@@ -1,0 +1,217 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>sdadminmain</class>
+ <widget class="QMainWindow" name="sdadminmain">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>400</width>
+    <height>277</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Spectral data file admin</string>
+  </property>
+  <widget class="QWidget" name="centralwidget"/>
+  <widget class="QMenuBar" name="menubar">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>0</y>
+     <width>400</width>
+     <height>25</height>
+    </rect>
+   </property>
+   <widget class="QMenu" name="menu_File">
+    <property name="title">
+     <string>&amp;File</string>
+    </property>
+    <addaction name="action_New_Control_File"/>
+    <addaction name="action_Select_Control_File"/>
+    <addaction name="action_Select_Observation_times_file"/>
+    <addaction name="action_Save_Control"/>
+    <addaction name="action_Save_Control_as"/>
+    <addaction name="separator"/>
+    <addaction name="action_New_range_file"/>
+    <addaction name="action_Select_Range_file"/>
+    <addaction name="action_Save_ranges"/>
+    <addaction name="action_Save_ranges_as"/>
+    <addaction name="separator"/>
+    <addaction name="action_Quit"/>
+   </widget>
+   <widget class="QMenu" name="menu_Data">
+    <property name="title">
+     <string>&amp;Data</string>
+    </property>
+    <addaction name="action_Scaling_and_offsets"/>
+    <addaction name="action_Tune_Ranges"/>
+   </widget>
+   <addaction name="menu_File"/>
+   <addaction name="menu_Data"/>
+  </widget>
+  <widget class="QStatusBar" name="statusbar"/>
+  <action name="action_Source_directory">
+   <property name="text">
+    <string>Source &amp;Directory</string>
+   </property>
+   <property name="toolTip">
+    <string>This selects the directory containing the spectral data.</string>
+   </property>
+   <property name="statusTip">
+    <string>This selects the directory containing the spectral data.</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+D</string>
+   </property>
+  </action>
+  <action name="action_Tune_Ranges">
+   <property name="text">
+    <string>&amp;Tune Ranges</string>
+   </property>
+   <property name="iconText">
+    <string>Tune Ranges</string>
+   </property>
+   <property name="toolTip">
+    <string>Adjust ranges in the range file.</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+T</string>
+   </property>
+  </action>
+  <action name="action_Quit">
+   <property name="text">
+    <string>&amp;Quit</string>
+   </property>
+   <property name="statusTip">
+    <string>Quit program</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+Q</string>
+   </property>
+  </action>
+  <action name="action_Peak_Comparison">
+   <property name="text">
+    <string>&amp;Calculate comparison</string>
+   </property>
+   <property name="statusTip">
+    <string>Run comparison procedure in batch</string>
+   </property>
+  </action>
+  <action name="action_Display_Results">
+   <property name="text">
+    <string>Display &amp;Results</string>
+   </property>
+   <property name="toolTip">
+    <string>Display Results of last comparison
+</string>
+   </property>
+  </action>
+  <action name="action_Select_Observation_times_file">
+   <property name="text">
+    <string>Select &amp;Observation times file</string>
+   </property>
+   <property name="toolTip">
+    <string>Select Observation times file, also select format of file.
+The spectal data files are assumed to be in the same directory.</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+O</string>
+   </property>
+  </action>
+  <action name="actionSpecify_spectral_data_format">
+   <property name="text">
+    <string>Specify &amp;spectral data format</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+F</string>
+   </property>
+  </action>
+  <action name="action_Scaling_and_offsets">
+   <property name="text">
+    <string>&amp;Scaling and offsets</string>
+   </property>
+   <property name="shortcut">
+    <string>Shift+S</string>
+   </property>
+  </action>
+  <action name="action_Save_Control">
+   <property name="text">
+    <string>&amp;Save control</string>
+   </property>
+   <property name="iconText">
+    <string>Save control file</string>
+   </property>
+   <property name="toolTip">
+    <string>Save control data to file</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+S</string>
+   </property>
+  </action>
+  <action name="action_Save_Control_as">
+   <property name="text">
+    <string>Save control &amp;as...</string>
+   </property>
+   <property name="toolTip">
+    <string>Save control to specified file</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+Shift+S</string>
+   </property>
+  </action>
+  <action name="action_Select_Control_File">
+   <property name="text">
+    <string>Select &amp;Control File</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+C</string>
+   </property>
+  </action>
+  <action name="action_Select_Range_file">
+   <property name="text">
+    <string>Select &amp;Range file</string>
+   </property>
+  </action>
+  <action name="action_Save_ranges">
+   <property name="text">
+    <string>Save ranges</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+G</string>
+   </property>
+  </action>
+  <action name="action_Save_ranges_as">
+   <property name="text">
+    <string>Save ranges as...</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+Shift+G</string>
+   </property>
+  </action>
+  <action name="action_New_Control_File">
+   <property name="text">
+    <string>&amp;New Control File</string>
+   </property>
+   <property name="toolTip">
+    <string>Start new control file</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+N</string>
+   </property>
+  </action>
+  <action name="action_New_range_file">
+   <property name="text">
+    <string>New range file</string>
+   </property>
+   <property name="toolTip">
+    <string>Staqrt a new range file</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+Shift+N</string>
+   </property>
+  </action>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>

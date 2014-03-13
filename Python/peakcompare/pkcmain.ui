@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>pkcmain</class>
+ <widget class="QMainWindow" name="pkcmain">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>400</width>
+    <height>277</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Peak comparison</string>
+  </property>
+  <widget class="QWidget" name="centralwidget"/>
+  <widget class="QMenuBar" name="menubar">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>0</y>
+     <width>400</width>
+     <height>25</height>
+    </rect>
+   </property>
+   <widget class="QMenu" name="menu_File">
+    <property name="title">
+     <string>&amp;File</string>
+    </property>
+    <addaction name="action_Configuration"/>
+    <addaction name="action_Parameters"/>
+    <addaction name="separator"/>
+    <addaction name="action_Quit"/>
+   </widget>
+   <widget class="QMenu" name="menu_Action">
+    <property name="title">
+     <string>&amp;Action</string>
+    </property>
+    <addaction name="action_Peak_Comparison"/>
+    <addaction name="action_Display_Results"/>
+   </widget>
+   <addaction name="menu_File"/>
+   <addaction name="menu_Action"/>
+  </widget>
+  <widget class="QStatusBar" name="statusbar"/>
+  <action name="action_Configuration">
+   <property name="text">
+    <string>&amp;Configuration</string>
+   </property>
+   <property name="toolTip">
+    <string>This option sets the configuration, notably the index file.
+
+Also set terminal size here.
+</string>
+   </property>
+   <property name="statusTip">
+    <string>Set up configuration parameters</string>
+   </property>
+   <property name="shortcut">
+    <string>Shift+C</string>
+   </property>
+  </action>
+  <action name="action_Parameters">
+   <property name="text">
+    <string>&amp;Parameters</string>
+   </property>
+   <property name="toolTip">
+    <string>Set up parameters, notably the ranges for comparison.</string>
+   </property>
+  </action>
+  <action name="action_Quit">
+   <property name="text">
+    <string>&amp;Quit</string>
+   </property>
+   <property name="statusTip">
+    <string>Quit program</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+Q</string>
+   </property>
+  </action>
+  <action name="action_Peak_Comparison">
+   <property name="text">
+    <string>&amp;Calculate comparison</string>
+   </property>
+   <property name="statusTip">
+    <string>Run comparison procedure in batch</string>
+   </property>
+  </action>
+  <action name="action_Display_Results">
+   <property name="text">
+    <string>Display &amp;Results</string>
+   </property>
+   <property name="toolTip">
+    <string>Display Results of last comparison
+</string>
+   </property>
+  </action>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>
