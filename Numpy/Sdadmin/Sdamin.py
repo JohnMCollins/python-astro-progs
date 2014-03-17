@@ -172,6 +172,13 @@ class SadminMain(QMainWindow, ui_sdadminmain.Ui_sdadminmain):
             newfile += ".spcr"
         self.set_rangefile(newfile)
 
+    def on_action_Scaling_and_offsets_triggered(self, checked = None):
+        if checked is None: return
+        if self.currentlist is None:
+            QMessageBox.warning(self, "No current obs file", "Please set up an observation times file first")
+            return
+        dlg = scaleoffdlg.ScaleOffDlg(self)
+        
     def on_action_Tune_Ranges_triggered(self, checked = None):
         if checked is None: return
         if self.currentlist is None:
