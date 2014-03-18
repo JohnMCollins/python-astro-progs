@@ -178,6 +178,10 @@ class SadminMain(QMainWindow, ui_sdadminmain.Ui_sdadminmain):
             QMessageBox.warning(self, "No current obs file", "Please set up an observation times file first")
             return
         dlg = scaleoffdlg.ScaleOffDlg(self)
+        dlg.initdata(self.currentlist)
+        if dlg.exec_():
+            dlg.copydata()
+            self.unsavedc = True
         
     def on_action_Tune_Ranges_triggered(self, checked = None):
         if checked is None: return
@@ -266,7 +270,9 @@ class SadminMain(QMainWindow, ui_sdadminmain.Ui_sdadminmain):
 
     def on_action_Quit_triggered(self, checked = None):
         if checked is None: return
-        if (self.dirty_ctrlfile() or self.dirty_rangefile()) and QMessageBox.question(self, "Unsaved data", "There are unsaved changes, sure you want to quit") != QMessageBox.Ok: return
+        if (self.dirty_ctrlfile() or self.dirty_rangefile()) and
+            QMessageBox.question(self, "Unsaved data", "There are unsaved changes, sure you want to quit", QMessageBox.Yes, QMessageBox.No|QMessageBox.Default|QMessageBox.Escape) != QMessageBox.Yes:
+            return
         QApplication.exit(0)
 
     def closeEvent(self, event):

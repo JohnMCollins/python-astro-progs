@@ -34,6 +34,21 @@ class ScaleOffDlg(QDialog, ui_scaleoffdlg.Ui_scaleoffdlg):
         self.yminv = 0.0
         self.ymaxv = 1e9
         self.prevxscale = self.prevyscale = 1.0
+        self.specctrl = None
+
+    def initmaxmin(self):
+        xr, yr = self.specctrl.getmaxmin()
+        self.xminv = xr.lower
+        self.xmaxv = xr.upper
+        self.yminv = yr.lower
+        self.ymaxv = yr.upper
+
+    def initdata(self, slist):
+        """Copy in and set up parameters"""
+        self.specctrl = slist
+        self.initmaxmin()
+        self.set_xoffset()
+        self.set_yoffset()
 
     def set_xoffset(self):
         """Reset spin box parameters to something sensible after we've fiddled"""
@@ -48,6 +63,8 @@ class ScaleOffDlg(QDialog, ui_scaleoffdlg.Ui_scaleoffdlg):
             else:
                 v = lower
             self.xoffset.setValue(v)   
+        self.xmin.setText(str(self.xminv))
+        self.xmax.setText(str(self.xmaxv))
         
    def set_yoffset(self):
         """Reset spin box parameters to something sensible after we've fiddled"""
@@ -62,6 +79,8 @@ class ScaleOffDlg(QDialog, ui_scaleoffdlg.Ui_scaleoffdlg):
             else:
                 v = lower
             self.yoffset.setValue(v)
+        self.ymin.setText(str(self.xminv))
+        self.ymax.setText(str(self.xmaxv))
         
     def on_xscale_valueChanged(self, v):
         if not isinstance(v, float): return
@@ -71,8 +90,6 @@ class ScaleOffDlg(QDialog, ui_scaleoffdlg.Ui_scaleoffdlg):
         self.xminv *= rescale
         self.xmaxv *= rescale
         self.set_xoffset()
-        self.xmin.setText(str(self.xminv))
-        self.xmax.setText(str(self.xmaxv))
         self.prevxscale = v
 
     def on_yscale_valueChanged(self, v):
@@ -83,8 +100,6 @@ class ScaleOffDlg(QDialog, ui_scaleoffdlg.Ui_scaleoffdlg):
         self.yminv *= rescale
         self.ymaxv *= rescale
         self.set_yoffset()
-        self.ymin.setText(str(self.yminv))
-        self.ymax.setText(str(self.ymaxv))
         self.prevyscale = v
 
     def on_xlogscale_valueChanged(self, v):
@@ -96,8 +111,6 @@ class ScaleOffDlg(QDialog, ui_scaleoffdlg.Ui_scaleoffdlg):
         self.xminv *= rescale
         self.xmaxv *= rescale
         self.set_xoffset()
-        self.xmin.setText(str(self.xminv))
-        self.xmax.setText(str(self.xmaxv))
         self.prevxscale = actscale
 
     def on_ylogscale_valueChanged(self, v):
@@ -109,8 +122,19 @@ class ScaleOffDlg(QDialog, ui_scaleoffdlg.Ui_scaleoffdlg):
         self.yminv *= rescale
         self.ymaxv *= rescale
         self.set_yoffset()
-        self.ymin.setText(str(self.yminv))
-        self.ymax.setText(str(self.ymaxv))
         self.prevyscale = actscale
 
+    def on_resetx_clicked(self, b = None):
+        if b is None: return
+        if QMessageBox.question(self, "Are you sure", "This will cancel all X scaling and offsets, are you sure", QMessageBox.Yes, QMessageBox.No|QMessageBox.Default|QMessageBox.Escape) != QMessageBox.Yes: return
+        self.specctrl.reset_xscale()
+        self.initmaxmin()
+        self.set_xoffset()
+
+    def on_resety_clicked(self, b = None):
+        if b is None: return
+        if QMessageBox.question(self, "Are you sure", "This will cancel all Y scaling and offsets, are you sure", QMessageBox.Yes, QMessageBox.No|QMessageBox.Default|QMessageBox.Escape) != QMessageBox.Yes: return
+        self.specctrl.reset_yscale()
+        self.initmaxmin()
+        self.set_yoffset()
 
