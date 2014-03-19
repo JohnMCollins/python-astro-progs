@@ -8,7 +8,8 @@ import os.path
 import math
 import copy
 
-import ui_scaleoffdlg
+import ui_xscaleoffdlg
+import ui_yscaleoffdlg
 
 def calcscale(minv, maxv):
     """Calculate minimum and maximum values for offset fields.
@@ -24,31 +25,25 @@ def calcscale(minv, maxv):
     if postdigs < 0: postdigs = 0
     return (lower, upper, step, postdigs)
 
-class ScaleOffDlg(QDialog, ui_scaleoffdlg.Ui_scaleoffdlg):
+class XScaleOffDlg(QDialog, ui_xscaleoffdlg.Ui_xscaleoffdlg):
 
     def __init__(self, parent = None):
-        super(ScaleOffDlg, self).__init__(parent)
+        super(XScaleOffDlg, self).__init__(parent)
         self.setupUi(self)
         self.xminv = 0.0
         self.xmaxv = 1e9
-        self.yminv = 0.0
-        self.ymaxv = 1e9
-        self.prevxscale = self.prevyscale = 1.0
         self.specctrl = None
 
     def initmaxmin(self):
         xr, yr = self.specctrl.getmaxmin()
         self.xminv = xr.lower
         self.xmaxv = xr.upper
-        self.yminv = yr.lower
-        self.ymaxv = yr.upper
 
     def initdata(self, slist):
         """Copy in and set up parameters"""
         self.specctrl = slist
         self.initmaxmin()
         self.set_xoffset()
-        self.set_yoffset()
 
     def set_xoffset(self):
         """Reset spin box parameters to something sensible after we've fiddled"""
@@ -65,26 +60,11 @@ class ScaleOffDlg(QDialog, ui_scaleoffdlg.Ui_scaleoffdlg):
             self.xoffset.setValue(v)   
         self.xmin.setText(str(self.xminv))
         self.xmax.setText(str(self.xmaxv))
-        
-   def set_yoffset(self):
-        """Reset spin box parameters to something sensible after we've fiddled"""
-        lower, upper, step, postdigs = calcscale(self.yminv, self.ymaxv)
-        v = self.yoffset.value()
-        self.yoffset.setDecimals(postdigs)
-        self.yoffset.setRange(lower, upper)
-        self.yoffset.setMaximum(upper)
-        if not (lower <= v <= upper):
-            if lower <= 0.0 <= upper:
-                v = 0.0
-            else:
-                v = lower
-            self.yoffset.setValue(v)
-        self.ymin.setText(str(self.xminv))
-        self.ymax.setText(str(self.xmaxv))
-        
+              
     def on_xscale_valueChanged(self, v):
         if not isinstance(v, float): return
         if not self.xscale.hasFocus(): return
+        self.xscalequot.setValue(1.0/v)
         self.xlogscale.setValue(math.log10(v))
         rescale = v / self.prevxscale
         self.xminv *= rescale
@@ -92,49 +72,40 @@ class ScaleOffDlg(QDialog, ui_scaleoffdlg.Ui_scaleoffdlg):
         self.set_xoffset()
         self.prevxscale = v
 
-    def on_yscale_valueChanged(self, v):
+    def on_xscalequot_valueChanged(self, v):
         if not isinstance(v, float): return
-        if not self.yscale.hasFocus(): return
-        self.ylogscale.setValue(math.log10(v))
-        rescale = v / self.prevyscale
-        self.yminv *= rescale
-        self.ymaxv *= rescale
-        self.set_yoffset()
-        self.prevyscale = v
+        if not self.xscalequot.hasFocus(): return
+        self.xlogscale.setValue(-math.log10(v))
+        rescale = v / self.prevxscale
+        self.xminv *= rescale
+        self.xmaxv *= rescale
+        self.set_xoffset()
+        self.prevxscale = v
 
     def on_xlogscale_valueChanged(self, v):
         if not isinstance(v, float): return
         if not self.xlogscale.hasFocus(): return
         actscale = 10.0**v
         self.xscale.setValue(actscale)
+        self.xscalequot.setValue(1.0/actscale)
         rescale = actscale / self.prevxscale
         self.xminv *= rescale
         self.xmaxv *= rescale
         self.set_xoffset()
         self.prevxscale = actscale
 
-    def on_ylogscale_valueChanged(self, v):
-        if not isinstance(v, float): return
-        if not self.yscale.hasFocus(): return
-        actscale = 10.0**v
-        self.yscale.setValue(actscale)
-        rescale = actscale / self.prevyscale
-        self.yminv *= rescale
-        self.ymaxv *= rescale
-        self.set_yoffset()
-        self.prevyscale = actscale
-
     def on_resetx_clicked(self, b = None):
         if b is None: return
-        if QMessageBox.question(self, "Are you sure", "This will cancel all X scaling and offsets, are you sure", QMessageBox.Yes, QMessageBox.No|QMessageBox.Default|QMessageBox.Escape) != QMessageBox.Yes: return
-        self.specctrl.reset_xscale()
+        if QMessageBox.question(self, "Are you sure", "This will cancel X scaling and offsets, are you sure", QMessageBox.Yes, QMessageBox.No|QMessageBox.Default|QMessageBox.Escape) != QMessageBox.Yes: return
+        self.specctrl.reset_x()
         self.initmaxmin()
         self.set_xoffset()
 
-    def on_resety_clicked(self, b = None):
+    def on_resetindivx_clicked(self, b = None):
         if b is None: return
-        if QMessageBox.question(self, "Are you sure", "This will cancel all Y scaling and offsets, are you sure", QMessageBox.Yes, QMessageBox.No|QMessageBox.Default|QMessageBox.Escape) != QMessageBox.Yes: return
-        self.specctrl.reset_yscale()
+        if QMessageBox.question(self, "Are you sure", "This will cancel previous X scaling and offsets, are you sure", QMessageBox.Yes, QMessageBox.No|QMessageBox.Default|QMessageBox.Escape) != QMessageBox.Yes: return
+        self.specctrl.reset_indiv_x()
         self.initmaxmin()
-        self.set_yoffset()
+        self.set_xoffset()
+
 
