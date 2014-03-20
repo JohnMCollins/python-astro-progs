@@ -17,19 +17,10 @@ import xmlutil
 import specdatactrl
 import datarange
 
-try:
-    import obsfileseldlg
-    import rangeseldlg
-    import ui_sdadminmain
-except ImportError:
-    os.system("make")
-    try:
-        import obsfileseldlg
-        import rangeseldlg
-        import ui_sdadminmain
-    except ImportError:
-        print "Still no joy, byebye"
-        sys.exit(100)
+import obsfileseldlg
+import rangeseldlg
+import scaleoffdlg
+import ui_sdadminmain
 
 SPC_DOC_NAME = "SPCCTRL"
 SPC_DOC_ROOT = "spcctrl"
@@ -172,16 +163,23 @@ class SadminMain(QMainWindow, ui_sdadminmain.Ui_sdadminmain):
             newfile += ".spcr"
         self.set_rangefile(newfile)
 
-    def on_action_Scaling_and_offsets_triggered(self, checked = None):
+    def on_action_X_Scaling_and_offsets_triggered(self, checked = None):
         if checked is None: return
         if self.currentlist is None:
             QMessageBox.warning(self, "No current obs file", "Please set up an observation times file first")
             return
-        dlg = scaleoffdlg.ScaleOffDlg(self)
+        dlg = scaleoffdlg.XScaleOffDlg(self)
         dlg.initdata(self.currentlist)
-        if dlg.exec_():
-            dlg.copydata()
-            self.unsavedc = True
+        dlg.exec_()
+
+    def on_action_Y_Scaling_and_offsets_triggered(self, checked = None):
+        if checked is None: return
+        if self.currentlist is None:
+            QMessageBox.warning(self, "No current obs file", "Please set up an observation times file first")
+            return
+        dlg = scaleoffdlg.YScaleOffDlg(self)
+        dlg.initdata(self.currentlist)
+        dlg.exec_()
         
     def on_action_Tune_Ranges_triggered(self, checked = None):
         if checked is None: return
@@ -239,7 +237,15 @@ class SadminMain(QMainWindow, ui_sdadminmain.Ui_sdadminmain):
         try:
             datarange.save_ranges(fname, self.rangelist)
             return True
-        except datarange.DataRangeError as e:
+        except datarange.DataRangeE    def on_action_X_Scaling_and_offsets_triggered(self, checked = None):
+        if checked is None: return
+        if self.currentlist is None:
+            QMessageBox.warning(self, "No current obs file", "Please set up an observation times file first")
+            return
+        dlg = scaleoffdlg.XScaleOffDlg(self)
+        dlg.initdata(self.currentlist)
+        dlg.exec_()
+rror as e:
             QMessageBox.warning(self, "Save range file error", e.args[0])
             return False
 
@@ -270,7 +276,7 @@ class SadminMain(QMainWindow, ui_sdadminmain.Ui_sdadminmain):
 
     def on_action_Quit_triggered(self, checked = None):
         if checked is None: return
-        if (self.dirty_ctrlfile() or self.dirty_rangefile()) and
+        if (self.dirty_ctrlfile() or self.dirty_rangefile()) and \
             QMessageBox.question(self, "Unsaved data", "There are unsaved changes, sure you want to quit", QMessageBox.Yes, QMessageBox.No|QMessageBox.Default|QMessageBox.Escape) != QMessageBox.Yes:
             return
         QApplication.exit(0)

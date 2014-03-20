@@ -44,7 +44,9 @@
     <property name="title">
      <string>&amp;Data</string>
     </property>
-    <addaction name="action_Scaling_and_offsets"/>
+    <addaction name="action_X_Scaling_and_offsets"/>
+    <addaction name="action_Y_Scaling_and_offsets"/>
+    <addaction name="separator"/>
     <addaction name="action_Tune_Ranges"/>
    </widget>
    <addaction name="menu_File"/>
@@ -127,9 +129,9 @@ The spectal data files are assumed to be in the same directory.</string>
     <string>Ctrl+F</string>
    </property>
   </action>
-  <action name="action_Scaling_and_offsets">
+  <action name="action_X_Scaling_and_offsets">
    <property name="text">
-    <string>&amp;Scaling and offsets</string>
+    <string>&amp;X Scaling and offsets</string>
    </property>
    <property name="shortcut">
     <string>Shift+S</string>
@@ -209,6 +211,11 @@ The spectal data files are assumed to be in the same directory.</string>
    </property>
    <property name="shortcut">
     <string>Ctrl+Shift+N</string>
+   </property>
+  </action>
+  <action name="action_Y_Scaling_and_offsets">
+   <property name="text">
+    <string>&amp;Y Scaling and offsets</string>
    </property>
   </action>
  </widget>
