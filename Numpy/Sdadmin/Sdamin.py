@@ -1,4 +1,4 @@
-#! /usr/bin/python
+#! /local/home/jcollins/lib/anaconda/bin/python
 
 import sys
 import os
@@ -237,15 +237,7 @@ class SadminMain(QMainWindow, ui_sdadminmain.Ui_sdadminmain):
         try:
             datarange.save_ranges(fname, self.rangelist)
             return True
-        except datarange.DataRangeE    def on_action_X_Scaling_and_offsets_triggered(self, checked = None):
-        if checked is None: return
-        if self.currentlist is None:
-            QMessageBox.warning(self, "No current obs file", "Please set up an observation times file first")
-            return
-        dlg = scaleoffdlg.XScaleOffDlg(self)
-        dlg.initdata(self.currentlist)
-        dlg.exec_()
-rror as e:
+        except datarange.DataRangeError as e:
             QMessageBox.warning(self, "Save range file error", e.args[0])
             return False
 

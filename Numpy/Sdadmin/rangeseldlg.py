@@ -205,6 +205,7 @@ class Rangeseldlg(QDialog, ui_rangeseldlg.Ui_rangeseldlg):
             for r in self.rangelist.listranges():
                 if r == "xrange" or r == "yrange": continue
                 self.plotter.set_subrange(self.rangelist.getrange(r))
+            self.specctl.loadfiles(plotlist)
             self.plotter.set_plot(plotlist)
             self.warningmsg.setText("")
         except mpplotter.Plotter_error as e:

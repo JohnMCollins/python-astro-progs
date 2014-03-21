@@ -49,8 +49,15 @@
     <addaction name="separator"/>
     <addaction name="action_Tune_Ranges"/>
    </widget>
+   <widget class="QMenu" name="menu_Procedures">
+    <property name="title">
+     <string>&amp;Procedures</string>
+    </property>
+    <addaction name="action_Calculate_continuum"/>
+   </widget>
    <addaction name="menu_File"/>
    <addaction name="menu_Data"/>
+   <addaction name="menu_Procedures"/>
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
   <action name="action_Source_directory">
@@ -134,7 +141,7 @@ The spectal data files are assumed to be in the same directory.</string>
     <string>&amp;X Scaling and offsets</string>
    </property>
    <property name="shortcut">
-    <string>Shift+S</string>
+    <string>Shift+X</string>
    </property>
   </action>
   <action name="action_Save_Control">
@@ -216,6 +223,17 @@ The spectal data files are assumed to be in the same directory.</string>
   <action name="action_Y_Scaling_and_offsets">
    <property name="text">
     <string>&amp;Y Scaling and offsets</string>
+   </property>
+   <property name="shortcut">
+    <string>Shift+Y</string>
+   </property>
+  </action>
+  <action name="action_Calculate_continuum">
+   <property name="text">
+    <string>Calculate continuum</string>
+   </property>
+   <property name="toolTip">
+    <string>Calculate continuum on data</string>
    </property>
   </action>
  </widget>

@@ -220,9 +220,9 @@ p, li { white-space: pre-wrap; }
   <widget class="QLabel" name="label_3">
    <property name="geometry">
     <rect>
-     <x>150</x>
-     <y>50</y>
-     <width>421</width>
+     <x>120</x>
+     <y>40</y>
+     <width>461</width>
      <height>17</height>
     </rect>
    </property>
@@ -232,7 +232,7 @@ p, li { white-space: pre-wrap; }
     </font>
    </property>
    <property name="text">
-    <string>Adjustments to scaling and offset for X (time) axis</string>
+    <string>Adjustments to scaling and offset for X (wavelength) axis</string>
    </property>
   </widget>
   <widget class="QLabel" name="label_7">
