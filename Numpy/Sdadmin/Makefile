@@ -4,8 +4,9 @@
 all:	ui_newrangedlg.py\
 	ui_obsfileseldlg.py\
 	ui_rangeseldlg.py\
-	ui_scaleoffdlg.py\
-	ui_sdadminmain.py
+	ui_sdadminmain.py\
+	ui_xscaleoffdlg.py\
+	ui_yscaleoffdlg.py
 
 ui_newrangedlg.py:	newrangedlg.ui
 	pyuic4 -o $@ $?
@@ -16,10 +17,13 @@ ui_obsfileseldlg.py:	obsfileseldlg.ui
 ui_rangeseldlg.py:	rangeseldlg.ui
 	pyuic4 -o $@ $?
 
-ui_scaleoffdlg.py:	scaleoffdlg.ui
+ui_sdadminmain.py:	sdadminmain.ui
 	pyuic4 -o $@ $?
 
-ui_sdadminmain.py:	sdadminmain.ui
+ui_xscaleoffdlg.py:	xscaleoffdlg.ui
+	pyuic4 -o $@ $?
+
+ui_yscaleoffdlg.py:	yscaleoffdlg.ui
 	pyuic4 -o $@ $?
 
 clean:
