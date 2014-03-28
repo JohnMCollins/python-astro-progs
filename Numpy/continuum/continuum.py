@@ -21,20 +21,24 @@ class intresult(object):
         self.bluecont = 0.0
         self.redcont = 0.0
         self.totcont = 0.0
+        self.note = None
 
 parsearg = argparse.ArgumentParser(description='Calculate continuum')
 parsearg.add_argument('--rangefile', type=str, help='Range file')
 parsearg.add_argument('--specfile', type=str, help='Spectrum data controlfile')
 parsearg.add_argument('--renorm', action='store_true', help='Rescale intensity to normalise')
 parsearg.add_argument('--stddev', type=int, default=5, help='Number of std devs to highlight')
+parsearg.add_argument('--markexc', action='store_true', help='Mark exceptional data sets')
 
 SPC_DOC_ROOT = "spcctrl"
+SPC_DOC_NAME = "SPCCTRL"
 
 res = vars(parsearg.parse_args())
 rf = res['rangefile']
 sf = res['specfile']
 renorm = res['renorm']
 stdevs = res['stddev']
+markexc = res['markexc']
 
 if rf is None:
     print "No range file specified"
@@ -114,19 +118,45 @@ bluestddev = np.std(blueconts)
 
 rednote = stdevs * redstddev
 bluenote = stdevs * bluestddev
+notechanges = []
+anychanges = 0
 
 for rk in dates:
     datum = resultdict[rk]
     dat = datum.dataarray.modjdate
     rd = datum.redcont
     bl = datum.bluecont
-#    print "%15.6f %15.6f %15.6f" % (dat, rd, bl),
-#    if abs(rd-redmean) >= rednote: print " Except red",
-#    if abs(bl-bluemean) >= bluenote: print " Except blue",
-#    print
+    if abs(rd-redmean) >= rednote:
+        if abs(bl-bluemean) >= bluenote:
+            datum.note = "Blue/Red outside range"
+        else:
+            datum.note = "Red outside range"
+        notechanges.append(datum)
+    elif abs(bl-bluemean) >= bluenote:
+        datum.note = "Blue outside range"
+        notechanges.append(datum)
+
+if markexc and len(notechanges) != 0:
+    for c in notechanges:
+        c.dataarray.discount = c.note
+        anychanges += 1
 
 num = float(len(dates))
-print "Av red=",totred/num,"Av blue=",totblue/num,"overall=",totboth / num
+overall = totboth / num
+
+if renorm:
+    spclist.adj_yscale(overall)
+    anychanges += 1
+SPC_DOC_NAME = "SPCCTRL"
+if anychanges != 0:
+    try:
+        doc, root = xmlutil.init_save(SPC_DOC_NAME, SPC_DOC_ROOT)
+        spclist.save(doc, root, "cfile")
+        xmlutil.complete_save(sf, doc)
+    except xmlutil.XMLError as e:
+        print "XML error -", e.args[0]
+
+print "Av red=",totred/num,"Av blue=",totblue/num,"overall=",overall
 plt.plot(dates,redconts,"r",dates,blueconts,"b")
 plt.show()
 
