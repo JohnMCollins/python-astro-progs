@@ -1,6 +1,6 @@
 #! /local/home/jcollins/lib/anaconda/bin/python
 
-# Integrate the H alpha peaks to get figures for the total values,
+# Integrate the two "horns" of the Halpha peak to get variations,
 # assume continuum is normalised at 1 unless otherwise specified
 
 import argparse
@@ -19,9 +19,9 @@ class intresult(object):
 
     def __init__(self, da):
         self.dataarray = da
-        self.peaksize = 0.0
+        self.compar = 0.0
 
-parsearg = argparse.ArgumentParser(description='Get sizes of H Alpha peaks')
+parsearg = argparse.ArgumentParser(description='Compare sub-peaks of Halpha')
 parsearg.add_argument('--rangefile', type=str, help='Range file')
 parsearg.add_argument('--specfile', type=str, help='Spectrum data controlfile')
 parsearg.add_argument('--outfile', type=str, help='Output file')
@@ -62,7 +62,8 @@ except datarange.DataRangeError as e:
     sys.exit(51)
 
 try:
-    halphar = rangelist.getrange("halpha")
+    integ1 = rangelist.getrange("integ1")
+    integ2 = rangelist.getrange("integ2")
 except datarange.DataRangeError as e:
     print e.args[0]
     sys.exit(52)
@@ -85,9 +86,12 @@ for dataset in spclist.datalist:
         yvalues = dataset.get_yvalues(False)
     except specdatactrl.SpecDataError:
         continue
-    har, hir = meanval.mean_value(halphar, xvalues, yvalues)
+    i1r, i1i = meanval.mean_value(integ1, xvalues, yvalues)
+    i2r, i2i = meanval.mean_value(integ2, xvalues, yvalues)
+    i1v = i1i/i1r
+    i2v = i2i/i2r
     res = intresult(dataset)
-    res.peaksize = hir / har - continuum
+    res.compar = (i1v-i2v) / (i1v+i2v - 2.0*continuum)
     resultdict[dataset.modjdate] = res
 
 dates = resultdict.keys()
@@ -103,7 +107,7 @@ lastdate = 1e12
 for rk in dates:
     datum = resultdict[rk]
     dat = datum.dataarray.modbjdate
-    ps = datum.peaksize
+    ps = datum.compar
     if dat - lastdate > sepdays and len(rxvalues) != 0:
         rxarray.append(rxvalues)
         ryarray.append(ryvalues)

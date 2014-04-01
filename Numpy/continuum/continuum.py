@@ -27,6 +27,7 @@ parsearg = argparse.ArgumentParser(description='Calculate continuum')
 parsearg.add_argument('--rangefile', type=str, help='Range file')
 parsearg.add_argument('--specfile', type=str, help='Spectrum data controlfile')
 parsearg.add_argument('--renorm', action='store_true', help='Rescale intensity to normalise')
+parsearg.add_argument('--indiv', action='store_true', help='Rescale individual intensities')
 parsearg.add_argument('--stddev', type=int, default=5, help='Number of std devs to highlight')
 parsearg.add_argument('--markexc', action='store_true', help='Mark exceptional data sets')
 
@@ -37,6 +38,7 @@ res = vars(parsearg.parse_args())
 rf = res['rangefile']
 sf = res['specfile']
 renorm = res['renorm']
+indiv = res['indiv']
 stdevs = res['stddev']
 markexc = res['markexc']
 
@@ -123,7 +125,6 @@ anychanges = 0
 
 for rk in dates:
     datum = resultdict[rk]
-    dat = datum.dataarray.modjdate
     rd = datum.redcont
     bl = datum.bluecont
     if abs(rd-redmean) >= rednote:
@@ -146,8 +147,22 @@ overall = totboth / num
 
 if renorm:
     spclist.adj_yscale(overall)
-    anychanges += 1
-SPC_DOC_NAME = "SPCCTRL"
+    if overall != 1.0: anychanges += 1
+    if indiv:
+        anychanges += 1
+        for rk in dates:
+            datum = resultdict[rk]
+            if datum.dataarray.discount is not None: continue
+            newscale = 1.0
+            if datum.dataarray.yscale is not None: newscale = datum.dataarray.yscale
+            # Multiply by overall scale as global y scale is being divided by that
+            # Divide by the amount we came to
+            newscale *= overall / datum.totcont
+            if newscale == 1.0:
+                datum.dataarray.yscale = None
+            else:
+                datum.dataarray.yscale = newscale
+
 if anychanges != 0:
     try:
         doc, root = xmlutil.init_save(SPC_DOC_NAME, SPC_DOC_ROOT)
