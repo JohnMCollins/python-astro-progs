@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>701</width>
-    <height>469</height>
+    <height>362</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -16,8 +16,8 @@
   <widget class="QDialogButtonBox" name="buttonBox">
    <property name="geometry">
     <rect>
-     <x>440</x>
-     <y>400</y>
+     <x>410</x>
+     <y>290</y>
      <width>221</width>
      <height>32</height>
     </rect>
@@ -32,8 +32,8 @@
   <widget class="QLineEdit" name="ymin">
    <property name="geometry">
     <rect>
-     <x>160</x>
-     <y>140</y>
+     <x>110</x>
+     <y>70</y>
      <width>141</width>
      <height>27</height>
     </rect>
@@ -48,8 +48,8 @@
   <widget class="QLineEdit" name="ymax">
    <property name="geometry">
     <rect>
-     <x>430</x>
-     <y>140</y>
+     <x>380</x>
+     <y>70</y>
      <width>141</width>
      <height>27</height>
     </rect>
@@ -64,8 +64,8 @@
   <widget class="QLabel" name="label_2">
    <property name="geometry">
     <rect>
-     <x>350</x>
-     <y>140</y>
+     <x>300</x>
+     <y>70</y>
      <width>31</width>
      <height>17</height>
     </rect>
@@ -77,8 +77,8 @@
   <widget class="QDoubleSpinBox" name="yscale">
    <property name="geometry">
     <rect>
-     <x>150</x>
-     <y>210</y>
+     <x>110</x>
+     <y>110</y>
      <width>181</width>
      <height>27</height>
     </rect>
@@ -102,8 +102,8 @@
   <widget class="QLabel" name="label_5">
    <property name="geometry">
     <rect>
-     <x>360</x>
-     <y>220</y>
+     <x>310</x>
+     <y>110</y>
      <width>31</width>
      <height>17</height>
     </rect>
@@ -115,8 +115,8 @@
   <widget class="QDoubleSpinBox" name="ylogscale">
    <property name="geometry">
     <rect>
-     <x>410</x>
-     <y>210</y>
+     <x>370</x>
+     <y>110</y>
      <width>181</width>
      <height>27</height>
     </rect>
@@ -140,8 +140,8 @@
   <widget class="QLabel" name="label">
    <property name="geometry">
     <rect>
-     <x>70</x>
-     <y>140</y>
+     <x>20</x>
+     <y>70</y>
      <width>62</width>
      <height>17</height>
     </rect>
@@ -153,8 +153,8 @@
   <widget class="QDoubleSpinBox" name="yoffset">
    <property name="geometry">
     <rect>
-     <x>150</x>
-     <y>310</y>
+     <x>110</x>
+     <y>190</y>
      <width>181</width>
      <height>27</height>
     </rect>
@@ -173,8 +173,8 @@ p, li { white-space: pre-wrap; }
   <widget class="QPushButton" name="resety">
    <property name="geometry">
     <rect>
-     <x>390</x>
-     <y>310</y>
+     <x>10</x>
+     <y>300</y>
      <width>221</width>
      <height>27</height>
     </rect>
@@ -194,8 +194,8 @@ p, li { white-space: pre-wrap; }
   <widget class="QLabel" name="label_4">
    <property name="geometry">
     <rect>
-     <x>60</x>
-     <y>220</y>
+     <x>20</x>
+     <y>120</y>
      <width>71</width>
      <height>17</height>
     </rect>
@@ -207,8 +207,8 @@ p, li { white-space: pre-wrap; }
   <widget class="QLabel" name="label_6">
    <property name="geometry">
     <rect>
-     <x>60</x>
-     <y>320</y>
+     <x>20</x>
+     <y>200</y>
      <width>71</width>
      <height>17</height>
     </rect>
@@ -220,8 +220,8 @@ p, li { white-space: pre-wrap; }
   <widget class="QLabel" name="label_3">
    <property name="geometry">
     <rect>
-     <x>150</x>
-     <y>50</y>
+     <x>10</x>
+     <y>10</y>
      <width>431</width>
      <height>17</height>
     </rect>
@@ -238,8 +238,8 @@ p, li { white-space: pre-wrap; }
   <widget class="QLabel" name="label_7">
    <property name="geometry">
     <rect>
-     <x>160</x>
-     <y>100</y>
+     <x>10</x>
+     <y>40</y>
      <width>411</width>
      <height>17</height>
     </rect>
@@ -251,8 +251,8 @@ p, li { white-space: pre-wrap; }
   <widget class="QDoubleSpinBox" name="yscalequot">
    <property name="geometry">
     <rect>
-     <x>150</x>
-     <y>260</y>
+     <x>110</x>
+     <y>150</y>
      <width>181</width>
      <height>27</height>
     </rect>
@@ -276,8 +276,8 @@ p, li { white-space: pre-wrap; }
   <widget class="QLabel" name="label_8">
    <property name="geometry">
     <rect>
-     <x>60</x>
-     <y>270</y>
+     <x>20</x>
+     <y>150</y>
      <width>62</width>
      <height>17</height>
     </rect>
@@ -289,8 +289,8 @@ p, li { white-space: pre-wrap; }
   <widget class="QPushButton" name="resetindivy">
    <property name="geometry">
     <rect>
-     <x>390</x>
-     <y>360</y>
+     <x>300</x>
+     <y>240</y>
      <width>221</width>
      <height>27</height>
     </rect>
@@ -317,8 +317,8 @@ p, li { white-space: pre-wrap; }
   <widget class="QLineEdit" name="yindivnum">
    <property name="geometry">
     <rect>
-     <x>150</x>
-     <y>360</y>
+     <x>110</x>
+     <y>240</y>
      <width>81</width>
      <height>27</height>
     </rect>
@@ -333,14 +333,43 @@ p, li { white-space: pre-wrap; }
   <widget class="QLabel" name="label_9">
    <property name="geometry">
     <rect>
-     <x>60</x>
-     <y>370</y>
+     <x>30</x>
+     <y>250</y>
      <width>62</width>
      <height>16</height>
     </rect>
    </property>
    <property name="text">
     <string>Indivs</string>
+   </property>
+  </widget>
+  <widget class="QLineEdit" name="slope">
+   <property name="geometry">
+    <rect>
+     <x>370</x>
+     <y>190</y>
+     <width>211</width>
+     <height>27</height>
+    </rect>
+   </property>
+   <property name="toolTip">
+    <string>This is a slope for gradation on the continuum</string>
+   </property>
+   <property name="text">
+    <string>0.0</string>
+   </property>
+  </widget>
+  <widget class="QLabel" name="label_10">
+   <property name="geometry">
+    <rect>
+     <x>310</x>
+     <y>190</y>
+     <width>41</width>
+     <height>17</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Slope</string>
    </property>
   </widget>
  </widget>
@@ -351,9 +380,10 @@ p, li { white-space: pre-wrap; }
   <tabstop>ylogscale</tabstop>
   <tabstop>yscalequot</tabstop>
   <tabstop>yoffset</tabstop>
-  <tabstop>resety</tabstop>
+  <tabstop>slope</tabstop>
   <tabstop>yindivnum</tabstop>
   <tabstop>resetindivy</tabstop>
+  <tabstop>resety</tabstop>
   <tabstop>buttonBox</tabstop>
  </tabstops>
  <resources/>
@@ -371,6 +401,22 @@ p, li { white-space: pre-wrap; }
     <hint type="destinationlabel">
      <x>286</x>
      <y>274</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>buttonBox</sender>
+   <signal>accepted()</signal>
+   <receiver>yscaleoffdlg</receiver>
+   <slot>accept()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>550</x>
+     <y>415</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>350</x>
+     <y>234</y>
     </hint>
    </hints>
   </connection>

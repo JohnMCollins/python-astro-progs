@@ -197,7 +197,7 @@ class YScaleOffDlg(QDialog, ui_yscaleoffdlg.Ui_yscaleoffdlg):
         if b is None: return
         if QMessageBox.question(self, "Are you sure", "This will cancel previous y scaling and offsets, are you sure", QMessageBox.Yes, QMessageBox.No|QMessageBox.Default|QMessageBox.Escape) != QMessageBox.Yes: return
         self.specctrl.reset_indiv_y()
-        self.yindivnum.setText(0)
+        self.yindivnum.setText("0")
         self.resetindivy.setEnabled(False)
 
 

@@ -7,26 +7,18 @@ import argparse
 import os.path
 import sys
 import numpy as np
-import matplotlib.pyplot as plt
-
 import specdatactrl
 import datarange
 import xmlutil
 import meanval
-
-class intresult(object):
-    """Record integration results"""
-
-    def __init__(self, da):
-        self.dataarray = da
-        self.peaksize = 0.0
+import exclusions
 
 parsearg = argparse.ArgumentParser(description='Get sizes of H Alpha peaks')
 parsearg.add_argument('--rangefile', type=str, help='Range file')
 parsearg.add_argument('--specfile', type=str, help='Spectrum data controlfile')
 parsearg.add_argument('--outfile', type=str, help='Output file')
-parsearg.add_argument('--sepdays', type=int, default=1, help='Separate plots if this number of days apart')
 parsearg.add_argument('--continuum', type=float, default=1.0, help='Value for continuum')
+parsearg.add_argument('--excludes', type=str, help='File for output of excluded data')
 
 SPC_DOC_ROOT = "spcctrl"
 SPC_DOC_NAME = "SPCCTRL"
@@ -35,7 +27,7 @@ res = vars(parsearg.parse_args())
 rf = res['rangefile']
 sf = res['specfile']
 outf = res['outfile']
-sepdays = res['sepdays']
+exclf = res['excludes']
 continuum = res['continuum']
 
 if rf is None:
@@ -45,6 +37,10 @@ if rf is None:
 if sf is None:
     print "No spec data control specified"
     sys.exit(101)
+
+if outf is None:
+    print "No output file specified"
+    sys.exit(102)
 
 try:
     doc, root = xmlutil.load_file(sf, SPC_DOC_ROOT)
@@ -77,56 +73,40 @@ except specdatactrl.SpecDataError as e:
 
 print "load complete"
 
-resultdict = dict()
-peaksizes = []
+skipped = 0
+elist = exclusions.Exclusions()
+datelu = dict()
 
 for dataset in spclist.datalist:
     try:
         xvalues = dataset.get_xvalues(False)
         yvalues = dataset.get_yvalues(False)
-    except specdatactrl.SpecDataError:
+    except specdatactrl.SpecDataError as err:
+        if err.args[0] == "Discounted data":
+            elist.add(dataset.modbjdate, err.args[2])
+        skipped += 1
         continue
     har, hir = meanval.mean_value(halphar, xvalues, yvalues)
-    res = intresult(dataset)
-    ps = hir / har - continuum
-    res.peaksize = ps
-    peaksizes.append(ps)
-    resultdict[dataset.modjdate] = res
+    ew = (hir - continuum * har) / har
+    datelu[dataset.modbjdate] = ew
 
-plt.hist(peaksizes,bins=20)
-plt.figure()
-dates = resultdict.keys()
-dates.sort()
+print "Integration complete, skipped", skipped, "data files"
+if skipped > 0 and exclf is not None:
+    try:
+        elist.save(exclf)
+    except ExcludeError as e:
+        print e.args[0], e.args[1]
+        sys.exit(54)
 
-rxarray = []
-ryarray = []
-rxvalues = []
-ryvalues = []
+ds = datelu.keys()
+ds.sort()
+dates = []
+ews = []
+for d in ds:
+    dates.append(d)
+    ews.append(datelu[d])
 
-lastdate = 1e12
+nparr = np.array([dates, ews]).transpose()
+np.savetxt(outf, nparr)
 
-for rk in dates:
-    datum = resultdict[rk]
-    dat = datum.dataarray.modbjdate
-    ps = datum.peaksize
-    if dat - lastdate > sepdays and len(rxvalues) != 0:
-        rxarray.append(rxvalues)
-        ryarray.append(ryvalues)
-        rxvalues = []
-        ryvalues = []
-    rxvalues.append(dat)
-    ryvalues.append(ps)
-    lastdate = dat
-
-if len(rxvalues) != 0:
-   rxarray.append(rxvalues)
-   ryarray.append(ryvalues)
-
-colours = ('black','red','green','blue','yellow','magenta','cyan') * ((len(rxarray) + 6) / 7)
-
-for xarr, yarr, col in zip(rxarray,ryarray,colours):
-    xa = np.array(xarr) - xarr[0]
-    ya = np.array(yarr)
-    plt.plot(xa, ya, col)
-plt.show()
 
