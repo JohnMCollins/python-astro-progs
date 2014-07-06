@@ -139,7 +139,7 @@ for rk in dates:
 
 if markexc and len(notechanges) != 0:
     for c in notechanges:
-        c.dataarray.discount = c.note
+        c.dataarray.skip(c.note)
         anychanges += 1
 
 num = float(len(dates))
