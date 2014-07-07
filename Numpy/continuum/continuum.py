@@ -102,7 +102,7 @@ for dataset in spclist.datalist:
     res.bluecont = mvb
     res.redcont = mvr
     res.totcont = totmv
-    resultdict[dataset.modjdate] = res
+    resultdict[dataset.modbjdate] = res
     totred += mvr
     totblue += mvb
     totboth += totmv
@@ -152,7 +152,7 @@ if renorm:
         anychanges += 1
         for rk in dates:
             datum = resultdict[rk]
-            if datum.dataarray.discount is not None: continue
+            if datum.dataarray.is_skipped(): continue
             newscale = 1.0
             if datum.dataarray.yscale is not None: newscale = datum.dataarray.yscale
             # Multiply by overall scale as global y scale is being divided by that
