@@ -1,24 +1,24 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
- <class>yscaleoffdlg</class>
- <widget class="QDialog" name="yscaleoffdlg">
+ <class>yindscaleoffdlg</class>
+ <widget class="QDialog" name="yindscaleoffdlg">
   <property name="geometry">
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>603</width>
-    <height>351</height>
+    <width>625</width>
+    <height>412</height>
    </rect>
   </property>
   <property name="windowTitle">
-   <string>y Scaling and Offsets</string>
+   <string>Individual Y scale/offset</string>
   </property>
   <widget class="QDialogButtonBox" name="buttonBox">
    <property name="geometry">
     <rect>
-     <x>360</x>
-     <y>300</y>
-     <width>221</width>
+     <x>260</x>
+     <y>350</y>
+     <width>341</width>
      <height>32</height>
     </rect>
    </property>
@@ -29,56 +29,11 @@
     <set>QDialogButtonBox::Cancel|QDialogButtonBox::Ok</set>
    </property>
   </widget>
-  <widget class="QLineEdit" name="ymin">
+  <widget class="QDoubleSpinBox" name="yscalequot">
    <property name="geometry">
     <rect>
-     <x>110</x>
-     <y>70</y>
-     <width>141</width>
-     <height>27</height>
-    </rect>
-   </property>
-   <property name="toolTip">
-    <string>Current minimum y</string>
-   </property>
-   <property name="readOnly">
-    <bool>true</bool>
-   </property>
-  </widget>
-  <widget class="QLineEdit" name="ymax">
-   <property name="geometry">
-    <rect>
-     <x>380</x>
-     <y>70</y>
-     <width>141</width>
-     <height>27</height>
-    </rect>
-   </property>
-   <property name="toolTip">
-    <string>Current maximum y</string>
-   </property>
-   <property name="readOnly">
-    <bool>true</bool>
-   </property>
-  </widget>
-  <widget class="QLabel" name="label_2">
-   <property name="geometry">
-    <rect>
-     <x>300</x>
-     <y>70</y>
-     <width>31</width>
-     <height>17</height>
-    </rect>
-   </property>
-   <property name="text">
-    <string>to</string>
-   </property>
-  </widget>
-  <widget class="QDoubleSpinBox" name="yscale">
-   <property name="geometry">
-    <rect>
-     <x>110</x>
-     <y>110</y>
+     <x>120</x>
+     <y>160</y>
      <width>181</width>
      <height>27</height>
     </rect>
@@ -102,8 +57,8 @@
   <widget class="QLabel" name="label_5">
    <property name="geometry">
     <rect>
-     <x>310</x>
-     <y>110</y>
+     <x>320</x>
+     <y>120</y>
      <width>31</width>
      <height>17</height>
     </rect>
@@ -112,11 +67,40 @@
     <string>Log</string>
    </property>
   </widget>
+  <widget class="QLineEdit" name="ymin">
+   <property name="geometry">
+    <rect>
+     <x>120</x>
+     <y>80</y>
+     <width>141</width>
+     <height>27</height>
+    </rect>
+   </property>
+   <property name="toolTip">
+    <string>Current minimum y</string>
+   </property>
+   <property name="readOnly">
+    <bool>true</bool>
+   </property>
+  </widget>
+  <widget class="QLabel" name="label_4">
+   <property name="geometry">
+    <rect>
+     <x>30</x>
+     <y>130</y>
+     <width>71</width>
+     <height>17</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Scale by</string>
+   </property>
+  </widget>
   <widget class="QDoubleSpinBox" name="ylogscale">
    <property name="geometry">
     <rect>
-     <x>370</x>
-     <y>110</y>
+     <x>380</x>
+     <y>120</y>
      <width>181</width>
      <height>27</height>
     </rect>
@@ -140,8 +124,8 @@
   <widget class="QLabel" name="label">
    <property name="geometry">
     <rect>
-     <x>20</x>
-     <y>70</y>
+     <x>30</x>
+     <y>80</y>
      <width>62</width>
      <height>17</height>
     </rect>
@@ -150,11 +134,29 @@
     <string>From</string>
    </property>
   </widget>
+  <widget class="QLabel" name="label_3">
+   <property name="geometry">
+    <rect>
+     <x>20</x>
+     <y>20</y>
+     <width>251</width>
+     <height>17</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>12</pointsize>
+    </font>
+   </property>
+   <property name="text">
+    <string>Individual scale offset for date</string>
+   </property>
+  </widget>
   <widget class="QPushButton" name="resety">
    <property name="geometry">
     <rect>
-     <x>10</x>
-     <y>300</y>
+     <x>20</x>
+     <y>350</y>
      <width>221</width>
      <height>27</height>
     </rect>
@@ -171,68 +173,11 @@
     <string>Reset Offset and Scaling</string>
    </property>
   </widget>
-  <widget class="QLabel" name="label_4">
+  <widget class="QDoubleSpinBox" name="yscale">
    <property name="geometry">
     <rect>
-     <x>20</x>
+     <x>120</x>
      <y>120</y>
-     <width>71</width>
-     <height>17</height>
-    </rect>
-   </property>
-   <property name="text">
-    <string>Scale by</string>
-   </property>
-  </widget>
-  <widget class="QLabel" name="label_6">
-   <property name="geometry">
-    <rect>
-     <x>20</x>
-     <y>200</y>
-     <width>91</width>
-     <height>17</height>
-    </rect>
-   </property>
-   <property name="text">
-    <string>Offset coeffs</string>
-   </property>
-  </widget>
-  <widget class="QLabel" name="label_3">
-   <property name="geometry">
-    <rect>
-     <x>10</x>
-     <y>10</y>
-     <width>431</width>
-     <height>17</height>
-    </rect>
-   </property>
-   <property name="font">
-    <font>
-     <pointsize>12</pointsize>
-    </font>
-   </property>
-   <property name="text">
-    <string>Adjustments to scaling and offset for Y (intensity) axis</string>
-   </property>
-  </widget>
-  <widget class="QLabel" name="label_7">
-   <property name="geometry">
-    <rect>
-     <x>10</x>
-     <y>40</y>
-     <width>411</width>
-     <height>17</height>
-    </rect>
-   </property>
-   <property name="text">
-    <string>Current Range of Y values (after scaling and offsets)</string>
-   </property>
-  </widget>
-  <widget class="QDoubleSpinBox" name="yscalequot">
-   <property name="geometry">
-    <rect>
-     <x>110</x>
-     <y>150</y>
      <width>181</width>
      <height>27</height>
     </rect>
@@ -256,8 +201,8 @@
   <widget class="QLabel" name="label_8">
    <property name="geometry">
     <rect>
-     <x>20</x>
-     <y>150</y>
+     <x>30</x>
+     <y>160</y>
      <width>62</width>
      <height>17</height>
     </rect>
@@ -266,68 +211,108 @@
     <string>Divide by</string>
    </property>
   </widget>
-  <widget class="QPushButton" name="resetindivy">
+  <widget class="QLabel" name="label_2">
    <property name="geometry">
     <rect>
-     <x>360</x>
-     <y>250</y>
-     <width>221</width>
-     <height>27</height>
+     <x>310</x>
+     <y>80</y>
+     <width>31</width>
+     <height>17</height>
     </rect>
-   </property>
-   <property name="font">
-    <font>
-     <pointsize>12</pointsize>
-    </font>
-   </property>
-   <property name="toolTip">
-    <string>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
-&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
-p, li { white-space: pre-wrap; }
-&lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:'Sans'; font-size:10pt; font-weight:400; font-style:normal;&quot;&gt;
-&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Cancel any individual scales or offsets on Y values.&lt;/p&gt;
-&lt;p style=&quot;-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;/p&gt;
-&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;Be careful&lt;/span&gt;&lt;/p&gt;
-&lt;p style=&quot;-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
    </property>
    <property name="text">
-    <string>Reset Individual Scales</string>
+    <string>to</string>
    </property>
   </widget>
-  <widget class="QLineEdit" name="yindivnum">
+  <widget class="QLineEdit" name="ymax">
    <property name="geometry">
     <rect>
-     <x>240</x>
-     <y>250</y>
-     <width>81</width>
+     <x>370</x>
+     <y>80</y>
+     <width>141</width>
      <height>27</height>
     </rect>
    </property>
    <property name="toolTip">
-    <string>Number of y values with indiv scales</string>
+    <string>Current maximum y</string>
    </property>
    <property name="readOnly">
     <bool>true</bool>
    </property>
   </widget>
-  <widget class="QLabel" name="label_9">
+  <widget class="QLabel" name="label_7">
    <property name="geometry">
     <rect>
      <x>20</x>
-     <y>260</y>
-     <width>211</width>
-     <height>16</height>
+     <y>50</y>
+     <width>411</width>
+     <height>17</height>
     </rect>
    </property>
    <property name="text">
-    <string>Number with individual values</string>
+    <string>Current Range of Y values (after scaling and offsets)</string>
+   </property>
+  </widget>
+  <widget class="QLineEdit" name="jdate">
+   <property name="geometry">
+    <rect>
+     <x>300</x>
+     <y>10</y>
+     <width>171</width>
+     <height>27</height>
+    </rect>
+   </property>
+   <property name="toolTip">
+    <string>This is the date in question</string>
+   </property>
+   <property name="readOnly">
+    <bool>true</bool>
+   </property>
+  </widget>
+  <widget class="QLineEdit" name="remarks">
+   <property name="geometry">
+    <rect>
+     <x>30</x>
+     <y>260</y>
+     <width>571</width>
+     <height>27</height>
+    </rect>
+   </property>
+   <property name="toolTip">
+    <string>These are remarks to put along individual spectra</string>
+   </property>
+  </widget>
+  <widget class="QCheckBox" name="exclude">
+   <property name="geometry">
+    <rect>
+     <x>30</x>
+     <y>300</y>
+     <width>221</width>
+     <height>22</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Exclude from analysis</string>
+   </property>
+  </widget>
+  <widget class="QLabel" name="label_9">
+   <property name="geometry">
+    <rect>
+     <x>30</x>
+     <y>230</y>
+     <width>62</width>
+     <height>17</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Remarks</string>
    </property>
   </widget>
   <widget class="QComboBox" name="offsets">
    <property name="geometry">
     <rect>
-     <x>110</x>
-     <y>190</y>
+     <x>120</x>
+     <y>200</y>
      <width>181</width>
      <height>27</height>
     </rect>
@@ -346,16 +331,30 @@ polynomial representing the continuum.</string>
     <bool>true</bool>
    </property>
   </widget>
+  <widget class="QLabel" name="label_6">
+   <property name="geometry">
+    <rect>
+     <x>30</x>
+     <y>200</y>
+     <width>91</width>
+     <height>17</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Offset coeffs</string>
+   </property>
+  </widget>
  </widget>
  <tabstops>
+  <tabstop>jdate</tabstop>
   <tabstop>ymin</tabstop>
   <tabstop>ymax</tabstop>
   <tabstop>yscale</tabstop>
   <tabstop>ylogscale</tabstop>
   <tabstop>yscalequot</tabstop>
   <tabstop>offsets</tabstop>
-  <tabstop>yindivnum</tabstop>
-  <tabstop>resetindivy</tabstop>
+  <tabstop>remarks</tabstop>
+  <tabstop>exclude</tabstop>
   <tabstop>resety</tabstop>
   <tabstop>buttonBox</tabstop>
  </tabstops>
@@ -363,8 +362,24 @@ polynomial representing the continuum.</string>
  <connections>
   <connection>
    <sender>buttonBox</sender>
+   <signal>accepted()</signal>
+   <receiver>yindscaleoffdlg</receiver>
+   <slot>accept()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>248</x>
+     <y>254</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>157</x>
+     <y>274</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>buttonBox</sender>
    <signal>rejected()</signal>
-   <receiver>yscaleoffdlg</receiver>
+   <receiver>yindscaleoffdlg</receiver>
    <slot>reject()</slot>
    <hints>
     <hint type="sourcelabel">
@@ -374,22 +389,6 @@ polynomial representing the continuum.</string>
     <hint type="destinationlabel">
      <x>286</x>
      <y>274</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>buttonBox</sender>
-   <signal>accepted()</signal>
-   <receiver>yscaleoffdlg</receiver>
-   <slot>accept()</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>550</x>
-     <y>415</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>350</x>
-     <y>234</y>
     </hint>
    </hints>
   </connection>

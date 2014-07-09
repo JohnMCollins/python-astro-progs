@@ -14,6 +14,53 @@ import datarange
 import ui_rangeseldlg
 import ui_newrangedlg
 
+import scaleoffdlg
+
+def rangeadj(lobox, hibox, loadj, hiadj):
+    """Adjust range limit spin boxes by given adjustments
+
+    Don't do anything if the result would make the low value >= high value or either below minimum
+    or maximum"""
+
+    lomin = lobox.minimum()
+    himax = hibox.maximum()
+    loval = lobox.value()
+    hival = hibox.value()
+    nlo = loval + loadj
+    nhi = hival + hiadj
+    if  nlo < lomin or nhi > himax or nlo >= nhi: return
+    if  nlo != loval: lobox.setValue(nlo)
+    if  nhi != hival: hibox.setValue(nhi)
+
+def dlg_rangeadj(box):
+    """Adjust range in a dialog box, used for new ranges and ranges in main dlg"""
+    # Get amount to adjust from Combo Box
+    amt = float(box.radjby.currentText())
+    lamt = amt
+    ramt = -amt
+    if box.rzoomout.isChecked():
+        lamt = -amt
+        ramt = amt
+    if box.rzleft.isChecked():
+        ramt = 0.0
+    elif box.rzright.isChecked():
+        lamt = 0.0
+    rangeadj(box.srmin, box.srmax, lamt, ramt)
+
+def make_listitem(spectra, num):
+    """Make a list item widget out of a spectrum structure for display"""
+    spectrum = spectra[num]
+    jd = "%.4f" % spectrum.modbjdate
+    rems = spectrum.remarks
+    if rems is not None:
+        if spectrum.discount:
+           jd += " (" + rems + ")"
+        else:
+           jd += " " + rems
+    item = QListWidgetItem(jd)
+    item.setData(Qt.UserRole, QVariant(num))
+    return  item
+
 class NewRangeDlg(QDialog, ui_newrangedlg.Ui_newrangedlg):
 
     def __init__(self, parent = None):
@@ -28,30 +75,9 @@ class NewRangeDlg(QDialog, ui_newrangedlg.Ui_newrangedlg):
         if not nc.isValid(): return
         self.colourdisp.scene().setForegroundBrush(nc)
 
-    def incdec_range(self, b, fld, amt):
+    def on_adjrange_clicked(self, b = None):
         if b is None: return
-        cval = fld.value()
-        nval = cval + amt
-        if nval > fld.maximum(): nval = fld.maximum()
-        elif nval < fld.minimum(): nval = fld.minimum()
-        if nval != cval: fld.setValue(nval)
-
-    def incdec_both(self, b, lfld, ufld, amt):
-        self.incdec_range(b, lfld, -amt)
-        self.incdec_range(b, ufld, amt)
-
-    def on_srlpp1_clicked(self, b = None): self.incdec_range(b, self.srmin, 0.1)
-    def on_srlpp5_clicked(self, b = None): self.incdec_range(b, self.srmin, 0.5)
-    def on_srlmp1_clicked(self, b = None): self.incdec_range(b, self.srmin, -0.1)
-    def on_srlmp5_clicked(self, b = None): self.incdec_range(b, self.srmin, -0.5)
-    def on_srupp1_clicked(self, b = None): self.incdec_range(b, self.srmax, 0.1)
-    def on_srupp5_clicked(self, b = None): self.incdec_range(b, self.srmax, 0.5)
-    def on_srump1_clicked(self, b = None): self.incdec_range(b, self.srmax, -0.1)
-    def on_srump5_clicked(self, b = None): self.incdec_range(b, self.srmax, -0.5)
-    def on_srbpp1_clicked(self, b = None): self.incdec_both(b, self.srmin, self.srmax, 0.1)
-    def on_srbpp5_clicked(self, b = None): self.incdec_both(b, self.srmin, self.srmax, 0.5)
-    def on_srbmp1_clicked(self, b = None): self.incdec_both(b, self.srmin, self.srmax, -0.1)
-    def on_srbmp5_clicked(self, b = None): self.incdec_both(b, self.srmin, self.srmax, -0.5)
+        dlg_rangeadj(self)
 
 class Rangeseldlg(QDialog, ui_rangeseldlg.Ui_rangeseldlg):
 
@@ -115,14 +141,8 @@ class Rangeseldlg(QDialog, ui_rangeseldlg.Ui_rangeseldlg):
 
         self.plotter = mpplotter.Plotter(mpplotter.Plotter_options())
         
-        for n,id in enumerate(self.specctl.datalist):
-            jd = "%.4f" % id.modbjdate
-            sk = id.is_skipped()
-            if sk:
-                jd += " (" + sk + ")"
-            item = QListWidgetItem(jd)
-            item.setData(Qt.UserRole, QVariant(n))
-            self.datafiles.addItem(item)
+        for n in xrange(0, len(self.specctl.datalist)):
+            self.datafiles.addItem(make_listitem(self.specctl.datalist, n))
 
     def make_xrange(self):
         """Generate range structure from X selection fields"""
@@ -196,7 +216,10 @@ class Rangeseldlg(QDialog, ui_rangeseldlg.Ui_rangeseldlg):
         if self.plotter is None:  return
 
         selected = [ p.data(Qt.UserRole).toInt()[0] for p in self.datafiles.selectedItems() ]
-        if len(selected) == 0: return
+        nsel = len(selected)
+        self.editx.setEnabled(nsel == 1)
+        self.edity.setEnabled(nsel == 1)
+        if nsel == 0: return
 
         plotlist = [self.specctl.datalist[n] for n in selected]
         try:
@@ -282,47 +305,74 @@ class Rangeseldlg(QDialog, ui_rangeseldlg.Ui_rangeseldlg):
         if b is None: return
         if self.currentrange is None: return
         self.currentrange.notused = not self.rinuse.isChecked()
+        self.updateplot()
 
-    def incdec_range(self, b, fld, amt):
+    def getxyamounts(self):
+        """Get adjustments for X or Y ranges"""
+        amt = float(self.adjby.currentText())
+        lamt = amt
+        ramt = -amt
+        if self.zoomout.isChecked():
+            lamt = -amt
+            ramt = amt
+        if self.zleft.isChecked():
+            ramt = 0.0
+        elif self.zright.isChecked():
+            lamt = 0.0
+        return (lamt, ramt)      
+
+    def on_adjustx_clicked(self, b = None):
         if b is None: return
-        cval = fld.value()
-        nval = cval + amt
-        if nval > fld.maximum(): nval = fld.maximum()
-        elif nval < fld.minimum(): nval = fld.minimum()
-        if nval != cval: fld.setValue(nval)
+        lamt, ramt = self.getxyamounts()
+        rangeadj(self.xrangemin, self.xrangemax, lamt, ramt)
 
-    def incdec_both(self, b, lfld, ufld, amt):
-        self.incdec_range(b, lfld, -amt)
-        self.incdec_range(b, ufld, amt)
+    def on_adjusty_clicked(self, b = None):
+        if b is None: return
+        lamt, ramt = self.getxyamounts()
+        rangeadj(self.yrangemin, self.yrangemax, lamt, ramt)
+
+    def on_adjrange_clicked(self, b = None):
+        if b is None: return
+        dlg_rangeadj(self)
 
     def on_datafiles_itemSelectionChanged(self):
         self.updateplot()
- 
-    def on_rlpp1_clicked(self, b = None): self.incdec_range(b, self.xrangemin, 0.1)
-    def on_rlpp5_clicked(self, b = None): self.incdec_range(b, self.xrangemin, 0.5)
-    def on_rlmp1_clicked(self, b = None): self.incdec_range(b, self.xrangemin, -0.1)
-    def on_rlmp5_clicked(self, b = None): self.incdec_range(b, self.xrangemin, -0.5)
-    def on_rupp1_clicked(self, b = None): self.incdec_range(b, self.xrangemax, 0.1)
-    def on_rupp5_clicked(self, b = None): self.incdec_range(b, self.xrangemax, 0.5)
-    def on_rump1_clicked(self, b = None): self.incdec_range(b, self.xrangemax, -0.1)
-    def on_rump5_clicked(self, b = None): self.incdec_range(b, self.xrangemax, -0.5)
-    def on_rbpp1_clicked(self, b = None): self.incdec_both(b, self.xrangemin, self.xrangemax, 0.1)
-    def on_rbpp5_clicked(self, b = None): self.incdec_both(b, self.xrangemin, self.xrangemax, 0.5)
-    def on_rbmp1_clicked(self, b = None): self.incdec_both(b, self.xrangemin, self.xrangemax, -0.1)
-    def on_rbmp5_clicked(self, b = None): self.incdec_both(b, self.xrangemin, self.xrangemax, -0.5)
-    def on_srlpp1_clicked(self, b = None): self.incdec_range(b, self.srmin, 0.1)
-    def on_srlpp5_clicked(self, b = None): self.incdec_range(b, self.srmin, 0.5)
-    def on_srlmp1_clicked(self, b = None): self.incdec_range(b, self.srmin, -0.1)
-    def on_srlmp5_clicked(self, b = None): self.incdec_range(b, self.srmin, -0.5)
-    def on_srupp1_clicked(self, b = None): self.incdec_range(b, self.srmax, 0.1)
-    def on_srupp5_clicked(self, b = None): self.incdec_range(b, self.srmax, 0.5)
-    def on_srump1_clicked(self, b = None): self.incdec_range(b, self.srmax, -0.1)
-    def on_srump5_clicked(self, b = None): self.incdec_range(b, self.srmax, -0.5)
-    def on_srbpp1_clicked(self, b = None): self.incdec_both(b, self.srmin, self.srmax, 0.1)
-    def on_srbpp5_clicked(self, b = None): self.incdec_both(b, self.srmin, self.srmax, 0.5)
-    def on_srbmp1_clicked(self, b = None): self.incdec_both(b, self.srmin, self.srmax, -0.1)
-    def on_srbmp5_clicked(self, b = None): self.incdec_both(b, self.srmin, self.srmax, -0.5)
 
+    def on_editx_clicked(self, b = None):
+        if b is None: return
+        selected = [ p.data(Qt.UserRole).toInt()[0] for p in self.datafiles.selectedItems() ]
+        if len(selected) != 1: return
+        spectrum = self.specctl.datalist[selected[0]]
+        dlg = scaleoffdlg.XIndScaleOffDlg(self)
+        dlg.initdata(copy.deepcopy(spectrum))
+        if dlg.exec_():
+            spectrum.xscale = dlg.spectrum.xscale
+            spectrum.xoffset = dlg.spectrum.xoffset
+            # Possibly redisplay line if different
+
+    def on_edity_clicked(self, b = None):
+        if b is None: return
+        selected = [ p.data(Qt.UserRole).toInt()[0] for p in self.datafiles.selectedItems() ]
+        if len(selected) != 1: return
+        nsel = selected[0]
+        spectrum = self.specctl.datalist[selected[0]]
+        dlg = scaleoffdlg.YIndScaleOffDlg(self)
+        dlg.initdata(spectrum)
+        if dlg.exec_():
+            spectrum.yscale = dlg.spectrum.yscale
+            spectrum.yoffset = dlg.spectrum.yoffset
+            rems = string.strip(str(dlg.remarks.text()))
+            disc = dlg.exclude.isChecked()
+            if len(rems) == 0:
+                rems = None
+                disc = False
+            if rems != spectrum.remarks or disc != spectrum.discount:
+                spectrum.remarks = rems
+                spectrum.discount = disc
+                self.datafiles.takeItem(nsel)
+                self.datafiles.insertItem(nsel, make_listitem(self.specctl.datalist, nsel))
+                self.datafiles.setCurrentRow(nsel)
+ 
     def closefigure(self):
         if self.plotter is not None:
             self.plotter.close()
