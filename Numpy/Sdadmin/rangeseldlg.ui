@@ -264,7 +264,7 @@
     <rect>
      <x>40</x>
      <y>160</y>
-     <width>751</width>
+     <width>631</width>
      <height>192</height>
     </rect>
    </property>
@@ -453,8 +453,8 @@
   <widget class="QPushButton" name="editx">
    <property name="geometry">
     <rect>
-     <x>800</x>
-     <y>160</y>
+     <x>790</x>
+     <y>240</y>
      <width>92</width>
      <height>27</height>
     </rect>
@@ -863,8 +863,8 @@ of range to right.</string>
   <widget class="QPushButton" name="edity">
    <property name="geometry">
     <rect>
-     <x>800</x>
-     <y>200</y>
+     <x>790</x>
+     <y>270</y>
      <width>92</width>
      <height>27</height>
     </rect>
@@ -874,6 +874,65 @@ of range to right.</string>
    </property>
    <property name="text">
     <string>Edit Y</string>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="select_unmarked">
+   <property name="geometry">
+    <rect>
+     <x>690</x>
+     <y>160</y>
+     <width>92</width>
+     <height>61</height>
+    </rect>
+   </property>
+   <property name="toolTip">
+    <string>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
+&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
+p, li { white-space: pre-wrap; }
+&lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:'Sans'; font-size:10pt; font-weight:400; font-style:normal;&quot;&gt;
+&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Select all spectra not marked in any way&lt;/p&gt;
+&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;as unusual. Do &lt;span style=&quot; font-weight:600;&quot;&gt;not&lt;/span&gt; included marked spectra&lt;/p&gt;
+&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;even if not excluded.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+   </property>
+   <property name="text">
+    <string>Select
+non-marked</string>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="select_unexcluded">
+   <property name="geometry">
+    <rect>
+     <x>691</x>
+     <y>240</y>
+     <width>91</width>
+     <height>61</height>
+    </rect>
+   </property>
+   <property name="toolTip">
+    <string>Select all spectra not excluded.
+If a spectrum has a remark but is not excluded,
+still select it.</string>
+   </property>
+   <property name="text">
+    <string>Select
+non-excl</string>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="select_all">
+   <property name="geometry">
+    <rect>
+     <x>790</x>
+     <y>160</y>
+     <width>92</width>
+     <height>61</height>
+    </rect>
+   </property>
+   <property name="toolTip">
+    <string>Select all spectra</string>
+   </property>
+   <property name="text">
+    <string>Select
+All</string>
    </property>
   </widget>
  </widget>
@@ -893,6 +952,9 @@ of range to right.</string>
   <tabstop>adjusty</tabstop>
   <tabstop>adjustx</tabstop>
   <tabstop>datafiles</tabstop>
+  <tabstop>select_unmarked</tabstop>
+  <tabstop>select_unexcluded</tabstop>
+  <tabstop>select_all</tabstop>
   <tabstop>editx</tabstop>
   <tabstop>edity</tabstop>
   <tabstop>editrange</tabstop>

@@ -47,7 +47,7 @@ def dlg_rangeadj(box):
         lamt = 0.0
     rangeadj(box.srmin, box.srmax, lamt, ramt)
 
-def make_listitem(spectra, num):
+def make_listitem(spectra, colourlist, num):
     """Make a list item widget out of a spectrum structure for display"""
     spectrum = spectra[num]
     jd = "%.4f" % spectrum.modbjdate
@@ -57,6 +57,7 @@ def make_listitem(spectra, num):
            jd += " (" + rems + ")"
         else:
            jd += " " + rems
+    jd += " : " + colourlist[num]
     item = QListWidgetItem(jd)
     item.setData(Qt.UserRole, QVariant(num))
     return  item
@@ -79,14 +80,18 @@ class NewRangeDlg(QDialog, ui_newrangedlg.Ui_newrangedlg):
         if b is None: return
         dlg_rangeadj(self)
 
+colourlist = ('black', 'brown', 'red', 'orange', 'yellow', 'green', 'blue', 'magenta', 'cyan', 'lightgrey')
+
 class Rangeseldlg(QDialog, ui_rangeseldlg.Ui_rangeseldlg):
 
     def __init__(self, parent = None):
         super(Rangeseldlg, self).__init__(parent)
         self.rangelist = None
         self.specctl = None
+        self.colourlist = None
         self.plotter = None
         self.currentrange = None
+        self.hangon = False
         self.setupUi(self)
         self.colourdisp.setScene(QGraphicsScene())
         self.colourdisp.show()
@@ -141,8 +146,10 @@ class Rangeseldlg(QDialog, ui_rangeseldlg.Ui_rangeseldlg):
 
         self.plotter = mpplotter.Plotter(mpplotter.Plotter_options())
         
+        self.colourlist = colourlist * ((len(self.specctl.datalist) + len(colourlist) - 1) / len(colourlist))
+
         for n in xrange(0, len(self.specctl.datalist)):
-            self.datafiles.addItem(make_listitem(self.specctl.datalist, n))
+            self.datafiles.addItem(make_listitem(self.specctl.datalist, self.colourlist, n))
 
     def make_xrange(self):
         """Generate range structure from X selection fields"""
@@ -222,6 +229,7 @@ class Rangeseldlg(QDialog, ui_rangeseldlg.Ui_rangeseldlg):
         if nsel == 0: return
 
         plotlist = [self.specctl.datalist[n] for n in selected]
+        clist = [self.colourlist[n] for n in selected]
         try:
             self.plotter.set_xrange(self.make_xrange())
             self.plotter.set_yrange(self.make_yrange())
@@ -229,7 +237,7 @@ class Rangeseldlg(QDialog, ui_rangeseldlg.Ui_rangeseldlg):
                 if r == "xrange" or r == "yrange": continue
                 self.plotter.set_subrange(self.rangelist.getrange(r))
             self.specctl.loadfiles(plotlist)
-            self.plotter.set_plot(plotlist)
+            self.plotter.set_plot(plotlist, clist)
             self.warningmsg.setText("")
         except mpplotter.Plotter_error as e:
             self.warningmsg.setText(e.args[0])
@@ -336,6 +344,36 @@ class Rangeseldlg(QDialog, ui_rangeseldlg.Ui_rangeseldlg):
         dlg_rangeadj(self)
 
     def on_datafiles_itemSelectionChanged(self):
+        if self.hangon: return
+        self.updateplot()
+
+    def on_select_all_clicked(self, b = None):
+        if b is None: return
+        self.hangon = True
+        for row in xrange(0, self.datafiles.count()):
+            self.datafiles.item(row).setSelected(True)
+        self.hangon = False
+        self.updateplot()
+
+    def on_select_unmarked_clicked(self, b = None):
+        if b is None: return
+        self.hangon = True
+        for row in xrange(0, self.datafiles.count()):
+            item = self.datafiles.item(row)
+            specnum = item.data(Qt.UserRole).toInt()[0]
+            spec = self.specctl.datalist[specnum]
+            item.setSelected(spec.remarks is None or len(spec.remarks) == 0)
+        self.hangon = False
+        self.updateplot()
+
+    def on_select_unexcluded_clicked(self, b = None):
+        if b is None: return
+        for row in xrange(0, self.datafiles.count()):
+            item = self.datafiles.item(row)
+            specnum = item.data(Qt.UserRole).toInt()[0]
+            spec = self.specctl.datalist[specnum]
+            item.setSelected(not spec.discount)
+        self.hangon = False
         self.updateplot()
 
     def on_editx_clicked(self, b = None):
@@ -370,7 +408,7 @@ class Rangeseldlg(QDialog, ui_rangeseldlg.Ui_rangeseldlg):
                 spectrum.remarks = rems
                 spectrum.discount = disc
                 self.datafiles.takeItem(nsel)
-                self.datafiles.insertItem(nsel, make_listitem(self.specctl.datalist, nsel))
+                self.datafiles.insertItem(nsel, make_listitem(self.specctl.datalist, self.colourlist, nsel))
                 self.datafiles.setCurrentRow(nsel)
  
     def closefigure(self):

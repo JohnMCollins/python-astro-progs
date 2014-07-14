@@ -6,30 +6,58 @@ import argparse
 import os.path
 import sys
 import numpy as np
+import scipy.integrate as si
+import scipy.optimize as so
 import matplotlib.pyplot as plt
 
 import specdatactrl
 import datarange
 import xmlutil
-import meanval
+import polynomial
+
+def selectrange(rangev, xvals, yvals):
+    """Using the specified range, extract the xvals in the range and return those plus the corresponding
+    Y values"""
+    sel = (xvals >= rangev.lower) & (xvals <= rangev.upper)
+    return (xvals[sel], yvals[sel])
+
+def poly0(x, a):
+    """Polynomial of order 0 of x with coeffs a"""
+    return  a
+
+def poly1(x, a, b):
+    """Polynomial of order 1 of x with coeffs a b a + b*x"""
+    return  a + b * x
+
+def poly2(x, a, b, c):
+    """Return a + b*x + c*x^2"""
+    return  a + (b + c*x) * x
+
+def poly3(x, a, b, c, d):
+    """Cubic"""
+    return  a + (b + (c + d*x) * x) * x
+
+def poly4(x, a, b, c, d, e):
+    """Quartic"""
+    return  a + (b + (c + (d + e*x) * x) * x) * x
+
+polytypes = (poly0, poly1, poly2, poly3, poly4)
 
 class intresult(object):
     """Record integration results"""
 
     def __init__(self, da):
         self.dataarray = da
-        self.bluecont = 0.0
-        self.redcont = 0.0
-        self.totcont = 0.0
-        self.note = None
+        self.yoffsets = None
+        self.yscale = 1.0
 
-parsearg = argparse.ArgumentParser(description='Calculate continuum')
+parsearg = argparse.ArgumentParser(description='Calculate continuum polynomial(s)')
 parsearg.add_argument('--rangefile', type=str, help='Range file')
 parsearg.add_argument('--specfile', type=str, help='Spectrum data controlfile')
-parsearg.add_argument('--renorm', action='store_true', help='Rescale intensity to normalise')
-parsearg.add_argument('--indiv', action='store_true', help='Rescale individual intensities')
-parsearg.add_argument('--stddev', type=int, default=5, help='Number of std devs to highlight')
-parsearg.add_argument('--markexc', action='store_true', help='Mark exceptional data sets')
+parsearg.add_argument('--save', action='store_true', help='Clear existing results and save')
+parsearg.add_argument('--indiv', action='store_true', help='Do each spectrum individually')
+parsearg.add_argument('--order', default=2, type=int, help='Order of polynomial for continuum (default 2)')
+parsearg.add_argument('--entirespec', action='store_true', help="Use entire spectrum, don't bother with ranges")
 
 SPC_DOC_ROOT = "spcctrl"
 SPC_DOC_NAME = "SPCCTRL"
@@ -37,18 +65,26 @@ SPC_DOC_NAME = "SPCCTRL"
 res = vars(parsearg.parse_args())
 rf = res['rangefile']
 sf = res['specfile']
-renorm = res['renorm']
+save = res['save']
 indiv = res['indiv']
-stdevs = res['stddev']
-markexc = res['markexc']
+entire = res['entirespec']
+order = res['order']
 
-if rf is None:
+if not (0 < order < len(polytypes)):
+    print "Invalid order", order, "of polynomial, supporting 1 to", len(polytypes)-1, "currently"
+    sys.exit(99)
+
+polfunc = polytypes[order]
+
+if not entire and rf is None:
     print "No range file specified"
     sys.exit(100)
 
 if sf is None:
     print "No spec data control specified"
     sys.exit(101)
+
+# Load up spectrum control file
 
 try:
     doc, root = xmlutil.load_file(sf, SPC_DOC_ROOT)
@@ -59,18 +95,22 @@ except xmlutil.XMLError as e:
     print "Load control file XML error", e.args[0]
     sys.exit(50)
 
-try:
-    rangelist = datarange.load_ranges(rf)
-except datarange.DataRangeError as e:
-    print "Range load error", e.args[0]
-    sys.exit(51)
+# Load up range file if we are using it
 
-try:
-    contb = rangelist.getrange("contblue")
-    contr = rangelist.getrange("contred")
-except datarange.DataRangeError as e:
-    print e.args[0]
-    sys.exit(52)
+if not entire:
+    try:
+        rangelist = datarange.load_ranges(rf)
+    except datarange.DataRangeError as e:
+        print "Range load error", e.args[0]
+        sys.exit(51)
+    try:
+        contb = rangelist.getrange("contblue")
+        contr = rangelist.getrange("contred")
+    except datarange.DataRangeError as e:
+        print e.args[0]
+        sys.exit(52)
+
+# Load up all the data files
 
 print "Loading data files"
 
@@ -82,88 +122,115 @@ except specdatactrl.SpecDataError as e:
 
 print "load complete"
 
-totred = 0.0
-totblue = 0.0
-totboth = 0.0
+# If we are regenerating this, clear existing stuff and print appropriate messages
+# Likewise discount data markers
+
+anychanges = 0
+if save:
+    if spclist.reset_x():
+        print "Reset global X scale/offset"
+        anychanges += 1
+    if spclist.reset_indiv_x():
+        print "Reset individual X scale/offset"
+        anychanges += 1
+    if spclist.reset_y():
+        print "Reset global Y scale/offsets"
+        anychanges += 1
+    if spclist.reset_indiv_y():
+        print "Reset individual Y scale/offsets"
+        anychanges += 1
+
+allxvalues = np.empty((0,),dtype=np.float64)
+allyvalues = np.empty((0,),dtype=np.float64)
 resultdict = dict()
 
+# OK do the business
+
 for dataset in spclist.datalist:
+    if dataset.modbjdate in resultdict:
+        print "OOPS mod bjdate of", dataset.modbjdate, "dupllicated in data"
+        sys.exit(200)
     try:
         xvalues = dataset.get_xvalues(False)
         yvalues = dataset.get_yvalues(False)
     except specdatactrl.SpecDataError:
         continue
-    rr, ir = meanval.mean_value(contr, xvalues, yvalues)
-    br, ib = meanval.mean_value(contb, xvalues, yvalues)
-    mvr = ir / rr
-    mvb = ib / br
-    totmv = (ir + ib) / (rr + br)
-    res = intresult(dataset)
-    res.bluecont = mvb
-    res.redcont = mvr
-    res.totcont = totmv
-    resultdict[dataset.modbjdate] = res
-    totred += mvr
-    totblue += mvb
-    totboth += totmv
 
-dates = resultdict.keys()
-dates.sort()
+    # If doing ranges cut down X and Y values to the ones in the range
 
-redconts = [resultdict[r].redcont for r in dates]
-blueconts = [resultdict[r].bluecont for r in dates]
+    if not entire:
+        contrx, contry = selectrange(contr, xvalues, yvalues)
+        contbx, contby = selectrange(contb, xvalues, yvalues)
+        xvalues = np.concatenate((contbx, contrx))
+        yvalues = np.concatenate((contby, contry))
 
-redmean = np.mean(redconts)
-redstddev = np.std(redconts)
-bluemean = np.mean(blueconts)
-bluestddev = np.std(blueconts)
+    # Subtract reference wavelength from x values
 
-rednote = stdevs * redstddev
-bluenote = stdevs * bluestddev
-notechanges = []
-anychanges = 0
+    xvalues -= spclist.refwavelength
 
-for rk in dates:
-    datum = resultdict[rk]
-    rd = datum.redcont
-    bl = datum.bluecont
-    if abs(rd-redmean) >= rednote:
-        if abs(bl-bluemean) >= bluenote:
-            datum.note = "Blue/Red outside range"
-        else:
-            datum.note = "Red outside range"
-        notechanges.append(datum)
-    elif abs(bl-bluemean) >= bluenote:
-        datum.note = "Blue outside range"
-        notechanges.append(datum)
+    allxvalues = np.concatenate((allxvalues, xvalues))
+    allyvalues = np.concatenate((allyvalues, yvalues))
 
-if markexc and len(notechanges) != 0:
-    for c in notechanges:
-        c.dataarray.skip(c.note)
-        anychanges += 1
+    resitem = intresult(dataset)    
+    offsets, errors = so.curve_fit(polfunc, xvalues, yvalues)
 
-num = float(len(dates))
-overall = totboth / num
+    minx = np.min(xvalues)
+    maxx = np.max(xvalues)
+    meanval = (polynomial.areapol(maxx, offsets) - polynomial.areapol(minx,offsets)) / (maxx - minx)
+        
+    # Scale is reciprocal of mean value
 
-if renorm:
-    spclist.adj_yscale(overall)
-    if overall != 1.0: anychanges += 1
+    resitem.yscale = 1.0 / meanval
+
+    # Subtract the mean value from the first offset so when we subtract that again and then multiply
+    # back by the scale, we end up with a continuum of 1.
+
+    offsets[0] -= meanval
+    resitem.yoffsets = offsets
+    resultdict[dataset.modbjdate] = resitem
+
+# OK now work out the overall curve fit.
+
+offsets, errors = so.curve_fit(polfunc, allxvalues, allyvalues)
+minx = np.min(allxvalues)
+maxx = np.max(allxvalues)
+meanval = (polynomial.areapol(maxx, offsets) - polynomial.areapol(minx,offsets)) / (maxx - minx)
+
+# Scale is reciprocal of mean value
+
+overall_yscale = 1.0 / meanval
+
+# Subtract the mean value from the first offset so when we subtract that again and then multiply
+# back by the scale, we end up with a continuum of 1.
+
+xp = np.linspace(minx, maxx, 200)
+yp = polynomial.polyeval(xp, offsets)
+xp += spclist.refwavelength
+fig = plt.gcf()
+fig.canvas.set_window_title('Continuum polynomial prior to scaling')
+plt.xlabel('Wavelength Angstroms')
+plt.plot(xp, yp, label='Continuum polynomial')
+plt.legend()
+
+offsets[0] -= meanval
+
+# OK now write the values up if we are saving them
+
+if save:
+
+    spclist.set_yscale(overall_yscale)
+    spclist.set_yoffset(offsets)
+
+    print "Y scale is set to", spclist.yscale
     if indiv:
-        anychanges += 1
-        for rk in dates:
-            datum = resultdict[rk]
-            if datum.dataarray.is_skipped(): continue
-            newscale = 1.0
-            if datum.dataarray.yscale is not None: newscale = datum.dataarray.yscale
-            # Multiply by overall scale as global y scale is being divided by that
-            # Divide by the amount we came to
-            newscale *= overall / datum.totcont
-            if newscale == 1.0:
-                datum.dataarray.yscale = None
-            else:
-                datum.dataarray.yscale = newscale
+        dates = resultdict.keys()
+        dates.sort()        
+        for d in dates:
+            rd = resultdict[d]
+            rdata = rd.dataarray
+            rdata.yoffset = rd.yoffsets
+            rdata.yscale = rd.yscale
 
-if anychanges != 0:
     try:
         doc, root = xmlutil.init_save(SPC_DOC_NAME, SPC_DOC_ROOT)
         spclist.save(doc, root, "cfile")
@@ -171,9 +238,11 @@ if anychanges != 0:
     except xmlutil.XMLError as e:
         print "XML error -", e.args[0]
 
-print "Av red=",totred/num,"Av blue=",totblue/num,"overall=",overall
-plt.plot(dates,redconts,"r",dates,blueconts,"b")
+print "At end of calculation, mean value =", meanval
+print "Overall Scale =", overall_yscale
+print "Offsets:"
+for off in offsets:
+    print "%#.16g" % off
 plt.show()
-
-
+sys.exit(0)
 

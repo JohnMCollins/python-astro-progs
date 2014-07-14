@@ -171,6 +171,7 @@ class SadminMain(QMainWindow, ui_sdadminmain.Ui_sdadminmain):
         dlg = scaleoffdlg.XScaleOffDlg(self)
         dlg.initdata(self.currentlist)
         dlg.exec_()
+        self.updateUI()
 
     def on_action_Y_Scaling_and_offsets_triggered(self, checked = None):
         if checked is None: return
@@ -180,6 +181,7 @@ class SadminMain(QMainWindow, ui_sdadminmain.Ui_sdadminmain):
         dlg = scaleoffdlg.YScaleOffDlg(self)
         dlg.initdata(self.currentlist)
         dlg.exec_()
+        self.updateUI()
         
     def on_action_Tune_Ranges_triggered(self, checked = None):
         if checked is None: return
