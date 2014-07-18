@@ -1,4 +1,4 @@
-#! /usr/bin/python
+#! /local/home/jcollins/lib/anaconda/bin/python
 
 import sys
 import os
@@ -20,6 +20,7 @@ import datarange
 import obsfileseldlg
 import rangeseldlg
 import scaleoffdlg
+import markexceptdlg
 import ui_sdadminmain
 
 SPC_DOC_NAME = "SPCCTRL"
@@ -198,6 +199,24 @@ class SadminMain(QMainWindow, ui_sdadminmain.Ui_sdadminmain):
             self.updateUI()
         dlg.closefigure()
 
+    def ready_to_calc(self):
+        if self.currentlist is None:
+            QMessageBox.warning(self, "No current obs file", "Please set up an observation times file first")
+            return False
+        if self.rangelist is None:
+            QMessageBox.warning(self, "No current ranges", "Please set up ranges first")
+            return False
+        return True
+
+    def on_action_Mark_Exceptional_triggered(self, checked = None):
+        if checked is None: return
+        if not self.ready_to_calc(): return
+        markexceptdlg.run_exception_marks(self.currentlist, self.rangelist)
+
+    def on_action_action_Calculate_continuum_triggered(self, checked = None):
+        if checked is None: return
+        if not self.ready_to_calc(): return
+
     def save_cf_ops(self, fname):
         """Guts of saving control file"""
         try:
@@ -292,5 +311,6 @@ if sf is not None:
 if rf is not None:
     mw.set_rangefile(rf)
 mw.show()
-os._exit(app.exec_())
+app.exec_()              
+
 

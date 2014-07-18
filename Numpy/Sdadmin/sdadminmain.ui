@@ -53,6 +53,7 @@
     <property name="title">
      <string>&amp;Procedures</string>
     </property>
+    <addaction name="action_Mark_Exceptional"/>
     <addaction name="action_Calculate_continuum"/>
    </widget>
    <addaction name="menu_File"/>
@@ -233,7 +234,15 @@ The spectal data files are assumed to be in the same directory.</string>
     <string>Calculate continuum</string>
    </property>
    <property name="toolTip">
-    <string>Calculate continuum on data</string>
+    <string>Calculate continuum on data and normalise</string>
+   </property>
+  </action>
+  <action name="action_Mark_Exceptional">
+   <property name="text">
+    <string>&amp;Mark Exceptional</string>
+   </property>
+   <property name="toolTip">
+    <string>Mark Exceptional spectra</string>
    </property>
   </action>
  </widget>

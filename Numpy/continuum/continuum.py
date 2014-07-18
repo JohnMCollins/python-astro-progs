@@ -57,7 +57,8 @@ parsearg.add_argument('--specfile', type=str, help='Spectrum data controlfile')
 parsearg.add_argument('--save', action='store_true', help='Clear existing results and save')
 parsearg.add_argument('--indiv', action='store_true', help='Do each spectrum individually')
 parsearg.add_argument('--order', default=2, type=int, help='Order of polynomial for continuum (default 2)')
-parsearg.add_argument('--entirespec', action='store_true', help="Use entire spectrum, don't bother with ranges")
+parsearg.add_argument('--fitentire', action='store_true', help="Use entire spectrum for fit don't bother with ranges")
+parsearg.add_argument('--normentire', action='store_true', help="Use entire spectrum for normalisation don't bother with ranges")
 
 SPC_DOC_ROOT = "spcctrl"
 SPC_DOC_NAME = "SPCCTRL"
@@ -67,7 +68,8 @@ rf = res['rangefile']
 sf = res['specfile']
 save = res['save']
 indiv = res['indiv']
-entire = res['entirespec']
+fitentire = res['fitentire']
+normentire = res['normentire']
 order = res['order']
 
 if not (0 < order < len(polytypes)):
@@ -76,7 +78,7 @@ if not (0 < order < len(polytypes)):
 
 polfunc = polytypes[order]
 
-if not entire and rf is None:
+if not fitentire and not normentire and rf is None:
     print "No range file specified"
     sys.exit(100)
 
@@ -97,7 +99,7 @@ except xmlutil.XMLError as e:
 
 # Load up range file if we are using it
 
-if not entire:
+if not fitentire or not normentire:
     try:
         rangelist = datarange.load_ranges(rf)
     except datarange.DataRangeError as e:
@@ -146,6 +148,9 @@ resultdict = dict()
 
 # OK do the business
 
+maxx = -1e40
+minx = 1e40
+
 for dataset in spclist.datalist:
     if dataset.modbjdate in resultdict:
         print "OOPS mod bjdate of", dataset.modbjdate, "dupllicated in data"
@@ -157,8 +162,20 @@ for dataset in spclist.datalist:
         continue
 
     # If doing ranges cut down X and Y values to the ones in the range
+    
+    if normentire:
+        # Normalising entire range, select from that
+        maxx = max(maxx, np.max(allxvalues))
+        minx = min(minx, np.min(allxvalues))
 
-    if not entire:
+    if fitentire:
+        if not normentire:
+            # Cut down x values 
+            contrx, contry = selectrange(contr, xvalues, yvalues)
+            contbx, contby = selectrange(contb, xvalues, yvalues)
+            maxx = max(maxx, np.max(contrx), np.max(contbx))
+            minx = min(minx, np.min(contrx), np.min(contbx))
+    else:
         contrx, contry = selectrange(contr, xvalues, yvalues)
         contbx, contby = selectrange(contb, xvalues, yvalues)
         xvalues = np.concatenate((contbx, contrx))
@@ -192,8 +209,6 @@ for dataset in spclist.datalist:
 # OK now work out the overall curve fit.
 
 offsets, errors = so.curve_fit(polfunc, allxvalues, allyvalues)
-minx = np.min(allxvalues)
-maxx = np.max(allxvalues)
 meanval = (polynomial.areapol(maxx, offsets) - polynomial.areapol(minx,offsets)) / (maxx - minx)
 
 # Scale is reciprocal of mean value

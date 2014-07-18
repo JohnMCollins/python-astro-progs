@@ -214,6 +214,7 @@ class Rangeseldlg(QDialog, ui_rangeseldlg.Ui_rangeseldlg):
         if QMessageBox.question(self, "OK to delete", "Are you sure you mean to delete range '" + self.currentrange.description + "'") != QMessageBox.Ok: return
         self.rangelist.removerange(self.currentrange)
         self.editrange.removeItem(self.editrange.currentIndex())
+        self.updateplot()
 
     def updateplot(self):
         """Revise plot when anything changes"""
