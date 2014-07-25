@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>400</width>
-    <height>344</height>
+    <height>378</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -16,9 +16,9 @@
   <widget class="QDialogButtonBox" name="buttonBox">
    <property name="geometry">
     <rect>
-     <x>240</x>
-     <y>280</y>
-     <width>131</width>
+     <x>170</x>
+     <y>320</y>
+     <width>191</width>
      <height>32</height>
     </rect>
    </property>
@@ -26,7 +26,7 @@
     <enum>Qt::Horizontal</enum>
    </property>
    <property name="standardButtons">
-    <set>QDialogButtonBox::Ok</set>
+    <set>QDialogButtonBox::Cancel|QDialogButtonBox::Ok</set>
    </property>
   </widget>
   <widget class="QLabel" name="label">
@@ -39,20 +39,7 @@
     </rect>
    </property>
    <property name="text">
-    <string>Average Red</string>
-   </property>
-  </widget>
-  <widget class="QLabel" name="label_2">
-   <property name="geometry">
-    <rect>
-     <x>40</x>
-     <y>70</y>
-     <width>91</width>
-     <height>17</height>
-    </rect>
-   </property>
-   <property name="text">
-    <string>Average Blue</string>
+    <string>Average for</string>
    </property>
   </widget>
   <widget class="QLabel" name="label_3">
@@ -98,7 +85,7 @@
    <property name="geometry">
     <rect>
      <x>40</x>
-     <y>230</y>
+     <y>280</y>
      <width>111</width>
      <height>17</height>
     </rect>
@@ -107,23 +94,7 @@
     <string>Newly marked</string>
    </property>
   </widget>
-  <widget class="QLineEdit" name="avred">
-   <property name="geometry">
-    <rect>
-     <x>210</x>
-     <y>30</y>
-     <width>151</width>
-     <height>27</height>
-    </rect>
-   </property>
-   <property name="toolTip">
-    <string>Average value for red in continuum area</string>
-   </property>
-   <property name="readOnly">
-    <bool>true</bool>
-   </property>
-  </widget>
-  <widget class="QLineEdit" name="avblue">
+  <widget class="QLineEdit" name="rngav">
    <property name="geometry">
     <rect>
      <x>210</x>
@@ -133,7 +104,7 @@
     </rect>
    </property>
    <property name="toolTip">
-    <string>Average value for blue in continuum area</string>
+    <string>Average value for selected range.</string>
    </property>
    <property name="readOnly">
     <bool>true</bool>
@@ -191,7 +162,7 @@
    <property name="geometry">
     <rect>
      <x>210</x>
-     <y>230</y>
+     <y>270</y>
      <width>71</width>
      <height>27</height>
     </rect>
@@ -203,14 +174,88 @@
     <bool>true</bool>
    </property>
   </widget>
+  <widget class="QPushButton" name="applychanges">
+   <property name="geometry">
+    <rect>
+     <x>20</x>
+     <y>320</y>
+     <width>131</width>
+     <height>27</height>
+    </rect>
+   </property>
+   <property name="toolTip">
+    <string>Apply changes to files and exit</string>
+   </property>
+   <property name="text">
+    <string>&amp;Apply Changes</string>
+   </property>
+  </widget>
+  <widget class="QLineEdit" name="cleared">
+   <property name="geometry">
+    <rect>
+     <x>210</x>
+     <y>230</y>
+     <width>71</width>
+     <height>27</height>
+    </rect>
+   </property>
+   <property name="toolTip">
+    <string>Number of markers removed
+Includes comments made removed if clear remarks also set.</string>
+   </property>
+   <property name="readOnly">
+    <bool>true</bool>
+   </property>
+  </widget>
+  <widget class="QLabel" name="label_7">
+   <property name="geometry">
+    <rect>
+     <x>40</x>
+     <y>240</y>
+     <width>62</width>
+     <height>17</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Cleared</string>
+   </property>
+  </widget>
+  <widget class="QComboBox" name="inclrange">
+   <property name="geometry">
+    <rect>
+     <x>140</x>
+     <y>30</y>
+     <width>251</width>
+     <height>27</height>
+    </rect>
+   </property>
+   <property name="toolTip">
+    <string>Inclusive range to display total</string>
+   </property>
+  </widget>
+  <widget class="QLabel" name="label_2">
+   <property name="geometry">
+    <rect>
+     <x>160</x>
+     <y>70</y>
+     <width>21</width>
+     <height>17</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Is</string>
+   </property>
+  </widget>
  </widget>
  <tabstops>
-  <tabstop>avred</tabstop>
-  <tabstop>avblue</tabstop>
+  <tabstop>inclrange</tabstop>
+  <tabstop>rngav</tabstop>
   <tabstop>avoverall</tabstop>
   <tabstop>median</tabstop>
   <tabstop>prevmarked</tabstop>
+  <tabstop>cleared</tabstop>
   <tabstop>newmarked</tabstop>
+  <tabstop>applychanges</tabstop>
   <tabstop>buttonBox</tabstop>
  </tabstops>
  <resources/>

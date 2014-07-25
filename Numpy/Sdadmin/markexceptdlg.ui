@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>576</width>
-    <height>370</height>
+    <width>657</width>
+    <height>473</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -16,8 +16,8 @@
   <widget class="QDialogButtonBox" name="buttonBox">
    <property name="geometry">
     <rect>
-     <x>200</x>
-     <y>300</y>
+     <x>240</x>
+     <y>400</y>
      <width>341</width>
      <height>32</height>
     </rect>
@@ -36,8 +36,8 @@ ranges (given by red and blue continuum ranges)</string>
   <widget class="QGroupBox" name="groupBox">
    <property name="geometry">
     <rect>
-     <x>40</x>
-     <y>20</y>
+     <x>250</x>
+     <y>30</y>
      <width>191</width>
      <height>101</height>
     </rect>
@@ -100,45 +100,27 @@ ranges (given by red and blue continuum ranges)</string>
   <widget class="QCheckBox" name="entirespec">
    <property name="geometry">
     <rect>
-     <x>250</x>
-     <y>50</y>
+     <x>360</x>
+     <y>160</y>
      <width>261</width>
      <height>22</height>
     </rect>
    </property>
+   <property name="toolTip">
+    <string>Use the whole spectrum for evaluation rather than the
+specified &quot;include&quot; ranges.
+
+Note that the excluded ranges always apply.</string>
+   </property>
    <property name="text">
     <string>Use entire spectrum for evaluation</string>
-   </property>
-  </widget>
-  <widget class="QCheckBox" name="setresult">
-   <property name="geometry">
-    <rect>
-     <x>60</x>
-     <y>150</y>
-     <width>121</width>
-     <height>22</height>
-    </rect>
-   </property>
-   <property name="font">
-    <font>
-     <pointsize>11</pointsize>
-     <weight>75</weight>
-     <bold>true</bold>
-    </font>
-   </property>
-   <property name="toolTip">
-    <string>When done, set control file elements.
-(You will still have to save the control file from the main menu).</string>
-   </property>
-   <property name="text">
-    <string>Set result</string>
    </property>
   </widget>
   <widget class="QCheckBox" name="median">
    <property name="geometry">
     <rect>
      <x>280</x>
-     <y>230</y>
+     <y>350</y>
      <width>201</width>
      <height>22</height>
     </rect>
@@ -154,7 +136,7 @@ ranges (given by red and blue continuum ranges)</string>
    <property name="geometry">
     <rect>
      <x>170</x>
-     <y>210</y>
+     <y>330</y>
      <width>62</width>
      <height>27</height>
     </rect>
@@ -179,20 +161,21 @@ ranges (given by red and blue continuum ranges)</string>
    <property name="geometry">
     <rect>
      <x>60</x>
-     <y>210</y>
+     <y>330</y>
      <width>81</width>
-     <height>17</height>
+     <height>31</height>
     </rect>
    </property>
    <property name="text">
-    <string>Upper limit</string>
+    <string>Upper limit
+(std devs)</string>
    </property>
   </widget>
   <widget class="QDoubleSpinBox" name="lowerlim">
    <property name="geometry">
     <rect>
      <x>170</x>
-     <y>260</y>
+     <y>380</y>
      <width>62</width>
      <height>27</height>
     </rect>
@@ -217,13 +200,105 @@ ranges (given by red and blue continuum ranges)</string>
    <property name="geometry">
     <rect>
      <x>60</x>
-     <y>270</y>
+     <y>370</y>
      <width>81</width>
+     <height>51</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Lower limit
+(std devs)</string>
+   </property>
+  </widget>
+  <widget class="QComboBox" name="inclrange1">
+   <property name="geometry">
+    <rect>
+     <x>20</x>
+     <y>190</y>
+     <width>251</width>
+     <height>27</height>
+    </rect>
+   </property>
+   <property name="toolTip">
+    <string>Possibly put a range to include here (if not using whole spectrum)</string>
+   </property>
+  </widget>
+  <widget class="QLabel" name="label_3">
+   <property name="geometry">
+    <rect>
+     <x>110</x>
+     <y>160</y>
+     <width>62</width>
      <height>17</height>
     </rect>
    </property>
    <property name="text">
-    <string>Lower Limit</string>
+    <string>Include</string>
+   </property>
+  </widget>
+  <widget class="QComboBox" name="inclrange2">
+   <property name="geometry">
+    <rect>
+     <x>20</x>
+     <y>230</y>
+     <width>251</width>
+     <height>27</height>
+    </rect>
+   </property>
+   <property name="toolTip">
+    <string>Possibly put a range to include here (if not using whole spectrum)</string>
+   </property>
+  </widget>
+  <widget class="QComboBox" name="inclrange3">
+   <property name="geometry">
+    <rect>
+     <x>20</x>
+     <y>270</y>
+     <width>251</width>
+     <height>27</height>
+    </rect>
+   </property>
+   <property name="toolTip">
+    <string>Possibly put a range to include here (if not using whole spectrum)</string>
+   </property>
+  </widget>
+  <widget class="QComboBox" name="exclrange1">
+   <property name="geometry">
+    <rect>
+     <x>360</x>
+     <y>230</y>
+     <width>251</width>
+     <height>27</height>
+    </rect>
+   </property>
+   <property name="toolTip">
+    <string>Possibly put a range to exclude here</string>
+   </property>
+  </widget>
+  <widget class="QLabel" name="label_4">
+   <property name="geometry">
+    <rect>
+     <x>430</x>
+     <y>200</y>
+     <width>62</width>
+     <height>17</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Exclude</string>
+   </property>
+  </widget>
+  <widget class="QComboBox" name="exclrange2">
+   <property name="geometry">
+    <rect>
+     <x>360</x>
+     <y>270</y>
+     <width>251</width>
+     <height>27</height>
+    </rect>
+   </property>
+   <property name="toolTip">
+    <string>Possibly put a range to exclude here</string>
    </property>
   </widget>
  </widget>
@@ -232,10 +307,14 @@ ranges (given by red and blue continuum ranges)</string>
   <tabstop>resetmarks</tabstop>
   <tabstop>clearmarks</tabstop>
   <tabstop>entirespec</tabstop>
-  <tabstop>setresult</tabstop>
+  <tabstop>inclrange1</tabstop>
+  <tabstop>inclrange2</tabstop>
+  <tabstop>inclrange3</tabstop>
+  <tabstop>exclrange1</tabstop>
+  <tabstop>exclrange2</tabstop>
   <tabstop>upperlim</tabstop>
-  <tabstop>lowerlim</tabstop>
   <tabstop>median</tabstop>
+  <tabstop>lowerlim</tabstop>
   <tabstop>buttonBox</tabstop>
  </tabstops>
  <resources/>

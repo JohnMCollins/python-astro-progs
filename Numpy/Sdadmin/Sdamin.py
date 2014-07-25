@@ -211,7 +211,11 @@ class SadminMain(QMainWindow, ui_sdadminmain.Ui_sdadminmain):
     def on_action_Mark_Exceptional_triggered(self, checked = None):
         if checked is None: return
         if not self.ready_to_calc(): return
-        markexceptdlg.run_exception_marks(self.currentlist, self.rangelist)
+        nc = markexceptdlg.run_exception_marks(self.currentlist, self.rangelist)
+        return
+        if nc is not None:
+            self.currentlist = nc
+            selt.updateUI()
 
     def on_action_action_Calculate_continuum_triggered(self, checked = None):
         if checked is None: return
