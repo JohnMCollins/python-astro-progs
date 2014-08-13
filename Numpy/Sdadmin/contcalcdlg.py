@@ -428,7 +428,7 @@ def run_continuum_calc(ctrlfile, rangefile):
 
     return None
 
-def run_indiv_continuum_calc((ctrlfile, rangefile):
+def run_indiv_continuum_calc(ctrlfile, rangefile):
     """Do the business to calculate the continuum polynomial for individual spectra"""
 
     # If no master polynomial ask the user if he/she didn't mean that first
@@ -474,5 +474,68 @@ def run_indiv_continuum_calc((ctrlfile, rangefile):
             rls = dlg.getrangelists(rangefile)
             if rls is None: continue
             inclist, exclist = rls
+            
+            prevexcl = None
+            
+        # Get rest of parameters from dlg
+       
+        degree = dlg.degree.value()
+        iterations = dlg.iterations.value()
+        uprstd = dlg.upperlim.value()
+        lwrstd = dlg.lowerlim.value()
 
+        # Repeat for each iteration..
+
+        totremovals = 0
+        stuffed = False
+        
+        for dataset in copy_ctrlfile.datalist:
+            
+            # Grab each spectrum we're not excluding
+            
+            try:
+                xvalues, yvalues = rangeapply.get_selected_specdata(dataset, exclist, inclist)
+            except specdatactrl.SpecDataError:
+                continue
+            
+            origxvalues = np.copy(xvalues)
+            origyvalues = np.copy(yvalues)
+        
+            for itn in xrange(0, iterations):
+            
+                relx = xvalues - copy_ctrlfile.refwavelength
+                coeffs = np.polyfit(relx, yvalues, degree)
+                
+                # Get yvalues corresponding to fitted polynomial
+                
+                polyyvalues = np.polyval(coeffs, relx)
+                diffs = yvalues - polyyvalues
+                
+                stddeviation = diffs.std()
+                
+                mindiff = - (lwrstd * stddeviation)
+                maxdiff = uprstd * stddeviation
+
+                removing = (diffs < mindiff) | (diffs > maxdiff)
+                
+                # If that didn't do anything, we're done however many iterations we've got to go
+
+                nrem = np.count_nonzero(removing)
+                if nrem == 0: break
+
+                notremoving = ~ removing
+                if np.count_nonzero(notremoving) == 0:
+                    QMessageBox.warning(dlg, "No data left", "No data left after pruning")
+                    stuffed = True
+                    break
+
+                # Prune away the ones we are removing.
+            
+                xvalues = xvalues[notremoving]
+                yvalues = yvalues[notremoving]
+
+                totremovals += nrem
+            
+            if stuffed: break
+            
 
