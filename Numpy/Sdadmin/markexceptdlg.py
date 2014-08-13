@@ -18,6 +18,8 @@ import specdatactrl
 import ui_markexceptdlg
 import ui_markexresdlg
 
+import rangeapply
+
 class Markexresdlg(QDialog, ui_markexresdlg.Ui_markexresdlg):
 
     def __init__(self, parent = None):
@@ -87,40 +89,6 @@ class intresult(object):
         self.totcont = 0.0
         self.note = None
 
-def list_spec_ranges(dlg, rangefile, *boxes):
-    """List specified distinct ranges specified in boxes"""
-
-    bl = set()              # Done as a set to eliminate dups
-    for b in boxes:
-        rn = dlg.getrangename(b)
-        if rn is not None:
-            bl.add(rn)
-    rl = []
-    for b in bl:
-        try:
-            rl.append(rangefile.getrange(b))
-        except datarange.DataRangeError as e:
-            QMessageBox.warning(dlg, "Problem loading range", "Could not load range " + b + " error was " + e.args[0])
-
-    rl.sort(lambda a,b: cmp(a.description, b.description))
-    return rl
-
-def apply_included_ranges(rangelist, xvalues, yvalues):
-    """Apply list of included ranges to xvalues and yvalues.
-
-    Return list of tuples (Xvals,Yvals) for each range"""
-
-    return  [ r.select(xvalues,yvalues) for r in rangelist ]
-
-def apply_excluded_ranges(rangelist, xvalues, yvalues):
-    """Apply list of excluded ranges to xvalues and yvalues.
-
-    Return revised list of xvalues and yvalues"""
-
-    for r in rangelist:
-        xvalues, yvalues = r.selectnot(xvalues, yvalues)
-    return (xvalues, yvalues)
-
 def run_exception_marks(ctrlfile, rangefile):
     """Do the business for marking exceptions
 
@@ -169,7 +137,7 @@ def run_exception_marks(ctrlfile, rangefile):
 
         # Get ourselves any excluded ranges
 
-        exclist = list_spec_ranges(dlg, rangefile, dlg.exclrange1, dlg.exclrange2)
+        exclist = rangeapply.list_spec_ranges(dlg, rangefile, dlg.exclrange1, dlg.exclrange2)
 
         # If we are doing the whole list....
 
@@ -187,7 +155,7 @@ def run_exception_marks(ctrlfile, rangefile):
                 # Apply exclusions
 
                 if len(exclist) != 0:
-                    xvalues, yvalues = apply_excluded_ranges(exclist, xvalues, yvalues)
+                    xvalues, yvalues = rangeapply.apply_excluded_ranges(exclist, xvalues, yvalues)
             
                 # Remember all Y values for median
 
@@ -208,7 +176,7 @@ def run_exception_marks(ctrlfile, rangefile):
 
             # Applying ranges to include
 
-            inclist = list_spec_ranges(dlg, rangefile, dlg.inclrange1, dlg.inclrange2, dlg.inclrange3)
+            inclist = rangeapply.list_spec_ranges(dlg, rangefile, dlg.inclrange1, dlg.inclrange2, dlg.inclrange3)
             if len(inclist) == 0:
                 QMessageBox.warning(dlg, "No valid input range", "No range was valid (probably a bug)")
                 continue
@@ -229,13 +197,13 @@ def run_exception_marks(ctrlfile, rangefile):
                 # Apply exclusions
 
                 if len(exclist) != 0:
-                    xvalues, yvalues = apply_excluded_ranges(exclist, xvalues, yvalues)
+                    xvalues, yvalues = rangeapply.apply_excluded_ranges(exclist, xvalues, yvalues)
 
                 # Extract the continuum ranges from the data to get a list of x values and y values
                 # corresponding to each range
                 # NB this doesn't worry about possibly overlapping ranges!
 
-                xypairs = apply_included_ranges(inclist, xvalues, yvalues)
+                xypairs = rangeapply.apply_included_ranges(inclist, xvalues, yvalues)
 
                 # Keep track of the total area and width we are dealing with and do the division at the end
 
@@ -297,6 +265,7 @@ def run_exception_marks(ctrlfile, rangefile):
         # Lets have a catchy title
 
         if doneonce:    plt.clf()
+        doneonce = True
         fig = plt.gcf()
 
         if entire:
@@ -353,7 +322,7 @@ def run_exception_marks(ctrlfile, rangefile):
             rtotals /= numdates
             for rd in resultdict.values():
                 contc = rd.contlist
-                for c, r in zip(rtotals, inclist):        # Each continuum calc versus each range used
+                for c, r in zip(contc, inclist):        # Each continuum calc versus each range used
                     if not (llim < c < ulim):
                         nt = "Outside range for " + r.description
                         if rd.note is None: rd.note = nt

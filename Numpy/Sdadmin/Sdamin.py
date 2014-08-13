@@ -8,6 +8,8 @@ import argparse
 
 import matplotlib
 matplotlib.use('Qt4agg')
+matplotlib.interactive(True)
+import matplotlib.pyplot as plt
 
 from PyQt4.QtCore import *
 from PyQt4.QtGui import *
@@ -21,6 +23,7 @@ import obsfileseldlg
 import rangeseldlg
 import scaleoffdlg
 import markexceptdlg
+import contcalcdlg
 import ui_sdadminmain
 
 SPC_DOC_NAME = "SPCCTRL"
@@ -212,14 +215,25 @@ class SadminMain(QMainWindow, ui_sdadminmain.Ui_sdadminmain):
         if checked is None: return
         if not self.ready_to_calc(): return
         nc = markexceptdlg.run_exception_marks(self.currentlist, self.rangelist)
-        return
         if nc is not None:
             self.currentlist = nc
-            selt.updateUI()
+            self.updateUI()
 
-    def on_action_action_Calculate_continuum_triggered(self, checked = None):
+    def on_action_Calculate_continuum_triggered(self, checked = None):
         if checked is None: return
         if not self.ready_to_calc(): return
+        nc = contcalcdlg.run_continuum_calc(self.currentlist, self.rangelist)
+        if nc is not None:
+            self.currentlist = nc
+            self.updateUI()
+
+    def on_action_individual_continuum_triggered(self, checked = None):
+        if checked is None: return
+        if not self.ready_to_calc(): return
+        nc = contcalcdlg.run_indiv_continuum_calc(self.currentlist, self.rangelist)
+        if nc is not None:
+            self.currentlist = nc
+            self.updateUI()
 
     def save_cf_ops(self, fname):
         """Guts of saving control file"""
@@ -305,10 +319,12 @@ app = QApplication(sys.argv)
 parsearg = argparse.ArgumentParser(description='Spectrum data files admin')
 parsearg.add_argument('--rangefile', type=str, help='Range file')
 parsearg.add_argument('--specfile', type=str, help='Spectrum data controlfile')
+parsearg.add_argument('--width', type=float, default=15.0, help='Plotting width display')
+parsearg.add_argument('--height', type=float, default=10.0, help='Plotting height display')
 res = vars(parsearg.parse_args())
 rf = res['rangefile']
 sf = res['specfile']
-
+plt.rcParams['figure.figsize'] = (res['width'], res['height'])
 mw = SadminMain()
 if sf is not None:
     mw.set_ctrl_file(sf)

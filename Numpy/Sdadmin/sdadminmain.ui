@@ -55,6 +55,7 @@
     </property>
     <addaction name="action_Mark_Exceptional"/>
     <addaction name="action_Calculate_continuum"/>
+    <addaction name="action_individual_continuum"/>
    </widget>
    <addaction name="menu_File"/>
    <addaction name="menu_Data"/>
@@ -243,6 +244,14 @@ The spectal data files are assumed to be in the same directory.</string>
    </property>
    <property name="toolTip">
     <string>Mark Exceptional spectra</string>
+   </property>
+  </action>
+  <action name="action_individual_continuum">
+   <property name="text">
+    <string>&amp;individual continuum</string>
+   </property>
+   <property name="toolTip">
+    <string>Calculate individual continuum polynomials</string>
    </property>
   </action>
  </widget>

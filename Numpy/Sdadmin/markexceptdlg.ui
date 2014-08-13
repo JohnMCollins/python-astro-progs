@@ -144,6 +144,9 @@ Note that the excluded ranges always apply.</string>
    <property name="toolTip">
     <string>Gives the upper limit of acceptable standard deviations</string>
    </property>
+   <property name="alignment">
+    <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+   </property>
    <property name="minimum">
     <double>0.010000000000000</double>
    </property>
@@ -182,6 +185,9 @@ Note that the excluded ranges always apply.</string>
    </property>
    <property name="toolTip">
     <string>Gives the lower limit of acceptable standard deviations</string>
+   </property>
+   <property name="alignment">
+    <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
    </property>
    <property name="minimum">
     <double>0.010000000000000</double>
