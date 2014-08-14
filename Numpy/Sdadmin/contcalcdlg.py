@@ -48,7 +48,7 @@ def rangeadj(lobox, hibox, loadj, hiadj):
 
 class ContCalcResDlg(QDialog, ui_contcalcresdlg.Ui_contcalcresdlg):
 
-    def __init__(self, parent = None):
+    def __init__(self, parent = None, ind = False):
         super(ContCalcResDlg, self).__init__(parent)
         self.setupUi(self)
         self.settingup = True
@@ -58,6 +58,7 @@ class ContCalcResDlg(QDialog, ui_contcalcresdlg.Ui_contcalcresdlg):
         self.lowstd = 0.0
         self.upstd = 0.0
         self.refwl = 0.0
+        self.indiv = ind
         fig = plt.gcf()
         fig.canvas.set_window_title('X/Y values versus continuum polynomial')
 
@@ -95,6 +96,21 @@ class ContCalcResDlg(QDialog, ui_contcalcresdlg.Ui_contcalcresdlg):
                 else:
                     jd += " " + rems
             self.datafiles.addItem(QListWidgetItem(jd))
+    
+    def coeff_display(self, cs):
+        """Display the coefficients supplied in the box.
+        
+        The 0th index is that of the highest coeff"""
+        
+        # Zap anything else that was there
+        
+        while self.coeffs.count() != 0:
+            self.coeffs.takeItem(0)
+
+        pwrs = len(cs)-1
+        for c in cs:
+            self.coeffs.addItem("%d: %#.8g" % (pwrs, c))
+            pwrs -= 1
 
     def on_applychanges_clicked(self, b = None):
         if b is None: return
@@ -141,13 +157,23 @@ class ContCalcResDlg(QDialog, ui_contcalcresdlg.Ui_contcalcresdlg):
 
         pxv = np.linspace(minx, maxx, 300)
         relpv = pxv - self.refwl
-        pyv = np.polyval(self.calccoeffs, relpv)
+        if self.indiv:
+            coeffs = selected.tmpcoeffs
+            pyv = np.polyval(coeffs, relpv)
+            self.coeff_display(coeffs)
+            lstd = pyv - self.lowstd * selected.stddev
+            ustd = pyv + self.upstd * selected.stdev
+        else:
+            pyv = np.polyval(self.calccoeffs, relpv)
+            lstd = pyv + self.lowstd  # Already put - sign in
+            ustd = pyv + self.upstd
+
         plt.plot(pxv, pyv, color='g', label='Fitted polynomial')
         
         # Put in std devs
 
-        plt.plot(pxv, pyv + self.lowstd, color='g', ls=':', label='Lower lim')              # lowstd is -ve
-        plt.plot(pxv, pyv + self.upstd, color='g', ls=':', label='Upper lim')
+        plt.plot(pxv, lstd, color='g', ls=':', label='Lower lim')
+        plt.plot(pxv, ustd, color='g', ls=':', label='Upper lim')
         plt.legend()
         plt.show()
 
@@ -390,10 +416,7 @@ def run_continuum_calc(ctrlfile, rangefile):
         else: resdlg.pexclpoints.setText(str(prevexc))
         prevexc = removals      
 
-        pwrs = len(coeffs)-1
-        for c in coeffs:
-            resdlg.coeffs.addItem("%d: %#.8g" % (pwrs, c))
-            pwrs -= 1
+        resdlg.coeff_display(coeffs)
 
         # Now add all the stuff for plotting with
 
@@ -500,6 +523,10 @@ def run_indiv_continuum_calc(ctrlfile, rangefile):
             
             origxvalues = np.copy(xvalues)
             origyvalues = np.copy(yvalues)
+            
+            # We iterate each spectrum in turn, using the
+            # tmpcoeffs entry in each to remember the result of
+            # the last iteration.
         
             for itn in xrange(0, iterations):
             
@@ -536,6 +563,51 @@ def run_indiv_continuum_calc(ctrlfile, rangefile):
 
                 totremovals += nrem
             
+            # Out of iterations loop, break to previous loop if
+            # we hit an error otherwise save the last lot of coeffs
+            
             if stuffed: break
             
+            dataset.tmpcoeffs = coeffs
+            dataset.stddev = stddeviation
+        
+        # Finished iteration over datasets, now display results
+        
+        resdlg = ContCalcResDlg(dlg, True)
 
+        resdlg.exclpoints.setText("%d" % totremovals)
+        if prevexcl is None: resdlg.pexclpoints.setText("N/a")
+        else: resdlg.pexclpoints.setText(str(prevexcl))
+        prevexcl = totremovals      
+
+        # Now add all the stuff for plotting with
+
+        resdlg.init_data(copy_ctrlfile)
+        resdlg.lowstd = lwrstd
+        resdlg.upstd = uprstd
+        resdlg.settingup = False
+        resdlg.datafiles.setCurrentRow(0)
+
+        # False return from result dialog means we pressed cancel
+
+        if not resdlg.exec_():
+            plt.close()
+            return None
+
+        plt.close()
+
+        # Otherwise look at "applied" to see if user pressed "Apply changes"
+
+        if resdlg.applied:
+            copy_ctrlfile.set_yoffset(coeffs)
+            return copy_ctrlfile
+
+        # Turn off restart which disables things we can't change unless we restart
+
+        dlg.restart.setChecked(False)
+
+        # Now we should be ready to loop again
+
+    # Cancel pressed, return None to say we're not doing anything
+
+    return None
