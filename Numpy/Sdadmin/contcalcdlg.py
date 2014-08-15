@@ -157,23 +157,29 @@ class ContCalcResDlg(QDialog, ui_contcalcresdlg.Ui_contcalcresdlg):
 
         pxv = np.linspace(minx, maxx, 300)
         relpv = pxv - self.refwl
+        
         if self.indiv:
             coeffs = selected.tmpcoeffs
-            pyv = np.polyval(coeffs, relpv)
-            self.coeff_display(coeffs)
-            lstd = pyv - self.lowstd * selected.stddev
-            ustd = pyv + self.upstd * selected.stdev
+            if coeffs is None:
+                self.coeff_display([])
+            else:
+                self.coeff_display(coeffs)
+                pyv = np.polyval(coeffs, relpv)
+                lstd = pyv - self.lowstd * selected.stddev
+                ustd = pyv + self.upstd * selected.stddev
+                plt.plot(pxv, pyv, color='g', label='Fitted polynomial')
+                # Put in std devs
+                plt.plot(pxv, lstd, color='g', ls=':', label='Lower lim')
+                plt.plot(pxv, ustd, color='g', ls=':', label='Upper lim')
         else:
             pyv = np.polyval(self.calccoeffs, relpv)
+            plt.plot(pxv, pyv, color='g', label='Fitted polynomial')
             lstd = pyv + self.lowstd  # Already put - sign in
             ustd = pyv + self.upstd
-
-        plt.plot(pxv, pyv, color='g', label='Fitted polynomial')
-        
-        # Put in std devs
-
-        plt.plot(pxv, lstd, color='g', ls=':', label='Lower lim')
-        plt.plot(pxv, ustd, color='g', ls=':', label='Upper lim')
+            # Put in std devs
+            plt.plot(pxv, lstd, color='g', ls=':', label='Lower lim')
+            plt.plot(pxv, ustd, color='g', ls=':', label='Upper lim')         
+            
         plt.legend()
         plt.show()
 
@@ -491,6 +497,7 @@ def run_indiv_continuum_calc(ctrlfile, rangefile):
 
             copy_ctrlfile = copy.deepcopy(ctrlfile)
             copy_ctrlfile.reset_indiv_y()
+            copy_ctrlfile.tmpreset()
             
             # Get what we're including and excluding
 
@@ -515,14 +522,15 @@ def run_indiv_continuum_calc(ctrlfile, rangefile):
         for dataset in copy_ctrlfile.datalist:
             
             # Grab each spectrum we're not excluding
-            
-            try:
-                xvalues, yvalues = rangeapply.get_selected_specdata(dataset, exclist, inclist)
-            except specdatactrl.SpecDataError:
-                continue
-            
-            origxvalues = np.copy(xvalues)
-            origyvalues = np.copy(yvalues)
+           
+            if dataset.tmpxvals is None: 
+                try:
+                    xvalues, yvalues = rangeapply.get_selected_specdata(dataset, exclist, inclist)
+                except specdatactrl.SpecDataError:
+                    continue
+            else:
+                xvalues = dataset.tmpxvals
+                yvalues = dataset.tmpyvals
             
             # We iterate each spectrum in turn, using the
             # tmpcoeffs entry in each to remember the result of
@@ -562,6 +570,7 @@ def run_indiv_continuum_calc(ctrlfile, rangefile):
                 yvalues = yvalues[notremoving]
 
                 totremovals += nrem
+                tries += 1
             
             # Out of iterations loop, break to previous loop if
             # we hit an error otherwise save the last lot of coeffs
@@ -569,6 +578,8 @@ def run_indiv_continuum_calc(ctrlfile, rangefile):
             if stuffed: break
             
             dataset.tmpcoeffs = coeffs
+            dataset.tmpxvals = xvalues
+            dataset.tmpyvals = yvalues
             dataset.stddev = stddeviation
         
         # Finished iteration over datasets, now display results
@@ -578,7 +589,7 @@ def run_indiv_continuum_calc(ctrlfile, rangefile):
         resdlg.exclpoints.setText("%d" % totremovals)
         if prevexcl is None: resdlg.pexclpoints.setText("N/a")
         else: resdlg.pexclpoints.setText(str(prevexcl))
-        prevexcl = totremovals      
+        prevexcl = totremovals
 
         # Now add all the stuff for plotting with
 
@@ -599,7 +610,8 @@ def run_indiv_continuum_calc(ctrlfile, rangefile):
         # Otherwise look at "applied" to see if user pressed "Apply changes"
 
         if resdlg.applied:
-            copy_ctrlfile.set_yoffset(coeffs)
+            changes = 0
+            copy_ctrlfile.copy_coeffs()
             return copy_ctrlfile
 
         # Turn off restart which disables things we can't change unless we restart

@@ -57,9 +57,16 @@
     <addaction name="action_Calculate_continuum"/>
     <addaction name="action_individual_continuum"/>
    </widget>
+   <widget class="QMenu" name="menu_Calculations">
+    <property name="title">
+     <string>&amp;Calculations</string>
+    </property>
+    <addaction name="action_Equivalent_widths"/>
+   </widget>
    <addaction name="menu_File"/>
    <addaction name="menu_Data"/>
    <addaction name="menu_Procedures"/>
+   <addaction name="menu_Calculations"/>
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
   <action name="action_Source_directory">
@@ -252,6 +259,11 @@ The spectal data files are assumed to be in the same directory.</string>
    </property>
    <property name="toolTip">
     <string>Calculate individual continuum polynomials</string>
+   </property>
+  </action>
+  <action name="action_Equivalent_widths">
+   <property name="text">
+    <string>&amp;Equivalent widths</string>
    </property>
   </action>
  </widget>

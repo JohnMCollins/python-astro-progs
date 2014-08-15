@@ -478,9 +478,9 @@ of range to right.</string>
   <widget class="QListWidget" name="datafiles">
    <property name="geometry">
     <rect>
-     <x>80</x>
+     <x>60</x>
      <y>310</y>
-     <width>631</width>
+     <width>711</width>
      <height>192</height>
     </rect>
    </property>
@@ -514,7 +514,7 @@ of range to right.</string>
     <rect>
      <x>150</x>
      <y>10</y>
-     <width>101</width>
+     <width>121</width>
      <height>66</height>
     </rect>
    </property>
