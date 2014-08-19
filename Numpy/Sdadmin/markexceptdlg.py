@@ -316,7 +316,7 @@ def run_exception_marks(ctrlfile, rangefile):
             for rd in resultdict.values():
                 totc = rd.totcont
                 if not (llim < totc < ulim):
-                    rd.node = "Continuum outside range"
+                    rd.note = "Continuum outside range"
                     notechanges.append(rd)
         else:
             rtotals /= numdates

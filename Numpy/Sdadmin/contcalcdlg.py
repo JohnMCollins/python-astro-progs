@@ -59,6 +59,8 @@ class ContCalcResDlg(QDialog, ui_contcalcresdlg.Ui_contcalcresdlg):
         self.upstd = 0.0
         self.refwl = 0.0
         self.indiv = ind
+        self.totx = None
+        self.toty = None
         fig = plt.gcf()
         fig.canvas.set_window_title('X/Y values versus continuum polynomial')
 
@@ -87,6 +89,8 @@ class ContCalcResDlg(QDialog, ui_contcalcresdlg.Ui_contcalcresdlg):
         xr, yr = ctrlfile.getmaxmin()
         self.set_range_limits(self.xrangemin, self.xrangemax, xr)
         self.set_range_limits(self.yrangemin, self.yrangemax, yr)
+        if not self.indiv:
+            self.datafiles.addItem("Overall data")
         for spectrum in self.data:
             jd = "%.4f" % spectrum.modbjdate
             rems = spectrum.remarks
@@ -150,8 +154,16 @@ class ContCalcResDlg(QDialog, ui_contcalcresdlg.Ui_contcalcresdlg):
 
         # Plot the selected spectrum
 
-        selected = self.data[self.datafiles.currentRow()]
-        plt.plot(selected.get_xvalues(), selected.get_yvalues(), color='b', label='Selected spectrum')
+        if self.indiv:
+            selected = self.data[self.datafiles.currentRow()]
+            plt.plot(selected.get_xvalues(), selected.get_yvalues(), color='b', label='Selected spectrum')
+        else:
+            row = self.datafiles.currentRow()-1
+            if row < 0:
+                plt.plot(self.totx, self.toty, alpha=self.alpha.value(), color='b', label='Overall data')
+            else:
+                selected = self.data[row]
+                plt.plot(selected.get_xvalues(), selected.get_yvalues(), color='b', label='Selected spectrum')
 
         # Plot the fitted polynomial
 
@@ -232,6 +244,11 @@ class ContCalcResDlg(QDialog, ui_contcalcresdlg.Ui_contcalcresdlg):
         rangeadj(self.yrangemin, self.yrangemax, lamt, ramt)
 
     def on_datafiles_itemSelectionChanged(self):
+        self.updateplot()
+        
+    def on_alpha_valueChanged(self, v):
+        if not isinstance(v, float): return
+        if self.indiv: return
         self.updateplot()
 
 class ContCalcDlg(QDialog, ui_contcalcdlg.Ui_contcalcdlg):
@@ -333,6 +350,22 @@ def run_continuum_calc(ctrlfile, rangefile):
             copy_ctrlfile.reset_indiv_y()
             copy_ctrlfile.reset_y()
             copy_ctrlfile.set_yscale(1.0)
+            
+            # Accumulate all known X and Y values for overall plot
+
+            totxvalues = np.empty((0,),dtype=np.float64)
+            totyvalues = np.empty((0,),dtype=np.float64)
+            for dataset in copy_ctrlfile.datalist:
+                try:
+                    xvalues = dataset.get_xvalues()
+                    yvalues = dataset.get_yvalues()
+                except specdatactrl.SpecDataError:
+                    continue
+                totyvalues = np.concatenate((totyvalues, yvalues))
+                totxvalues = np.concatenate((totxvalues, xvalues))
+                sortind = totxvalues.argsort()
+                totxvalues = totxvalues[sortind]
+                totyvalues = totyvalues[sortind]
 
             # Get what we're including and excluding
 
@@ -351,9 +384,6 @@ def run_continuum_calc(ctrlfile, rangefile):
             sortind = allxvalues.argsort()
             allxvalues = allxvalues[sortind]
             allyvalues = allyvalues[sortind]
-
-            origxvalues = np.copy(allxvalues)
-            origyvalues = np.copy(allyvalues)
  
         # Get rest of parameters from dlg
        
@@ -414,6 +444,8 @@ def run_continuum_calc(ctrlfile, rangefile):
             continue
 
         resdlg = ContCalcResDlg(dlg)
+        resdlg.totx = totxvalues
+        resdlg.toty = totyvalues
 
         # Put coefficients and what we've done in box
 
@@ -449,8 +481,9 @@ def run_continuum_calc(ctrlfile, rangefile):
 
         # Turn off restart which disables things we can't change unless we restart
 
+        dlg.restart.setEnabled(True)
         dlg.restart.setChecked(False)
-
+        
         # Now we should be ready to loop again
 
     # Cancel pressed, return None to say we're not doing anything
@@ -616,6 +649,7 @@ def run_indiv_continuum_calc(ctrlfile, rangefile):
 
         # Turn off restart which disables things we can't change unless we restart
 
+        dlg.restart.setEnabled(True)
         dlg.restart.setChecked(False)
 
         # Now we should be ready to loop again

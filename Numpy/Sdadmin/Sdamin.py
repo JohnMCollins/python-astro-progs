@@ -24,6 +24,7 @@ import rangeseldlg
 import scaleoffdlg
 import markexceptdlg
 import contcalcdlg
+import ewcalc
 import ui_sdadminmain
 
 SPC_DOC_NAME = "SPCCTRL"
@@ -234,6 +235,11 @@ class SadminMain(QMainWindow, ui_sdadminmain.Ui_sdadminmain):
         if nc is not None:
             self.currentlist = nc
             self.updateUI()
+            
+    def on_action_Equivalent_widths_triggered(self, checked = None):
+        if checked is None: return
+        if not self.ready_to_calc(): return
+        ewcalc.run_ew_calc(self.currentlist, self.rangelist)  
 
     def save_cf_ops(self, fname):
         """Guts of saving control file"""
