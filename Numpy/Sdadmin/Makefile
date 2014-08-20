@@ -3,6 +3,8 @@
 
 all:	ui_contcalcdlg.py\
 	ui_contcalcresdlg.py\
+	ui_ewcalcdlg.py\
+	ui_ewresdlg.py\
 	ui_markexceptdlg.py\
 	ui_markexresdlg.py\
 	ui_newrangedlg.py\
@@ -18,6 +20,12 @@ ui_contcalcdlg.py:	contcalcdlg.ui
 	pyuic4 -o $@ $?
 
 ui_contcalcresdlg.py:	contcalcresdlg.ui
+	pyuic4 -o $@ $?
+
+ui_ewcalcdlg.py:	ewcalcdlg.ui
+	pyuic4 -o $@ $?
+
+ui_ewresdlg.py:	ewresdlg.ui
 	pyuic4 -o $@ $?
 
 ui_markexceptdlg.py:	markexceptdlg.ui
