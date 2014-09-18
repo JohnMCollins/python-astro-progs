@@ -232,11 +232,13 @@ class Rangeseldlg(QDialog, ui_rangeseldlg.Ui_rangeseldlg):
         plotlist = [self.specctl.datalist[n] for n in selected]
         clist = [self.colourlist[n] for n in selected]
         try:
+            self.plotter.ranges.clear()
             self.plotter.set_xrange(self.make_xrange())
             self.plotter.set_yrange(self.make_yrange())
-            for r in self.rangelist.listranges():
-                if r == "xrange" or r == "yrange": continue
-                self.plotter.set_subrange(self.rangelist.getrange(r))
+            if not self.turnoffrangedisp.isChecked():
+                for r in self.rangelist.listranges():
+                    if r == "xrange" or r == "yrange": continue
+                    self.plotter.set_subrange(self.rangelist.getrange(r))
             self.specctl.loadfiles(plotlist)
             self.plotter.set_plot(plotlist, clist)
             self.warningmsg.setText("")
@@ -264,6 +266,10 @@ class Rangeseldlg(QDialog, ui_rangeseldlg.Ui_rangeseldlg):
         self.updateplot()
 
     def on_selecty_stateChanged(self, b = None):
+        if b is None: return
+        self.updateplot()
+    
+    def on_turnoffrangedisp_stateChanged(self, b = None):
         if b is None: return
         self.updateplot()
 
@@ -411,6 +417,12 @@ class Rangeseldlg(QDialog, ui_rangeseldlg.Ui_rangeseldlg):
                 self.datafiles.takeItem(nsel)
                 self.datafiles.insertItem(nsel, make_listitem(self.specctl.datalist, self.colourlist, nsel))
                 self.datafiles.setCurrentRow(nsel)
+    
+    def on_savedisp_clicked(self, b = None):
+        if b is None: return
+        fname = QFileDialog.getSaveFileName(self, self.tr("Select save file"), "unnamed.png", self.tr("Saved plot (*.png)"))
+        if fname is None: return
+        self.plotter.savefig(str(fname))
  
     def closefigure(self):
         if self.plotter is not None:
