@@ -29,6 +29,7 @@
     </property>
     <addaction name="action_New_Control_File"/>
     <addaction name="action_Select_Control_File"/>
+    <addaction name="action_Select_observation_directory"/>
     <addaction name="action_Select_Observation_times_file"/>
     <addaction name="action_Save_Control"/>
     <addaction name="action_Save_Control_as"/>
@@ -264,6 +265,20 @@ The spectal data files are assumed to be in the same directory.</string>
   <action name="action_Equivalent_widths">
    <property name="text">
     <string>&amp;Equivalent widths</string>
+   </property>
+  </action>
+  <action name="action_Select_observation_directory">
+   <property name="text">
+    <string>Select observation &amp;directory</string>
+   </property>
+   <property name="toolTip">
+    <string>Select the directory containing the observations.</string>
+   </property>
+   <property name="statusTip">
+    <string>Select the directory containing the observations.</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+D</string>
    </property>
   </action>
  </widget>

@@ -102,18 +102,42 @@ class SadminMain(QMainWindow, ui_sdadminmain.Ui_sdadminmain):
         newfile = QFileDialog.getOpenFileName(self, self.tr("Select control file"), self.currentfile, self.tr("Sadmin control files (*.sac)"))
         if len(newfile) == 0: return
         self.set_ctrl_file(str(newfile))
+    
+    def on_action_Select_observation_directory_triggered(self, checked = None):
+        if checked is None: return
+        olddir = ""
+        if self.currentlist is not None:
+            olddir = self.currentlist.dirname
+        newdir = QFileDialog.getExistingDirectory(self, self.tr("Select observations directory"), olddir)
+        if len(newdir) == 0: return
+        newdir = str(newdir)
+        if self.currentlist is None:
+            self.currentlist = specdatactrl.SpecDataList(newdir)
+        else:
+            self.currentlist.set_dirname(newdir)
 
     def on_action_Select_Observation_times_file_triggered(self, checked = None):
         if checked is None: return
         dlg = obsfileseldlg.ObsFileDlg(self)
-        dlg.obsfile.setText(self.currentfile)
         if self.currentlist is None:
             dlg.default_fields()
         else:
+            if len(self.currentlist.obsfname) > 0 and len(self.currentlist.dirname) > 0:
+                dlg.obsfile.setText(os.path.join(self.currentlist.dirname, self.currentlist.obsfname))
             dlg.copyin_specfields(self.currentlist.cols, self.currentlist.spdcols)
         while dlg.exec_():
             obslist, speclist = dlg.extract_fields()
             fname = str(dlg.obsfile.text())
+            if len(fname) == 0:
+                QMessageBox.warning(self, "No obs file", "No observation file given")
+                continue
+            if self.currentlist is None:
+                fname = os.path.abspath(fname)
+            elif not os.path.isabs(fname):
+                if len(self.currentlist.dirname) > 0:
+                    fname = os.path.join(self.currentlist.dirname, fname)
+                else:
+                    fname = os.path.abspath(fname)
             if not os.path.isfile(fname):
                 QMessageBox.warning(self, "No such file", "No such file as " + fname)
                 continue

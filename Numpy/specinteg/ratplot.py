@@ -9,13 +9,14 @@ import string
 import numpy as np
 import matplotlib.pyplot as plt
 import exclusions
+import jdate
 
 parsearg = argparse.ArgumentParser(description='Plot peak ratio results')
 parsearg.add_argument('--integ', type=str, help='Input integration file (time/intensity)')
 parsearg.add_argument('--sepdays', type=int, default=10000, help='Separate plots if this number of days apart')
 parsearg.add_argument('--sdplot', action='store_true', help='Put separate days in separate figure')
 parsearg.add_argument('--ploty', type=str, default='Ratio of peaks', help='Label for plot Y axis')
-parsearg.add_argument('--plotx', type=str, default='Date (offset from start)', help='Label for plot X axis')
+parsearg.add_argument('--plotx', type=str, default='Days offset from start', help='Label for plot X axis')
 parsearg.add_argument('--outprefix', type=str, help='Output file prefix')
 parsearg.add_argument('--plotcolours', type=str, default='black,red,green,blue,yellow,magenta,cyan', help='Colours for successive plots')
 parsearg.add_argument('--excludes', type=str, help='File with excluded obs times and reasons')
@@ -90,7 +91,8 @@ if sdp:
         f = plt.figure()
         plt.ylabel(ylab)
         plt.xlabel(xlab)
-        plt.plot(xa,ya,col,label="%.1f" % xarr[0])
+        plt.axhline(1.0, color='black')
+        plt.plot(xa,ya,col,label=jdate.display(xarr[0]))
         if excludes is not None:
             sube = elist.inrange(np.min(xarr), np.max(xarr))
             had = dict()
@@ -114,13 +116,14 @@ else:
     ln = res['legnum']
     plt.ylabel(ylab)
     plt.xlabel(xlab)
+    plt.axhline(1.0, color='black')
     for xarr, yarr, col in zip(rxarray,ryarray,colours):
         offs = xarr[0]
         xa = np.array(xarr) - offs
         ya = np.array(yarr)
         plt.plot(xa,ya, col)
         if len(legends) < ln:
-            legends.append("%.1f" % xarr[0])
+            legends.append(jdate.display(xarr[0]))
         elif  len(legends) == ln:
             legends.append('etc...')
         if excludes is not None:

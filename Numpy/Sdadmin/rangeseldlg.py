@@ -10,6 +10,7 @@ import copy
 
 import mpplotter
 import datarange
+import jdate
 
 import ui_rangeseldlg
 import ui_newrangedlg
@@ -50,7 +51,7 @@ def dlg_rangeadj(box):
 def make_listitem(spectra, colourlist, num):
     """Make a list item widget out of a spectrum structure for display"""
     spectrum = spectra[num]
-    jd = "%.4f" % spectrum.modbjdate
+    jd = jdate.display(spectrum.modbjdate)
     rems = spectrum.remarks
     if rems is not None:
         if spectrum.discount:
@@ -231,6 +232,10 @@ class Rangeseldlg(QDialog, ui_rangeseldlg.Ui_rangeseldlg):
 
         plotlist = [self.specctl.datalist[n] for n in selected]
         clist = [self.colourlist[n] for n in selected]
+        legends = [ jdate.display(spectrum.modbjdate) for spectrum in plotlist]
+        if len(legends) > 5:
+            legends = legends[0:5]
+            legends.append("...etc")
         try:
             self.plotter.ranges.clear()
             self.plotter.set_xrange(self.make_xrange())
@@ -240,7 +245,7 @@ class Rangeseldlg(QDialog, ui_rangeseldlg.Ui_rangeseldlg):
                     if r == "xrange" or r == "yrange": continue
                     self.plotter.set_subrange(self.rangelist.getrange(r))
             self.specctl.loadfiles(plotlist)
-            self.plotter.set_plot(plotlist, clist)
+            self.plotter.set_plot(plotlist, clist, legends)
             self.warningmsg.setText("")
         except mpplotter.Plotter_error as e:
             self.warningmsg.setText(e.args[0])

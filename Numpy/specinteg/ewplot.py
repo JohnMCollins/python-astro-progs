@@ -10,6 +10,7 @@ import string
 import numpy as np
 import matplotlib.pyplot as plt
 import exclusions
+import jdate
 
 parsearg = argparse.ArgumentParser(description='Plot equivalent width results')
 parsearg.add_argument('--integ', type=str, help='Input integration file (time/intensity)')
@@ -19,7 +20,7 @@ parsearg.add_argument('--sdplot', action='store_true', help='Put separate days i
 parsearg.add_argument('--histy', type=str, default='Occurrences', help='Label for histogram Y axis')
 parsearg.add_argument('--histx', type=str, default='Equivalent width (Angstroms)', help='Label for histogram X axis')
 parsearg.add_argument('--ploty', type=str, default='Equivalent width (Angstroms)', help='Label for plot Y axis')
-parsearg.add_argument('--plotx', type=str, default='Date (offset from start)', help='Label for plot X axis')
+parsearg.add_argument('--plotx', type=str, default='Days offset from start', help='Label for plot X axis')
 parsearg.add_argument('--outprefix', type=str, help='Output file prefix')
 parsearg.add_argument('--plotcolours', type=str, default='black,red,green,blue,yellow,magenta,cyan', help='Colours for successive plots')
 parsearg.add_argument('--excludes', type=str, help='File with excluded obs times and reasons')
@@ -102,7 +103,7 @@ if sdp:
         f = plt.figure()
         plt.ylabel(ylab)
         plt.xlabel(xlab)
-        plt.plot(xa,ya,col,label="%.1f" % xarr[0])
+        plt.plot(xa,ya,col,label=jdate.display(xarr[0]))
         if excludes is not None:
             sube = elist.inrange(np.min(xarr), np.max(xarr))
             had = dict()
@@ -132,7 +133,7 @@ else:
         ya = np.array(yarr)
         plt.plot(xa,ya, col)
         if len(legends) < ln:
-            legends.append("%.1f" % xarr[0])
+            legends.append(jdate.display(xarr[0]))
         elif  len(legends) == ln:
             legends.append('etc...')
         if excludes is not None:

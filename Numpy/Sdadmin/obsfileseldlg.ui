@@ -52,8 +52,9 @@
     </rect>
    </property>
    <property name="toolTip">
-    <string>This is the file name (with directory) giving the observation
-times, possibly the file names</string>
+    <string>This is the name of the observation file to use.
+You shouldn't need a directory if it is the same one already chosen
+for the observations directory.</string>
    </property>
   </widget>
   <widget class="QPushButton" name="selobsfile">

@@ -654,6 +654,9 @@ of range to right.</string>
    <property name="text">
     <string>Adj Y</string>
    </property>
+   <property name="autoRepeat">
+    <bool>true</bool>
+   </property>
   </widget>
   <widget class="QPushButton" name="adjustx">
    <property name="geometry">
@@ -669,6 +672,9 @@ of range to right.</string>
    </property>
    <property name="text">
     <string>Adj X</string>
+   </property>
+   <property name="autoRepeat">
+    <bool>true</bool>
    </property>
   </widget>
   <widget class="QGroupBox" name="groupBox_4">
@@ -858,6 +864,9 @@ of range to right.</string>
    </property>
    <property name="text">
     <string>Adj Range</string>
+   </property>
+   <property name="autoRepeat">
+    <bool>true</bool>
    </property>
   </widget>
   <widget class="QPushButton" name="edity">
