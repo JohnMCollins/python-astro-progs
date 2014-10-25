@@ -6,10 +6,12 @@ import os.path
 import locale
 import argparse
 
+sys.ps1 = 'FRED'            # Mystery stuff to make interactive work
 import matplotlib
 matplotlib.use('Qt4agg')
 matplotlib.interactive(True)
 import matplotlib.pyplot as plt
+plt.ion()
 
 from PyQt4.QtCore import *
 from PyQt4.QtGui import *
