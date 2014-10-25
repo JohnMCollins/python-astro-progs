@@ -108,6 +108,11 @@
      <height>17</height>
     </rect>
    </property>
+   <property name="font">
+    <font>
+     <pointsize>10</pointsize>
+    </font>
+   </property>
    <property name="text">
     <string>Log</string>
    </property>
@@ -200,6 +205,11 @@ p, li { white-space: pre-wrap; }
      <height>17</height>
     </rect>
    </property>
+   <property name="font">
+    <font>
+     <pointsize>10</pointsize>
+    </font>
+   </property>
    <property name="text">
     <string>Scale by</string>
    </property>
@@ -212,6 +222,11 @@ p, li { white-space: pre-wrap; }
      <width>71</width>
      <height>17</height>
     </rect>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>10</pointsize>
+    </font>
    </property>
    <property name="text">
     <string>Offset by</string>
@@ -282,6 +297,11 @@ p, li { white-space: pre-wrap; }
      <height>17</height>
     </rect>
    </property>
+   <property name="font">
+    <font>
+     <pointsize>10</pointsize>
+    </font>
+   </property>
    <property name="text">
     <string>Divide by</string>
    </property>
@@ -336,6 +356,11 @@ p, li { white-space: pre-wrap; }
      <width>62</width>
      <height>16</height>
     </rect>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>10</pointsize>
+    </font>
    </property>
    <property name="text">
     <string>Indivs</string>

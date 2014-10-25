@@ -203,7 +203,7 @@
     <rect>
      <x>30</x>
      <y>160</y>
-     <width>62</width>
+     <width>81</width>
      <height>17</height>
     </rect>
    </property>
@@ -339,6 +339,11 @@ polynomial representing the continuum.</string>
      <width>91</width>
      <height>17</height>
     </rect>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>10</pointsize>
+    </font>
    </property>
    <property name="text">
     <string>Offset coeffs</string>

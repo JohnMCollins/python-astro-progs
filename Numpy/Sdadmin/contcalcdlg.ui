@@ -313,9 +313,9 @@ exclude from the intensity after each iteration.</string>
   <widget class="QLabel" name="label_7">
    <property name="geometry">
     <rect>
-     <x>510</x>
-     <y>80</y>
-     <width>111</width>
+     <x>490</x>
+     <y>70</y>
+     <width>131</width>
      <height>17</height>
     </rect>
    </property>

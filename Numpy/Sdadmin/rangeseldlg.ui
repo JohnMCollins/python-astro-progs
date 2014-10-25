@@ -50,7 +50,7 @@
     <rect>
      <x>170</x>
      <y>70</y>
-     <width>91</width>
+     <width>101</width>
      <height>27</height>
     </rect>
    </property>
@@ -73,11 +73,16 @@
   <widget class="QLabel" name="label_3">
    <property name="geometry">
     <rect>
-     <x>270</x>
+     <x>280</x>
      <y>70</y>
      <width>31</width>
      <height>17</height>
     </rect>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>10</pointsize>
+    </font>
    </property>
    <property name="text">
     <string>to</string>
@@ -88,7 +93,7 @@
     <rect>
      <x>310</x>
      <y>70</y>
-     <width>91</width>
+     <width>101</width>
      <height>27</height>
     </rect>
    </property>
@@ -145,6 +150,11 @@
      <height>17</height>
     </rect>
    </property>
+   <property name="font">
+    <font>
+     <pointsize>10</pointsize>
+    </font>
+   </property>
    <property name="text">
     <string>to</string>
    </property>
@@ -199,6 +209,11 @@
      <height>17</height>
     </rect>
    </property>
+   <property name="font">
+    <font>
+     <pointsize>10</pointsize>
+    </font>
+   </property>
    <property name="text">
     <string>to</string>
    </property>
@@ -208,7 +223,7 @@
     <rect>
      <x>30</x>
      <y>520</y>
-     <width>91</width>
+     <width>101</width>
      <height>27</height>
     </rect>
    </property>
@@ -236,7 +251,7 @@
     <rect>
      <x>170</x>
      <y>520</y>
-     <width>91</width>
+     <width>101</width>
      <height>27</height>
     </rect>
    </property>
@@ -349,7 +364,7 @@
     <rect>
      <x>30</x>
      <y>450</y>
-     <width>131</width>
+     <width>141</width>
      <height>21</height>
     </rect>
    </property>
@@ -376,7 +391,7 @@
   <widget class="QLineEdit" name="shortname">
    <property name="geometry">
     <rect>
-     <x>170</x>
+     <x>180</x>
      <y>450</y>
      <width>191</width>
      <height>27</height>
@@ -411,6 +426,11 @@
      <height>22</height>
     </rect>
    </property>
+   <property name="font">
+    <font>
+     <pointsize>10</pointsize>
+    </font>
+   </property>
    <property name="toolTip">
     <string>Whether we apply the Y range to plots</string>
    </property>
@@ -426,6 +446,11 @@
      <width>131</width>
      <height>22</height>
     </rect>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>10</pointsize>
+    </font>
    </property>
    <property name="toolTip">
     <string>Whether we apply the X range to plots</string>
@@ -949,7 +974,7 @@ All</string>
     <rect>
      <x>40</x>
      <y>370</y>
-     <width>191</width>
+     <width>221</width>
      <height>22</height>
     </rect>
    </property>

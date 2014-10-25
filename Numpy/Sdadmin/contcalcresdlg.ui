@@ -32,7 +32,7 @@
   <widget class="QLabel" name="label">
    <property name="geometry">
     <rect>
-     <x>310</x>
+     <x>380</x>
      <y>30</y>
      <width>62</width>
      <height>17</height>
@@ -63,7 +63,7 @@
     <rect>
      <x>10</x>
      <y>20</y>
-     <width>111</width>
+     <width>131</width>
      <height>17</height>
     </rect>
    </property>
@@ -75,9 +75,9 @@
    <property name="geometry">
     <rect>
      <x>10</x>
-     <y>50</y>
-     <width>141</width>
-     <height>17</height>
+     <y>60</y>
+     <width>191</width>
+     <height>20</height>
     </rect>
    </property>
    <property name="text">
@@ -87,7 +87,7 @@
   <widget class="QListWidget" name="coeffs">
    <property name="geometry">
     <rect>
-     <x>450</x>
+     <x>490</x>
      <y>10</y>
      <width>211</width>
      <height>111</height>
@@ -222,6 +222,11 @@
      <width>21</width>
      <height>17</height>
     </rect>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>10</pointsize>
+    </font>
    </property>
    <property name="text">
     <string>to</string>
@@ -370,6 +375,11 @@ of range to right.</string>
      <height>22</height>
     </rect>
    </property>
+   <property name="font">
+    <font>
+     <pointsize>10</pointsize>
+    </font>
+   </property>
    <property name="toolTip">
     <string>Whether we apply the Y range to plots</string>
    </property>
@@ -455,6 +465,11 @@ of range to right.</string>
      <height>22</height>
     </rect>
    </property>
+   <property name="font">
+    <font>
+     <pointsize>10</pointsize>
+    </font>
+   </property>
    <property name="toolTip">
     <string>Whether we apply the X range to plots</string>
    </property>
@@ -470,6 +485,11 @@ of range to right.</string>
      <width>31</width>
      <height>17</height>
     </rect>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>10</pointsize>
+    </font>
    </property>
    <property name="text">
     <string>to</string>
@@ -501,7 +521,7 @@ of range to right.</string>
     <rect>
      <x>70</x>
      <y>270</y>
-     <width>101</width>
+     <width>121</width>
      <height>17</height>
     </rect>
    </property>
@@ -547,13 +567,13 @@ of range to right.</string>
     <double>0.750000000000000</double>
    </property>
   </widget>
-  <widget class="QWidget" name="">
+  <widget class="QWidget" name="layoutWidget">
    <property name="geometry">
     <rect>
-     <x>150</x>
-     <y>10</y>
+     <x>200</x>
+     <y>20</y>
      <width>121</width>
-     <height>66</height>
+     <height>68</height>
     </rect>
    </property>
    <layout class="QVBoxLayout" name="verticalLayout">
@@ -581,7 +601,6 @@ of range to right.</string>
   </widget>
  </widget>
  <tabstops>
-  <tabstop>exclpoints</tabstop>
   <tabstop>pexclpoints</tabstop>
   <tabstop>coeffs</tabstop>
   <tabstop>alpha</tabstop>
