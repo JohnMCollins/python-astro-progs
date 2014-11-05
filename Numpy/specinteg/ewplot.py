@@ -8,6 +8,7 @@ import os.path
 import sys
 import string
 import numpy as np
+import scipy.stats as ss
 import matplotlib.pyplot as plt
 import exclusions
 import jdate
@@ -16,6 +17,8 @@ parsearg = argparse.ArgumentParser(description='Plot equivalent width results')
 parsearg.add_argument('--integ', type=str, help='Input integration file (time/intensity)')
 parsearg.add_argument('--sepdays', type=int, default=10000, help='Separate plots if this number of days apart')
 parsearg.add_argument('--bins', type=int, default=20, help='Histogram bins')
+parsearg.add_argument('--clip', type=float, default=0.0, help='Number of S.D.s to clip from histogram')
+parsearg.add_argument('--gauss', action='store_true', help='Normalise and overlay gaussian on histogram')
 parsearg.add_argument('--sdplot', action='store_true', help='Put separate days in separate figure')
 parsearg.add_argument('--histy', type=str, default='Occurrences', help='Label for histogram Y axis')
 parsearg.add_argument('--histx', type=str, default='Equivalent width (Angstroms)', help='Label for histogram X axis')
@@ -34,6 +37,9 @@ sepdays = res['sepdays']
 sdp = res['sdplot']
 outf = res['outprefix']
 excludes = res['excludes']
+clip = res['clip']
+gauss = res['gauss']
+bins = res['bins']
 
 if rf is None:
     print "No integration result file specified"
@@ -59,7 +65,36 @@ inp = np.loadtxt(rf, unpack=True)
 dates = inp[0]
 vals = inp[1]
 
-plt.hist(vals,bins=res['bins'])
+# If clipping histogram, iterate to remove outliers
+
+if clip != 0.0:
+    hvals = vals + 0.0
+    lh = len(hvals)
+    while 1:
+        mv = np.mean(hvals)
+        std = np.std(hvals)
+        sel = np.abs(hvals - mv) <= clip * std
+        hvals = hvals[sel]
+        nl = len(hvals)
+        if nl == 0:
+            print "No values left after clip???"
+            sys.exit(101)
+        if nl == lh:
+            break
+        lh = nl
+    if gauss:
+        mv = np.mean(hvals)
+        std = np.std(hvals)
+        minv = np.min(hvals)
+        maxv = np.max(hvals)
+        lx = np.linspace(minv,maxv,250)
+        garr = ss.norm.pdf(lx, mv, std)
+        plt.hist(hvals, bins=bins, normed = True)
+        plt.plot(lx, garr)
+    else:
+        plt.hist(hvals,bins=bins)
+else:
+    plt.hist(vals,bins=bins)
 plt.ylabel(res['histy'])
 plt.xlabel(res['histx'])
 if outf is not None:

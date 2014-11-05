@@ -39,6 +39,7 @@
     <addaction name="action_Save_ranges"/>
     <addaction name="action_Save_ranges_as"/>
     <addaction name="separator"/>
+    <addaction name="action_Options"/>
     <addaction name="action_Quit"/>
    </widget>
    <widget class="QMenu" name="menu_Data">
@@ -279,6 +280,14 @@ The spectal data files are assumed to be in the same directory.</string>
    </property>
    <property name="shortcut">
     <string>Ctrl+D</string>
+   </property>
+  </action>
+  <action name="action_Options">
+   <property name="text">
+    <string>O&amp;ptions</string>
+   </property>
+   <property name="toolTip">
+    <string>Set width and height of windows</string>
    </property>
   </action>
  </widget>

@@ -5,6 +5,7 @@ import os
 import os.path
 import locale
 import argparse
+import xml.etree.ElementTree as ET
 
 sys.ps1 = 'FRED'            # Mystery stuff to make interactive work
 import matplotlib
@@ -20,6 +21,8 @@ import miscutils
 import xmlutil
 import specdatactrl
 import datarange
+import mpplotter
+import configfile
 
 import obsfileseldlg
 import rangeseldlg
@@ -28,9 +31,51 @@ import markexceptdlg
 import contcalcdlg
 import ewcalc
 import ui_sdadminmain
+import ui_progoptsdlg
 
 SPC_DOC_NAME = "SPCCTRL"
 SPC_DOC_ROOT = "spcctrl"
+
+CONFIGFNAME = 'Sdadmin'
+CONFIGROOT = 'SDADMIN'
+
+class SdaminConfig(object):
+    """Bits and pieces of program options"""
+    
+    def __init__(self):
+        self.swidth = 15.0
+        self.sheight = 10.0
+    
+    def load(self, node):
+        """Load from XML DOM node"""
+        for child in node:
+            tagn = child.tag
+            if tagn == "geom":
+                self.load_geom(child)
+    
+    def load_geom(self, node):
+        """Load geom parameters"""
+        for child in node:
+            tagn = child.tag
+            if tagn == "width":
+                self.swidth = xmlutil.getfloat(child)
+            elif tagn == "height":
+                self.sheight = xmlutil.getfloat(child)
+    
+    def save_geom(self, doc, pnode, name):
+        """Save geom parameters"""
+        node = ET.SubElement(pnode, name)
+        xmlutil.savedata(doc, node, "width", self.swidth)
+        xmlutil.savedata(doc, node, "height", self.sheight)
+
+    def save(self, doc, pnode):
+        """Save to XML DOM node"""
+        self.save_geom(doc, pnode, "geom")
+
+class ProgoptsDlg(QDialog, ui_progoptsdlg.Ui_progoptsdlg):
+    def __init__(self, parent = None):
+        super(ProgoptsDlg, self).__init__(parent)
+        self.setupUi(self)
 
 class SadminMain(QMainWindow, ui_sdadminmain.Ui_sdadminmain):
 
@@ -336,33 +381,70 @@ class SadminMain(QMainWindow, ui_sdadminmain.Ui_sdadminmain):
         self.unsavedr = False
         self.rangefile = fname
         self.updateUI()
+        
+    def on_action_Options_triggered(self, checked = None):
+        global cfg
+        if checked is None: return
+        dlg = ProgoptsDlg(self)
+        dlg.pwidth.setValue(cfg.swidth)
+        dlg.pheight.setValue(cfg.sheight)
+        if dlg.exec_():
+            cfg.swidth = dlg.pwidth.value()
+            cfg.sheight = dlg.pheight.value()
+            mpplotter.Setdims(width = cfg.swidth, height = cfg.sheight)
 
     def on_action_Quit_triggered(self, checked = None):
+        global cfg
         if checked is None: return
         if (self.dirty_ctrlfile() or self.dirty_rangefile()) and \
             QMessageBox.question(self, "Unsaved data", "There are unsaved changes, sure you want to quit", QMessageBox.Yes, QMessageBox.No|QMessageBox.Default|QMessageBox.Escape) != QMessageBox.Yes:
             return
+        try:
+            cdoc, croot = configfile.init_save(CONFIGROOT)
+            cfg.save(cdoc, croot)
+            configfile.complete_save(cdoc, CONFIGFNAME)
+        except configfile.ConfigError as e:
+            QMessageBox.warning(self, "Configuration file error", e.args[0])
         QApplication.exit(0)
 
     def closeEvent(self, event):
         self.on_action_Quit_triggered(True)
 
 app = QApplication(sys.argv)
+mw = SadminMain()
+cfg = SdaminConfig()
+
+# Load up last times config parameters
+
+try:
+    dp = configfile.load(fname = CONFIGFNAME, rootname = CONFIGROOT)
+    if dp is not None:
+        cdoc, croot = dp
+        cfg.load(croot)
+except configfile.ConfigError as e:
+    QMessageBox.warning(mw, "Configuration file error", e.args[0])
+except xmlutil.XMLError as e:
+    QMessageBox.warning(mw, "Config file XML error", e.args[0])
+
+# Parse arguments
+    
 parsearg = argparse.ArgumentParser(description='Spectrum data files admin')
 parsearg.add_argument('--rangefile', type=str, help='Range file')
 parsearg.add_argument('--specfile', type=str, help='Spectrum data controlfile')
-parsearg.add_argument('--width', type=float, default=15.0, help='Plotting width display')
-parsearg.add_argument('--height', type=float, default=10.0, help='Plotting height display')
+parsearg.add_argument('--width', type=float, default=0.0, help='Plotting width display')
+parsearg.add_argument('--height', type=float, default=0.0, help='Plotting height display')
 res = vars(parsearg.parse_args())
 rf = res['rangefile']
 sf = res['specfile']
-plt.rcParams['figure.figsize'] = (res['width'], res['height'])
-mw = SadminMain()
+if res['width'] >= 2.0:
+    cfg.swidth = res['width']
+if res['height'] >= 2.0:
+    cfg.sheight = res['height']            
+mpplotter.Setdims(width = cfg.swidth, height = cfg.sheight)
+
 if sf is not None:
     mw.set_ctrl_file(sf)
 if rf is not None:
     mw.set_rangefile(rf)
 mw.show()
 app.exec_()              
-
-

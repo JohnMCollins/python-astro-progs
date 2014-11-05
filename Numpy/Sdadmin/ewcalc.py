@@ -7,6 +7,7 @@ import string
 import os.path
 import numpy as np
 import matplotlib.pyplot as plt
+import scipy.stats as ss
 import specdatactrl
 import datarange
 import xmlutil
@@ -115,7 +116,29 @@ def run_ew_calc(ctrlfile, rangefile):
         
         histfig = plt.gcf()
         histfig.canvas.set_window_title("Equivalent widths histogram")
-        plt.hist(ews, bins=dlg.histbins.value())
+        histews = np.array(ews)
+        sexv = dlg.exclstds.value()
+        if sexv != 0.0:
+            lh = len(histews)
+            while 1:
+                hmean = np.mean(histews)
+                hstd = np.std(histews)
+                sel = np.abs(histews - hmean) <= sexv * hstd
+                histews = histews[sel]
+                nl = len(histews)
+                if nl == lh: break
+                lh = nl
+        if dlg.gaussian.isChecked():
+            plt.hist(histews, bins=dlg.histbins.value(), normed=True)
+            hmean = np.mean(histews)
+            hstd = np.std(histews)
+            minv = np.min(histews)
+            maxv = np.max(histews)
+            lx = np.linspace(minv,maxv,500)
+            garr = ss.norm.pdf(lx, hmean, hstd)
+            plt.plot(lx, garr)
+        else:
+            plt.hist(histews, bins=dlg.histbins.value())
         plt.ylabel(str(dlg.histyaxis.text()))
         plt.xlabel(str(dlg.histxaxis.text()))
         plt.show()

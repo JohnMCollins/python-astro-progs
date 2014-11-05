@@ -339,11 +339,65 @@
     <string>This is the peak we want to perform the integration over.</string>
    </property>
   </widget>
+  <widget class="QDoubleSpinBox" name="exclstds">
+   <property name="geometry">
+    <rect>
+     <x>310</x>
+     <y>110</y>
+     <width>81</width>
+     <height>27</height>
+    </rect>
+   </property>
+   <property name="toolTip">
+    <string>Exclude items at least this number of stddevs
+from histogram</string>
+   </property>
+   <property name="suffix">
+    <string> std</string>
+   </property>
+   <property name="maximum">
+    <double>20.000000000000000</double>
+   </property>
+   <property name="singleStep">
+    <double>0.500000000000000</double>
+   </property>
+  </widget>
+  <widget class="QLabel" name="label_10">
+   <property name="geometry">
+    <rect>
+     <x>270</x>
+     <y>120</y>
+     <width>41</width>
+     <height>17</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Excl</string>
+   </property>
+  </widget>
+  <widget class="QCheckBox" name="gaussian">
+   <property name="geometry">
+    <rect>
+     <x>430</x>
+     <y>110</y>
+     <width>93</width>
+     <height>22</height>
+    </rect>
+   </property>
+   <property name="toolTip">
+    <string>Overlay a Gaussian curve on the histogram</string>
+   </property>
+   <property name="text">
+    <string>Gaussian</string>
+   </property>
+  </widget>
  </widget>
  <tabstops>
   <tabstop>peakrange</tabstop>
   <tabstop>scaling</tabstop>
   <tabstop>histbins</tabstop>
+  <tabstop>exclstds</tabstop>
+  <tabstop>gaussian</tabstop>
   <tabstop>histxaxis</tabstop>
   <tabstop>histyaxis</tabstop>
   <tabstop>plotxaxis</tabstop>

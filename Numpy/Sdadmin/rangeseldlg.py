@@ -145,7 +145,7 @@ class Rangeseldlg(QDialog, ui_rangeseldlg.Ui_rangeseldlg):
             r = self.rangelist.getrange(rnam)
             self.editrange.addItem(r.description, QVariant(rnam))
 
-        self.plotter = mpplotter.Plotter(mpplotter.Plotter_options())
+        self.plotter = mpplotter.Plotter()
         
         self.colourlist = colourlist * ((len(self.specctl.datalist) + len(colourlist) - 1) / len(colourlist))
 

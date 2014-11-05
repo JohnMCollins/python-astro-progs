@@ -9,6 +9,7 @@ all:	ui_contcalcdlg.py\
 	ui_markexresdlg.py\
 	ui_newrangedlg.py\
 	ui_obsfileseldlg.py\
+	ui_progoptsdlg.py\
 	ui_rangeseldlg.py\
 	ui_sdadminmain.py\
 	ui_xindscaleoffdlg.py\
@@ -38,6 +39,9 @@ ui_newrangedlg.py:	newrangedlg.ui
 	pyuic4 -o $@ $?
 
 ui_obsfileseldlg.py:	obsfileseldlg.ui
+	pyuic4 -o $@ $?
+
+ui_progoptsdlg.py:	progoptsdlg.ui
 	pyuic4 -o $@ $?
 
 ui_rangeseldlg.py:	rangeseldlg.ui
