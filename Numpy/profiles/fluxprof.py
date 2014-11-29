@@ -168,7 +168,12 @@ while dlg.exec_():
     if len(outfile) == 0:
         QMessageBox.warning(dlg, "No output file", "Please specify output file")
         continue
-    arr = np.array([dlg.xvals,dlg.yvals])
+    yv = dlg.yvals
+    mv = np.min(yv)
+    if mv <= 0:
+        adj = max(-mv, 1.0)
+        yv += adj
+    arr = np.array([dlg.xvals,yv])
     arr = np.transpose(arr)
     np.savetxt(outfile, arr, "%.2f %.6f")
     sys.exit(0)

@@ -1,4 +1,4 @@
-#! /local/home/jcollins/lib/anaconda/bin/python
+#! /home/jcollins/bin/python
 
 # Integrate the H alpha peaks to get figures for the total values,
 # assume continuum is normalised at 1 unless otherwise specified
@@ -188,4 +188,3 @@ try:
     plt.show()
 except KeyboardInterrupt:
     pass
-
