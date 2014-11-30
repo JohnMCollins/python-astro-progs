@@ -24,6 +24,9 @@ parsearg.add_argument('--histy', type=str, default='Occurrences', help='Label fo
 parsearg.add_argument('--histx', type=str, default='Equivalent width (Angstroms)', help='Label for histogram X axis')
 parsearg.add_argument('--ploty', type=str, default='Equivalent width (Angstroms)', help='Label for plot Y axis')
 parsearg.add_argument('--plotx', type=str, default='Days offset from start', help='Label for plot X axis')
+parsearg.add_argument('--yaxr', action='store_true', help='Put Y axis label on right')
+parsearg.add_argument('--width', type=float, default=4, help='Display width')
+parsearg.add_argument('--height', type=float, default=3, help='Display height')
 parsearg.add_argument('--outprefix', type=str, help='Output file prefix')
 parsearg.add_argument('--plotcolours', type=str, default='black,red,green,blue,yellow,magenta,cyan', help='Colours for successive plots')
 parsearg.add_argument('--excludes', type=str, help='File with excluded obs times and reasons')
@@ -40,6 +43,8 @@ excludes = res['excludes']
 clip = res['clip']
 gauss = res['gauss']
 bins = res['bins']
+ytr = res['yaxr']
+dims = (res['width'], res['height'])
 
 if rf is None:
     print "No integration result file specified"
@@ -64,6 +69,8 @@ if excludes is not None:
 inp = np.loadtxt(rf, unpack=True)
 dates = inp[0]
 vals = inp[1]
+
+plt.figure(figsize=dims)
 
 # If clipping histogram, iterate to remove outliers
 
@@ -95,12 +102,27 @@ if clip != 0.0:
         plt.hist(hvals,bins=bins)
 else:
     plt.hist(vals,bins=bins)
-plt.ylabel(res['histy'])
-plt.xlabel(res['histx'])
+if ytr:
+    plt.gca().yaxis.tick_right()
+    plt.gca().yaxis.set_label_position("right")
+histxlab = res['histx']
+histylab = res['histy']
+if histxlab == "none":
+	histxlab = ""
+if histylab == "none":
+	histylab = ""
+if len(histylab) > 0:
+    plt.ylabel(histylab)
+else:
+    plt.yticks([])
+if len(histxlab) > 0:
+    plt.xlabel(histxlab)
+else:
+    plt.xticks([])
 if outf is not None:
     fname = outf + '_hist.png'
     plt.savefig(fname)
-if not sdp: plt.figure()
+if not sdp: plt.figure(figsize=dims)
  
 rxarray = []
 ryarray = []
@@ -128,16 +150,30 @@ colours = plotcols * ((len(rxarray) + len(plotcols) - 1) / len(plotcols))
 
 xlab = res['plotx']
 ylab = res['ploty']
+if xlab == "none":
+	xlab = ""
+if ylab == "none":
+	ylab = ""
 fnum = 1
+legend_number = res['legnum']
 
 if sdp:
     for xarr, yarr, col in zip(rxarray,ryarray,colours):
         offs = xarr[0]
         xa = np.array(xarr) - offs
         ya = np.array(yarr)
-        f = plt.figure()
-        plt.ylabel(ylab)
-        plt.xlabel(xlab)
+        f = plt.figure(figsize=dims)
+        if len(ylab) == 0:
+            plt.yticks([])
+        else:
+            if ytr:
+                plt.gca().yaxis.tick_right()
+                plt.gca().yaxis.set_label_position("right")
+            plt.ylabel(ylab)
+        if len(xlab) == 0:
+            plt.xticks([])
+        else:
+            plt.xlabel(xlab)
         plt.plot(xa,ya,col,label=jdate.display(xarr[0]))
         if excludes is not None:
             sube = elist.inrange(np.min(xarr), np.max(xarr))
@@ -151,7 +187,8 @@ if sdp:
                 else:
                     had[reas] = 1
                     plt.axvline(xpl, color=creas, label=reas, ls="--")
-        plt.legend(loc=res['legpos'])
+        if legend_number > 0:
+            plt.legend(loc=res['legpos'])
         if outf is not None:
             fname = outf + ("_f%.3d.png" % fnum)
             f.savefig(fname)
@@ -159,17 +196,25 @@ if sdp:
 else:
     legends = []
     lines = []
-    ln = res['legnum']
-    plt.ylabel(ylab)
-    plt.xlabel(xlab)
+    if len(ylab) == 0:
+        plt.yticks([])
+    else:
+        if ytr:
+            plt.gca().yaxis.tick_right()
+            plt.gca().yaxis.set_label_position("right")
+        plt.ylabel(ylab)
+    if len(xlab) == 0:
+        plt.xticks([])
+    else:
+        plt.xlabel(xlab)
     for xarr, yarr, col in zip(rxarray,ryarray,colours):
         offs = xarr[0]
         xa = np.array(xarr) - offs
         ya = np.array(yarr)
         plt.plot(xa,ya, col)
-        if len(legends) < ln:
+        if len(legends) < legend_number:
             legends.append(jdate.display(xarr[0]))
-        elif  len(legends) == ln:
+        elif  len(legends) == legend_number:
             legends.append('etc...')
         if excludes is not None:
             sube = elist.inrange(np.min(xarr), np.max(xarr))
@@ -178,7 +223,8 @@ else:
                 reas = sube.getreason(pl)
                 creas = rlookup[reas]
                 lines.append((xpl,creas))
-    plt.legend(legends,loc=res['legpos'])
+	if legend_number > 0:
+	    plt.legend(legends,loc=res['legpos'])
     for xpl, creas in lines:
         plt.axvline(xpl, color=creas, ls="--")
     if outf is not None:
