@@ -1,4 +1,4 @@
-#! /local/home/jcollins/lib/anaconda/bin/python
+#! /usr/bin/env python
 
 # Display ratio calculation vs EW
 

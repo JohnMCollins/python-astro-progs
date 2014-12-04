@@ -1,4 +1,4 @@
-#! /local/home/jcollins/lib/anaconda/bin/python
+#! /usr/bin/env python
 
 # Integrate the two "horns" of the Halpha peak to get variations,
 # assume continuum is normalised at 1 unless otherwise specified

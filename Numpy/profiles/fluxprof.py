@@ -1,4 +1,4 @@
-#! /home/jcollins/bin/python
+#! /usr/bin/env python
 
 import sys
 import math

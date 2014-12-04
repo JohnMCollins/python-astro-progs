@@ -1,4 +1,4 @@
-#! /local/home/jcollins/lib/anaconda/bin/python
+#! /usr/bin/env python
 
 # Integrate the continuum to give an overall value for normalising the intensity of a spectrum
 

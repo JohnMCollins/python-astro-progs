@@ -1,4 +1,4 @@
-#! /local/home/jcollins/lib/anaconda/bin/python
+#! /usr/bin/env python
 
 # Integrate two H Alpha peaks and generate ratio red/blue,
 # assume continuum is normalised at 1 unless otherwise specified

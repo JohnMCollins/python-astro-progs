@@ -1,4 +1,4 @@
-#! /local/home/jcollins/lib/anaconda/bin/python
+#! /usr/bin/env python
 
 # Correlate the wavelengths in a set of spectra to try and make them line up
 
