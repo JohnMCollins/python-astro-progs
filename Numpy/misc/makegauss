@@ -1,0 +1,55 @@
+#!/bin/tcsh
+
+echo " "
+echo " Generate a Gaussian of the form :  G(x) = A / (1 + 0.5*((x-B)/C)**2))"
+echo " "
+echo "						N = number of points for -N/2 - N/2"
+echo "						S = pixel width"
+echo "						A = scale"
+echo "						B = offset"
+echo "						C = FWHM (will use sigma = FWHM / 2*sqrt(2ln2)"
+echo " "
+
+if ( "$#argv" != 1 ) then
+	set noglob
+	echo -n "Enter N,S,A,B,FWHM :"
+	set vals   = ( `echo $< ` )
+else
+	set vals = $1
+endif
+
+set string = `echo $vals | sed 's:,: :g'`
+set N = $string[1]
+set S = $string[2]
+set A = $string[3]
+set B = $string[4]
+set C = `echo $string[5] | awk '{print $1/(2.0*sqrt(log(2)*2.0))}'`
+
+set H = `echo $N $S | awk '{print $1*$2/2.}'`
+
+rm -f gauss.dat
+touch gauss.dat
+
+set i = -$H
+
+@ count = 1
+@ total = $N + 1
+
+while ($count <= $total)
+
+set G = `echo $i $A $B $C | awk '{if($1 >= $3-5.*$4 && $1 <= $3+5.*$4) print 1.0-($2 * exp(-0.5 * ( ($1-$3)/$4 )**2)); else print 1.0}'`
+
+echo $i $G >> gauss.dat
+
+set i = `echo $i $S | awk '{print $1+$2}'` 
+
+@ count ++
+
+end
+
+/star/bin/figaro/ascin gauss.dat lines="[1,99999]" colaxes=1 coldata=2 out=gauss
+
+echo " "
+echo "Output written to gauss.dat and gauss.sdf"
+echo " "
+
