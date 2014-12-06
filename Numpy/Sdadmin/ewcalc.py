@@ -183,7 +183,7 @@ def run_ew_calc(ctrlfile, rangefile):
             rlookup[r] = c
     
         xlab = str(dlg.plotxaxis.text())
-        ylab = str(dlg.plotxaxis.text())
+        ylab = str(dlg.plotyaxis.text())
 
         # Separate plots if we've asked for them and we have actually split across days
         
