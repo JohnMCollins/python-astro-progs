@@ -7,27 +7,7 @@ import os.path
 import os
 import sys
 import string
-
-def parserange(arg):
-    """Parse a range argument, either a single floating point number, in which case assume other end is zero,
-    or a pair. If only a single number add zero. Return a sorted result"""
-    
-    if arg is None: return None
-    
-    bits = string.split(arg, ',')
-    try:
-        if len(bits) == 1:
-            ret = [0, float(arg)]
-        elif len(bits) == 2:
-            ret = map(lambda x: float(x), bits)
-        else:
-            raise ValueError
-    except:
-        print "Did not understand range value of", arg
-        return None
-    
-    ret.sort()
-    return ret
+import rangearg
 
 parsearg = argparse.ArgumentParser(description='Display bar chart of periods')
 parsearg.add_argument('--outfig', type=str, help='Output figure')
@@ -44,6 +24,7 @@ parsearg.add_argument('--xaxt', action='store_true', help='Put X axis label on t
 parsearg.add_argument('--xrange', type=str, help='Range for X axis')
 parsearg.add_argument('--fork', action='store_true', help='Fork off daemon process to show plot and exit')
 parsearg.add_argument('--title', help='Set window title', type=str, default="Periodogram display")
+parsearg.add_argument('--legend', type=str, help='Specify legend')
 parsearg.add_argument('--width', help="Width of plot", type=float, default=4)
 parsearg.add_argument('--height', help="Height of plot", type=float, default=3)
 
@@ -61,8 +42,9 @@ if ylab == "none":
     ylab = ""
 ytr = resargs['yaxr']
 xtt = resargs['xaxt']
-yrange = parserange(resargs['yrange'])
-xrange = parserange(resargs['xrange'])
+yrange = rangearg.parserange(resargs['yrange'])
+xrange = rangearg.parserange(resargs['xrange'])
+exlegend = resargs['legend']
 
 forkoff = resargs['fork']
 
@@ -121,6 +103,8 @@ else:
         plt.gca().xaxis.tick_top()
         plt.gca().xaxis.set_label_position('top')
     plt.xlabel(xlab)
+if exlegend is not None:
+    plt.legend([exlegend], handlelength=0)
 if outfig is not None:
     plt.savefig(outfig)
     sys.exit(0)

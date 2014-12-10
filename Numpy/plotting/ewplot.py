@@ -12,27 +12,7 @@ import scipy.stats as ss
 import matplotlib.pyplot as plt
 import exclusions
 import jdate
-
-def parserange(arg):
-    """Parse a range argument, either a single floating point number, in which case assume other end is zero,
-    or a pair. If only a single number add zero. Return a sorted result"""
-    
-    if arg is None: return None
-    
-    bits = string.split(arg, ',')
-    try:
-        if len(bits) == 1:
-            ret = [0, float(arg)]
-        elif len(bits) == 2:
-            ret = map(lambda x: float(x), bits)
-        else:
-            raise ValueError
-    except:
-        print "Did not understand range value of", arg
-        return None
-    
-    ret.sort()
-    return ret
+import rangearg
 
 parsearg = argparse.ArgumentParser(description='Plot equivalent width results')
 parsearg.add_argument('integ', type=str, nargs=1, help='Input integration file (time/intensity)')
@@ -57,8 +37,8 @@ parsearg.add_argument('--outprefix', type=str, help='Output file prefix')
 parsearg.add_argument('--plotcolours', type=str, default='black,red,green,blue,yellow,magenta,cyan', help='Colours for successive plots')
 parsearg.add_argument('--excludes', type=str, help='File with excluded obs times and reasons')
 parsearg.add_argument('--exclcolours', type=str, default='red,green,blue,yellow,magenta,cyan,black', help='Colours for successive exclude reasons')
-parsearg.add_argument('--legpos', type=str, default='best', help='Legend position')
 parsearg.add_argument('--legnum', type=int, default=5, help='Number for legend')
+parsearg.add_argument('--legend', type=str, help='Specify explicit legend')
 parsearg.add_argument('--fork', action='store_true', help='Fork off daemon process to show plot and exit')
 
 res = vars(parsearg.parse_args())
@@ -72,11 +52,12 @@ gauss = res['gauss']
 bins = res['bins']
 ytr = res['yaxr']
 xtt = res['xaxt']
-yrange = parserange(res['yrange'])
-xrange = parserange(res['xrange'])
-histyrange = parserange(res['histyrange'])
-histxrange = parserange(res['histxrange'])
-forkoff = res['fork']                   
+yrange = rangearg.parserange(res['yrange'])
+xrange = rangearg.parserange(res['xrange'])
+histyrange = rangearg.parserange(res['histyrange'])
+histxrange = rangearg.parserange(res['histxrange'])
+forkoff = res['fork']
+explicit_legend = res['legend']
 
 dims = (res['width'], res['height'])
 
@@ -168,6 +149,8 @@ if len(histxlab) > 0:
     plt.xlabel(histxlab)
 else:
     plt.xticks([])
+if explicit_legend is not None:
+    plt.legend([explicit_legend], handlelength=0)
 if outf is not None:
     fname = outf + '_hist.png'
     plt.savefig(fname)
@@ -243,8 +226,10 @@ if sdp:
                 else:
                     had[reas] = 1
                     plt.axvline(xpl, color=creas, label=reas, ls="--")
-        if legend_number > 0:
-            plt.legend(loc=res['legpos'])
+        if explicit_legend is not None:
+            plt.legend([explicit_legend], handlelength=0)
+        elif legend_number > 0:
+            plt.legend()
         if outf is not None:
             fname = outf + ("_f%.3d.png" % fnum)
             f.savefig(fname)
@@ -268,6 +253,7 @@ else:
             plt.gca().xaxis.tick_top()
             plt.gca().xaxis.set_label_position('top')
         plt.xlabel(xlab)
+    
     for xarr, yarr, col in zip(rxarray,ryarray,colours):
         offs = xarr[0]
         xa = np.array(xarr) - offs
@@ -284,8 +270,11 @@ else:
                 reas = sube.getreason(pl)
                 creas = rlookup[reas]
                 lines.append((xpl,creas))
-	if legend_number > 0:
-	    plt.legend(legends,loc=res['legpos'])
+	
+    if explicit_legend is not None:
+        plt.legend([explicit_legend], handlelength=0)
+    elif legend_number > 0:
+	    plt.legend(legends)
     for xpl, creas in lines:
         plt.axvline(xpl, color=creas, ls="--")
     if outf is not None:
