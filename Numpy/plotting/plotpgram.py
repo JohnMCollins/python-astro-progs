@@ -1,4 +1,4 @@
-#! /home/jcollins/bin/python
+#! /usr/bin/env python
 
 import argparse
 import matplotlib.pyplot as plt
@@ -13,8 +13,10 @@ parsearg = argparse.ArgumentParser(description='Display bar chart of periods')
 parsearg.add_argument('--outfig', type=str, help='Output figure')
 parsearg.add_argument('--resdir', type=str, help='Directory if not same as spectrum data')
 parsearg.add_argument('--barwidth', type=float, default=.01, help='Bar width')
-parsearg.add_argument('--line', action='store_true', help='Line rather than bar chart')
 parsearg.add_argument('--colour', type=str, default='blue', help='Line/bar colour')
+parsearg.add_argument('--maxfile', type=str, help='File for maxima values')
+parsearg.add_argument('--maxnum', type=int, default=5, help='Number of highest maxima to take')
+parsearg.add_argument('--maxcol', type=str, default='green', help='Colour of lines denoting maxima') 
 parsearg.add_argument('spec', type=str, help='Spectrum file')
 parsearg.add_argument('--xlab', type=str, help='Label for X axis', default='Period in days')
 parsearg.add_argument('--ylab', type=str, help='Label for Y axis', default='Probability that period is correct')
@@ -85,10 +87,7 @@ if xrange is not None:
     plt.xlim(*xrange)
 if yrange is not None:
     plt.ylim(*yrange)
-if resargs['line']:
-    plt.plot(periods, amps, color=col)
-else:
-    plt.bar(periods, amps, width=width, align='center', color=col, edgecolor=col)
+plt.plot(periods, amps, color=col)
 if len(ylab) == 0:
     plt.yticks([])
 else:
@@ -105,6 +104,25 @@ else:
     plt.xlabel(xlab)
 if exlegend is not None:
     plt.legend([exlegend], handlelength=0)
+
+maxfile = resargs['maxfile']
+if maxfile is not None:
+	try:
+		maxx, maxy = np.loadtxt(maxfile, unpack=True)
+		maxnum = resargs['maxnum']
+		if len(maxx) < maxnum: maxnum = len(maxx)
+		if maxnum > 0:
+			sortl = np.argsort(maxy)[-maxnum:]
+			maxx = maxx[sortl]
+			maxy = maxy[sortl]
+			mcol = resargs['maxcol']
+			for m in maxx:
+				plt.axvline(m, color=mcol)
+	except IOError as e:
+		print "Could not load maxima file", maxfile, "error was", e.args[1]
+	except ValueError:
+		print "Conversion error on", maxfile
+
 if outfig is not None:
     plt.savefig(outfig)
     sys.exit(0)

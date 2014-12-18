@@ -14,6 +14,7 @@ import scipy.signal as ss
 parsearg = argparse.ArgumentParser(description='Perform L-S FFT')
 parsearg.add_argument('integ', type=str, nargs=1, help='Input integration file (time/intensity)')
 parsearg.add_argument('--outspec', type=str, help='Output spectrum file')
+parsearg.add_argument('--maxfile', type=str, help='Output maxima file')
 parsearg.add_argument('--start', type=float, default=50, help='Starting point for range of periods')
 parsearg.add_argument('--stop', type=float, default=100, help='End point for range of periods')
 parsearg.add_argument('--step', type=float, default=.5, help='Step in range')
@@ -22,6 +23,7 @@ resargs = vars(parsearg.parse_args())
 
 integ = resargs['integ'][0]
 outspec = resargs['outspec']
+maxfile = resargs['maxfile']
 strt = resargs['start']
 stop = resargs['stop']
 step = resargs['step']
@@ -72,9 +74,12 @@ except IOError as e:
     print "Could not save output file", outspec, "error was", e.args[1]
     sys.exit(13)
 
-maxesat = np.argmax(spectrum)
-if len(maxesat) != 0:
-    print "Maxima at"
-    for a in maxesat:
-        print periods[a]
+if maxfile is not None:
+	maxesat = ss.argrelmax(spectrum)[0]
+	if len(maxesat) != 0:
+		try:
+			np.savetxt(maxfile, np.transpose(np.array([periods[maxesat], spectrum[maxesat]])))
+		except IOError as e:
+			print "Could not save maxima file", maxfile, "error was", e.args[1]
+			sys.exit(14)
 
