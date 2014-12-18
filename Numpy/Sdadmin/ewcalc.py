@@ -14,6 +14,7 @@ import xmlutil
 import meanval
 import exclusions
 import miscutils
+import jdate
 import ui_ewcalcdlg
 import ui_ewresdlg
 
@@ -203,7 +204,7 @@ def run_ew_calc(ctrlfile, rangefile):
                 figlist.append(f)
                 plt.ylabel(ylab)
                 plt.xlabel(xlab)
-                plab = "%.1f" % xarr[0]
+                plab = jdate.display(xarr[0])
                 plt.plot(xa,ya,col,label=plab)
                 f.canvas.set_window_title("Equivalent width plot for " + plab)
                 sube = elist.inrange(np.min(xarr), np.max(xarr))
@@ -232,7 +233,7 @@ def run_ew_calc(ctrlfile, rangefile):
                 ya = np.array(yarr)
                 plt.plot(xa,ya, col)
                 if len(legends) < ln:
-                    legends.append("%.1f" % xarr[0])
+                    legends.append(jdate.display(xarr[0]))
                 elif  len(legends) == ln:
                     legends.append('etc...')
                 sube = elist.inrange(np.min(xarr), np.max(xarr))
