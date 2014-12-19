@@ -2,6 +2,7 @@
 
 import argparse
 import matplotlib.pyplot as plt
+from matplotlib.ticker import ScalarFormatter
 import numpy as np
 import os.path
 import os
@@ -16,7 +17,9 @@ parsearg.add_argument('--barwidth', type=float, default=.01, help='Bar width')
 parsearg.add_argument('--colour', type=str, default='blue', help='Line/bar colour')
 parsearg.add_argument('--maxfile', type=str, help='File for maxima values')
 parsearg.add_argument('--maxnum', type=int, default=5, help='Number of highest maxima to take')
-parsearg.add_argument('--maxcol', type=str, default='green', help='Colour of lines denoting maxima') 
+parsearg.add_argument('--maxcol', type=str, default='green', help='Colour of lines denoting maxima')
+parsearg.add_argument('--mxoffs', type=float, default=1.0, help='Offset of maxima line labels X (%) -ve for LHS of line')
+parsearg.add_argument('--myoffs', type=float, default=10.0, help='Offset of maxima line labels Y (%)')
 parsearg.add_argument('spec', type=str, help='Spectrum file')
 parsearg.add_argument('--xlab', type=str, help='Label for X axis', default='Period in days')
 parsearg.add_argument('--ylab', type=str, help='Label for Y axis', default='Probability that period is correct')
@@ -29,6 +32,7 @@ parsearg.add_argument('--title', help='Set window title', type=str, default="Per
 parsearg.add_argument('--legend', type=str, help='Specify legend')
 parsearg.add_argument('--width', help="Width of plot", type=float, default=4)
 parsearg.add_argument('--height', help="Height of plot", type=float, default=3)
+parsearg.add_argument('--logscale', action='store_true', help='Show X axis in log scale')
 
 resargs = vars(parsearg.parse_args())
 
@@ -82,10 +86,19 @@ except ValueError:
     sys.exit(12)
 
 col=resargs['colour']
+lscale = resargs['logscale']
 
-if xrange is not None:
+if lscale:
+	ax = plt.gca()
+	ax.set_xscale('log')
+	ax.xaxis.set_major_formatter(ScalarFormatter())
+if xrange is None:
+    xrange = (periods.min(), periods.max())
+else:
     plt.xlim(*xrange)
-if yrange is not None:
+if yrange is None:
+    yrange = (amps.min(), amps.max())
+else:
     plt.ylim(*yrange)
 plt.plot(periods, amps, color=col)
 if len(ylab) == 0:
@@ -116,8 +129,19 @@ if maxfile is not None:
 			maxx = maxx[sortl]
 			maxy = maxy[sortl]
 			mcol = resargs['maxcol']
+			yoffssc = resargs['myoffs'] / 100.0
+			yplace = np.dot(yrange, (yoffssc, 1-yoffssc))
+			xoffssc = resargs['mxoffs'] / 100.0
+			xoffs = (xrange[1] - xrange[0]) * xoffssc
+			xscale = 1 + xoffssc
 			for m in maxx:
 				plt.axvline(m, color=mcol)
+				if lscale:
+					xplace = m*xscale
+				else:
+					xplace = m+xoffs
+				if xrange[0] < xplace < xrange[1]:
+					plt.text(xplace, yplace, "%.4g" % m, color=mcol, rotation=90)
 	except IOError as e:
 		print "Could not load maxima file", maxfile, "error was", e.args[1]
 	except ValueError:
