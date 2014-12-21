@@ -588,7 +588,7 @@
     </rect>
    </property>
    <property name="title">
-    <string>GroupBox</string>
+    <string>Y scaling</string>
    </property>
    <widget class="QRadioButton" name="noadj">
     <property name="geometry">
