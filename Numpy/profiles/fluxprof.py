@@ -13,19 +13,7 @@ matplotlib.interactive(True)
 plt.ion()
 
 import ui_fluxprofdlgui
-
-Gaussdiv = 2.0 * math.sqrt(2.0 * math.log(2.0))
-Lorentzdiv = 2.0 * math.sqrt(2.0)
-
-def calcgauss(xvals, offset, scale, fhwm):
-    """Calculate Gaussian profile"""
-    sigma = fhwm / Gaussdiv
-    return  scale * np.exp(-0.5 * ((xvals - offset) / sigma)**2)
-
-def calclorentz(xvals, offset, scale, fhwm):
-    """Calculate Lorentzian profile"""
-    sigma = fhwm / Lorentzdiv
-    return  scale / (1.0 + 0.5 * ((offset - xvals) / sigma) ** 2)
+import profcalc
 
 class fluxprofdlg(QDialog, ui_fluxprofdlgui.Ui_fluxprofdlg):
 
@@ -45,13 +33,13 @@ class fluxprofdlg(QDialog, ui_fluxprofdlgui.Ui_fluxprofdlg):
         scale = self.scale1.value()
         fhwm = self.fhwm1.value()
         if self.gauss1.isChecked():
-            yvals1 = calcgauss(xvals, offset, scale, fhwm)
+            yvals1 = 1.0 + profcalc.calcgauss(xvals, offset, scale, fhwm)
         elif self.igauss1.isChecked():
-            yvals1 = 1.0 - calcgauss(xvals, offset, scale, fhwm)
+            yvals1 = 1.0 - profcalc.calcgauss(xvals, offset, scale, fhwm)
         elif self.lorentz1.isChecked():
-            yvals1 = calclorentz(xvals, offset, scale, fhwm)
+            yvals1 = 1.0 + profcalc.calclorentz(xvals, offset, scale, fhwm)
         else:
-            yvals1 = 1.0 - calclorentz(xvals, offset, scale, fhwm)
+            yvals1 = 1.0 - profcalc.calclorentz(xvals, offset, scale, fhwm)
         if self.none2.isChecked():
             yvals = yvals1
         else:
@@ -59,13 +47,13 @@ class fluxprofdlg(QDialog, ui_fluxprofdlgui.Ui_fluxprofdlg):
             scale = self.scale2.value()
             fhwm = self.fhwm2.value()
             if self.gauss2.isChecked():
-                yvals2 = calcgauss(xvals, offset, scale, fhwm)
+                yvals2 = profcalc.calcgauss(xvals, offset, scale, fhwm)
             elif self.igauss2.isChecked():
-                yvals2 = 1.0 - calcgauss(xvals, offset, scale, fhwm)
+                yvals2 = 1.0 - profcalc.calcgauss(xvals, offset, scale, fhwm)
             elif self.lorentz2.isChecked():
-                yvals2 = calclorentz(xvals, offset, scale, fhwm)
+                yvals2 = profcalc.calclorentz(xvals, offset, scale, fhwm)
             else:
-                yvals2 = 1.0 - calclorentz(xvals, offset, scale, fhwm)
+                yvals2 = 1.0 - profcalc.calclorentz(xvals, offset, scale, fhwm)
             yvals = yvals1 + yvals2 - 1.0
         if self.clipy.isChecked():
             yvals[yvals > 1.0] = 1.0
@@ -170,8 +158,8 @@ while dlg.exec_():
         continue
     yv = dlg.yvals
     mv = np.min(yv)
-    if mv <= 0:
-        adj = max(-mv, 1.0)
+    if mv <= 1e-5:
+        adj = max(abs(mv), 1.0)
         yv += adj
     arr = np.array([dlg.xvals,yv])
     arr = np.transpose(arr)
