@@ -3,6 +3,7 @@
 # Plotting of map taken from http://www.geophysique.be/2011/02/20/matplotlib-basemap-tutorial-09-drawing-circles/
 # Note that installation of basemap is needed.
 
+import os
 from mpl_toolkits.basemap import Basemap
 import matplotlib.pyplot as plt
 import numpy as np
@@ -100,6 +101,7 @@ parsearg.add_argument('--height', type=float, help='Height of figure', default=2
 parsearg.add_argument('--latint', type=float, help='Latitude grid interval (0 to omit)', default=45.0)
 parsearg.add_argument('--longint', type=float, help='Longitude grid interval (0 to omit', default=45.0)
 parsearg.add_argument('--fillint', type=float, help='Interval for filling (0 to not fill)', default=10.0)
+parsearg.add_argument('--forkoff', action='store_true', help='Fork off process to display results')
 
 resargs = vars(parsearg.parse_args())
 
@@ -116,6 +118,9 @@ try:
 except IOError as e:
 	print "Cannot open plage file", inpfile, "error was", e.args[1]
 	sys.exit(10)
+
+if outfile is not None or (resargs['forkoff'] and os.fork() != 0):
+    sys.exit(0)
 
 fig = plt.figure(figsize=(width,height))
 plt.subplots_adjust(left=0,right=1,top=1,bottom=0,wspace=0,hspace=0)

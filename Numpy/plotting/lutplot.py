@@ -1,5 +1,6 @@
 #! /usr/bin/env python
 
+import os
 import sys
 import math
 import numpy as np
@@ -15,6 +16,8 @@ parsearg.add_argument('--basewl', type=float, default=6562.8, help='Base wavelen
 parsearg.add_argument('--outfile', type=str, help='Output file if required')
 parsearg.add_argument('--width', type=float, help='Width of figure', default=8.0)
 parsearg.add_argument('--height', type=float, help='Height of figure', default=6.0)
+parsearg.add_argument('--spoint', type=int, default=2, help='Size of scatter points')
+parsearg.add_argument('--forkoff', action='store_true', help='Fork off process to display results')
 
 resargs = vars(parsearg.parse_args())
 
@@ -38,8 +41,9 @@ temp2 = round(((ld.maxt4+ld.mint4) / 2.0) ** .25, 2)
 temp3 = round(ld.maxt4 ** .25, 2)
 temps = (temp1, temp2, temp3)
 
-#print "Temps: 1: %.2f 2: %.2f 3: %.2f" % temps
-#print "Min/max lambda = %.2f %.2f" % (minlambda, maxlambda)
+outf = resargs['outfile']
+if outf is not None or (resargs['forkoff'] and os.fork() != 0):
+    sys.exit(0)
 
 plt.rcParams['figure.figsize'] = (resargs['width'], resargs['height'])
 
@@ -47,12 +51,13 @@ plt.xlabel('Cosine limb angle')
 plt.xlim(0,1)
 plt.ylabel('Intensity')
 if len(args) == 0:
+    ssize = resargs['spoint']
     tempcols = ['red','black','blue']
     plt.ylim(da.min(), da.max())
     for tr in da:
         clr = tempcols.pop(0)
         for wl in tr:
-            plt.scatter(la, wl, color=clr)
+            plt.scatter(la, wl, color=clr, s=ssize)
 else:
     basewl = resargs['basewl']
     minlambda = basewl * (1.0 + ld.minv / 299792.458)
@@ -83,7 +88,6 @@ else:
                 plt.plot(la, da[i][indx], label="%.0f$^\circ$ $\lambda$=%.2f" % (temps[i], wl))
         plt.legend()
 
-outf = resargs['outfile']
 if outf is not None:
     try:
         plt.savefig(outf)
