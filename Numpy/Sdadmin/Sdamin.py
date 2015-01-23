@@ -141,6 +141,7 @@ class SadminMain(QMainWindow, ui_sdadminmain.Ui_sdadminmain):
         self.unsavedc = False
         self.currentfile = ""
         self.currentlist = None
+        self.setWindowTitle("Spectral data file admin")
         self.updateUI()
     
     def on_action_Select_Control_File_triggered(self, checked = None):
@@ -149,6 +150,8 @@ class SadminMain(QMainWindow, ui_sdadminmain.Ui_sdadminmain):
         newfile = QFileDialog.getOpenFileName(self, self.tr("Select control file"), self.currentfile, self.tr("Sadmin control files (*.sac)"))
         if len(newfile) == 0: return
         self.set_ctrl_file(str(newfile))
+        cdir = os.path.basename(self.currentlist.dirname)
+        self.setWindowTitle("Processing - " + cdir)
     
     def on_action_Select_observation_directory_triggered(self, checked = None):
         if checked is None: return
@@ -162,6 +165,7 @@ class SadminMain(QMainWindow, ui_sdadminmain.Ui_sdadminmain):
             self.currentlist = specdatactrl.SpecDataList(newdir)
         else:
             self.currentlist.set_dirname(newdir)
+        self.setWindowTitle("Processing - " + os.path.basename(newdir))
 
     def on_action_Select_Observation_times_file_triggered(self, checked = None):
         if checked is None: return
@@ -381,6 +385,11 @@ class SadminMain(QMainWindow, ui_sdadminmain.Ui_sdadminmain):
         self.unsavedr = False
         self.rangefile = fname
         self.updateUI()
+    
+    def on_action_Save_control_and_ranges_triggered(self, checked = None):
+        if checked is None: return
+        self.on_action_Save_Control_triggered(True)
+        self.on_action_Save_ranges_triggered(True)
         
     def on_action_Options_triggered(self, checked = None):
         global cfg

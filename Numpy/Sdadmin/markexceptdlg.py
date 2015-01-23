@@ -67,6 +67,14 @@ class Markexceptdlg(QDialog, ui_markexceptdlg.Ui_markexceptdlg):
             if rnam == "yrange": continue
             r = rangefile.getrange(rnam)
             self.set_combos(rnam, r.description)
+        try:
+            har = rangefile.getrange('halpha')
+            if har.notused: return
+        except datarange.DataRangeError:
+            return
+        halind = self.exclrange1.findData(QVariant('halpha'))
+        if halind >= 0:
+            self.exclrange1.setCurrentIndex(halind)
 
     def getrangename(self, box):
         """Get range name from given combo box"""

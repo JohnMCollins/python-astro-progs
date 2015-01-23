@@ -281,6 +281,14 @@ class ContCalcDlg(QDialog, ui_contcalcdlg.Ui_contcalcdlg):
             if rnam == "yrange": continue
             r = rangefile.getrange(rnam)
             self.set_combos(rnam, r.description)
+        try:
+            har = rangefile.getrange('halpha')
+            if har.notused: return
+        except datarange.DataRangeError:
+            return
+        halind = self.exclrange1.findData(QVariant('halpha'))
+        if halind >= 0:
+            self.exclrange1.setCurrentIndex(halind)
 
     def getrangename(self, box):
         """Get range name from given combo box"""
@@ -452,7 +460,8 @@ def run_continuum_calc(ctrlfile, rangefile):
         resdlg.exclpoints.setText("%d/%d" % (removals, origvals))
         if prevexc is None: resdlg.pexclpoints.setText("N/a")
         else: resdlg.pexclpoints.setText(str(prevexc))
-        prevexc = removals      
+        prevexc = removals
+        resdlg.afterits.setText("%d/%d" % (itn+1, iterations))
 
         resdlg.coeff_display(coeffs)
 
@@ -623,6 +632,7 @@ def run_indiv_continuum_calc(ctrlfile, rangefile):
         if prevexcl is None: resdlg.pexclpoints.setText("N/a")
         else: resdlg.pexclpoints.setText(str(prevexcl))
         prevexcl = totremovals
+        resdlg.afterits.setText("%d/%d" % (itn+1, iterations))
 
         # Now add all the stuff for plotting with
 

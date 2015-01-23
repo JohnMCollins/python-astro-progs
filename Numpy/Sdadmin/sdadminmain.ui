@@ -20,7 +20,7 @@
      <x>0</x>
      <y>0</y>
      <width>400</width>
-     <height>25</height>
+     <height>24</height>
     </rect>
    </property>
    <widget class="QMenu" name="menu_File">
@@ -38,6 +38,8 @@
     <addaction name="action_Select_Range_file"/>
     <addaction name="action_Save_ranges"/>
     <addaction name="action_Save_ranges_as"/>
+    <addaction name="separator"/>
+    <addaction name="action_Save_control_and_ranges"/>
     <addaction name="separator"/>
     <addaction name="action_Options"/>
     <addaction name="action_Quit"/>
@@ -288,6 +290,17 @@ The spectal data files are assumed to be in the same directory.</string>
    </property>
    <property name="toolTip">
     <string>Set width and height of windows</string>
+   </property>
+  </action>
+  <action name="action_Save_control_and_ranges">
+   <property name="text">
+    <string>Save control and ranges</string>
+   </property>
+   <property name="toolTip">
+    <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Save control and ranges files at once&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+B</string>
    </property>
   </action>
  </widget>

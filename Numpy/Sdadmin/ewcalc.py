@@ -24,6 +24,7 @@ Exclcolours = ('red','green','blue','yellow','magenta','cyan','black')
 class EWResdlg(QDialog, ui_ewresdlg.Ui_ewresdlg):
     def __init__(self, parent = None):
         super(EWResdlg, self).__init__(parent)
+        self.starname = ""
         self.setupUi(self)
 
     def on_browsedir_clicked(self, b = None):
@@ -34,11 +35,18 @@ class EWResdlg(QDialog, ui_ewresdlg.Ui_ewresdlg):
         
     def on_browsefile_clicked(self, b = None):
         if b is None: return
-        fname = QFileDialog.getSaveFileName(self, self.tr("Select save file"), self.resfile.text())
+        ename = self.resfile.text()
+        if len(ename) == 0:
+            ename = os.path.abspath(self.starname + '.ew')
+        fname = QFileDialog.getSaveFileName(self, self.tr("Select save file"), ename)
         if fname is None: return
         self.resfile.setText(fname)
         if len(self.resdir.text()) == 0:
-            self.resdir.setText(os.path.dirname(str(fname)))       
+            self.resdir.setText(os.path.dirname(str(fname)))
+        if len(self.histfile.text()) == 0:
+            self.histfile.setText(self.starname + '-hist')
+        if len(self.plotfile.text()) == 0:
+            self.plotfile.setText(self.starname + '-plot')
 
 class EWCalcDlg(QDialog, ui_ewcalcdlg.Ui_ewcalcdlg):
     
@@ -55,6 +63,16 @@ class EWCalcDlg(QDialog, ui_ewcalcdlg.Ui_ewcalcdlg):
             if rnam == "yrange": continue
             r = rangefile.getrange(rnam)
             self.peakrange.addItem(r.description, QVariant(rnam))
+        # This lot wants turning into config parameters
+        # and making a routine as we have it in 2 other places
+        try:
+            har = rangefile.getrange('halpha')
+            if har.notused: return
+        except datarange.DataRangeError:
+            return
+        halind = self.peakrange.findData(QVariant('halpha'))
+        if halind >= 0:
+            self.peakrange.setCurrentIndex(halind)
 
 def run_ew_calc(ctrlfile, rangefile):
     """Do the business to calculate the equivalent width plots"""
@@ -248,6 +266,7 @@ def run_ew_calc(ctrlfile, rangefile):
         plt.show()
     
         resdlg = EWResdlg()
+        resdlg.starname = os.path.basename(ctrlfile.dirname)
         
         # Loop until we get a sensible answer or he gives up
 
