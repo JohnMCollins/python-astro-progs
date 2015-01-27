@@ -1,4 +1,4 @@
-#! /usr/bin/python
+#! /usr/bin/env python
 
 # Program to convert fake spectra array to files of spectra looking like ones we know and love
 
@@ -18,6 +18,7 @@ parsearg.add_argument('--lambda', type=float, default=-1.0, help='Base wavelengt
 parsearg.add_argument('--resdir', type=str, help='Output directory')
 parsearg.add_argument('--resprefix', type=str, help='File prefix')
 parsearg.add_argument('--ressuffix', type=str, help='File suffix')
+parsearg.add_argument('--norm', action='store_true', help='Normalise each fake spectrum')
 
 resargs = vars(parsearg.parse_args())
 
@@ -29,6 +30,7 @@ basewl = resargs['lambda']
 resdir = resargs['resdir']
 respref = resargs['resprefix']
 ressuff = resargs['ressuffix']
+norm = resargs['norm']
 
 errors = 0
 
@@ -85,11 +87,10 @@ for n, dat in enumerate(fakespecs):
     fbase = (respref + "%.3d" + ressuff) % (n+1,)
     fname = resdir + '/' + fbase
     tout.write("%-*s %#.18g\n" % (fsize, fbase, timings[n]))
+    if norm:
+        dat = dat / dat[0]
     specn = np.array([wavelengths,dat])
     specn = specn.transpose()
     np.savetxt(fname, specn, "%#.18g")
 
 tout.close()
-
-
-

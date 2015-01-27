@@ -1,0 +1,45 @@
+#! /usr/bin/env python
+
+# Program to convert normalise fake spectra
+
+import argparse
+import os.path
+import sys
+import numpy as np
+
+parsearg = argparse.ArgumentParser(description='Normalise fake spectra')
+parsearg.add_argument('spectra', type=str, nargs='+', help='Fake spectra files')
+
+resargs = vars(parsearg.parse_args())
+specfiles = resargs['spectra']
+
+errors = 0
+
+for sf in specfiles:
+    
+    try:
+        spec = np.loadtxt(sf, unpack=True)
+    except IOError as e:
+        print "Cannot load", sf, "error was", e.args[1]
+        errors += 1
+        continue
+    
+    div = spec[1][0]
+    if abs(div) < 1e-10:
+        print "Avoiding division by zero file", sf
+        errors += 1
+        continue
+    
+    spec[1] /= div
+    
+    spec = spec.transpose()
+    try:
+        np.savetxt(sf, spec, "%#.18g")
+    except IOError as e:
+        print "Cannot save", sf, "error was", e.args[1]
+        errors += 1
+
+if errors:
+    print errors, "errors"
+    sys.exit(10)
+   

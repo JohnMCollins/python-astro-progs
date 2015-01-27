@@ -26,6 +26,7 @@ parsearg.add_argument('--linecolour', help='Set line colour for range', type=str
 parsearg.add_argument('--xcolumn', help='Column in data for X values', type=int, default=0)
 parsearg.add_argument('--ycolumn', help='Column in data for Y values', type=int, default=1)
 parsearg.add_argument('--xrange', help='Range of X values', type=str)
+parsearg.add_argument('--yrange', help='Range of Y values', type=str)
 parsearg.add_argument('--legnum', type=int, default=5, help='Number of plots in legend')
 parsearg.add_argument('--obstimes', type=str, help='File for observation times')
 
@@ -39,6 +40,7 @@ forkoff = resargs['fork']
 xcolumn = resargs['xcolumn']
 ycolumn = resargs['ycolumn']
 xrangelims = rangearg.parserange(resargs['xrange'])
+yrangelims = rangearg.parserange(resargs['yrange'])
 legnum = resargs['legnum']
 obstimes = dict()
 if legnum > 0:
@@ -99,6 +101,8 @@ yupper += resargs['ypad']
 
 if xrangelims is not None:
     xlower, xupper = xrangelims
+if yrangelims is not None:
+    ylower, yupper = yrangelims
 plt.xlim(xlower, xupper)
 plt.ylim(ylower, yupper)
 lline = uline = 0.0
