@@ -6,14 +6,23 @@ import argparse
 import os.path
 import sys
 import numpy as np
+import glob
 
 parsearg = argparse.ArgumentParser(description='Normalise fake spectra')
 parsearg.add_argument('spectra', type=str, nargs='+', help='Fake spectra files')
+parsearg.add_argument('--glob', action='store_true', help='Apply glob to arguments')
 
 resargs = vars(parsearg.parse_args())
 specfiles = resargs['spectra']
 
 errors = 0
+
+if resargs['glob']:
+    sfs = specfiles
+    specfiles = []
+    for sf in sfs:
+        gs = glob.glob(sf)
+        specfiles.extend(gs)
 
 for sf in specfiles:
     
