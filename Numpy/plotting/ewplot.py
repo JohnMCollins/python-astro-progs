@@ -14,16 +14,24 @@ import exclusions
 import jdate
 import rangearg
 
+# According to type of display select column, xlabel  for hist, ylabel for plot and whether log
+
+optdict = dict(ew = (1, 'Equivalent width (Angstroms)', 'Equivalent width (Angstroms)', False),
+               ps = (2, 'Peak size (rel to EW)', 'Peak size (rel to EW)', False),
+               pr = (3, 'Peak ratio', 'Peak ratio', True))
+
 parsearg = argparse.ArgumentParser(description='Plot equivalent width results')
 parsearg.add_argument('integ', type=str, nargs=1, help='Input integration file (time/intensity)')
+parsearg.add_argument('--type', help='ew/ps/pr to select display', type=str, default="ew")
+parsearg.add_argument('--logy', action='store_true', help='Take log of Y values')
 parsearg.add_argument('--sepdays', type=int, default=10000, help='Separate plots if this number of days apart')
 parsearg.add_argument('--bins', type=int, default=20, help='Histogram bins')
 parsearg.add_argument('--clip', type=float, default=0.0, help='Number of S.D.s to clip from histogram')
 parsearg.add_argument('--gauss', action='store_true', help='Normalise and overlay gaussian on histogram')
 parsearg.add_argument('--sdplot', action='store_true', help='Put separate days in separate figure')
 parsearg.add_argument('--yhist', type=str, default='Occurrences', help='Label for histogram Y axis')
-parsearg.add_argument('--xhist', type=str, default='Equivalent width (Angstroms)', help='Label for histogram X axis')
-parsearg.add_argument('--yplot', type=str, default='Equivalent width (Angstroms)', help='Label for plot Y axis')
+parsearg.add_argument('--xhist', type=str, help='Label for histogram X axis')
+parsearg.add_argument('--yplot', type=str, help='Label for plot Y axis')
 parsearg.add_argument('--xplot', type=str, default='Days offset from start', help='Label for plot X axis')
 parsearg.add_argument('--yaxr', action='store_true', help='Put Y axis label on right')
 parsearg.add_argument('--yrange', type=str, help='Range for Y axis')
@@ -37,7 +45,6 @@ parsearg.add_argument('--outprefix', type=str, help='Output file prefix')
 parsearg.add_argument('--plotcolours', type=str, default='black,red,green,blue,yellow,magenta,cyan', help='Colours for successive plots')
 parsearg.add_argument('--excludes', type=str, help='File with excluded obs times and reasons')
 parsearg.add_argument('--exclcolours', type=str, default='red,green,blue,yellow,magenta,cyan,black', help='Colours for successive exclude reasons')
-parsearg.add_argument('--legnum', type=int, default=5, help='Number for legend')
 parsearg.add_argument('--legend', type=str, help='Specify explicit legend')
 parsearg.add_argument('--fork', action='store_true', help='Fork off daemon process to show plot and exit')
 
@@ -58,6 +65,30 @@ histyrange = rangearg.parserange(res['histyrange'])
 histxrange = rangearg.parserange(res['histxrange'])
 forkoff = res['fork']
 explicit_legend = res['legend']
+typeplot = res['type']
+
+if typeplot not in optdict:
+    print "Unknown type", typeplot, "specified"
+    sys.exit(2)
+
+ycolumn, histxlab, plotylab, logplot = optdict[typeplot]
+if res['xhist'] is not None:
+    histxlab = res['xhist']
+    if histxlab == "none":
+        histxlab = ""
+if res['yplot'] is not None:
+    plotylab = res['yplot']
+    if plotylab == "none":
+        ylab = ""
+
+# Ones not dependent on column
+
+histylab = res['yhist']
+if histylab == "none":
+    histylab = ""
+xlab = res['xplot']
+if xlab == "none":
+    xlab = ""
 
 dims = (res['width'], res['height'])
 
@@ -83,7 +114,11 @@ if excludes is not None:
 
 inp = np.loadtxt(rf, unpack=True)
 dates = inp[0]
-vals = inp[1]
+vals = inp[ycolumn]
+if res['logy']:
+    logplot = not logplot
+if logplot:
+    vals = np.log(vals)
 
 plt.figure(figsize=dims)
 
@@ -116,7 +151,7 @@ if clip != 0.0:
         if histxrange is not None:
             plt.xlim(*histxrange)
         plt.hist(hvals, bins=bins, normed = True)
-        plt.plot(lx, garr)
+        plt.plot(lx, garr, color='red')
     else:
         if histyrange is not None:
             plt.ylim(*histyrange)
@@ -128,19 +163,23 @@ else:
         plt.ylim(*histyrange)
     if histxrange is not None:
         plt.xlim(*histxrange)
-    plt.hist(vals,bins=bins)
+    if gauss:
+        mv = np.mean(vals)
+        std = np.std(vals)
+        minv = np.min(vals)
+        maxv = np.max(vals)
+        lx = np.linspace(minv, maxv, 250)
+        garr = ss.norm.pdf(lx, mv, std)
+        plt.hist(vals, bins=bins, normed = True)
+        plt.plot(lx, garr, color='red')
+    else:
+        plt.hist(vals,bins=bins)
 if ytr:
     plt.gca().yaxis.tick_right()
     plt.gca().yaxis.set_label_position("right")
 if xtt:
     plt.gca().xaxis.tick_top()
     plt.gca().xaxis.set_label_position("top")
-histxlab = res['xhist']
-histylab = res['yhist']
-if histxlab == "none":
-	histxlab = ""
-if histylab == "none":
-	histylab = ""
 if len(histylab) > 0:
     plt.ylabel(histylab)
 else:
@@ -180,14 +219,7 @@ if len(rxvalues) != 0:
 plotcols = string.split(res['plotcolours'], ',')
 colours = plotcols * ((len(rxarray) + len(plotcols) - 1) / len(plotcols))
 
-xlab = res['xplot']
-ylab = res['yplot']
-if xlab == "none":
-	xlab = ""
-if ylab == "none":
-	ylab = ""
 fnum = 1
-legend_number = res['legnum']
 
 if sdp:
     for xarr, yarr, col in zip(rxarray,ryarray,colours):
@@ -199,13 +231,13 @@ if sdp:
             plt.xlim(*xrange)
         if yrange is not None:
             plt.ylim(*yrange)
-        if len(ylab) == 0:
+        if len(plotylab) == 0:
             plt.yticks([])
         else:
             if ytr:
                 plt.gca().yaxis.tick_right()
                 plt.gca().yaxis.set_label_position("right")
-            plt.ylabel(ylab)
+            plt.ylabel(plotylab)
         if len(xlab) == 0:
             plt.xticks([])
         else:
@@ -227,25 +259,22 @@ if sdp:
                     had[reas] = 1
                     plt.axvline(xpl, color=creas, label=reas, ls="--")
         if explicit_legend is not None:
-            plt.legend([explicit_legend], handlelength=0)
-        elif legend_number > 0:
-            plt.legend()
+            plt.legend([explicit_legend] + " (%d)" % fnum, handlelength=0)
         if outf is not None:
             fname = outf + ("_f%.3d.png" % fnum)
             f.savefig(fname)
-            fnum += 1
+        fnum += 1
 else:
-    legends = []
     lines = []
     if yrange is not None:
         plt.ylim(*yrange)
-    if len(ylab) == 0:
+    if len(plotylab) == 0:
         plt.yticks([])
     else:
         if ytr:
             plt.gca().yaxis.tick_right()
             plt.gca().yaxis.set_label_position("right")
-        plt.ylabel(ylab)
+        plt.ylabel(plotylab)
     if len(xlab) == 0:
         plt.xticks([])
     else:
@@ -259,10 +288,6 @@ else:
         xa = np.array(xarr) - offs
         ya = np.array(yarr)
         plt.plot(xa,ya, col)
-        if len(legends) < legend_number:
-            legends.append(jdate.display(xarr[0]))
-        elif  len(legends) == legend_number:
-            legends.append('etc...')
         if excludes is not None:
             sube = elist.inrange(np.min(xarr), np.max(xarr))
             for pl in sube.places():
@@ -273,8 +298,7 @@ else:
 	
     if explicit_legend is not None:
         plt.legend([explicit_legend], handlelength=0)
-    elif legend_number > 0:
-	    plt.legend(legends)
+
     for xpl, creas in lines:
         plt.axvline(xpl, color=creas, ls="--")
     if outf is not None:

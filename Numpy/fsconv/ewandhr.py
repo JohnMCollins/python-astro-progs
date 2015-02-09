@@ -17,8 +17,7 @@ parsearg.add_argument('--ycolumn', help='Column in data for Y values', type=int,
 parsearg.add_argument('--central', type=float, default=6563.0, help='Central wavelength value def=6563')
 parsearg.add_argument('--ithresh', type=float, default=10.0, help='Percent threshold for EW selection')
 parsearg.add_argument('--continuum', type=float, default=1.0, help='Continuum value')
-parsearg.add_argument('--outew', type=str, help='Output equivalent width file')
-parsearg.add_argument('--outpr', type=str, help='Output peak ratio file')
+parsearg.add_argument('--outfile', type=str, help='Output file')
 
 resargs = vars(parsearg.parse_args())
 
@@ -31,15 +30,11 @@ ithreshold = resargs['ithresh']
 con = resargs['continuum']
 threshv = con + ithreshold / 100.0
 
-outew = resargs['outew']
-outpr = resargs['outpr']
+outew = resargs['outfile']
 
 if outew is None:
     print "No ew file out given"
     sys.exit(5)
-if outpr is None:
-    print "No pr file out given"
-    sys.exit(6)
 
 obstimes = dict()
 obstimefile = resargs['obstimes']    
@@ -89,26 +84,25 @@ for sf in spec:
     ewpll = ewpl[-1]
     ewlow = wavelengths[ewplf]
     ewhi = wavelengths[ewpll]
-    ew = np.trapz(amps[ewplf:ewpll]-1.0, wavelengths[ewplf:ewpll]) / (ewhi - ewlow)
+    ewsz = np.trapz(amps[ewplf:ewpll]-1.0, wavelengths[ewplf:ewpll])
+    ew =  ewsz / (ewhi - ewlow)
     if maxinten > -1e6:
         sel = amps >= maxinten
         mipl = np.where(sel)[0]
         miplf = mipl[0]
         mipll = mipl[-1]
-        lhorn = np.trapz(amps[miplf:maxintenplace]-maxinten, wavelengths[miplf:maxintenplace]) / (wavelengths[maxintenplace]-wavelengths[miplf])
-        rhorn = np.trapz(amps[maxintenplace:mipll]-maxinten, wavelengths[maxintenplace:mipll]) / (wavelengths[mipll]-wavelengths[maxintenplace])
+        lhornsz = np.trapz(amps[miplf:maxintenplace]-maxinten, wavelengths[miplf:maxintenplace])
+        rhornsz = np.trapz(amps[maxintenplace:mipll]-maxinten, wavelengths[maxintenplace:mipll])
+        lhorn = lhornsz / (wavelengths[maxintenplace]-wavelengths[miplf])
+        rhorn =  rhornsz / (wavelengths[mipll]-wavelengths[maxintenplace])
         hr = rhorn / lhorn
+        hs = (lhornsz + rhornsz) / ewsz
     else:
         hr = 1.0
+        hs = 0.0
     
-    results.append([obst, ew, hr])
+    results.append([obst, ew, hs, hr])
 
-resulta = np.array(results)
-resulta = resulta.transpose()
-ewres = np.array([resulta[0], resulta[1]])
-hrres = np.array([resulta[0], resulta[2]])
-ewres = ewres.transpose()
-hrres = hrres.transpose()
+results = np.array(results)
 
-np.savetxt(outew, ewres)
-np.savetxt(outpr, hrres)
+np.savetxt(outew, results)

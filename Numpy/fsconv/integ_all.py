@@ -90,7 +90,7 @@ for lin in fin:
     if len(wl) == 0:
         print "No data after selection"
         sys.exit(13)
-    integ = np.trapz(inten, wl)
+    integ = np.trapz(inten, wl) / (np.max(wl) - np.min(wl)) - 1
     fout.write("%#.16g %#.16g\n" % (tim, integ))
 
 fout.close()
