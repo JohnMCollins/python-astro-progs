@@ -10,29 +10,26 @@ import sys
 import numpy as np
 import re
 import scipy.signal as ss
+import scipy.integrate as si
 
 # According to type of display select column, whether log
 
-optdict = dict(ew = (1, False),
-               ps = (2, False),
-               pr = (3, True))
-
+optdict = dict(ew = (1, False), ps = (2, False), pr = (3, True))
 
 parsearg = argparse.ArgumentParser(description='Perform L-S FFT')
 parsearg.add_argument('integ', type=str, nargs=1, help='Input integration file (time/intensity)')
 parsearg.add_argument('--type', help='ew/ps/pr to select display', type=str, default="ew")
 parsearg.add_argument('--logy', action='store_true', help='Take log of Y values')
 parsearg.add_argument('--outspec', type=str, help='Output spectrum file')
-parsearg.add_argument('--maxfile', type=str, help='Output maxima file')
+parsearg.add_argument('--nonorm', action='store_true', help='Do not normalise Y axis')
 parsearg.add_argument('--start', type=float, default=50, help='Starting point for range of periods')
 parsearg.add_argument('--stop', type=float, default=100, help='End point for range of periods')
-parsearg.add_argument('--step', type=float, default=.5, help='Step in range')
+parsearg.add_argument('--step', type=float, default=.1, help='Step in range')
 
 resargs = vars(parsearg.parse_args())
 
 integ = resargs['integ'][0]
 outspec = resargs['outspec']
-maxfile = resargs['maxfile']
 strt = resargs['start']
 stop = resargs['stop']
 step = resargs['step']
@@ -88,22 +85,14 @@ if logplot:
 # Do the business
 
 spectrum = ss.lombscargle(timings, sums, tfreqs)
-periods = (2 * np.pi) / tfreqs
+
+if not resargs['nonorm']:
+    spectrum /= si.simps(spectrum, tdays) / (np.max(tdays) - np.min(tdays))
 
 # Generate result array
 
 try:
-    np.savetxt(outspec, np.transpose(np.array([periods, spectrum])))
+    np.savetxt(outspec, np.transpose(np.array([tdays, spectrum])))
 except IOError as e:
     print "Could not save output file", outspec, "error was", e.args[1]
     sys.exit(13)
-
-if maxfile is not None:
-	maxesat = ss.argrelmax(spectrum)[0]
-	if len(maxesat) != 0:
-		try:
-			np.savetxt(maxfile, np.transpose(np.array([periods[maxesat], spectrum[maxesat]])))
-		except IOError as e:
-			print "Could not save maxima file", maxfile, "error was", e.args[1]
-			sys.exit(14)
-
