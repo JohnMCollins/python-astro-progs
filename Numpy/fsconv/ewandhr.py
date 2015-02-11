@@ -27,11 +27,11 @@ spec = resargs['spec']
 
 if resargs['glob']:
     sfs = spec
-    specfiles = []
+    spec = []
     for sf in sfs:
         gs = glob.glob(sf)
         gs.sort()
-        specfiles.extend(gs)
+        spec.extend(gs)
 
 xcolumn = resargs['xcolumn']
 ycolumn = resargs['ycolumn']
@@ -107,7 +107,10 @@ for sf in spec:
         lhorn = lhornsz / (wavelengths[maxintenplace]-wavelengths[miplf])
         rhorn =  rhornsz / (wavelengths[mipll]-wavelengths[maxintenplace])
         hr = rhorn / lhorn
-        hs = (lhornsz + rhornsz) / ewsz
+        if abs(ewsz) < 1e-6:
+            hs = 0.0
+        else:
+            hs = (lhornsz + rhornsz) / ewsz
     else:
         hr = 1.0
         hs = 0.0
