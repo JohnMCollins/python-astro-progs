@@ -11,6 +11,7 @@ import fakeobs
 
 parsearg = argparse.ArgumentParser(description='Compute ew and subpeak profiles')
 parsearg.add_argument('spec', type=str, help='Spectrum files', nargs='+')
+parsearg.add_argument('--glob', action='store_true', help='Apply glob to arguments')
 parsearg.add_argument('--obstimes', type=str, help='File for observation times')
 parsearg.add_argument('--xcolumn', help='Column in data for X values', type=int, default=0)
 parsearg.add_argument('--ycolumn', help='Column in data for Y values', type=int, default=1)
@@ -22,6 +23,15 @@ parsearg.add_argument('--outfile', type=str, help='Output file')
 resargs = vars(parsearg.parse_args())
 
 spec = resargs['spec']
+
+if resargs['glob']:
+    sfs = spec
+    specfiles = []
+    for sf in sfs:
+        gs = glob.glob(sf)
+        gs.sort()
+        specfiles.extend(gs)
+
 xcolumn = resargs['xcolumn']
 ycolumn = resargs['ycolumn']
 

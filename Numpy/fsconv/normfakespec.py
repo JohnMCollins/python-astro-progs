@@ -22,6 +22,7 @@ if resargs['glob']:
     specfiles = []
     for sf in sfs:
         gs = glob.glob(sf)
+        gs.sort()
         specfiles.extend(gs)
 
 for sf in specfiles:
