@@ -6,6 +6,7 @@ import numpy as np
 import string
 import sys
 import os
+import glob
 import rangearg
 import fakeobs
 
