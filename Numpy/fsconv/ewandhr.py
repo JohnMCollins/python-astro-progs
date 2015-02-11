@@ -81,40 +81,77 @@ for sf in spec:
 
     maxima = ss.argrelmax(amps)[0]
     minima = ss.argrelmin(amps)[0]
-  
-    maxinten = -1e6
-    maxintenplace = -1
 
-    for mn in minima:
-        maxintenplace = mn
-        maxinten = amps[mn]
+    if len(maxima) == 0 or len(maxima) > 2:
 
-    sel = amps > threshv
-    ewpl = np.where(sel)[0]
-    ewplf = ewpl[0]
-    ewpll = ewpl[-1]
-    ewlow = wavelengths[ewplf]
-    ewhi = wavelengths[ewpll]
-    ewsz = np.trapz(amps[ewplf:ewpll]-1.0, wavelengths[ewplf:ewpll])
-    ew =  ewsz / (ewhi - ewlow)
-    if maxinten > -1e6:
-        sel = amps >= maxinten
-        mipl = np.where(sel)[0]
-        miplf = mipl[0]
-        mipll = mipl[-1]
-        lhornsz = np.trapz(amps[miplf:maxintenplace]-maxinten, wavelengths[miplf:maxintenplace])
-        rhornsz = np.trapz(amps[maxintenplace:mipll]-maxinten, wavelengths[maxintenplace:mipll])
-        lhorn = lhornsz / (wavelengths[maxintenplace]-wavelengths[miplf])
-        rhorn =  rhornsz / (wavelengths[mipll]-wavelengths[maxintenplace])
-        hr = rhorn / lhorn
-        if abs(ewsz) < 1e-6:
-            hs = 0.0
-        else:
-            hs = (lhornsz + rhornsz) / ewsz
-    else:
+        # No peak or lots of peaks, we're not clever enough right now
+
+        ew = hs = 0.0
         hr = 1.0
+
+    elif len(maxima) == 1:
+
+        # Just one maximum no horns
+
         hs = 0.0
-    
+        hr = 1.0
+
+        sel = amps > threshv
+        ewpl = np.where(sel)[0]
+        if len(ewpl) < 2:
+            ew = 0.0
+        else:
+            ewplf = ewpl[0]
+            ewpll = ewpl[-1]
+            ew =  np.trapz(amps[ewplf:ewpll+1]-1.0, wavelengths[ewplf:ewpll+1]) / (wavelengths[ewpll] - wavelengths[ewplf])
+
+    else:
+
+        # Two maxmima with min in between.
+
+        minplace = minima[0]
+        mininten = amps[minplace]
+
+        # Do equivalent width as before
+
+        sel = amps > threshv
+        ewpl = np.where(sel)[0]
+
+        if len(ewpl) < 2:
+            ew = hs = 0.0
+            hr = 1.0
+        else:
+            ewplf = ewpl[0]
+            ewpll = ewpl[-1]
+            ewlow = wavelengths[ewplf]
+            ewhi = wavelengths[ewpll]
+            ewsz = np.trapz(amps[ewplf:ewpll+1]-1.0, wavelengths[ewplf:ewpll+1])
+            ew =  ewsz / (ewhi - ewlow)
+
+            # Extract the left and right horns
+
+            sel = amps >= mininten
+            mipl = np.where(sel)[0]
+
+            if len(mipl) < 2 or abs(ewsz) < 1e-6:
+
+                # Too minimal forget it
+
+                hr = 1.0
+                hs = 0.0
+
+            else:
+                miplf = mipl[0]
+                mipll = mipl[-1]
+
+                lhornsz = np.trapz(amps[miplf:minplace+1] - mininten, wavelengths[miplf:minplace+1])
+                rhornsz = np.trapz(amps[minplace:mipll+1]- mininten, wavelengths[minplace:mipll+1])
+                lhorn = lhornsz / (wavelengths[minplace] - wavelengths[miplf])
+                rhorn =  rhornsz / (wavelengths[mipll] - wavelengths[minplace])
+
+                hr = rhorn / lhorn
+                hs = (lhornsz + rhornsz) / ewsz
+
     results.append([obst, ew, hs, hr])
 
 results = np.array(results)
