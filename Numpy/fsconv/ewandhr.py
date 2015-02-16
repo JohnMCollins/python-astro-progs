@@ -96,15 +96,15 @@ for sf in spec:
     # only the real ones
     maxmin = np.real(maxmin[np.imag(maxmin) == 0.0])
     
-    # only the ones within the given range of wavelengths
+    # only the ones inside the range
     
-    maxmin = maxmin[(maxmin > np.min(scaledwl)) & (maxmin < np.max(scaledwl))]
+    maxmin = maxmin[(maxmin >= np.min(scaledwl)) & (maxmin <= np.max(scalewl))]
     maxmin = np.sort(maxmin)
     
-    maxima_values = maxmin[np.polyval(ddcoeffs, maxmin) > 0]
-    minima_values = maxmin[np.polyval(ddcoeffs, maxmin) < 0]
+    maxima_wls = maxmin[np.polyval(ddcoeffs, maxmin) > 0]
+    minima_wls = maxmin[np.polyval(ddcoeffs, maxmin) < 0]
     
-    print maxima_values, minima_values
+    print maxima_wls, minima_wls
     continue
 
     maxima = ss.argrelmax(amps)[0]
