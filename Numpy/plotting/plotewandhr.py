@@ -16,7 +16,7 @@ parsearg.add_argument('specs', type=str, nargs='+', help='Spectrum files')
 parsearg.add_argument('--xrange', type=str, help='Range for X axis')
 parsearg.add_argument('--central', type=float, default=6563.0, help='Central wavelength value def=6563')
 parsearg.add_argument('--degfit', type=int, default=10, help='Degree of fitting polynomial')
-parsearg.add_argument('--ithresh', type=float, default=10.0, help='Percent threshold for EW selection')
+parsearg.add_argument('--ithresh', type=float, default=2.0, help='Percent threshold for EW selection')
 parsearg.add_argument('--sthresh', type=float, default=50.0, help='Percent threshold for considering maxima and minima')
 parsearg.add_argument('--ylab', type=str, help='Label for plot Y axis', default='Intensity')
 parsearg.add_argument('--xlab', type=str, default='Wavelength (offset from central)', help='Label for plot X axis')
@@ -31,7 +31,7 @@ degfit = res['degfit']
 dims = (res['width'], res['height'])
 xlab = res['xlab']
 ylab = res['ylab']
-ithresh = res['ithresh']
+ithresh = 1.0 + res['ithresh'] / 100.0 
 sthresh = res['sthresh']
 
 for sf in specfiles:
@@ -64,13 +64,84 @@ for sf in specfiles:
     sigmins = specmin[(amps[specmin] - minamp) >= diffamp]
     sigmaxes = specmax[(amps[specmax] - minamp) >= diffamp]
     
-    if len(sigmins) == 0:
-        
+    bthresh = np.argwhere(amps < ithresh).flatten()
     
-    for mx in sigmaxes:
-        plt.axvline(scaledwl[mx], color='brown')
-    for mn in sigmins:
-        plt.axvline(scaledwl[mn], color='purple')
+    singlemaxind = lmaxind = rmaxind = minind = -1   
+        
+    if len(sigmins) == 0:
+        if len(sigmaxes) == 0:
+            print "Could not figure shape in", sf, "No maxes or mmins"
+            continue
+        if len(sigmaxes) > 2:
+            print "Could not figure shape in", sf, "No mins", len(sigmaxes), "maxes"
+            continue
+        if len(sigmaxes) == 1:
+            lmaxind = rmaxind = singlemaxind = sigmaxes[0]
+        else:
+            # Case where we have 2 maxima but we didn't find the minimum
+            # First try without limiting minimum
+            
+            lmaxind, rmaxind = sigmaxes
+            restrwl = scaledwl[lmaxind:rmaxind+1]
+            restramp = amps[lmaxind:rmaxind+1]
+            limmins = ss.argrelmin(restramp)[0]
+            if len(limmins) == 1:
+                # That did it
+                minind = limmins[0] + lmaxind
+                print "First pass did it", minind
+            else:
+                # Fit a polynomial to section between 2 maxima and get minimum
+                # from that
+                coeffs = np.polyfit(restrwl, restramp, degfit)
+                pvals = np.polyval(coeffs, restrwl)
+                pminima = ss.argrelmin(pvals)[0]
+                if len(pminima) == 0:
+                    # Try roots later if we get this
+                    print "Still could not find minimum between two maxima in", sf
+                    continue
+                minmins = np.argsort(np.polyval(coeffs, restrwl[pminima]))
+                minind = pminima[minmins[0]] + lmaxind
+                print "Second pass did it", minind
+    
+    elif len(sigmins) == 1:
+        
+        minind = sigmins[0]
+        
+        if len(sigmaxes) != 2:
+            print "Could not figure shape in", sf, "nmaxes =", len(sigmaxes)
+            for mx in sigmaxes: plt.axvline(scaledwl[mx], color='brown')
+            plt.axvline(scaledwl[minind], color='green')
+            continue
+        
+        lmaxind, rmaxind = sigmaxes
+                
+        if not (lmaxind < minind < rmaxind):
+            print "Could not understand shape in", sf, "with lmaxind =", lmaxind, "rmaxind =", rmaxind, "minind =", minind
+            for mx in sigmaxes: plt.axvline(scaledwl[mx], color='brown')
+            plt.axvline(scaledwl[minind], color='green')
+            continue
+        
+    leftinds = bthresh[bthresh < lmaxind]
+    rightinds = bthresh[bthresh > rmaxind]
+        
+    try:           
+        leftew = leftinds[-1]+1
+    except IndexError:
+        leftew = 0
+    try:
+        rightew = rightinds[0]-1
+    except IndexError:
+        rightew = len(amps)-1
+    
+    if minind >= 0:
+        plt.axvline(scaledwl[minind], color='green', label='central')
+    if singlemaxind >= 0:
+        plt.axvline(scaledwl[singlemaxind], color='red', label='Maximum')
+    else:
+        plt.axvline(scaledwl[lmaxind], color='red', label='blue horn')
+        plt.axvline(scaledwl[rmaxind], color='red', label='red horn')
+    plt.axvline(scaledwl[leftew], color='purple', label='ew')
+    plt.axvline(scaledwl[rightew], color='purple', label='ew')
     plt.legend()
 
 plt.show()
