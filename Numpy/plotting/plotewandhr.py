@@ -10,6 +10,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import scipy.signal as ss
 import rangearg
+import findprofile
 
 parsearg = argparse.ArgumentParser(description='Find maxima etc of plot to get equivalent width')
 parsearg.add_argument('specs', type=str, nargs='+', help='Spectrum files')
@@ -31,8 +32,8 @@ degfit = res['degfit']
 dims = (res['width'], res['height'])
 xlab = res['xlab']
 ylab = res['ylab']
-ithresh = 1.0 + res['ithresh'] / 100.0 
-sthresh = res['sthresh']
+ithresh = res['ithresh'] / 100.0 
+sthresh = res['sthresh'] / 100.0
 
 for sf in specfiles:
     try:
@@ -51,98 +52,20 @@ for sf in specfiles:
         plt.xlim(*xrange)
     plt.xlabel(xlab)
     plt.ylabel(ylab)
+    ax = plt.gca()
+    ax.get_xaxis().get_major_formatter().set_useOffset(False)
+    plt.plot(wavelengths, amps, label='spectrum', color='blue')
     
-    scaledwl = wavelengths - central
-    plt.plot(scaledwl, amps, label='spectrum', color='blue')
-      
-    minamp = np.min(amps)
-    maxamp = np.max(amps)
-    diffamp = (maxamp-minamp)*sthresh / 100.0
-         
-    specmax = ss.argrelmax(amps)[0]
-    specmin = ss.argrelmin(amps)[0]  
-    sigmins = specmin[(amps[specmin] - minamp) >= diffamp]
-    sigmaxes = specmax[(amps[specmax] - minamp) >= diffamp]
-    
-    bthresh = np.argwhere(amps < ithresh).flatten()
-    
-    singlemaxind = lmaxind = rmaxind = minind = -1   
-        
-    if len(sigmins) == 0:
-        if len(sigmaxes) == 0:
-            print "Could not figure shape in", sf, "No maxes or mmins"
-            continue
-        if len(sigmaxes) > 2:
-            print "Could not figure shape in", sf, "No mins", len(sigmaxes), "maxes"
-            continue
-        if len(sigmaxes) == 1:
-            lmaxind = rmaxind = singlemaxind = sigmaxes[0]
-        else:
-            # Case where we have 2 maxima but we didn't find the minimum
-            # First try without limiting minimum
-            
-            lmaxind, rmaxind = sigmaxes
-            restrwl = scaledwl[lmaxind:rmaxind+1]
-            restramp = amps[lmaxind:rmaxind+1]
-            limmins = ss.argrelmin(restramp)[0]
-            if len(limmins) == 1:
-                # That did it
-                minind = limmins[0] + lmaxind
-                print "First pass did it", minind
-            else:
-                # Fit a polynomial to section between 2 maxima and get minimum
-                # from that
-                coeffs = np.polyfit(restrwl, restramp, degfit)
-                pvals = np.polyval(coeffs, restrwl)
-                pminima = ss.argrelmin(pvals)[0]
-                if len(pminima) == 0:
-                    # Try roots later if we get this
-                    print "Still could not find minimum between two maxima in", sf
-                    continue
-                minmins = np.argsort(np.polyval(coeffs, restrwl[pminima]))
-                minind = pminima[minmins[0]] + lmaxind
-                print "Second pass did it", minind
-    
-    elif len(sigmins) == 1:
-        
-        minind = sigmins[0]
-        
-        if len(sigmaxes) != 2:
-            print "Could not figure shape in", sf, "nmaxes =", len(sigmaxes)
-            for mx in sigmaxes: plt.axvline(scaledwl[mx], color='brown')
-            plt.axvline(scaledwl[minind], color='green')
-            continue
-        
-        lmaxind, rmaxind = sigmaxes
-                
-        if not (lmaxind < minind < rmaxind):
-            print "Could not understand shape in", sf, "with lmaxind =", lmaxind, "rmaxind =", rmaxind, "minind =", minind
-            for mx in sigmaxes: plt.axvline(scaledwl[mx], color='brown')
-            plt.axvline(scaledwl[minind], color='green')
-            continue
-        
-    leftinds = bthresh[bthresh < lmaxind]
-    rightinds = bthresh[bthresh > rmaxind]
-        
-    try:           
-        leftew = leftinds[-1]+1
-    except IndexError:
-        leftew = 0
-    try:
-        rightew = rightinds[0]-1
-    except IndexError:
-        rightew = len(amps)-1
-    
-    if minind >= 0:
-        plt.axvline(scaledwl[minind], color='green', label='central')
-    if singlemaxind >= 0:
-        plt.axvline(scaledwl[singlemaxind], color='red', label='Maximum')
-    else:
-        plt.axvline(scaledwl[lmaxind], color='red', label='blue horn')
-        plt.axvline(scaledwl[rmaxind], color='red', label='red horn')
-    plt.axvline(scaledwl[leftew], color='purple', label='ew')
-    plt.axvline(scaledwl[rightew], color='purple', label='ew')
+    prof = findprofile.Specprofile(degfit = degfit)
+    ret = prof.calcprofile(wavelengths, amps, central = central, sigthreash = sthresh, intthresh = ithresh)
+    if prof.maxima is not None:
+        for mx in prof.maxima: plt.axvline(wavelengths[mx], color='red', label='Maximum')
+    if prof.minima is not None:
+        for mn in prof.minima: plt.axvline(wavelengths[mn], color='green', label='Minimum')
+    if prof.ewinds is not None:
+        for ew in prof.ewinds: plt.axvline(wavelengths[ew], color='purple', label='ew')
     plt.legend()
-
+    if not ret:
+        print prof.comment, "in", sf
 plt.show()
 sys.exit(0)
