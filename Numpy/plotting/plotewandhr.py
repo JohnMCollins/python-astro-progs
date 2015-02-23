@@ -35,6 +35,8 @@ ylab = res['ylab']
 ithresh = res['ithresh'] / 100.0 
 sthresh = res['sthresh'] / 100.0
 
+errors = 0
+
 for sf in specfiles:
     try:
         arr = np.loadtxt(sf, unpack=True)
@@ -57,7 +59,11 @@ for sf in specfiles:
     plt.plot(wavelengths, amps, label='spectrum', color='blue')
     
     prof = findprofile.Specprofile(degfit = degfit)
-    ret = prof.calcprofile(wavelengths, amps, central = central, sigthreash = sthresh, intthresh = ithresh)
+    try:
+        prof.calcprofile(wavelengths, amps, central = central, sigthreash = sthresh, intthresh = ithresh)
+    except findprofile.FindProfileError as e:
+        errors += 1
+        print "Error -", e.args[0], "in file", sf
     if prof.maxima is not None:
         for mx in prof.maxima: plt.axvline(wavelengths[mx], color='red', label='Maximum')
     if prof.minima is not None:
@@ -65,7 +71,7 @@ for sf in specfiles:
     if prof.ewinds is not None:
         for ew in prof.ewinds: plt.axvline(wavelengths[ew], color='purple', label='ew')
     plt.legend()
-    if not ret:
-        print prof.comment, "in", sf
 plt.show()
+if errors > 0:
+    sys.exit(1)
 sys.exit(0)

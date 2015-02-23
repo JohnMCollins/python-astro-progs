@@ -2,6 +2,7 @@
 
 import argparse
 import scipy.signal as ss
+import scipy.integrate as si
 import numpy as np
 import string
 import sys
@@ -9,6 +10,7 @@ import os
 import glob
 import rangearg
 import fakeobs
+import findprofile
 
 parsearg = argparse.ArgumentParser(description='Compute ew and subpeak profiles')
 parsearg.add_argument('spec', type=str, help='Spectrum files', nargs='+')
@@ -17,9 +19,9 @@ parsearg.add_argument('--obstimes', type=str, help='File for observation times')
 parsearg.add_argument('--xcolumn', help='Column in data for X values', type=int, default=0)
 parsearg.add_argument('--ycolumn', help='Column in data for Y values', type=int, default=1)
 parsearg.add_argument('--central', type=float, default=6563.0, help='Central wavelength value def=6563')
-parsearg.add_argument('--ithresh', type=float, default=10.0, help='Percent threshold for EW selection')
-parsearg.add_argument('--continuum', type=float, default=1.0, help='Continuum value')
 parsearg.add_argument('--degfit', type=int, default=10, help='Degree of fitting polynomial')
+parsearg.add_argument('--ithresh', type=float, default=2.0, help='Percent threshold for EW selection')
+parsearg.add_argument('--sthresh', type=float, default=50.0, help='Percent threshold for considering maxima and minima')
 parsearg.add_argument('--outfile', type=str, help='Output file')
 
 resargs = vars(parsearg.parse_args())
@@ -39,9 +41,8 @@ ycolumn = resargs['ycolumn']
 
 central = resargs['central']
 degfit = resargs['degfit']
-ithreshold = resargs['ithresh'] / 100.0
-con = resargs['continuum']
-threshv = con + ithreshold / 100.0
+ithresh = resargs['ithresh'] / 100.0 
+sthresh = resargs['sthresh'] / 100.0
 
 outew = resargs['outfile']
 
@@ -63,6 +64,8 @@ if xcolumn == ycolumn:
     sys.exit(210)
 
 results = []
+errors = 0
+nohorns = 0
 
 for sf in spec:
     try:
@@ -80,112 +83,66 @@ for sf in spec:
         sys.exit(213)
             
     obst = obstimes[sf]
+    prof = findprofile.Specprofile(degfit = degfit)
     
-    # Try to find the main maxima by fitting a polynomial to it thinking that the main peaks
-    # will be the bits we want
+    try:
+        
+        prof.calcprofile(wavelengths, amps, central = central, sigthreash = sthresh, intthresh = ithresh)
     
-    scaledwl = wavelengths - central
-    coeffs = np.polyfit(scaledwl, amps, degfit)
+    except findprofile.FindProfileError as e:
     
-    # Get maxima and minima of that
-    
-    dcoeffs = np.polyder(coeffs)
-    ddcoeffs = np.polyder(dcoeffs)
-    maxmin = np.roots(dcoeffs)
-    
-    # only the real ones
-    maxmin = np.real(maxmin[np.imag(maxmin) == 0.0])
-    
-    # only the ones inside the range
-    
-    maxmin = maxmin[(maxmin >= np.min(scaledwl)) & (maxmin <= np.max(scalewl))]
-    maxmin = np.sort(maxmin)
-    
-    maxima_wls = maxmin[np.polyval(ddcoeffs, maxmin) > 0]
-    minima_wls = maxmin[np.polyval(ddcoeffs, maxmin) < 0]
-    
-    print maxima_wls, minima_wls
-    continue
-
-    maxima = ss.argrelmax(amps)[0]
-    minima = ss.argrelmin(amps)[0]
-
-    if len(maxima) == 0 or len(maxima) > 2:
-
-        # No peak or lots of peaks, we're not clever enough right now
-
+        errors += 1
+        nohorns += 1
+        print "Error -", e.args[0], "in file", sf
         ew = hs = 0.0
         hr = 1.0
-        print "Nothing, maxima len =", len(maxima), "minima len =",len(minima)
+        results.append([obst, ew, hs, hr])
+        continue
+    
+    ewleft, ewright = prof.ewinds
+    ewsz = si.simps(amps[ewleft:ewright+1]-1.0, wavelengths[ewleft:ewright+1])
+    ew = ewsz / (wavelengths[ewright] - wavelengths[ewleft])
+    
+    if prof.twinpeaks:
+                
+        lhmax, rhmax = prof.maxima
+        minind = prof.minima[0]
+        minamp = amps[minind]
+        below_minamp = np.where(amps < minamp)[0]
+        lwhere = below_minamp[below_minamp < lhmax][-1] + 1
+        rwhere = below_minamp[below_minamp > rhmax][0] - 1
+        lhornsz = si.simps(amps[lwhere:minind+1] - 1.0, wavelengths[lwhere:minind+1])
+        rhornsz = si.simps(amps[minind:rwhere+1]- 1.0, wavelengths[minind:rwhere+1])
+        lhorn = lhornsz / (wavelengths[minind] - wavelengths[lwhere])
+        rhorn = rhornsz / (wavelengths[rwhere] - wavelengths[minind])
 
-    elif len(maxima) == 1:
-
-        # Just one maximum no horns
-
-        hs = 0.0
-        hr = 1.0
-
-        sel = amps > threshv
-        ewpl = np.where(sel)[0]
-        if len(ewpl) < 2:
-            ew = 0.0
-            print "No ewpl in", sf
-        else:
-            ewplf = ewpl[0]
-            ewpll = ewpl[-1]
-            ew =  np.trapz(amps[ewplf:ewpll+1]-1.0, wavelengths[ewplf:ewpll+1]) / (wavelengths[ewpll] - wavelengths[ewplf])
-            print "Ew 1 peak =", ew
+        hr = rhorn / lhorn
+        hs = (lhornsz + rhornsz) / ewsz
+        
     else:
-
-        # Two maxmima with min in between.
-
-        minplace = minima[0]
-        mininten = amps[minplace]
-
-        # Do equivalent width as before
-
-        sel = amps > threshv
-        ewpl = np.where(sel)[0]
-
-        if len(ewpl) < 2:
-            ew = hs = 0.0
-            hr = 1.0
-            print "No ewplaces in", sf
-        else:
-            ewplf = ewpl[0]
-            ewpll = ewpl[-1]
-            ewlow = wavelengths[ewplf]
-            ewhi = wavelengths[ewpll]
-            ewsz = np.trapz(amps[ewplf:ewpll+1]-1.0, wavelengths[ewplf:ewpll+1])
-            ew =  ewsz / (ewhi - ewlow)
-            print "ew set to", ew, "in", sf
-
-            # Extract the left and right horns
-
-            sel = amps >= mininten
-            mipl = np.where(sel)[0]
-
-            if len(mipl) < 2 or abs(ewsz) < 1e-6:
-
-                # Too minimal forget it
-
-                hr = 1.0
-                hs = 0.0
-
-            else:
-                miplf = mipl[0]
-                mipll = mipl[-1]
-
-                lhornsz = np.trapz(amps[miplf:minplace+1] - mininten, wavelengths[miplf:minplace+1])
-                rhornsz = np.trapz(amps[minplace:mipll+1]- mininten, wavelengths[minplace:mipll+1])
-                lhorn = lhornsz / (wavelengths[minplace] - wavelengths[miplf])
-                rhorn =  rhornsz / (wavelengths[mipll] - wavelengths[minplace])
-
-                hr = rhorn / lhorn
-                hs = (lhornsz + rhornsz) / ewsz
-
+        hr = 1.0
+        hs = 0.0
+        nohorns += 1
+    
     results.append([obst, ew, hs, hr])
 
 results = np.array(results)
 
 np.savetxt(outew, results)
+ecode = 0
+lr = len(results)
+if errors > 0:
+    ecode = 1
+    if errors == lr:
+        ecode += 4
+        print "Could not find EW in all cases"
+    else:
+        print "Could not find EW in %d out of %d cases" % (errors, lr)
+if nohorns > 0:
+    ecode += 2
+    if nohorns == lr:
+        ecode += 8
+        print "Could not find peaks in all cases"
+    else:
+        print "Could not find peaks in %d out of %d cases" % (nohorns, lr) 
+sys.exit(ecode)
