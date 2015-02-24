@@ -19,6 +19,7 @@ parsearg.add_argument('--central', type=float, default=6563.0, help='Central wav
 parsearg.add_argument('--degfit', type=int, default=10, help='Degree of fitting polynomial')
 parsearg.add_argument('--ithresh', type=float, default=2.0, help='Percent threshold for EW selection')
 parsearg.add_argument('--sthresh', type=float, default=50.0, help='Percent threshold for considering maxima and minima')
+parsearg.add_argument('--ignedge', type=float, default=5.0, help='Percentage of edges we ignore')
 parsearg.add_argument('--ylab', type=str, help='Label for plot Y axis', default='Intensity')
 parsearg.add_argument('--xlab', type=str, default='Wavelength (offset from central)', help='Label for plot X axis')
 parsearg.add_argument('--width', type=float, default=8, help='Display width')
@@ -34,6 +35,7 @@ xlab = res['xlab']
 ylab = res['ylab']
 ithresh = res['ithresh'] / 100.0 
 sthresh = res['sthresh'] / 100.0
+ign = res['ignedge']
 
 errors = 0
 
@@ -58,9 +60,9 @@ for sf in specfiles:
     ax.get_xaxis().get_major_formatter().set_useOffset(False)
     plt.plot(wavelengths, amps, label='spectrum', color='blue')
     
-    prof = findprofile.Specprofile(degfit = degfit)
+    prof = findprofile.Specprofile(degfit = degfit, ignoreedge=ign)
     try:
-        prof.calcprofile(wavelengths, amps, central = central, sigthreash = sthresh, intthresh = ithresh)
+        prof.calcprofile(wavelengths, amps, central = central, sigthresh = sthresh, intthresh = ithresh)
     except findprofile.FindProfileError as e:
         errors += 1
         print "Error -", e.args[0], "in file", sf

@@ -22,6 +22,7 @@ parsearg.add_argument('--central', type=float, default=6563.0, help='Central wav
 parsearg.add_argument('--degfit', type=int, default=10, help='Degree of fitting polynomial')
 parsearg.add_argument('--ithresh', type=float, default=2.0, help='Percent threshold for EW selection')
 parsearg.add_argument('--sthresh', type=float, default=50.0, help='Percent threshold for considering maxima and minima')
+parsearg.add_argument('--ignedge', type=float, default=5.0, help='Percentage of edges we ignore')
 parsearg.add_argument('--outfile', type=str, help='Output file')
 
 resargs = vars(parsearg.parse_args())
@@ -43,6 +44,7 @@ central = resargs['central']
 degfit = resargs['degfit']
 ithresh = resargs['ithresh'] / 100.0 
 sthresh = resargs['sthresh'] / 100.0
+ign = resargs['ignedge']
 
 outew = resargs['outfile']
 
@@ -83,7 +85,7 @@ for sf in spec:
         sys.exit(213)
             
     obst = obstimes[sf]
-    prof = findprofile.Specprofile(degfit = degfit)
+    prof = findprofile.Specprofile(degfit = degfit, ignoreedge = ign)
     
     try:
         
