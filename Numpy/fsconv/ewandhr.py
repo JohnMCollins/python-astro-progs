@@ -87,7 +87,7 @@ for sf in spec:
     
     try:
         
-        prof.calcprofile(wavelengths, amps, central = central, sigthreash = sthresh, intthresh = ithresh)
+        prof.calcprofile(wavelengths, amps, central = central, sigthresh = sthresh, intthresh = ithresh)
     
     except findprofile.FindProfileError as e:
     
@@ -100,9 +100,18 @@ for sf in spec:
         continue
     
     ewleft, ewright = prof.ewinds
+    if ewleft == ewright:
+        print "Error, cannot find EW in", sf
+        errors += 1
+        nohorns += 1
+        ew = hs = 0.0
+        hr = 1.0
+        results.append([obst, ew, hs, hr])
+        continue
+
     ewsz = si.simps(amps[ewleft:ewright+1]-1.0, wavelengths[ewleft:ewright+1])
     ew = ewsz / (wavelengths[ewright] - wavelengths[ewleft])
-    
+
     if prof.twinpeaks:
                 
         lhmax, rhmax = prof.maxima
