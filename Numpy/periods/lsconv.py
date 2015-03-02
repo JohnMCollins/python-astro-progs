@@ -10,7 +10,6 @@ import sys
 import numpy as np
 import re
 import scipy.signal as ss
-import scipy.integrate as si
 
 # According to type of display select column, whether log
 
@@ -24,7 +23,7 @@ parsearg.add_argument('--outspec', type=str, help='Output spectrum file')
 parsearg.add_argument('--nonorm', action='store_true', help='Do not normalise Y axis')
 parsearg.add_argument('--start', type=float, default=50, help='Starting point for range of periods')
 parsearg.add_argument('--stop', type=float, default=100, help='End point for range of periods')
-parsearg.add_argument('--step', type=float, default=.1, help='Step in range')
+parsearg.add_argument('--steps', type=int, default=1000, help='Number of trials')
 
 resargs = vars(parsearg.parse_args())
 
@@ -32,7 +31,7 @@ integ = resargs['integ'][0]
 outspec = resargs['outspec']
 strt = resargs['start']
 stop = resargs['stop']
-step = resargs['step']
+steps = resargs['steps']
 
 typeplot = resargs['type']
 
@@ -58,8 +57,12 @@ if strt >= stop:
     print "Start value > stop"
     errors += 1
 
-tdays = np.arange(strt, stop+step, step)
-tfreqs = (2 * np.pi) / tdays
+# I did get these round the right way.....
+
+start_freq = 2 * np.pi / stop
+stop_freq = 2 * np.pi / strt
+
+tfreqs = np.linspace(start_freq, stop_freq, steps)
 
 if errors > 0:
     sys.exit(10)
@@ -87,7 +90,9 @@ if logplot:
 spectrum = ss.lombscargle(timings, sums, tfreqs)
 
 if not resargs['nonorm']:
-    spectrum /= si.simps(spectrum, tdays) / (np.max(tdays) - np.min(tdays))
+    spectrum = np.sqrt(spectrum * 4.0 / float(len(timings)))
+
+tdays = 2.0 * np.pi / tfreqs
 
 # Generate result array
 
