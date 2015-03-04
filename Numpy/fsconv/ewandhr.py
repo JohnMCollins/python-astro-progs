@@ -12,7 +12,7 @@ import rangearg
 import fakeobs
 import findprofile
 
-parsearg = argparse.ArgumentParser(description='Compute ew and subpeak profiles')
+parsearg = argparse.ArgumentParser(description='Compute ew and subpeak profiles (fake specs)')
 parsearg.add_argument('spec', type=str, help='Spectrum files', nargs='+')
 parsearg.add_argument('--glob', action='store_true', help='Apply glob to arguments')
 parsearg.add_argument('--obstimes', type=str, help='File for observation times')
@@ -96,9 +96,9 @@ for sf in spec:
         errors += 1
         nohorns += 1
         print "Error -", e.args[0], "in file", sf
-        ew = hs = 0.0
+        ew = hs = lhr = 0.0
         hr = 1.0
-        results.append([obst, ew, hs, hr])
+        results.append([obst, ew, hs, hr, lhr])
         continue
     
     ewleft, ewright = prof.ewinds
@@ -106,7 +106,7 @@ for sf in spec:
         print "Error, cannot find EW in", sf
         errors += 1
         nohorns += 1
-        ew = hs = 0.0
+        ew = hs = lhr = 0.0
         hr = 1.0
         results.append([obst, ew, hs, hr])
         continue
@@ -128,14 +128,15 @@ for sf in spec:
         rhorn = rhornsz / (wavelengths[rwhere] - wavelengths[minind])
 
         hr = rhorn / lhorn
+        lhr = np.log(hr)
         hs = (lhornsz + rhornsz) / ewsz
         
     else:
         hr = 1.0
-        hs = 0.0
+        lhr = hs = 0.0
         nohorns += 1
     
-    results.append([obst, ew, hs, hr])
+    results.append([obst, ew, hs, hr, lhr])
 
 results = np.array(results)
 

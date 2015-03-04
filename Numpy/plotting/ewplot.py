@@ -14,16 +14,16 @@ import exclusions
 import jdate
 import rangearg
 
-# According to type of display select column, xlabel  for hist, ylabel for plot and whether log
+# According to type of display select column, xlabel  for hist, ylabel for plot
 
-optdict = dict(ew = (1, 'Equivalent width (Angstroms)', 'Equivalent width (Angstroms)', False),
-               ps = (2, 'Peak size (rel to EW)', 'Peak size (rel to EW)', False),
-               pr = (3, 'Peak ratio', 'Peak ratio', True))
+optdict = dict(ew = (1, 'Equivalent width (Angstroms)', 'Equivalent width (Angstroms)'),
+               ps = (2, 'Peak size (rel to EW)', 'Peak size (rel to EW)'),
+               pr = (3, 'Peak ratio', 'Peak ratio'),
+               lpr = (4, 'Log Peak Ratio', 'Log Peak Ratio'))
 
 parsearg = argparse.ArgumentParser(description='Plot equivalent width results')
 parsearg.add_argument('integ', type=str, nargs=1, help='Input integration file (time/intensity)')
 parsearg.add_argument('--type', help='ew/ps/pr to select display', type=str, default="ew")
-parsearg.add_argument('--logy', action='store_true', help='Take log of Y values')
 parsearg.add_argument('--sepdays', type=int, default=10000, help='Separate plots if this number of days apart')
 parsearg.add_argument('--bins', type=int, default=20, help='Histogram bins')
 parsearg.add_argument('--clip', type=float, default=0.0, help='Number of S.D.s to clip from histogram')
@@ -71,7 +71,7 @@ if typeplot not in optdict:
     print "Unknown type", typeplot, "specified"
     sys.exit(2)
 
-ycolumn, histxlab, plotylab, logplot = optdict[typeplot]
+ycolumn, histxlab, plotylab = optdict[typeplot]
 if res['xhist'] is not None:
     histxlab = res['xhist']
     if histxlab == "none":
@@ -115,10 +115,6 @@ if excludes is not None:
 inp = np.loadtxt(rf, unpack=True)
 dates = inp[0]
 vals = inp[ycolumn]
-if res['logy']:
-    logplot = not logplot
-if logplot:
-    vals = np.log(vals)
 
 plt.figure(figsize=dims)
 

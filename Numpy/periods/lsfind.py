@@ -13,13 +13,13 @@ import scipy.signal as ss
 import scipy.integrate as si
 import argmaxmin
 
-# According to type of display select column, whether log
+# According to type of display select column
 
-optdict = dict(ew = (1, False), ps = (2, False), pr = (3, True))
+optdict = dict(ew = 1, ps = 2, pr = 3, lpr = 4)
 
 parsearg = argparse.ArgumentParser(description='Perform L-S FFT and report peak periods')
 parsearg.add_argument('integ', type=str, nargs='+', help='Input integration file(s) (time/intensity)')
-parsearg.add_argument('--type', help='ew/ps/pr to select display', type=str, default="ew")
+parsearg.add_argument('--type', help='ew/ps/pr/lpr to select display', type=str, default="ew")
 parsearg.add_argument('--out', type=str, help='Output result file')
 parsearg.add_argument('--start', type=float, default=50, help='Starting point for range of periods')
 parsearg.add_argument('--stop', type=float, default=100, help='End point for range of periods')
@@ -39,7 +39,7 @@ cols = [0,0,0,0]
 
 for ty in string.split(typeplot, ','):
     try:
-        c,l = optdict[string.lower(ty)]
+        c = optdict[string.lower(ty)]
         cols[c] = 1
     except KeyError:
         sys.stdout = sys.stderr

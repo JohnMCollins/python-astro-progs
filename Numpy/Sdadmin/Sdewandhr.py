@@ -5,6 +5,7 @@ import os
 import os.path
 import locale
 import argparse
+import numpy as np
 import xml.etree.ElementTree as ET
 import xmlutil
 import datarange
@@ -31,6 +32,17 @@ specfile = resargs['specfile']
 ewrangename = resargs['ewrange']
 bhrangename = resargs['bluehorn']
 rhrangename = resargs['redhorn']
+outfile = resargs['outfile']
+
+if outfile is None:
+    outf = sys.stdout
+else:
+    try:
+        outf = open(outfile, 'w')
+    except IOError as e:
+        sys.stdout = sys.stderr
+        print "Could not open", outfile, "error was", e.args[1]
+        sys.exit(9)
 
 if rangefile is not None:
     rangefile = miscutils.addsuffix(rangefile, '.spcr')
@@ -120,9 +132,12 @@ except specdatactrl.SpecDataError as e:
     print "Error loading files", e.args[0]
     sys.exit(50)
 
-datelu = dict()
+if bhrange is None:
+    results = np.empty(shape=(0,2), dtype=np.float64)
+else:
+    results = np.empty(shape=(0,5),dtype=np.float64)
 skipped = 0
-    
+
  # Compile list of equivalent widths for each spectrum
  # Note the ones we are excluding separately
         
@@ -135,4 +150,14 @@ for dataset in cf.datalist:
         continue
     har, hir = meanval.mean_value(ewrange, xvalues, yvalues)
     ew = (hir - har) / har
-    datelu[dataset.modbjdate] = ew
+    if bhrange is None:
+        results = np.append(results,((dataset.modbjdate, ew),), axis=0)
+    else:
+        bhr, bir = meanval.mean_value(bhrange, xvalues, yvalues)
+        rhr, rir = meanval.mean_value(rhrange, xvalues, yvalues)
+        ps = (rir - rhr) / rhr + (bir - bhr) / bhr
+        pr = (rir * bhr) / (bir * rhr)
+        results = np.append(results, ((dataset.modbjdate, ew, ps, pr, np.log10(pr)),), axis=0)
+
+np.savetxt(outf, results)
+
