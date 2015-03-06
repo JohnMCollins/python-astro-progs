@@ -16,7 +16,7 @@ import rangearg
 
 # According to type of display select column, xlabel  for hist, ylabel for plot
 
-optdict = dict(ew = (1, 'Equivalent width (Angstroms)', 'Equivalent width (Angstroms)'),
+optdict = dict(ew = (1, 'Equivalent width ($\AA$)', 'Equivalent width ($\AA$)'),
                ps = (2, 'Peak size (rel to EW)', 'Peak size (rel to EW)'),
                pr = (3, 'Peak ratio', 'Peak ratio'),
                lpr = (4, 'Log Peak Ratio', 'Log Peak Ratio'))

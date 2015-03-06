@@ -24,6 +24,7 @@ parsearg.add_argument('--ewrange', type=str, default='halpha', help='Range to se
 parsearg.add_argument('--bluehorn', type=str, help='Range 1 for calculating sub-peaks')
 parsearg.add_argument('--redhorn', type=str, help='Range 2 for calculating sub-peaks')
 parsearg.add_argument('--outfile', type=str, help='Output file name')
+parsearg.add_argument('--excludes', type=str, help='File for output of excludes data')
 
 resargs = vars(parsearg.parse_args())
 
@@ -33,6 +34,7 @@ ewrangename = resargs['ewrange']
 bhrangename = resargs['bluehorn']
 rhrangename = resargs['redhorn']
 outfile = resargs['outfile']
+exclfile = resargs['excludes']
 
 if outfile is None:
     outf = sys.stdout
@@ -136,17 +138,18 @@ if bhrange is None:
     results = np.empty(shape=(0,2), dtype=np.float64)
 else:
     results = np.empty(shape=(0,5),dtype=np.float64)
-skipped = 0
 
  # Compile list of equivalent widths for each spectrum
  # Note the ones we are excluding separately
-        
+
+elist = exclusions.Exclusions()
+
 for dataset in cf.datalist:
     try:
         xvalues = dataset.get_xvalues(False)
         yvalues = dataset.get_yvalues(False)
     except specdatactrl.SpecDataError as err:
-        skipped += 1
+        elist.add(dataset.modbjdate, err.args[2])
         continue
     har, hir = meanval.mean_value(ewrange, xvalues, yvalues)
     ew = (hir - har) / har
@@ -160,4 +163,5 @@ for dataset in cf.datalist:
         results = np.append(results, ((dataset.modbjdate, ew, ps, pr, np.log10(pr)),), axis=0)
 
 np.savetxt(outf, results)
-
+if exclfile is not None:
+    elist.save(exclfile)
