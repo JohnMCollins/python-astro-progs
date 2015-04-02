@@ -36,7 +36,7 @@ yv = np.zeros(500)
 for f,a in zip(list(freqs),list(amps)):
     yv += a * np.sin(xv * f)
 
-samps = np.linspace(minfreq * 0.5, maxfreq * 2.0, 1000)
+samps = np.linspace(minfreq * 0.9, maxfreq * 1.1, 500000)
 pgm = ss.lombscargle(xv, yv, samps)
 amppgm = np.sqrt(4 * pgm / len(xv))
 perscalc = 2*np.pi/samps
