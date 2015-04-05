@@ -13,9 +13,15 @@ import matplotlib.pylab as plt
 
 parsearg = argparse.ArgumentParser(description='Generate periodic data')
 parsearg.add_argument('pars', type=int, nargs='+', help='List of periods and amplitudes')
+parsearg.add_argument('--xnum', type=int, default=500, help='Number of x/y values')
+parsearg.add_argument('--sampling', type=int, default=500000, help='Sampling interval')
+parsearg.add_argument('--scaling', type=float, default=1.0, help='Scaling of X values')
 
 resargs = vars(parsearg.parse_args())
 
+xnum = resargs['xnum']
+sampling = resargs['sampling']
+scaling = resargs['scaling']
 persamps = resargs['pars']
 
 if len(persamps) % 2 != 0:
@@ -31,12 +37,12 @@ freqs = 2 * np.pi / pers
 minfreq = np.min(freqs)
 maxfreq = np.max(freqs)
 
-xv = np.linspace(minfreq * 0.1, maxfreq * 100.0, 500)
-yv = np.zeros(500)
+xv = np.linspace(minfreq * 0.1, maxfreq * 2.0, xnum)
+yv = np.zeros(xnum)
 for f,a in zip(list(freqs),list(amps)):
     yv += a * np.sin(xv * f)
 
-samps = np.linspace(minfreq * 0.9, maxfreq * 1.1, 500000)
+samps = np.linspace(minfreq * 0.9, maxfreq * 1.1, sampling)
 pgm = ss.lombscargle(xv, yv, samps)
 amppgm = np.sqrt(4 * pgm / len(xv))
 perscalc = 2*np.pi/samps
