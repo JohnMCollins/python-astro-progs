@@ -117,7 +117,7 @@ if maxnum > 0:
     # If that's too many, prune to maxnum maxima taking the largest
     
     if len(maxima) > maxnum:
-        ordermax = np.argsort(-maxima)
+        ordermax = np.argsort(-amps[maxima])
         maxima = maxima[ordermax[0:maxnum]]
     
     yoffssc = resargs['myoffs'] / 100.0
