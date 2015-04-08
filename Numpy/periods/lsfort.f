@@ -101,6 +101,9 @@ C  Main program Fortran L-S, JMC Apr 2015
        integer nmax, rmax, dims, nout, jmax
        parameter (nmax=1000)
        parameter (rmax=1000000)
+       DOUBLE PRECISION TWOPID
+       PARAMETER (TWOPID=6.2831853071795865D0)
+
        real x(nmax), y(nmax), t2, t3, ofac, hifac
        real resx(rmax), resy(rmax), prob
        character*64 infile, outfile, cofac, chifac
@@ -109,7 +112,7 @@ C  Main program Fortran L-S, JMC Apr 2015
        dims = iargc()
        if (dims .lt. 4 .or. dims .gt. 5) then
             write(*,*) 'Usage: lombs infile outfile ofac hifac'
-            stop 10
+            call exit(10)
        end if
 
        call getarg(1, infile)
@@ -140,7 +143,7 @@ C  Main program Fortran L-S, JMC Apr 2015
      *             jmax, prob)
 
        do 50 i = 1, nout
-50     write(18, 51) resx(i), resy(i)
+50     write(18, 51) resx(i), TWOPID / resy(i)
 51     format(2E25.16)
        write(*,*) 'nout = ', nout,'  jmax = ', jmax, '  prob = ', prob
        stop
