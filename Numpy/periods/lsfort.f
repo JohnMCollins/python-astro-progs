@@ -98,9 +98,11 @@ C  (C) Copr. 1986-92 Numerical Recipes Software X!.
 
 C  Main program Fortran L-S, JMC Apr 2015
 
-       integer nmax, dims
+       integer nmax, rmax, dims, nout, jmax
        parameter (nmax=1000)
-       real x(nmax), y(nmax), y2(nmax), y3(nmax), pst, pend, pstep
+       parameter (rmax=1000000)
+       real x(nmax), y(nmax), t2, t3, ofac, hifac
+       real resx(rmax), resy(rmax), prob
        character*64 infile, outfile, cofac, chifac
        logical has4
 
@@ -114,20 +116,32 @@ C  Main program Fortran L-S, JMC Apr 2015
        call getarg(2, outfile)
        call getarg(3, cofac)
        call getarg(4, chifac)
-       call getarg(5, cpstep)
-       read (cpst, *) pst
-       read (cpend, *) pend
-       read (cpstep, *) pstep
+       has4 = dims .eq. 5
+       read (cofac, *) ofac
+       read (chifac, *) hifac
 
        open(17, file=infile)
        open(18, file=outfile)
        dims = 0
-       do 10 i = 1,nmax
-       read(17,*, end=15) x(i), y(i), y2(i), y3(i)
-       dims = dims + 1
-10     y(i) = x(i)**pwr
-15     do 20 i = 1,dims
-20     write(18, 30) x(i), y(i)
-30     format(2E25.16)
+       if (has4) then
+           do 10 i=1, nmax
+             read(17, *, end=30) x(i), y(i), t2, t3
+             dims = dims + 1
+10           continue
+       else
+           do 11 i=1, nmax
+             read(17, *, end=30) x(i), y(i)
+             dims = dims + 1
+11           continue
+       end if
+30     continue
+
+       call period(x, y, dims, ofac, hifac, resx, resy, rmax, nout,
+     *             jmax, prob)
+
+       do 50 i = 1, nout
+50     write(18, 51) resx(i), resy(i)
+51     format(2E25.16)
+       write(*,*) 'nout = ', nout,'  jmax = ', jmax, '  prob = ', prob
        stop
        end
