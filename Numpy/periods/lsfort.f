@@ -105,13 +105,14 @@ C  Main program Fortran L-S, JMC Apr 2015
        PARAMETER (TWOPID=6.2831853071795865D0)
 
        real x(nmax), y(nmax), t2, t3, ofac, hifac
-       real resx(rmax), resy(rmax), prob
-       character*64 infile, outfile, cofac, chifac
+       real resx(rmax), resy(rmax), prob, scale
+       character*64 infile, outfile, cofac, chifac, cscl
        logical has4
 
        dims = iargc()
-       if (dims .lt. 4 .or. dims .gt. 5) then
-            write(*,*) 'Usage: lombs infile outfile ofac hifac'
+       if (dims .lt. 5 .or. dims .gt. 6) then
+            write(*,*) 'Usage: lombs infile outfile ofac hifac scale [4c
+     * ol]'
             call exit(10)
        end if
 
@@ -119,9 +120,11 @@ C  Main program Fortran L-S, JMC Apr 2015
        call getarg(2, outfile)
        call getarg(3, cofac)
        call getarg(4, chifac)
-       has4 = dims .eq. 5
+       call getarg(5, cscl)
+       has4 = dims .eq. 6
        read (cofac, *) ofac
        read (chifac, *) hifac
+       read (cscl, *) scale
 
        open(17, file=infile)
        open(18, file=outfile)
@@ -139,11 +142,16 @@ C  Main program Fortran L-S, JMC Apr 2015
        end if
 30     continue
 
+       if (scale .ne. 1.0) then
+       do 40 i = 1, nmax
+40     x(i) = x(i) * scale
+       end if
+
        call period(x, y, dims, ofac, hifac, resx, resy, rmax, nout,
      *             jmax, prob)
 
        do 50 i = 1, nout
-50     write(18, 51) resx(i), TWOPID / resy(i)
+50     write(18, 51) TWOPID * scale / resx(i), resy(i)
 51     format(2E25.16)
        write(*,*) 'nout = ', nout,'  jmax = ', jmax, '  prob = ', prob
        stop
