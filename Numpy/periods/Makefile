@@ -21,7 +21,7 @@ RM=rm -f
 
 all: $(PROGS)
 
-ifneq (,findstring ac.uk, $(build_host))
+ifneq (,$(findstring ac.uk, $(build_host)))
 lsfort: lsfort.o
 	$(G77) $(LDFLAGS) -o lsfort lsfort.o $(G77LIBS)
 
@@ -39,9 +39,7 @@ endif
 
 clean:
 	$(RM) $(PROGS) $(OBJECTS)
-ifeq (,findstring ac.uk, $(build_host))
+ifeq (,$(findstring ac.uk, $(build_host)))
 	$(RM) $(CFILES)
 endif
-
-
 

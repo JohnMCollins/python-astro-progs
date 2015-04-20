@@ -18,6 +18,8 @@ parsearg.add_argument('--outfig', type=str, help='Output figure')
 parsearg.add_argument('--colour', type=str, default='blue', help='Line colour')
 parsearg.add_argument('--maxnum', type=int, default=0, help='Number of maxima to take')
 parsearg.add_argument('--maxcol', type=str, default='green', help='Colour of lines denoting maxima')
+parsearg.add_argument('--mtxtcol', type=str, help='Colour of text denoting maxima if not same as lines')
+parsearg.add_argument('--rottxt', type=float, default=90, help='Rotation of text')
 parsearg.add_argument('--mxoffs', type=float, default=2.0, help='Offset of maxima line labels X (percent) -ve for LHS of line')
 parsearg.add_argument('--myoffs', type=float, default=10.0, help='Offset of maxima line labels Y (percent)')
 parsearg.add_argument('--xlab', type=str, help='Label for X axis', default='Period in days')
@@ -112,6 +114,9 @@ if exlegend is not None:
 maxnum = resargs['maxnum']
 if maxnum > 0:
     mcol = resargs['maxcol']
+    mrot = resargs['rottxt']
+    mtxtcol = resargs['mtxtcol']
+    if mtxtcol is None: mtxtcol = mcol
     maxima = ss.argrelmax(amps)[0]
     
     # If that's too many, prune to maxnum maxima taking the largest
@@ -135,7 +140,7 @@ if maxnum > 0:
         else:
 			xplace = maxx+xoffs
         if xrange[0] < xplace < xrange[1]:
-			plt.text(xplace, yplace, "%.4g" % maxx, color=mcol, rotation=90)
+			plt.text(xplace, yplace, "%.4g, %.4g" % (maxx, maxy), color=mtxtcol, rotation=mrot)
 
 if outfig is not None:
     plt.savefig(outfig)

@@ -1,29 +1,26 @@
 #! /usr/bin/env python
 
-# Integrate all of a spectrum starting from obs times file
-# Obs times file is of form <spec file name> <obs time>
+# Gatspy version of LSCONV
 
 import argparse
 import os
 import os.path
 import sys
 import numpy as np
-import re
-import scipy.signal as ss
+from gatspy.periodic import LombScargle
 
 # According to type of display select column
 
 optdict = dict(ew = 1, ps = 2, pr = 3, lpr = 4)
 
-parsearg = argparse.ArgumentParser(description='Perform L-S FFT')
+parsearg = argparse.ArgumentParser(description='Perform Gatspy L-S FFT')
 parsearg.add_argument('integ', type=str, nargs=1, help='Input integration file (time/intensity)')
 parsearg.add_argument('--type', help='ew/ps/pr/lpr to select display', type=str, default="ew")
 parsearg.add_argument('--outspec', type=str, help='Output spectrum file')
-parsearg.add_argument('--nonorm', action='store_true', help='Do not normalise Y axis')
 parsearg.add_argument('--start', type=float, default=1, help='Starting point for range of periods')
 parsearg.add_argument('--stop', type=float, default=100, help='End point for range of periods')
-parsearg.add_argument('--steps', type=int, default=1000, help='Number of trials')
-parsearg.add_argument('--byperiod', action='store_true', help='Do trials by period not frequency')
+parsearg.add_argument('--step', type=float, default=.01, help='Interval for range of periods') 
+parsearg.add_argument('--error', type=float, default=.01, help='Error bar')
 
 resargs = vars(parsearg.parse_args())
 
@@ -31,7 +28,8 @@ integ = resargs['integ'][0]
 outspec = resargs['outspec']
 strt = resargs['start']
 stop = resargs['stop']
-steps = resargs['steps']
+step = resargs['step']
+err = resargs['error']
 
 typeplot = resargs['type']
 
@@ -56,18 +54,13 @@ if strt <= 0:
 if strt >= stop:
     print "Start value > stop"
     errors += 1
+if step <= 0.0:
+    print "Step value must be +ve"
+    errors += 1
+if err <= 0.0:
+    print "Error value must be +ve"
+    errors += 1
   
-if resargs['byperiod']:
-    tperiods = np.linspace(stop, strt, steps)
-    tfreqs = 2 * np.pi / tperiods
-else:
-    
-    # I did get these round the right way.....
-
-    start_freq = 2 * np.pi / stop
-    stop_freq = 2 * np.pi / strt
-    tfreqs = np.linspace(start_freq, stop_freq, steps)
-
 if errors > 0:
     sys.exit(10)
 
@@ -86,17 +79,12 @@ except ValueError:
 
 # Do the business
 
-spectrum = ss.lombscargle(timings, sums, tfreqs)
-
-if not resargs['nonorm']:
-    spectrum = np.sqrt(spectrum * 4.0 / float(len(timings)))
-
-tdays = 2.0 * np.pi / tfreqs
-
-# Generate result array
+periods = np.arange(strt, stop+step, step)
+model = LombScargle().fit(timings, sums, err)
+pgram = model.periodogram(periods)
 
 try:
-    np.savetxt(outspec, np.transpose(np.array([tdays, spectrum])))
+    np.savetxt(outspec, np.transpose(np.array([periods, pgram])))
 except IOError as e:
     print "Could not save output file", outspec, "error was", e.args[1]
     sys.exit(13)
