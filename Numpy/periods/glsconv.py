@@ -21,6 +21,8 @@ parsearg.add_argument('--start', type=float, default=1, help='Starting point for
 parsearg.add_argument('--stop', type=float, default=100, help='End point for range of periods')
 parsearg.add_argument('--step', type=float, default=.01, help='Interval for range of periods') 
 parsearg.add_argument('--error', type=float, default=.01, help='Error bar')
+parsearg.add_argument('--sqamps', action='store_true', help='Square input amplitudes')
+parsearg.add_argument('--rootres', action='store_true', help='Take root of results')
 
 resargs = vars(parsearg.parse_args())
 
@@ -70,6 +72,8 @@ try:
     arr = np.loadtxt(integ, unpack=True)
     timings = arr[0]
     sums = arr[ycolumn]
+    if resargs['sqamps']:
+        sums = np.square(sums)
 except IOError as e:
     print "Could not load integration file", integ, "error was", e.args[1]
     sys.exit(11)
@@ -82,6 +86,8 @@ except ValueError:
 periods = np.arange(strt, stop+step, step)
 model = LombScargle().fit(timings, sums, err)
 pgram = model.periodogram(periods)
+if resargs['rootres']:
+    pgram = np.sqrt(pgram)
 
 try:
     np.savetxt(outspec, np.transpose(np.array([periods, pgram])))

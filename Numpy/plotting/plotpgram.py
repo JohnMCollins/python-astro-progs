@@ -10,6 +10,7 @@ import os
 import sys
 import string
 import rangearg
+import argmaxmin
 
 parsearg = argparse.ArgumentParser(description='Display chart of periods')
 parsearg.add_argument('spec', type=str, help='Spectrum file')
@@ -19,7 +20,7 @@ parsearg.add_argument('--colour', type=str, default='blue', help='Line colour')
 parsearg.add_argument('--maxnum', type=int, default=0, help='Number of maxima to take')
 parsearg.add_argument('--maxcol', type=str, default='green', help='Colour of lines denoting maxima')
 parsearg.add_argument('--mtxtcol', type=str, help='Colour of text denoting maxima if not same as lines')
-parsearg.add_argument('--rottxt', type=float, default=90, help='Rotation of text')
+parsearg.add_argument('--rottxt', type=float, default=45, help='Rotation of text')
 parsearg.add_argument('--mxoffs', type=float, default=2.0, help='Offset of maxima line labels X (percent) -ve for LHS of line')
 parsearg.add_argument('--myoffs', type=float, default=10.0, help='Offset of maxima line labels Y (percent)')
 parsearg.add_argument('--xlab', type=str, help='Label for X axis', default='Period in days')
@@ -30,8 +31,8 @@ parsearg.add_argument('--xaxt', action='store_true', help='Put X axis label on t
 parsearg.add_argument('--xrange', type=str, help='Range for X axis')
 parsearg.add_argument('--fork', action='store_true', help='Fork off daemon process to show plot and exit')
 parsearg.add_argument('--legend', type=str, help='Specify legend')
-parsearg.add_argument('--width', help="Width of plot", type=float, default=4)
-parsearg.add_argument('--height', help="Height of plot", type=float, default=3)
+parsearg.add_argument('--width', help="Width of plot", type=float, default=8)
+parsearg.add_argument('--height', help="Height of plot", type=float, default=6)
 parsearg.add_argument('--logscale', action='store_true', help='Show X axis in log scale')
 
 resargs = vars(parsearg.parse_args())
@@ -81,32 +82,30 @@ except ValueError:
 col=resargs['colour']
 lscale = resargs['logscale']
 
+ax = plt.gca()
 if lscale:
-	ax = plt.gca()
 	ax.set_xscale('log')
 	ax.xaxis.set_major_formatter(ScalarFormatter())
-if xrange is None:
-    xrange = (periods.min(), periods.max())
-else:
+if xrange is not None:
     plt.xlim(*xrange)
-if yrange is None:
-    yrange = (amps.min(), amps.max())
-else:
+if yrange is not None:
     plt.ylim(*yrange)
 plt.plot(periods, amps, color=col)
+xrange = ax.get_xlim()
+yrange = ax.get_ylim()
 if len(ylab) == 0:
     plt.yticks([])
 else:
     if ytr:
-        plt.gca().yaxis.tick_right()
-        plt.gca().yaxis.set_label_position("right")
+        ax.yaxis.tick_right()
+        ax.yaxis.set_label_position("right")
     plt.ylabel(ylab)
 if len(xlab) == 0:
     plt.xticks([])
 else:
     if xtt:
-        plt.gca().xaxis.tick_top()
-        plt.gca().xaxis.set_label_position('top')
+        ax.xaxis.tick_top()
+        ax.xaxis.set_label_position('top')
     plt.xlabel(xlab)
 if exlegend is not None:
     plt.legend([exlegend], handlelength=0)
@@ -117,14 +116,9 @@ if maxnum > 0:
     mrot = resargs['rottxt']
     mtxtcol = resargs['mtxtcol']
     if mtxtcol is None: mtxtcol = mcol
-    maxima = ss.argrelmax(amps)[0]
-    
-    # If that's too many, prune to maxnum maxima taking the largest
-    
-    if len(maxima) > maxnum:
-        ordermax = np.argsort(-amps[maxima])
-        maxima = maxima[ordermax[0:maxnum]]
-    
+    maxima = argmaxmin.maxmaxes(periods, amps)
+    # If that's too many, prune taking the largest
+    if len(maxima) > maxnum: maxima = maxima[0:maxnum]  
     yoffssc = resargs['myoffs'] / 100.0
     yplace = np.dot(yrange, (yoffssc, 1-yoffssc))
     xoffssc = resargs['mxoffs'] / 100.0
