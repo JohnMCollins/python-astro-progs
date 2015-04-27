@@ -37,14 +37,15 @@ inputfile = resargs['input'][0]
 try:
     inarray = np.load(inputfile)
 except IOError as e:
-    if e.arg[0] == 2:
+    if e.args[0] == 2:
         try:
             inarray = np.load(inputfile + '.npy')
         except IOError as e:
             print "Cannot open", inputfile, "(with suffix)"
             sys.exit(2)
-    print "Cannot open", inputfile, "error was", e.arg[1]
-    sys.exit(1)
+    else:
+        print "Cannot open", inputfile, "error was", e.args[1]
+        sys.exit(1)
 
 sa = inarray.shape
 if len(sa) != 3:

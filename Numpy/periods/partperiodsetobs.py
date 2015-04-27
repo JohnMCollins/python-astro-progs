@@ -8,29 +8,34 @@ import numpy as np
 import periodtrial
 import threading
 
-class ProcessColumn(threading.Thread):
+class ProcessRow(threading.Thread):
     
-    # Thread to run all the SNRs over the given period fraction
+    # Thread to run all the period fractions over a given SNR
     
-    def __init__(self, colnum):
+    def __init__(self, rownum):
         threading.Thread.__init__(self)
-        self.colnum = colnum
+        self.rownum = rownum
     
     def run(self):
         
-        global X, Y, Z, tlock
-        
-        rowresult = []
-        
-        for row in xrange(0, nsnr):
-            snr = 10.0 ** (Y[self.colnum][row] / 10.0)
-            err = periodtrial.gen_recover_period(pqrange, nobs,
-                                                 X[self.colnum][row], randtimes = 0.5,
-                                                 snrnoise = snr, normpropnoise = 0.5, samples = searchn)
-            rowresult.append(err)
+        global X, Y, LY, Z, tlock
+
+        colresult = []
+
+        Logy = LY[self.rownum]
+        Xrow = X[self.rownum]
+
+        for col in xrange(0, nmults):
+            colresult.append(periodtrial.gen_recover_period(pqrange,
+                                                            nobs,
+                                                            Xrow[col],
+                                                            randtimes = 0.5,
+                                                            snrnoise = Logy[col],
+                                                            normpropnoise = 0.5,
+                                                            samples = searchn))
         
         tlock.acquire()
-        Z[self.colnum] = rowresult
+        Z[self.rownum] = colresult
         tlock.release()
 
 parsearg = argparse.ArgumentParser(description='Track recovery of periods for given number of obs')
@@ -67,12 +72,17 @@ snrrange = np.linspace(losnr, hisnr, nsnr)
 X, Y = np.meshgrid(partperrange, snrrange)
 Z = np.zeros_like(X)
 
+# De-logify the SNRs now
+
+LY = np.meshgrid(partperrange, 10.0 ** (snrrange / 10.0))
+LY = LY[1]
+
 tlock = threading.Lock()
 
 threadlist = []
 
-for p in xrange(0, nmults):
-    t = ProcessColumn(p)
+for s in xrange(0, nsnr):
+    t = ProcessRow(s)
     threadlist.append(t)
     t.start()
 
