@@ -65,7 +65,7 @@ if wc is None:
         cmapv = cmapd[resargs['contourcolour']]
     except KeyError:
         print "Unknown colour map", resargs['contourcolour']
-        sys.exit(4)   
+        sys.exit(4)
 
 fig = plt.figure(figsize=(resargs['width'],resargs['height']))
 ax = Axes3D(fig)
