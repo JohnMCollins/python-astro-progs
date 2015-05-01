@@ -24,6 +24,8 @@ parsearg.add_argument('--ithresh', type=float, default=2.0, help='Percent thresh
 parsearg.add_argument('--sthresh', type=float, default=50.0, help='Percent threshold for considering maxima and minima')
 parsearg.add_argument('--ignedge', type=float, default=5.0, help='Percentage of edges we ignore')
 parsearg.add_argument('--outfile', type=str, help='Output file')
+parsearg.add_argument('--rounding', type=int, default=5, help='Decimal rounding in peak search')
+parsearg.add_argument('--errs', type=str, help='File for output errors')
 
 resargs = vars(parsearg.parse_args())
 
@@ -89,7 +91,7 @@ for sf in spec:
     
     try:
         
-        prof.calcprofile(wavelengths, amps, central = central, sigthresh = sthresh, intthresh = ithresh)
+        prof.calcprofile(wavelengths, amps, central = central, sigthresh = sthresh, intthresh = ithresh, decs=resargs['rounding'])
     
     except findprofile.FindProfileError as e:
     
@@ -143,6 +145,11 @@ results = np.array(results)
 np.savetxt(outew, results)
 ecode = 0
 lr = len(results)
+if errors > 0 or nohorns > 0:
+    errfname = resargs['errs']
+    if errfname is not None:
+        errf = open(errfname, 'w')
+        sys.stdout = errf
 if errors > 0:
     ecode = 1
     if errors == lr:
@@ -156,5 +163,7 @@ if nohorns > 0:
         ecode += 8
         print "Could not find peaks in all cases"
     else:
-        print "Could not find peaks in %d out of %d cases" % (nohorns, lr) 
+        print "Could not find peaks in %d out of %d cases" % (nohorns, lr)
+if ecode != 0 and errfname is None:
+    print "Errors detected in directory", os.getcwd()
 sys.exit(ecode)
