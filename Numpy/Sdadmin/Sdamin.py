@@ -33,9 +33,6 @@ import ewcalc
 import ui_sdadminmain
 import ui_progoptsdlg
 
-SPC_DOC_NAME = "SPCCTRL"
-SPC_DOC_ROOT = "spcctrl"
-
 CONFIGFNAME = 'Sdadmin'
 CONFIGROOT = 'SDADMIN'
 
@@ -120,13 +117,7 @@ class SadminMain(QMainWindow, ui_sdadminmain.Ui_sdadminmain):
     def set_ctrl_file(self, filename):
         """Set control file up to given file name, possibly from argument or from dialog"""
         try:
-            doc, root = xmlutil.load_file(filename, SPC_DOC_ROOT)
-            newlist = specdatactrl.SpecDataList(filename)
-            cnode = xmlutil.find_child(root, "cfile")
-            newlist.load(cnode)
-        except xmlutil.XMLError as e:
-            QMessageBox.warning(self, "Load control file XML error", e.args[0])
-            return
+            newlist = specdatactrl.Load_specctrl(filename)
         except specdatactrl.SpecDataError as e:
             QMessageBox.warning(self, "Load control file data error", e.args[0])
             return
@@ -319,12 +310,10 @@ class SadminMain(QMainWindow, ui_sdadminmain.Ui_sdadminmain):
     def save_cf_ops(self, fname):
         """Guts of saving control file"""
         try:
-            doc, root = xmlutil.init_save(SPC_DOC_NAME, SPC_DOC_ROOT)
-            self.currentlist.save(doc, root, "cfile")
-            xmlutil.complete_save(fname, doc)
+            specdatactrl.Save_specctrl(fname, self.currentlist)
             return True
-        except xmlutil.XMLError as e:
-            QMessageBox.warning(self, "Save control file XML error", e.args[0])
+        except specdatactrl.SpecDataError as e:
+            QMessageBox.warning(self, "Save control file error", e.args[0])
             return False
 
     def on_action_Save_Control_triggered(self, checked = None):

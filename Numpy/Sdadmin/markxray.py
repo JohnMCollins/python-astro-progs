@@ -18,9 +18,6 @@ import datarange
 import jdate
 import datetime
 
-SPC_DOC_NAME = "SPCCTRL"
-SPC_DOC_ROOT = "spcctrl"
-
 CONFIGFNAME = 'Sdadmin'
 CONFIGROOT = 'SDADMIN'
 
@@ -90,14 +87,7 @@ interpfn = si.interp1d(xray_time, xray_amp, kind='cubic', bounds_error=False, fi
 # Load up starting control file
 
 try:
-    doc, root = xmlutil.load_file(inctrl, SPC_DOC_ROOT)
-    speclist = specdatactrl.SpecDataList(inctrl)
-    cnode = xmlutil.find_child(root, "cfile")
-    speclist.load(cnode)
-except xmlutil.XMLError as e:
-    sys.stdout = sys.stderr
-    print "Load control file XML error", e.args[0]
-    sys.exit(2)
+    speclist = specdatactrl.Load_specctrl(inctrl)
 except specdatactrl.SpecDataError as e:
     sys.stdout = sys.stderr
     print "Load control file data error", e.args[0]
@@ -128,12 +118,10 @@ for spec in speclist.datalist:
         spec.remarks = markmessage
 
 try:
-    doc, root = xmlutil.init_save(SPC_DOC_NAME, SPC_DOC_ROOT)
-    speclist.save(doc, root, "cfile")
-    xmlutil.complete_save(outctrl, doc)
-except xmlutil.XMLError as e:
+    specdatactrl.Save_specctrl(outctrl, speclist)
+except specdatactrl.SpecDataError as e:
     sys.stdout = sys.stderr
-    print "Save control file XML error", e.args[0]
+    print "Save control file error", e.args[0]
     sys.exit(4)
 
 print "Completed with %d spectra, %d originally marked %d newly marked" % (number_spec, existing_marked, new_marked)

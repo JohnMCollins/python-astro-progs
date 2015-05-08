@@ -9,9 +9,6 @@ import miscutils
 import xmlutil
 import specdatactrl
 
-SPC_DOC_NAME = "SPCCTRL"
-SPC_DOC_ROOT = "spcctrl"
-
 if len(sys.argv) != 3:
     sys.stdout = sys.stderr
     print "Usage: %s ctrl-file newdir" % sys.argv[0]
@@ -34,14 +31,7 @@ if not os.path.isdir(newdir):
     sys.exit(12)
 
 try:
-    doc, root = xmlutil.load_file(cfilename, SPC_DOC_ROOT)
-    cf = specdatactrl.SpecDataList(cfilename)
-    cnode = xmlutil.find_child(root, "cfile")
-    cf.load(cnode)
-except xmlutil.XMLError as e:
-    sys.stdout = sys.stderr
-    print "Load control file XML error", e.args[0]
-    sys.exit(13)
+    cf = specdatactrl.Load_specctrl(cfilename)
 except specdatactrl.SpecDataError as e:
     sys.stdout = sys.stderr
     print "Load control file data error", e.args[0]
@@ -61,12 +51,10 @@ cf.dirname = newdir
 cf.obsfname = os.path.join(newdir, os.path.basename(cf.obsfname))
 
 try:
-    doc, root = xmlutil.init_save(SPC_DOC_NAME, SPC_DOC_ROOT)
-    cf.save(doc, root, "cfile")
-    xmlutil.complete_save(cfilename, doc)
-except xmlutil.XMLError as e:
+    specdatactrl.Save_specctrl(cfilename, cf)
+except specdatactrl.SpecDataError as e:
     sys.stdout = sys.stderr
-    print "Save control file XML error", e.args[0]
+    print "Save control file error", e.args[0]
     sys.exit(16)
 
 

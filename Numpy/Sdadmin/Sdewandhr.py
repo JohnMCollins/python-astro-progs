@@ -14,9 +14,6 @@ import miscutils
 import meanval
 import exclusions
 
-SPC_DOC_NAME = "SPCCTRL"
-SPC_DOC_ROOT = "spcctrl"
-
 parsearg = argparse.ArgumentParser(description='Get table of EWs from spectral data files')
 parsearg.add_argument('--rangefile', type=str, help='Range file')
 parsearg.add_argument('--specfile', type=str, help='Spectrum data control file')
@@ -63,15 +60,7 @@ if specfile is None:
 # Open control file
 
 try:
-    doc, root = xmlutil.load_file(specfile, SPC_DOC_ROOT)
-    cf = specdatactrl.SpecDataList(specfile)
-    cnode = xmlutil.find_child(root, "cfile")
-    cf.load(cnode)
-except xmlutil.XMLError as e:
-    sys.stdout = sys.stderr
-    print "Load control file XML error on", specfile
-    print "error:", e.args[0]
-    sys.exit(11)
+    cf = specdatactrl.Load_specctrl(specfile)
 except specdatactrl.SpecDataError as e:
     sys.stdout = sys.stderr
     print "Load control file data error", specfile

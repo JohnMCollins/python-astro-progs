@@ -11,9 +11,6 @@ import xmlutil
 import specdatactrl
 import datarange
 
-SPC_DOC_NAME = "SPCCTRL"
-SPC_DOC_ROOT = "spcctrl"
-
 parsearg = argparse.ArgumentParser(description='Init spectrum data files (batch mode)')
 parsearg.add_argument('obsdir', type=str, help='Directory of obs data', nargs=1)
 parsearg.add_argument('--cdir', type=str, help='Directory for control files (if not CWD')
@@ -66,12 +63,10 @@ except specdatactrl.SpecDataError as e:
     print "Cannot load/parse files", sname, "-", e.args[0]
     sys.exit(3)    
 try:
-    doc, root = xmlutil.init_save(SPC_DOC_NAME, SPC_DOC_ROOT)
-    currentlist.save(doc, root, "cfile")
-    xmlutil.complete_save(outctrlfle, doc)
-except xmlutil.XMLError as e:
+    specdatactrl.Save_specctrl(outctrlfile, currentlist)
+except specdatactrl.SpecDataError as e:
     sys.stdout = sys.stderr
-    print "Save control file XML error", e.args[0]
+    print "Save control file error", e.args[0]
     sys.exit(103)
 
 rlist = datarange.init_default_ranges()

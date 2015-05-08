@@ -1,7 +1,6 @@
 #! /usr/bin/env python
 
-# Integrate the H alpha peaks to get figures for the total values,
-# assume continuum is normalised at 1 unless otherwise specified
+# Multiple display of EWs and plots of EWs for separate dates
 
 import argparse
 import os.path
@@ -16,107 +15,62 @@ import rangearg
 
 # According to type of display select column, xlabel  for hist, ylabel for plot
 
-optdict = dict(ew = (1, 'Equivalent width ($\AA$)', 'Equivalent width ($\AA$)'),
-               ps = (2, 'Peak size (rel to EW)', 'Peak size (rel to EW)'),
-               pr = (3, 'Peak ratio', 'Peak ratio'),
-               lpr = (4, 'Log Peak Ratio', 'Log Peak Ratio'))
-
-parsearg = argparse.ArgumentParser(description='Plot equivalent width results')
-parsearg.add_argument('integ', type=str, nargs=1, help='Input integration file (time/intensity)')
+parsearg = argparse.ArgumentParser(description='Plot comparative equivalent width results')
+parsearg.add_argument('integ', type=str, nargs='+', help='Input integration file (time/intensity)')
 parsearg.add_argument('--title', type=str, default='Equivalent widths', help='Title for window')
-parsearg.add_argument('--type', help='ew/ps/pr to select display', type=str, default="ew")
-parsearg.add_argument('--sepdays', type=int, default=10000, help='Separate plots if this number of days apart')
 parsearg.add_argument('--bins', type=int, default=20, help='Histogram bins')
 parsearg.add_argument('--clip', type=float, default=0.0, help='Number of S.D.s to clip from histogram')
 parsearg.add_argument('--gauss', action='store_true', help='Normalise and overlay gaussian on histogram')
-parsearg.add_argument('--sdplot', action='store_true', help='Put separate days in separate figure')
 parsearg.add_argument('--yhist', type=str, default='Occurrences', help='Label for histogram Y axis')
-parsearg.add_argument('--xhist', type=str, help='Label for histogram X axis')
+parsearg.add_argument('--xhist', type=str, help='Label for histogram X axis', default='Equivalent width ($\AA$)')
 parsearg.add_argument('--yplot', type=str, help='Label for plot Y axis')
-parsearg.add_argument('--xplot', type=str, default='Days offset from start', help='Label for plot X axis')
+parsearg.add_argument('--xplot', type=str, default='From start', help='Label for plot X axis')
 parsearg.add_argument('--yaxr', action='store_true', help='Put Y axis label on right')
+parsearg.add_argument('--xrange', type=str, help='Range for X axis')
 parsearg.add_argument('--yrange', type=str, help='Range for Y axis')
+parsearg.add_argument('--histxrange', type=str, help='Range for Hist X axis')
 parsearg.add_argument('--histyrange', type=str, help='Range for Hist Y axis')
 parsearg.add_argument('--xaxt', action='store_true', help='Put X axis label on top')
-parsearg.add_argument('--xrange', type=str, help='Range for X axis')
-parsearg.add_argument('--histxrange', type=str, help='Range for Hist X axis')
-parsearg.add_argument('--width', type=float, default=4, help='Display width')
-parsearg.add_argument('--height', type=float, default=3, help='Display height')
+parsearg.add_argument('--width', type=float, default=8, help='Display width')
+parsearg.add_argument('--height', type=float, default=6, help='Display height')
 parsearg.add_argument('--outprefix', type=str, help='Output file prefix')
 parsearg.add_argument('--plotcolours', type=str, default='black,red,green,blue,yellow,magenta,cyan', help='Colours for successive plots')
-parsearg.add_argument('--excludes', type=str, help='File with excluded obs times and reasons')
-parsearg.add_argument('--exclcolours', type=str, default='red,green,blue,yellow,magenta,cyan,black', help='Colours for successive exclude reasons')
-parsearg.add_argument('--legend', type=str, help='Specify explicit legend')
+parsearg.add_argument('--legend', type=str, help='Specify explicit legend as comma-separated list')
 parsearg.add_argument('--fork', action='store_true', help='Fork off daemon process to show plot and exit')
 
 res = vars(parsearg.parse_args())
-rf = res['integ'][0]
+rfiles = res['integ']
 title = res['title']
-sepdays = res['sepdays']
-sdp = res['sdplot']
 outf = res['outprefix']
-excludes = res['excludes']
 clip = res['clip']
 gauss = res['gauss']
 bins = res['bins']
 ytr = res['yaxr']
 xtt = res['xaxt']
-yrange = rangearg.parserange(res['yrange'])
-xrange = rangearg.parserange(res['xrange'])
-histyrange = rangearg.parserange(res['histyrange'])
-histxrange = rangearg.parserange(res['histxrange'])
-forkoff = res['fork']
-explicit_legend = res['legend']
-typeplot = res['type']
-
-if typeplot not in optdict:
-    print "Unknown type", typeplot, "specified"
-    sys.exit(2)
-
-ycolumn, histxlab, plotylab = optdict[typeplot]
-if res['xhist'] is not None:
-    histxlab = res['xhist']
-    if histxlab == "none":
-        histxlab = ""
-if res['yplot'] is not None:
-    plotylab = res['yplot']
-    if plotylab == "none":
-        ylab = ""
-
-# Ones not dependent on column
-
+histxlab = res['xhist']
 histylab = res['yhist']
 if histylab == "none":
     histylab = ""
 xlab = res['xplot']
 if xlab == "none":
     xlab = ""
+ylab = res['yplot']
+if ylab == "none":
+    ylab = ""
+
+yrange = rangearg.parserange(res['yrange'])
+xrange = rangearg.parserange(res['xrange'])
+histyrange = rangearg.parserange(res['histyrange'])
+histxrange = rangearg.parserange(res['histxrange'])
+forkoff = res['fork']
+explicit_legend = res['legend']
 
 dims = (res['width'], res['height'])
 
-if rf is None:
-    print "No integration result file specified"
-    sys.exit(100)
-
-if excludes is not None:
-    try:
-        elist = exclusions.Exclusions()
-        elist.load(excludes)
-    except exclusions.ExcludeError as e:
-        print e.args[0] + ': ' + e.args[1]
-        sys.exit(101)
-    rlist = elist.reasons()
-    excols = string.split(res['exclcolours'], ',')
-    excolours = excols * ((len(rlist) + len(excols) - 1) / len(excols))
-    rlookup = dict()
-    for r, c in zip(rlist, excolours):
-        rlookup[r] = c
-
-# Load up file of integration results
 
 inp = np.loadtxt(rf, unpack=True)
 dates = inp[0]
-vals = inp[ycolumn]
+vals = inp[1]
 
 fig = plt.figure(figsize=dims)
 fig.canvas.set_window_title(title + ' Histogram')
@@ -297,7 +251,7 @@ else:
                 reas = sube.getreason(pl)
                 creas = rlookup[reas]
                 lines.append((xpl,creas))
-	
+    
     if explicit_legend is not None:
         plt.legend([explicit_legend], handlelength=0)
 
