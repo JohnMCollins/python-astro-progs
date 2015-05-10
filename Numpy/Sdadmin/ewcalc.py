@@ -95,7 +95,7 @@ def run_ew_calc(ctrlfile, rangefile):
     while dlg.exec_():
         selrange = dlg.peakrange.currentIndex()
         if selrange <= 0:
-            QMessageBox.warning(dlg, "No range given", "You didn't give an indegrations range")
+            QMessageBox.warning(dlg, "No range given", "You didn't give an integrations range")
             continue
     
         halphar = rangefile.getrange(str(dlg.peakrange.itemData(selrange).toString()))
