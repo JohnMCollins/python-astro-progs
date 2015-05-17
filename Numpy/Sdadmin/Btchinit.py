@@ -63,7 +63,7 @@ except specdatactrl.SpecDataError as e:
     print "Cannot load/parse files", sname, "-", e.args[0]
     sys.exit(3)    
 try:
-    specdatactrl.Save_specctrl(outctrlfile, currentlist)
+    specdatactrl.Save_specctrl(outctrlfle, currentlist)
 except specdatactrl.SpecDataError as e:
     sys.stdout = sys.stderr
     print "Save control file error", e.args[0]
