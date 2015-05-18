@@ -25,9 +25,10 @@ SECSPERDAY = 3600.0 * 24.0
 
 parsearg = argparse.ArgumentParser(description='Process UVES data and show plots of effectively suppressing where X-ray levels are high')
 parsearg.add_argument('--ctrl', type=str, help='Input control file', required=True)
-parsearg.add_argument('--rangefile', type=str, help='Range file', required=True)
+parsearg.add_argument('--rangefile', type=str, help='Range file')
 parsearg.add_argument('--rangename', type=str, default='halpha', help='Range name to calculate equivalent widths')
 parsearg.add_argument('--xrayfile', type=str, nargs='*', help='Xray data files')
+parsearg.add_argument('--xrayoffset', type=float, default=0.0, help='Offset to X-ray times')
 parsearg.add_argument('--width', help="Width of plot", type=float, default=8)
 parsearg.add_argument('--height', help="Height of plot", type=float, default=8)
 parsearg.add_argument('--hwidth', help="Width of histogram", type=float, default=8)
@@ -36,12 +37,15 @@ parsearg.add_argument('--bins', help='Histogram bins', type=int, default=20)
 parsearg.add_argument('--colours', help='Colours for plot', type=str, default='blue,green,red,black,purple,orange')
 parsearg.add_argument('--deflevel', type=float, default=0.0, help='Default level of X-ray for points outside time range')
 parsearg.add_argument('--barycentric', action='store_true', help='Use barycentric date/time now obs date/time')
+parsearg.add_argument('--onehist', action='store_true', help='Plot on one histogram')
 parsearg.add_argument('xraylevel', type=float, nargs='+', help='Level of xray activity at which we discount data')
 
 resargs = vars(parsearg.parse_args())
 
 ctrlfile = resargs['ctrl']
 rangefile = resargs['rangefile']
+if rangefile is None:
+    rangefile = miscutils.replacesuffix(ctrlfile, '.spcr', '.sac')
 rangename = resargs['rangename']
 xrayfiles = resargs['xrayfile']
 width = resargs['width']
@@ -53,6 +57,26 @@ deflevel = resargs['deflevel']
 baycent = resargs['barycentric']
 xraylevels = resargs['xraylevel']
 colours = string.split(resargs['colours'], ',')
+
+# Get every combination of min and max levels
+
+minxrays = [-xrl for xrl in xraylevels if xrl<0]
+maxxrays = [xrl for xrl in xraylevels if xrl>0]
+
+if len(minxrays) == 0:
+    if len(maxxrays) == 0:
+        xraylevels = [(0,0)]
+    else:
+        xraylevels = [(0,xrl) for xrl in maxxrays]
+        xraylevels.insert(0, (0.0,0.0))
+elif len(maxxrays) == 0:
+    xraylevels = [(xrl,0) for xrl in minxrays]
+    xraylevels.insert(0, (0.0,0.0))
+else:
+    if not 0.0 in maxxrays: maxxrays.insert(0,0.0)
+    if not 0.0 in minxrays: minxrays.insert(0,0.0)
+    xraylevels = [(mn,mx) for mn in minxrays for mx in maxxrays]
+
 nlevs = len(xraylevels)
 
 # Make sure there are enough to cover all the xray levels + 1
@@ -170,7 +194,6 @@ if len(cday) != 0:
 
 hfmt = dates.DateFormatter('%H:%M')
 
-ewtotal = np.empty((0,))
 ewlevs = []
 for i in range(0, nlevs):
     ewlevs.append(np.empty(0,))
@@ -183,58 +206,95 @@ for cday in daydata:
     fig = plt.figure(figsize=(width,height))
     
     plt.subplots_adjust(hspace = 0)
-    ax1 = plt.subplot(2+nlevs,1,1)
-    #ax1.get_xaxis().get_major_formatter().set_useOffset(False)
     
     add = np.array(cday)
     day_jdates, day_bjdates, day_ews = add.transpose()
     timesp = np.array([jdate.jdate_to_datetime(d) for d in day_jdates])
+    day_xraylev = interpfn(day_jdates)
     plt.xlim(timesp[0], timesp[-1])
-    plt.ylim(minew, maxew)
-    
     fig.canvas.set_window_title(timesp[0].strftime("For %d %b %Y"))
-    plt.plot(timesp, day_ews,color=colours[0])
-    plt.legend(["No X-ray"])
     
-    ewtotal = np.append(ewtotal, day_ews)
+    ax1 = None
     
     for ln, xrl in enumerate(xraylevels):
-        pax = plt.subplot(2+nlevs,1,2+ln, sharex=ax1)
-        day_xraylev = interpfn(day_jdates)
-        selection = day_xraylev < xrl
-        plotcolour = colours[ln+1]
-        plot_ews = day_ews[selection]
-        plot_times = timesp[selection]
+        pax = plt.subplot(1+nlevs,1,1+ln, sharex=ax1)
         plt.ylim(minew, maxew)
-        plt.plot(plot_times, plot_ews, color=plotcolour)
-        plt.legend(["X-ray < %.3g" % xrl])
+        if ax1 is None: ax1=pax
+        minxr, maxxr = xrl
+        if minxr <= 0.0:
+            if maxxr <= 0.0:
+                leg = "No X-ray"
+                plot_ews = day_ews
+                plot_times = timesp
+            else:
+                selection = day_xraylev < maxxr
+                plot_ews = day_ews[selection]
+                plot_times = timesp[selection]
+                leg = "X-ray < %.3g" % maxxr
+        elif maxxr <= 0.0:
+            selection = day_xraylev > minxr
+            plot_ews = day_ews[selection]
+            plot_times = timesp[selection]
+            leg = "X-ray > %.3g" % minxr
+        else:
+            selection = (day_xraylev > minxr) & (day_xraylev < maxxr)
+            plot_ews = day_ews[selection]
+            plot_times = timesp[selection]
+            leg = "%.3g > X-ray > %.3g" % (maxxr, minxr)
+        
+        plt.plot(timesp, day_ews,color=colours[ln])
+        plt.legend([leg]) 
         ewlevs[ln] = np.append(ewlevs[ln], plot_ews)
   
-    ax2 = plt.subplot(2+nlevs,1,2+nlevs,sharex=ax1)
+    ax2 = plt.subplot(1+nlevs,1,1+nlevs,sharex=ax1)
     
     times = [jdate.jdate_to_datetime(d) for d in xray_time]
     
     plt.plot(times, xray_amp)
     for ln, xrl in enumerate(xraylevels):
-        plt.axhline(xrl, color=colours[ln+1])
+        minxr, maxxr = xrl
+        if minxr > 0.0: plt.axhline(minxr, color=colours[ln])
+        if maxxr > 0.0: plt.axhline(maxxr, color=colours[ln])
     plt.legend(["X-ray"])
     plt.xlim(timesp[0], timesp[-1])
-    #plt.ylim(0, maxamp)
     ax2.xaxis.set_major_formatter(hfmt)
     plt.gcf().autofmt_xdate()
 
 fig = plt.figure(figsize=(hwidth, hheight))
 fig.canvas.set_window_title("Equivalent widths (all days)")
-plt.subplots_adjust(hspace = 0)
-ax1 = plt.subplot(1+nlevs,1,1)
-plt.hist(ewtotal, bins=bins, color=colours[0])
-miny, maxy = ax1.get_ylim()
-plt.legend(['No X-ray'])
+
+histews = []
+histlegs = []
+
 for ln, xrl in enumerate(xraylevels):
-    ews = ewlevs[ln]
-    plt.subplot(1+nlevs, 1, 2+ln, sharex=ax1)
-    plt.ylim(0, maxy)
-    plt.hist(ews, bins=bins, color=colours[ln+1])
-    plt.legend(["X-ray < %.3g" % xrl])    
+    minxr, maxxr = xrl
+    histews.append(ewlevs[ln])
+    if minxr <= 0.0:
+        if maxxr <= 0.0:
+            leg = "No X-ray"
+        else:
+            leg = "X-ray < %.3g" % maxxr
+    elif maxxr <= 0.0:
+        leg = "X-ray > %.3g" % minxr
+    else:
+        leg = "%.3g > X-ray > %.3g" % (maxxr, minxr)
+    histlegs.append(leg)
+
+if resargs['onehist']:
+    plt.hist(histews)
+    plt.legend(histlegs)
+else:
+    plt.subplots_adjust(hspace = 0)
+    ax1 = None
+    for ln, xrl in enumerate(xraylevels):
+        ews = histews[ln]
+        ax = plt.subplot(1+nlevs, 1, 2+ln, sharex=ax1)
+        if ax1 is None:
+            miny, maxy = ax.get_ylim()
+            ax1 = ax
+        else:
+            plt.ylim(0, maxy)
+        plt.hist(ews, bins=bins, color=colours[ln])
+        plt.legend(histlegs[ln])
 
 plt.show()
