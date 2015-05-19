@@ -31,13 +31,12 @@ parsearg.add_argument('--xrayfile', type=str, nargs='*', help='Xray data files')
 parsearg.add_argument('--xrayoffset', type=float, default=0.0, help='Offset to X-ray times')
 parsearg.add_argument('--width', help="Width of plot", type=float, default=8)
 parsearg.add_argument('--height', help="Height of plot", type=float, default=8)
-parsearg.add_argument('--hwidth', help="Width of histogram", type=float, default=8)
+parsearg.add_argument('--hwidth', help="Width of histogram", type=float, default=10)
 parsearg.add_argument('--hheight', help="Height of histogram", type=float, default=8)
 parsearg.add_argument('--bins', help='Histogram bins', type=int, default=20)
 parsearg.add_argument('--colours', help='Colours for plot', type=str, default='blue,green,red,black,purple,orange')
 parsearg.add_argument('--deflevel', type=float, default=0.0, help='Default level of X-ray for points outside time range')
 parsearg.add_argument('--barycentric', action='store_true', help='Use barycentric date/time now obs date/time')
-parsearg.add_argument('--onehist', action='store_true', help='Plot on one histogram')
 parsearg.add_argument('xraylevel', type=float, nargs='+', help='Level of xray activity at which we discount data')
 
 resargs = vars(parsearg.parse_args())
@@ -54,6 +53,7 @@ hwidth = resargs['hwidth']
 hheight = resargs['hheight']
 bins = resargs['bins']
 deflevel = resargs['deflevel']
+xrayoffset = resargs['xrayoffset']
 baycent = resargs['barycentric']
 xraylevels = resargs['xraylevel']
 colours = string.split(resargs['colours'], ',')
@@ -98,6 +98,7 @@ for xrf in xrayfiles:
     try:
         xray_amp, xray_err, xray_time = np.loadtxt(xrf, unpack=True)
         maxamp = max(maxamp, np.max(xray_amp))
+        xray_time += xrayoffset
         xray_time /= SECSPERDAY
         xray_time += 50814.0            # 1/1/1998 for whatever reason
         interpfn = si.interp1d(xray_time, xray_amp, kind='cubic', bounds_error=False, fill_value=deflevel, assume_sorted=True)
@@ -195,8 +196,18 @@ if len(cday) != 0:
 hfmt = dates.DateFormatter('%H:%M')
 
 ewlevs = []
-for i in range(0, nlevs):
+legends = []
+for minxr, maxxr in xraylevels:
     ewlevs.append(np.empty(0,))
+    if minxr <= 0:
+        if maxxr <= 0:
+            legends.append("No X-ray")
+        else:
+            legends.append("X-ray < %.3g" % maxxr)
+    elif maxxr <= 0:
+        legends.append("X-ray > %.3g" % minxr)
+    else:
+        legends.append("%.3g > X-ray > %.3g" % (maxxr, minxr))
 
 for cday in daydata:
     
@@ -223,27 +234,23 @@ for cday in daydata:
         minxr, maxxr = xrl
         if minxr <= 0.0:
             if maxxr <= 0.0:
-                leg = "No X-ray"
                 plot_ews = day_ews
                 plot_times = timesp
             else:
                 selection = day_xraylev < maxxr
                 plot_ews = day_ews[selection]
                 plot_times = timesp[selection]
-                leg = "X-ray < %.3g" % maxxr
         elif maxxr <= 0.0:
             selection = day_xraylev > minxr
             plot_ews = day_ews[selection]
             plot_times = timesp[selection]
-            leg = "X-ray > %.3g" % minxr
         else:
             selection = (day_xraylev > minxr) & (day_xraylev < maxxr)
             plot_ews = day_ews[selection]
             plot_times = timesp[selection]
-            leg = "%.3g > X-ray > %.3g" % (maxxr, minxr)
         
-        plt.plot(timesp, day_ews,color=colours[ln])
-        plt.legend([leg]) 
+        plt.plot(plot_times, plot_ews, color=colours[ln])
+        plt.legend([legends[ln]]) 
         ewlevs[ln] = np.append(ewlevs[ln], plot_ews)
   
     ax2 = plt.subplot(1+nlevs,1,1+nlevs,sharex=ax1)
@@ -255,46 +262,28 @@ for cday in daydata:
         minxr, maxxr = xrl
         if minxr > 0.0: plt.axhline(minxr, color=colours[ln])
         if maxxr > 0.0: plt.axhline(maxxr, color=colours[ln])
-    plt.legend(["X-ray"])
+    plt.legend(["X-ray amp"])
     plt.xlim(timesp[0], timesp[-1])
     ax2.xaxis.set_major_formatter(hfmt)
     plt.gcf().autofmt_xdate()
 
 fig = plt.figure(figsize=(hwidth, hheight))
+fig.canvas.set_window_title("Equivalent widths (all days) combined")
+plt.hist(ewlevs, normed=True)
+plt.legend(legends)
+fig = plt.figure(figsize=(hwidth, hheight))
 fig.canvas.set_window_title("Equivalent widths (all days)")
 
-histews = []
-histlegs = []
-
+plt.subplots_adjust(hspace = 0)
+ax1 = None
 for ln, xrl in enumerate(xraylevels):
-    minxr, maxxr = xrl
-    histews.append(ewlevs[ln])
-    if minxr <= 0.0:
-        if maxxr <= 0.0:
-            leg = "No X-ray"
-        else:
-            leg = "X-ray < %.3g" % maxxr
-    elif maxxr <= 0.0:
-        leg = "X-ray > %.3g" % minxr
+    ews = ewlevs[ln]
+    ax = plt.subplot(nlevs, 1, 1+ln, sharex=ax1)
+    plt.hist(ews, bins=bins, color=colours[ln], normed=True)
+    plt.legend([legends[ln]])
+    if ax1 is None:
+        miny, maxy = ax.get_ylim()
+        ax1 = ax
     else:
-        leg = "%.3g > X-ray > %.3g" % (maxxr, minxr)
-    histlegs.append(leg)
-
-if resargs['onehist']:
-    plt.hist(histews)
-    plt.legend(histlegs)
-else:
-    plt.subplots_adjust(hspace = 0)
-    ax1 = None
-    for ln, xrl in enumerate(xraylevels):
-        ews = histews[ln]
-        ax = plt.subplot(1+nlevs, 1, 2+ln, sharex=ax1)
-        if ax1 is None:
-            miny, maxy = ax.get_ylim()
-            ax1 = ax
-        else:
-            plt.ylim(0, maxy)
-        plt.hist(ews, bins=bins, color=colours[ln])
-        plt.legend(histlegs[ln])
-
+       plt.ylim(0, maxy)
 plt.show()
