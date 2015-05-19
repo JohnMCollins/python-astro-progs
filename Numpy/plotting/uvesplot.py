@@ -20,6 +20,7 @@ import datetime
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib import dates
+import splittime
 
 SECSPERDAY = 3600.0 * 24.0
 
@@ -32,6 +33,7 @@ parsearg.add_argument('--xrayoffset', type=float, default=0.0, help='Offset to X
 parsearg.add_argument('--width', help="Width of plot", type=float, default=8)
 parsearg.add_argument('--height', help="Height of plot", type=float, default=8)
 parsearg.add_argument('--hwidth', help="Width of histogram", type=float, default=10)
+parsearg.add_argument('--splittime', help='Split plot segs on value', type=float, default=1e10)
 parsearg.add_argument('--hheight', help="Height of histogram", type=float, default=8)
 parsearg.add_argument('--bins', help='Histogram bins', type=int, default=20)
 parsearg.add_argument('--colours', help='Colours for plot', type=str, default='blue,green,red,black,purple,orange')
@@ -57,6 +59,7 @@ xrayoffset = resargs['xrayoffset']
 baycent = resargs['barycentric']
 xraylevels = resargs['xraylevel']
 colours = string.split(resargs['colours'], ',')
+splitem = resargs['splittime']
 
 # Get every combination of min and max levels
 
@@ -249,7 +252,8 @@ for cday in daydata:
             plot_ews = day_ews[selection]
             plot_times = timesp[selection]
         
-        plt.plot(plot_times, plot_ews, color=colours[ln])
+        for t,e in splittime.splittime(plot_times, plot_ews, splitem):
+            plt.plot(t, e, color=colours[ln])
         plt.legend([legends[ln]]) 
         ewlevs[ln] = np.append(ewlevs[ln], plot_ews)
   
@@ -284,6 +288,6 @@ for ln, xrl in enumerate(xraylevels):
     if ax1 is None:
         miny, maxy = ax.get_ylim()
         ax1 = ax
-    else:
-       plt.ylim(0, maxy)
+    #else:
+       #plt.ylim(0, maxy)
 plt.show()
