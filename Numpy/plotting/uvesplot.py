@@ -5,6 +5,7 @@
 import sys
 import os
 import string
+import re
 import os.path
 import locale
 import argparse
@@ -39,7 +40,7 @@ parsearg.add_argument('--bins', help='Histogram bins', type=int, default=20)
 parsearg.add_argument('--colours', help='Colours for plot', type=str, default='blue,green,red,black,purple,orange')
 parsearg.add_argument('--deflevel', type=float, default=0.0, help='Default level of X-ray for points outside time range')
 parsearg.add_argument('--barycentric', action='store_true', help='Use barycentric date/time now obs date/time')
-parsearg.add_argument('xraylevel', type=float, nargs='+', help='Level of xray activity at which we discount data')
+parsearg.add_argument('xraylevel', type=str, nargs='+', help='Level of xray activity at which we discount data')
 
 resargs = vars(parsearg.parse_args())
 
@@ -57,28 +58,33 @@ bins = resargs['bins']
 deflevel = resargs['deflevel']
 xrayoffset = resargs['xrayoffset']
 baycent = resargs['barycentric']
-xraylevels = resargs['xraylevel']
+xraylevelargs = resargs['xraylevel']
 colours = string.split(resargs['colours'], ',')
 splitem = resargs['splittime']
 
-# Get every combination of min and max levels
+# Xray levels to plot from are given as l(low,high) or g(low,high) for upper and lower levels or gradients.
+# Omit low and high for no corresponding limit
 
-minxrays = [-xrl for xrl in xraylevels if xrl<0]
-maxxrays = [xrl for xrl in xraylevels if xrl>0]
+levmatcher = re.compile('^([gl])\(([-\d.e]*),?([-\d.e]*)\)$', re.IGNORECASE)
 
-if len(minxrays) == 0:
-    if len(maxxrays) == 0:
-        xraylevels = [(0,0)]
-    else:
-        xraylevels = [(0,xrl) for xrl in maxxrays]
-        xraylevels.insert(0, (0.0,0.0))
-elif len(maxxrays) == 0:
-    xraylevels = [(xrl,0) for xrl in minxrays]
-    xraylevels.insert(0, (0.0,0.0))
-else:
-    if not 0.0 in maxxrays: maxxrays.insert(0,0.0)
-    if not 0.0 in minxrays: minxrays.insert(0,0.0)
-    xraylevels = [(mn,mx) for mn in minxrays for mx in maxxrays]
+xraylevels = []
+for xrl in xraylevelargs:
+    mtch = levmatcher.match(xrl)
+    if mtch is None:
+        print "Cannot understand limit", xrl
+        sys.exit(2)
+    lo = 0
+    hi = 0
+    try:
+        if len(mtch.group(2)) != 0:
+            lo = float(mtch.group(2))
+        if len(mtch.group(3)) != 0:
+            hi = float(mtch.group(3))
+    except ValueError:
+        print "Cannot understand limit", xrl
+        sys.exit(3)
+    isgrad = mtch.group(1) == 'g'
+    xraylevels.append((lo, hi, isgrad))
 
 nlevs = len(xraylevels)
 
@@ -109,6 +115,8 @@ for xrf in xrayfiles:
         print "Cannoot open", xrf, "Error was", e.args[1]
         sys.exit(11)
     xraydata.append((interpfn, xray_time, xray_amp))
+
+xray_timediff = xraydata[0][1][1] = xraydata[0][1][0]
 
 hfmt = dates.DateFormatter('%H:%M')
 
@@ -200,22 +208,26 @@ hfmt = dates.DateFormatter('%H:%M')
 
 ewlevs = []
 legends = []
-for minxr, maxxr in xraylevels:
+for minxr, maxxr, isg in xraylevels:
     ewlevs.append(np.empty(0,))
     if minxr <= 0:
         if maxxr <= 0:
-            legends.append("No X-ray")
+            leg = "No X-ray"
         else:
-            legends.append("X-ray < %.3g" % maxxr)
+            leg = "X-ray < %.3g" % maxxr
     elif maxxr <= 0:
-        legends.append("X-ray > %.3g" % minxr)
+        leg = "X-ray > %.3g" % minxr
     else:
-        legends.append("%.3g > X-ray > %.3g" % (maxxr, minxr))
+        leg = "%.3g > X-ray > %.3g"
+    if isg:
+        leg += "(gr)"
+    legends.append(leg)
 
 for cday in daydata:
     
     xrd = xraydata.pop(0)
     interpfn, xray_time, xray_amp = xrd
+    xrg = np.gradient(xray_amp, xray_timediff)
     
     fig = plt.figure(figsize=(width,height))
     
@@ -234,7 +246,7 @@ for cday in daydata:
         pax = plt.subplot(1+nlevs,1,1+ln, sharex=ax1)
         plt.ylim(minew, maxew)
         if ax1 is None: ax1=pax
-        minxr, maxxr = xrl
+        minxr, maxxr, isg = xrl
         if minxr <= 0.0:
             if maxxr <= 0.0:
                 plot_ews = day_ews
@@ -263,13 +275,16 @@ for cday in daydata:
     
     plt.plot(times, xray_amp)
     for ln, xrl in enumerate(xraylevels):
-        minxr, maxxr = xrl
-        if minxr > 0.0: plt.axhline(minxr, color=colours[ln])
-        if maxxr > 0.0: plt.axhline(maxxr, color=colours[ln])
+        minxr, maxxr, isg = xrl
+        if not isg:
+            if minxr > 0.0: plt.axhline(minxr, color=colours[ln])
+            if maxxr > 0.0: plt.axhline(maxxr, color=colours[ln])
     plt.legend(["X-ray amp"])
     plt.xlim(timesp[0], timesp[-1])
     ax2.xaxis.set_major_formatter(hfmt)
     plt.gcf().autofmt_xdate()
+    ax3 = plt.twinx(ax2)
+    plt.plot(times, xrg, color='purple', ls='--')
 
 fig = plt.figure(figsize=(hwidth, hheight))
 fig.canvas.set_window_title("Equivalent widths (all days) combined")
