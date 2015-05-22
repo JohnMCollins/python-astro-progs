@@ -31,6 +31,7 @@ parsearg.add_argument('--rangefile', type=str, help='Range file')
 parsearg.add_argument('--rangename', type=str, default='halpha', help='Range name to calculate equivalent widths')
 parsearg.add_argument('--xrayfile', type=str, nargs='*', help='Xray data files')
 parsearg.add_argument('--xrayoffset', type=float, default=0.0, help='Offset to X-ray times')
+parsearg.add_argument('--logxray', action='store_true', help='Display X-rays on log scale')
 parsearg.add_argument('--width', help="Width of plot", type=float, default=8)
 parsearg.add_argument('--height', help="Height of plot", type=float, default=8)
 parsearg.add_argument('--hwidth', help="Width of histogram", type=float, default=10)
@@ -56,6 +57,7 @@ hwidth = resargs['hwidth']
 hheight = resargs['hheight']
 bins = resargs['bins']
 xrayoffset = resargs['xrayoffset']
+logxray = resargs['logxray']
 baycent = resargs['barycentric']
 xraylevelargs = resargs['xraylevel']
 colours = string.split(resargs['colours'], ',')
@@ -186,13 +188,16 @@ for xrd in xraydata:
     ax1.xaxis.set_major_formatter(hfmt)
     fig.autofmt_xdate()
     xray_dates = np.array([jdate.jdate_to_datetime(d - ln*2 - 2) for d in xray_time])
-    plt.plot(xray_dates, xray_amp, color='black')
+    if logxray:
+        plt.semilogy(xray_dates, xray_amp, color='black')
+    else:
+        plt.plot(xray_dates, xray_amp, color='black')
     plt.legend(["Day %d" % ln])
     plt.xlabel('Time')
     plt.ylabel('Intensity')
     rax = plt.twinx(ax1)
     plt.ylim(mingrad, maxgrad)
-    plt.plot(xray_dates, xray_gradient, color='purple', ls='--')
+    plt.plot(xray_dates, xray_gradient, color='purple', ls=':')
     plt.ylabel('Gradient')
     rax.yaxis.label.set_color('purple')
     rax.tick_params(axis='y', colors='purple')
@@ -237,13 +242,12 @@ for spectrum in ctrllist.datalist:
     # Get spectral data but skip over ones we've already marked to ignore
     
     try:
-        
         xvalues = spectrum.get_xvalues(False)
         yvalues = spectrum.get_yvalues(False)
-        
+
     except specdatactrl.SpecDataError:
         continue
-    
+
     # Calculate equivalent width using meanval calc
     
     har, hir = meanval.mean_value(selected_range, xvalues, yvalues)
@@ -329,8 +333,11 @@ for cday in daydata:
     # Stick X-ray stuff at the bottom
     
     ax2 = plt.subplot(1+nlevs,1,1+nlevs,sharex=ax1)
-    
-    plt.plot(xray_dates, xray_amp)
+
+    if logxray:
+        plt.semilogy(xray_dates, xray_amp)
+    else:    
+        plt.plot(xray_dates, xray_amp)
     for ln, xrl in enumerate(xraylevels):
         minxr, maxxr, isg = xrl
         if not isg:
@@ -341,13 +348,13 @@ for cday in daydata:
     ax2.xaxis.set_major_formatter(hfmt)
     plt.gcf().autofmt_xdate()
     ax3 = plt.twinx(ax2)
-    plt.plot(xray_dates, xray_gradient, color='purple', ls='--')
+    plt.plot(xray_dates, xray_gradient, color='purple', ls=':')
     #plt.legend(['X-ray grad'])
     for ln, xrl in enumerate(xraylevels):
         minxr, maxxr, isg = xrl
         if isg:
-            if minxr > -1e30: plt.axhline(minxr, color=colours[ln], ls='--')
-            if maxxr < 1e30: plt.axhline(maxxr, color=colours[ln], ls='--')
+            if minxr > -1e30: plt.axhline(minxr, color=colours[ln], ls=':')
+            if maxxr < 1e30: plt.axhline(maxxr, color=colours[ln], ls=':')
     
     if outfile is not None:
         fig.savefig(outfile + day_dates[0].strftime("plot_%d%b.png"))
@@ -391,4 +398,9 @@ for ln, ewd in enumerate(ewlevs):
     plt.legend([legends[ln]])
 if outfile is not None:
     fig.savefig(outfile + "ewhistall.png")
-plt.show()
+    
+# Only display if we're not saving
+#
+
+if outfile is None:
+    plt.show()
