@@ -5,30 +5,24 @@
 import sys
 import os
 import string
-import re
 import os.path
 import locale
 import argparse
 import numpy as np
-import scipy.interpolate as si
 import miscutils
-import xmlutil
-import specdatactrl
-import datarange
 import jdate
-import meanval
 import datetime
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib import dates
+import levelselect
 import splittime
+import histandgauss
 
 SECSPERDAY = 3600.0 * 24.0
 
 parsearg = argparse.ArgumentParser(description='Process UVES data and show plots of effectively suppressing where X-ray levels are high')
-parsearg.add_argument('--ctrl', type=str, help='Input control file', required=True)
-parsearg.add_argument('--rangefile', type=str, help='Range file')
-parsearg.add_argument('--rangename', type=str, default='halpha', help='Range name to calculate equivalent widths')
+parsearg.add_argument('--ewfile', type=str, required=True, help='EW data produced by uvesew')
 parsearg.add_argument('--xrayfile', type=str, nargs='*', help='Xray data files')
 parsearg.add_argument('--xrayoffset', type=float, default=0.0, help='Offset to X-ray times')
 parsearg.add_argument('--logxray', action='store_true', help='Display X-rays on log scale')
@@ -39,88 +33,31 @@ parsearg.add_argument('--splittime', help='Split plot segs on value', type=float
 parsearg.add_argument('--hheight', help="Height of histogram", type=float, default=8)
 parsearg.add_argument('--bins', help='Histogram bins', type=int, default=20)
 parsearg.add_argument('--colours', help='Colours for plot', type=str, default='blue,green,red,black,purple,orange')
-parsearg.add_argument('--barycentric', action='store_true', help='Use barycentric date/time now obs date/time')
 parsearg.add_argument('--outfile', help='Prefix for output file', type=str)
 parsearg.add_argument('xraylevel', type=str, nargs='+', help='Level of xray activity at which we discount data')
 
 resargs = vars(parsearg.parse_args())
 
-ctrlfile = resargs['ctrl']
-rangefile = resargs['rangefile']
-if rangefile is None:
-    rangefile = miscutils.replacesuffix(ctrlfile, '.spcr', '.sac')
-rangename = resargs['rangename']
+ewfile = resargs['ewfile']
 xrayfiles = resargs['xrayfile']
 width = resargs['width']
 height = resargs['height']
 hwidth = resargs['hwidth']
 hheight = resargs['hheight']
 bins = resargs['bins']
-xrayoffset = resargs['xrayoffset']
 logxray = resargs['logxray']
-baycent = resargs['barycentric']
+xrayoffset = resargs['xrayoffset']
 xraylevelargs = resargs['xraylevel']
 colours = string.split(resargs['colours'], ',')
 splitem = resargs['splittime']
 outfile = resargs['outfile']
 
-# Xray levels to plot from are given as:
-# This code interprets the following arguments:
+# Decipher xray levels
 
-# n (+ve value) upper limit of n
-# n (-ve value) lower limit of -n (unless we are talking about gradients when upper limit of n)
-# m,n lower limit m upper limit n
-# m, lower limit of m
-# ,n upper limit of n
-# Prefix by g: to talk about gradients (or l: to specify level).
-
-levmatcher = re.compile('^(?:([gl]):)?([-e\d.]*)(,?)([-e\d.]*)$', re.IGNORECASE)
-
-xraylevels = []
-for xrl in xraylevelargs:
-    try:
-        # Initialise to nice big numbers
-        lo = -1e40
-        hi = 1e40
-        
-        # Special case of no limit
-        if xrl == '0' or xrl == '-':
-            xraylevels.append((lo, hi, False))
-            continue
-        mtch = levmatcher.match(xrl)
-        if mtch is None:
-            raise ValueError("match")
-        
-        # re processing sets first group to l, g or None,
-        # second group to first numeric or empty
-        # third group to comma or empty
-        # fourth group to second numeric or empty
-        
-        lgind, lowarg, comma, hiarg = mtch.groups()
-        isg = lgind == 'g'  # Covers case where none at all
-        
-        if len(hiarg) == 0:     # No second numeric
-            
-            # If we had a comma, then this is a lower limit
-            
-            if len(comma) != 0:
-                lo = float(lowarg)
-            else:
-                # Possibly a high limit but low limit if doing gradient
-                hip = float(lowarg)
-                if not isg and hip < 0.0:
-                    lo = -hip
-                else:
-                    hi = hip
-        else:
-            # Did have high limit, if we've got lower limit take it
-            hi = float(hiarg)
-            if len(lowarg) != 0:
-                lo = float(lowarg)
-        xraylevels.append((lo, hi, isg))
-    except ValueError:
-        print "Cannot understand limit", xrl
-        sys.exit(3)
+xraylevels = levelselect.levelselect(xraylevelargs)
+if xraylevels is None:
+    print "Cannot understand limit", xrl
+    sys.exit(3)
 
 nlevs = len(xraylevels)
 
@@ -135,7 +72,7 @@ if len(xrayfiles) != 3:
 
 xrayfiles.sort()
 
-# Kick off by reading in X-ray data also work out gradient and get interpfn
+# Kick off by reading in X-ray data also work out gradient
 
 xraydata = []
 maxamp = 0
@@ -144,13 +81,18 @@ maxgrad = -1e20
 
 for daynum, xrf in enumerate(xrayfiles):
     try:
-        xray_amp, xray_err, xray_time = np.loadtxt(xrf, unpack=True)
         
+        # Columns of file are amplitude, error (currently ignored) and time.
+        # Time is seconds since 1/1/98 midnight don't ask me why.
+         
+        xray_amp, xray_err, xray_time = np.loadtxt(xrf, unpack=True)
+
         xray_time += xrayoffset
         xray_time /= SECSPERDAY
         xray_time += 50814.0            # 1/1/1998 for whatever reason
         
-        xray_dates = np.array([jdate.jdate_to_datetime(d) for d in xray_time])
+        # Get the difference between observations
+        # Work out the gradient
         
         xray_timediff = np.mean(np.diff(xray_time))
         xray_gradient = np.gradient(xray_amp, xray_timediff)
@@ -159,16 +101,19 @@ for daynum, xrf in enumerate(xrayfiles):
         mingrad = min(mingrad, np.min(xray_gradient))
         maxgrad = max(maxgrad, np.max(xray_gradient))
         
-        interpfn = si.interp1d(xray_time, xray_amp, kind='cubic', bounds_error=False, fill_value=1e50, assume_sorted=True)
-        ginterpfn = si.interp1d(xray_time, xray_gradient, kind='cubic', bounds_error=False, fill_value=1e50, assume_sorted=True)  
+        # Get sates as datetime array
+        
+        xray_dates = [jdate.jdate_to_datetime(d) for d in xray_time] 
         
     except IOError as e:
         print "Cannoot open", xrf, "Error was", e.args[1]
         sys.exit(11)
-        
-    xraydata.append((interpfn, ginterpfn, xray_time, xray_amp, xray_gradient, xray_dates))
+    
+    # Get ourselves an array of 3 rows with 4 columns, times, amps, gradients and times converted to dates
+     
+    xraydata.append((xray_time, xray_amp, xray_gradient, xray_dates))
 
-# This is used for display times as hh:mm
+# Formatting operation to display times as hh:mm
 
 hfmt = dates.DateFormatter('%H:%M')
 
@@ -180,18 +125,27 @@ ln = 1
 commonax = None
 plt.subplots_adjust(hspace = 0)
 
-for xrd in xraydata:
+for xray_time, xray_amp, xray_gradient, xray_dates in xraydata:
+    
+    # Display of one column 3 axes
+    
     ax1 = plt.subplot(3, 1, ln, sharex=commonax)
     if commonax is None: commonax=ax1
-    ifn, gifn, xray_time, xray_amp, xray_gradient, xray_dates = xrd
+    
+    # Limit each display to maxamp as we worked out when we read it in
+    
     plt.ylim(0, maxamp)
     ax1.xaxis.set_major_formatter(hfmt)
     fig.autofmt_xdate()
+    
+    # Recalc this to put them on the same axis
+    
     xray_dates = np.array([jdate.jdate_to_datetime(d - ln*2 - 2) for d in xray_time])
     if logxray:
         plt.semilogy(xray_dates, xray_amp, color='black')
     else:
         plt.plot(xray_dates, xray_amp, color='black')
+
     plt.legend(["Day %d" % ln])
     plt.xlabel('Time')
     plt.ylabel('Intensity')
@@ -206,68 +160,24 @@ for xrd in xraydata:
 if outfile is not None:
     fig.savefig(outfile + '-xraydisp.png')
 
-# Now read the control file
+# Now read the EW file
+# This is dates, barycentric dates (not currently used), EWs, interpolated amp and gradients
 
 try:
-    ctrllist = specdatactrl.Load_specctrl(ctrlfile)
-except specdatactrl.SpecDataError as e:
-    print "Cannot open control file, error was", e.args[0]
+    
+    jdates, bjdates, ews, prs, xrayvs, xraygrads = np.loadtxt(ewfile, unpack=True)
+    
+except IOError as e:
+    print "Cannot open info file, error was", e.args[1]
     sys.exit(12)
 
-# Open the range file
+# Get date list and split up spectra by day
 
-try:
-    rangelist = datarange.load_ranges(rangefile)
-    selected_range = rangelist.getrange(rangename)
-except datarange.DataRangeError as e:
-    print "Cannot open range file error was", e.args[0]
-    sys.exit(13)
-
-try:
-    ctrllist.loadfiles()
-except specdatactrl.SpecDataError as e:
-    print "Error loading files", e.args[0]
-    sys.exit(14)
-
-# Split up spectra according to day
-
-daydata = []
-cday = []
-lastdate = ctrllist.datalist[0].modjdate + 10000
-minew = 1e6
-maxew = -1e6
-
-for spectrum in ctrllist.datalist:
-
-    # Get spectral data but skip over ones we've already marked to ignore
-    
-    try:
-        xvalues = spectrum.get_xvalues(False)
-        yvalues = spectrum.get_yvalues(False)
-
-    except specdatactrl.SpecDataError:
-        continue
-
-    # Calculate equivalent width using meanval calc
-    
-    har, hir = meanval.mean_value(selected_range, xvalues, yvalues)
-    ew = (hir - har) / har
-    
-    minew = min(minew, ew)
-    maxew = max(maxew, ew)
-    
-    if spectrum.modjdate - lastdate >= 1.0:
-        
-        daydata.append(cday)
-        cday = []
-    
-    lastdate = spectrum.modjdate
-    cday.append((spectrum.modjdate, spectrum.modbjdate, ew))
-
-if len(cday) != 0:
-    daydata.append(cday)
+datelist = [jdate.jdate_to_datetime(jd) for jd in jdates]
+dateparts = splittime.splittime(SECSPERDAY, datelist, ews, prs, xrayvs, xraygrads)
 
 # Create legends for each specified level
+# Remember the selected EWs for each level
 
 legends = []
 ewlevs = []
@@ -289,24 +199,21 @@ for minxr, maxxr, isg in xraylevels:
 
 # Plot for each day
 
-for cday in daydata:
+for day_dates, day_ews, day_prs, day_xrayvs, day_xraygrads in dateparts:
     
-    xrd = xraydata.pop(0)
-    interpfn, ginterpfn, xray_time, xray_amp, xray_gradient, xray_dates = xrd
+    minew = np.min(day_ews)
+    maxew = np.max(day_ews)
+    
+    xray_time, xray_amp, xray_gradient, xray_dates = xraydata.pop(0)
     
     fig = plt.figure(figsize=(width,height))   
-    plt.subplots_adjust(hspace = 0)
-    
-    add = np.array(cday)
-    day_jdates, day_bjdates, day_ews = add.transpose()
-    day_dates = np.array([jdate.jdate_to_datetime(d) for d in day_jdates])
-    day_xraylev = interpfn(day_jdates)
-    day_xraygrad = ginterpfn(day_jdates)
-    
+    plt.subplots_adjust(hspace = 0)    
     plt.xlim(day_dates[0], day_dates[-1])
     fig.canvas.set_window_title(day_dates[0].strftime("For %d %b %Y"))
     
     ax1 = None
+    
+    # We remember the selected EWs for each X-ray level in "ewforday"
     
     ewforday = []
     
@@ -316,21 +223,27 @@ for cday in daydata:
         if ax1 is None: ax1=pax
         minxr, maxxr, isg = xrl
         if isg:
-            selection = (day_xraygrad > minxr) & (day_xraygrad < maxxr)
+            selection = (day_xraygrads > minxr) & (day_xraygrads < maxxr)
         else:
-            selection = (day_xraylev > minxr) & (day_xraylev < maxxr)
+            selection = (day_xrayvs > minxr) & (day_xrayvs < maxxr)
 
         plot_ews = day_ews[selection]
         plot_times = day_dates[selection]
         
-        for t,e in splittime.splittime(plot_times, plot_ews, splitem):
+        for t,e in splittime.splittime(splitem, plot_times, plot_ews):
             plt.plot(t, e, color=colours[ln])
+        
+        for t,pr in zip(day_dates, day_prs):
+            if pr < 1.0:
+                plt.axvline(t, color='#102590', alpha=.5)
         plt.legend([legends[ln]])
-        # Append EWs to that for day and total for level
+        
+        # Append EWs to that for day and total for X-ray level
+        
         ewforday.append(plot_ews)
         ewlevs[ln] = np.append(ewlevs[ln], plot_ews)
   
-    # Stick X-ray stuff at the bottom
+    # Stick X-ray plot at the bottom
     
     ax2 = plt.subplot(1+nlevs,1,1+nlevs,sharex=ax1)
 
@@ -343,10 +256,14 @@ for cday in daydata:
         if not isg:
             if minxr > -1e30: plt.axhline(minxr, color=colours[ln])
             if maxxr < 1e30: plt.axhline(maxxr, color=colours[ln])
+    
     plt.legend(["X-ray amp"])
     plt.xlim(xray_dates[0], xray_dates[-1])
     ax2.xaxis.set_major_formatter(hfmt)
     plt.gcf().autofmt_xdate()
+    
+    # Overlay gradient plot
+    
     ax3 = plt.twinx(ax2)
     plt.plot(xray_dates, xray_gradient, color='purple', ls=':')
     #plt.legend(['X-ray grad'])
@@ -359,14 +276,18 @@ for cday in daydata:
     if outfile is not None:
         fig.savefig(outfile + day_dates[0].strftime("plot_%d%b.png"))
     
-    # Do EW histograms for day
+    # Do EW histograms for day.
+    # We recorded the selected EW for each x-ray level in ewlevs
+    # First a combined histogram
     
     fig = plt.figure(figsize=(hwidth, hheight))
     fig.canvas.set_window_title(day_dates[0].strftime("Equivalent widths for %d %b %Y combined"))
-    plt.hist(ewforday, normed=True)
+    plt.hist(ewforday, bins=bins)
     plt.legend(legends)
     if outfile is not None:
         fig.savefig(outfile + day_dates[0].strftime("cewhist_%d%b.png"))
+    
+    # Redo as a separate histogram for each day
     
     fig = plt.figure(figsize=(hwidth, hheight))   
     plt.subplots_adjust(hspace = 0)
@@ -375,32 +296,37 @@ for cday in daydata:
     ax1 = None
     for ln, ewd in enumerate(ewforday):
         ax = plt.subplot(nlevs, 1, 1+ln, sharex=ax1)
-        plt.hist(ewd, bins=bins, color=colours[ln], normed=True)
+        histandgauss.histandgauss(ewd, bins=bins, colour=colours[ln])
         if ax1 is None: ax1 = ax
         plt.legend([legends[ln]])
     if outfile is not None:
         fig.savefig(outfile + day_dates[0].strftime("ewhist_%d%b.png"))
 
+# Finally do a histogram for all days combined
+# One histogram with different bars for each X-ray level
+
 fig = plt.figure(figsize=(hwidth, hheight))
 fig.canvas.set_window_title("Equivalent widths (all days) combined")
-plt.hist(ewlevs, normed=True)
+plt.hist(ewlevs, bins=bins)
 plt.legend(legends)
 if outfile is not None:
     fig.savefig(outfile + "cewhistall.png")
+
+# Now redo as separate histograms for each level
+
 fig = plt.figure(figsize=(hwidth, hheight))
 fig.canvas.set_window_title("Equivalent widths (all days)")
 plt.subplots_adjust(hspace = 0)
 ax1 = None
 for ln, ewd in enumerate(ewlevs):
     ax = plt.subplot(nlevs, 1, 1+ln, sharex=ax1)
-    plt.hist(ewd, bins=bins, color=colours[ln], normed=True)
+    histandgauss.histandgauss(ewd, bins=bins, colour=colours[ln])
     if ax1 is None: ax1 = ax
     plt.legend([legends[ln]])
 if outfile is not None:
     fig.savefig(outfile + "ewhistall.png")
     
 # Only display if we're not saving
-#
 
 if outfile is None:
     plt.show()

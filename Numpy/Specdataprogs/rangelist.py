@@ -3,17 +3,22 @@
 # Display ratio calculation vs EW
 
 import argparse
+import os.path
 import sys
 import string
 import datarange
+import specinfo
+import miscutils
 
-parsearg = argparse.ArgumentParser(description='List ranges')
-parsearg.add_argument('rangefile', help="XML file of ranges", nargs='+', type=str)
+RANGESUFF = 'spcr'      # Old range file
+
+parsearg = argparse.ArgumentParser(description='List ranges in spectrum data input file or old range file')
+parsearg.add_argument('infofile', help="XML file of ranges or spec info", nargs='+', type=str)
 parsearg.add_argument('--outfile', help="Output file if not STDOUT", type=str)
 parsearg.add_argument('--latex', help='Latex output format', action='store_true')
 
 res = vars(parsearg.parse_args())
-rfs = res['rangefile']
+rfs = res['infofile']
 outf = res['outfile']
 latex = res['latex']
 
@@ -33,14 +38,32 @@ had = 0
 sys.stdout = ofil
 
 for rf in rfs:
-    try:
-        rangelist = datarange.load_ranges(rf)
-    except datarange.DataRangeError as e:
-        sys.stdout = sys.stderr
-        print "Range load error", e.args[0], "file", rf
-        errors += 1
-        sys.stdout = ofil
-        continue
+    if miscutils.hassuffix(rf, RANGESUFF):
+        try:
+            rangelist = datarange.load_ranges(rf)
+        except datarange.DataRangeError as e:
+            sys.stdout = sys.stderr
+            print "Range load error on file", rf
+            print "Errow was:"
+            print e.args[0]
+            errors += 1
+            sys.stdout = ofil
+            continue
+    else:
+        if not os.path.isfile(rf):
+            rf = miscutils.replacesuffix(rf, specinfo.SUFFIX)
+        try:
+            sinf = specinfo.SpecInfo()
+            sinf.loadfile(rf)
+            rangelist = sinf.get_rangelist()
+        except specinfo.SpecInfoError as e:
+            sys.stdout = sys.stderr
+            print "Range load error on file", rf
+            print "Errow was:"
+            print e.args[0]
+            errors += 1
+            sys.stdout = ofil
+            continue
     rsnames = rangelist.listranges()
     rlist = [ rangelist.getrange(r) for r in rsnames]
     rlist.sort(key=lambda r: r.description)

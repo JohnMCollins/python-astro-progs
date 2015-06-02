@@ -13,13 +13,9 @@ import scipy.interpolate as si
 import xml.etree.ElementTree as ET
 import miscutils
 import xmlutil
-import specdatactrl
-import datarange
+import specinfo
 import jdate
 import datetime
-
-CONFIGFNAME = 'Sdadmin'
-CONFIGROOT = 'SDADMIN'
 
 SECSPERDAY = 3600.0 * 24.0
 
@@ -35,8 +31,8 @@ parsearg.add_argument('--overwrite', action='store_true', help='Replace any exis
 
 resargs = vars(parsearg.parse_args())
 
-inctrl = miscutils.addsuffix(resargs['inctrl'], 'sac')
-outctrl = miscutils.addsuffix(resargs['outctrl'], 'sac')
+inctrl = miscutils.replacesuffix(resargs['inctrl'], specinfo.SUFFIX)
+outctrl = miscutils.replacesuffix(resargs['outctrl'], specinfo.SUFFIX)
 xrayfile = resargs['xrayfile']
 xraylevel = resargs['xraylevel']
 deflevel = resargs['deflevel']
@@ -87,8 +83,10 @@ interpfn = si.interp1d(xray_time, xray_amp, kind='cubic', bounds_error=False, fi
 # Load up starting control file
 
 try:
-    speclist = specdatactrl.Load_specctrl(inctrl)
-except specdatactrl.SpecDataError as e:
+    sinf = specinfo.SpecInfo()
+    sinf.loadfile(inctrl)
+    speclist = sinf.get_ctrlfile()
+except specinfo.SpecInfoError as e:
     sys.stdout = sys.stderr
     print "Load control file data error", e.args[0]
     sys.exit(3)
@@ -118,8 +116,9 @@ for spec in speclist.datalist:
         spec.remarks = markmessage
 
 try:
-    specdatactrl.Save_specctrl(outctrl, speclist)
-except specdatactrl.SpecDataError as e:
+    sinf.set_ctrlfile(speclist)
+    sinf.savefile(outctrl)
+except specinfo.SpecInfoError as e:
     sys.stdout = sys.stderr
     print "Save control file error", e.args[0]
     sys.exit(4)

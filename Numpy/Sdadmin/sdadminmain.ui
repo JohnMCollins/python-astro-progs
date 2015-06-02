@@ -27,45 +27,43 @@
     <property name="title">
      <string>&amp;File</string>
     </property>
-    <addaction name="action_New_Control_File"/>
-    <addaction name="action_Select_Control_File"/>
-    <addaction name="action_Select_observation_directory"/>
-    <addaction name="action_Select_Observation_times_file"/>
-    <addaction name="action_Save_Control"/>
-    <addaction name="action_Save_Control_as"/>
+    <addaction name="action_new_info_file"/>
+    <addaction name="action_select_info_file"/>
+    <addaction name="action_select_observation_directory"/>
+    <addaction name="action_select_observation_times_file"/>
+    <addaction name="action_save_info"/>
+    <addaction name="action_save_info_as"/>
     <addaction name="separator"/>
-    <addaction name="action_New_range_file"/>
-    <addaction name="action_Select_Range_file"/>
-    <addaction name="action_Save_ranges"/>
-    <addaction name="action_Save_ranges_as"/>
+    <addaction name="action_reinit_ranges"/>
+    <addaction name="action_reload_control"/>
+    <addaction name="action_reload_ranges"/>
     <addaction name="separator"/>
-    <addaction name="action_Save_control_and_ranges"/>
+    <addaction name="action_options"/>
     <addaction name="separator"/>
-    <addaction name="action_Options"/>
-    <addaction name="action_Quit"/>
+    <addaction name="action_quit"/>
    </widget>
    <widget class="QMenu" name="menu_Data">
     <property name="title">
      <string>&amp;Data</string>
     </property>
-    <addaction name="action_X_Scaling_and_offsets"/>
-    <addaction name="action_Y_Scaling_and_offsets"/>
+    <addaction name="action_X_scaling_and_offsets"/>
+    <addaction name="action_Y_scaling_and_offsets"/>
     <addaction name="separator"/>
-    <addaction name="action_Tune_Ranges"/>
+    <addaction name="action_tune_ranges"/>
    </widget>
    <widget class="QMenu" name="menu_Procedures">
     <property name="title">
      <string>&amp;Procedures</string>
     </property>
-    <addaction name="action_Mark_Exceptional"/>
-    <addaction name="action_Calculate_continuum"/>
+    <addaction name="action_mark_exceptional"/>
+    <addaction name="action_calculate_continuum"/>
     <addaction name="action_individual_continuum"/>
    </widget>
    <widget class="QMenu" name="menu_Calculations">
     <property name="title">
      <string>&amp;Calculations</string>
     </property>
-    <addaction name="action_Equivalent_widths"/>
+    <addaction name="action_equivalent_widths"/>
    </widget>
    <addaction name="menu_File"/>
    <addaction name="menu_Data"/>
@@ -87,7 +85,7 @@
     <string>Ctrl+D</string>
    </property>
   </action>
-  <action name="action_Tune_Ranges">
+  <action name="action_tune_ranges">
    <property name="text">
     <string>&amp;Tune Ranges</string>
    </property>
@@ -101,7 +99,7 @@
     <string>Ctrl+T</string>
    </property>
   </action>
-  <action name="action_Quit">
+  <action name="action_quit">
    <property name="text">
     <string>&amp;Quit</string>
    </property>
@@ -129,13 +127,15 @@
 </string>
    </property>
   </action>
-  <action name="action_Select_Observation_times_file">
+  <action name="action_select_observation_times_file">
    <property name="text">
-    <string>Select &amp;Observation times file</string>
+    <string>Select &amp;observation times file</string>
    </property>
    <property name="toolTip">
-    <string>Select Observation times file, also select format of file.
-The spectal data files are assumed to be in the same directory.</string>
+    <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Select Observation times file, also select format of file (which columns contain data).&lt;/p&gt;&lt;p&gt;This is often not necessary where the file has a unique-looking file name and the format is time/intensity.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+   </property>
+   <property name="statusTip">
+    <string>Select the observation times file</string>
    </property>
    <property name="shortcut">
     <string>Ctrl+O</string>
@@ -149,7 +149,7 @@ The spectal data files are assumed to be in the same directory.</string>
     <string>Ctrl+F</string>
    </property>
   </action>
-  <action name="action_X_Scaling_and_offsets">
+  <action name="action_X_scaling_and_offsets">
    <property name="text">
     <string>&amp;X Scaling and offsets</string>
    </property>
@@ -157,42 +157,60 @@ The spectal data files are assumed to be in the same directory.</string>
     <string>Shift+X</string>
    </property>
   </action>
-  <action name="action_Save_Control">
+  <action name="action_save_info">
    <property name="text">
-    <string>&amp;Save control</string>
+    <string>&amp;Save info</string>
    </property>
    <property name="iconText">
-    <string>Save control file</string>
+    <string>Save info file</string>
    </property>
    <property name="toolTip">
-    <string>Save control data to file</string>
+    <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Save spectral info data to file.&lt;/p&gt;&lt;p&gt;This saves everything including the ranges data.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+   </property>
+   <property name="statusTip">
+    <string>Save spectral info data to file </string>
    </property>
    <property name="shortcut">
     <string>Ctrl+S</string>
    </property>
   </action>
-  <action name="action_Save_Control_as">
+  <action name="action_save_info_as">
    <property name="text">
-    <string>Save control &amp;as...</string>
+    <string>Save info &amp;as...</string>
    </property>
    <property name="toolTip">
-    <string>Save control to specified file</string>
+    <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Save spectral info data to a prompted-for file.&lt;/p&gt;&lt;p&gt;This saves everything including the ranges data to the new file.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+   </property>
+   <property name="statusTip">
+    <string>Save spectral info data to file </string>
    </property>
    <property name="shortcut">
     <string>Ctrl+Shift+S</string>
    </property>
   </action>
-  <action name="action_Select_Control_File">
+  <action name="action_select_info_file">
    <property name="text">
-    <string>Select &amp;Control File</string>
+    <string>Select &amp;Info File</string>
+   </property>
+   <property name="toolTip">
+    <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Select a previously-saved spectral data information file.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+   </property>
+   <property name="statusTip">
+    <string>Load previously-save info file</string>
    </property>
    <property name="shortcut">
     <string>Ctrl+C</string>
    </property>
   </action>
-  <action name="action_Select_Range_file">
+  <action name="action_reload_ranges">
    <property name="text">
-    <string>Select &amp;Range file</string>
+    <string>Reload ranges</string>
+   </property>
+   <property name="toolTip">
+    <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Reload the range data, if possible, from the original file.&lt;/p&gt;&lt;p&gt;This will not affect any spectral data and comments etc.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+   </property>
+   <property name="statusTip">
+    <string>Reload the range list from the original file if possible.</string>
    </property>
   </action>
   <action name="action_Save_ranges">
@@ -211,29 +229,35 @@ The spectal data files are assumed to be in the same directory.</string>
     <string>Ctrl+Shift+G</string>
    </property>
   </action>
-  <action name="action_New_Control_File">
+  <action name="action_new_info_file">
    <property name="text">
-    <string>&amp;New Control File</string>
+    <string>&amp;New info file</string>
    </property>
    <property name="toolTip">
-    <string>Start new control file</string>
+    <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Start new info file collating observation data, comments, adjustments&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+   </property>
+   <property name="statusTip">
+    <string>Start new info file</string>
    </property>
    <property name="shortcut">
     <string>Ctrl+N</string>
    </property>
   </action>
-  <action name="action_New_range_file">
+  <action name="action_reinit_ranges">
    <property name="text">
-    <string>New range file</string>
+    <string>Default ranges</string>
    </property>
    <property name="toolTip">
-    <string>Staqrt a new range file</string>
+    <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Re-initialise the range list to default settings.&lt;/p&gt;&lt;p&gt;These will alomost certainly have to be adjusted.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+   </property>
+   <property name="statusTip">
+    <string>Re-initialise the range list to default settings.</string>
    </property>
    <property name="shortcut">
     <string>Ctrl+Shift+N</string>
    </property>
   </action>
-  <action name="action_Y_Scaling_and_offsets">
+  <action name="action_Y_scaling_and_offsets">
    <property name="text">
     <string>&amp;Y Scaling and offsets</string>
    </property>
@@ -241,20 +265,26 @@ The spectal data files are assumed to be in the same directory.</string>
     <string>Shift+Y</string>
    </property>
   </action>
-  <action name="action_Calculate_continuum">
+  <action name="action_calculate_continuum">
    <property name="text">
     <string>Calculate continuum</string>
    </property>
    <property name="toolTip">
     <string>Calculate continuum on data and normalise</string>
    </property>
+   <property name="shortcut">
+    <string>Ctrl+Shift+C</string>
+   </property>
   </action>
-  <action name="action_Mark_Exceptional">
+  <action name="action_mark_exceptional">
    <property name="text">
     <string>&amp;Mark Exceptional</string>
    </property>
    <property name="toolTip">
     <string>Mark Exceptional spectra</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+Shift+E</string>
    </property>
   </action>
   <action name="action_individual_continuum">
@@ -264,18 +294,24 @@ The spectal data files are assumed to be in the same directory.</string>
    <property name="toolTip">
     <string>Calculate individual continuum polynomials</string>
    </property>
+   <property name="shortcut">
+    <string>Ctrl+Shift+I</string>
+   </property>
   </action>
-  <action name="action_Equivalent_widths">
+  <action name="action_equivalent_widths">
    <property name="text">
     <string>&amp;Equivalent widths</string>
    </property>
+   <property name="shortcut">
+    <string>Ctrl+E</string>
+   </property>
   </action>
-  <action name="action_Select_observation_directory">
+  <action name="action_select_observation_directory">
    <property name="text">
     <string>Select observation &amp;directory</string>
    </property>
    <property name="toolTip">
-    <string>Select the directory containing the observations.</string>
+    <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Select the directory containing the observations data. This should normally contain a list of similarly-named spectral files and an observation times file.&lt;/p&gt;&lt;p&gt; Provided it looks like that, the observation times file will be deduced as well.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
    </property>
    <property name="statusTip">
     <string>Select the directory containing the observations.</string>
@@ -284,12 +320,18 @@ The spectal data files are assumed to be in the same directory.</string>
     <string>Ctrl+D</string>
    </property>
   </action>
-  <action name="action_Options">
+  <action name="action_options">
    <property name="text">
     <string>O&amp;ptions</string>
    </property>
    <property name="toolTip">
-    <string>Set width and height of windows</string>
+    <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Set options, currently width and height of windows for displaying plots.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+   </property>
+   <property name="statusTip">
+    <string>Set program options</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+O</string>
    </property>
   </action>
   <action name="action_Save_control_and_ranges">
@@ -301,6 +343,17 @@ The spectal data files are assumed to be in the same directory.</string>
    </property>
    <property name="shortcut">
     <string>Ctrl+B</string>
+   </property>
+  </action>
+  <action name="action_reload_control">
+   <property name="text">
+    <string>Reload control</string>
+   </property>
+   <property name="toolTip">
+    <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Reload control section from original file if possible. The control section contains the links to the spectral data file with continuum offsets and notes.&lt;/p&gt;&lt;p&gt;This doesn't affect the ranges.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+   </property>
+   <property name="statusTip">
+    <string>Reload control file section from original</string>
    </property>
   </action>
  </widget>

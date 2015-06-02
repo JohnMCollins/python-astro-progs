@@ -10,6 +10,7 @@ import miscutils
 import xmlutil
 import specdatactrl
 import datarange
+import specinfo
 
 parsearg = argparse.ArgumentParser(description='Init spectrum data files (batch mode)')
 parsearg.add_argument('obsdir', type=str, help='Directory of obs data', nargs=1)
@@ -38,10 +39,9 @@ if not os.path.isdir(srcdir):
 srcdir = os.path.abspath(srcdir)
 sname = os.path.basename(srcdir)
 
-outctrlfle = os.path.join(resdir, sname + '.sac')
-outrngfle = os.path.join(resdir, sname + '.spcr')
+outinffile = os.path.join(resdir, miscutils.addsuffix(sname, specinfo.SUFFIX))
 
-if not res['force'] and (os.path.exists(outctrlfle) or os.path.exists(outrngfle)):
+if not res['force'] and os.path.exists(outinffile):
     sys.stdout = sys.stderr
     print "will not overwrite existing files"
     sys.exit(102)
@@ -62,17 +62,17 @@ except specdatactrl.SpecDataError as e:
     sys.stdout = sys.stderr
     print "Cannot load/parse files", sname, "-", e.args[0]
     sys.exit(3)    
-try:
-    specdatactrl.Save_specctrl(outctrlfle, currentlist)
-except specdatactrl.SpecDataError as e:
-    sys.stdout = sys.stderr
-    print "Save control file error", e.args[0]
-    sys.exit(103)
 
 rlist = datarange.init_default_ranges()
+
 try:
-    datarange.save_ranges(outrngfle, rlist)
-except datarange.DataRangeError as e:
-    sys.stdout = sys.stderr
-    print "Range save error", e.args[0]
+    sinf = specinfo.SpecInfo()
+    sinf.set_ctrlfile(currentlist)
+    sinf.set_rangelist(rlist)
+    sinf.savefile(outinffile)
+except specinfo.SpecInfoError as e:
+    print "Could not save output file", outinffile
+    print "Error was"
+    print e.args[0]
     sys.exit(104)
+

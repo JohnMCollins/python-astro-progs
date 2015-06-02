@@ -3,6 +3,7 @@
 import sys
 import os
 import os.path
+import string
 import locale
 import argparse
 import xml.etree.ElementTree as ET
@@ -21,6 +22,7 @@ import miscutils
 import xmlutil
 import specdatactrl
 import datarange
+import specinfo
 import mpplotter
 import configfile
 
@@ -78,25 +80,45 @@ class SadminMain(QMainWindow, ui_sdadminmain.Ui_sdadminmain):
 
     def __init__(self):
         super(SadminMain, self).__init__(None)
-        self.currentfile = ""
-        self.rangefile = ""
+        self.sinf = None
+        self.currentlist = None
+        self.rangelist = datarange.init_default_ranges()
         self.unsavedc = False
         self.unsavedr = False
-        self.currentlist = None
-        self.rangelist = None
         self.setupUi(self)
         self.updateUI()
+        self.origtitle = str(self.windowTitle())
+
+    def resetTitle(self, filename = None):
+        """Reset the window title according to the file name being processed"""
+        if filename is None or len(filename) == 0:
+            self.setWindowTitle(self.origtitle)
+        else:
+            filename = string.upper(miscutils.removesuffix(os.path.basename(filename)))
+            self.setWindowTitle("Processing - " + filename)
 
     def updateUI(self):
-        dcf = self.dirty_ctrlfile()
-        self.action_Save_Control.setEnabled(dcf)
-        nocl = self.currentlist is not None
-        self.action_Save_Control_as.setEnabled(nocl)
-        self.action_Tune_Ranges.setEnabled(nocl)
-        drf = self.dirty_rangefile()
-        self.action_Save_ranges.setEnabled(drf)
-        norf = self.rangelist is not None
-        self.action_Save_ranges_as.setEnabled(norf)
+        hascl = self.currentlist is not None
+        saveable = hascl and self.currentlist.is_complete()
+        needssaving = saveable and self.dirty_either()
+        reloadable = hascl and self.sinf is not None and self.sinf.is_complete()
+        self.action_select_observation_directory.setEnabled(hascl)
+        self.action_select_observation_times_file.setEnabled(hascl)
+        self.action_save_info.setEnabled(needssaving)
+        self.action_save_info_as.setEnabled(saveable)
+        self.action_reload_control.setEnabled(reloadable)
+        self.action_reload_ranges.setEnabled(reloadable)
+        self.action_X_scaling_and_offsets.setEnabled(saveable)
+        self.action_Y_scaling_and_offsets.setEnabled(saveable)
+        self.action_tune_ranges.setEnabled(saveable)
+        self.action_mark_exceptional.setEnabled(saveable)
+        self.action_calculate_continuum.setEnabled(saveable)
+        self.action_individual_continuum.setEnabled(saveable)
+        self.action_equivalent_widths.setEnabled(saveable)
+
+    def dirty_either(self):
+        """True if anything needs saving"""
+        return self.dirty_ctrlfile() or self.dirty_rangefile()
 
     def dirty_ctrlfile(self):
         """Report if ctrlfile needs saving.
@@ -110,41 +132,64 @@ class SadminMain(QMainWindow, ui_sdadminmain.Ui_sdadminmain):
     def ask_dirty_ctrlfile(self):
         """If control file is dirty, ask before zapping"""
         if not self.dirty_ctrlfile(): return True
-        if QMessageBox.question(self, "Are you sure", "There are unsaved changes in the control file, are you sure", QMessageBox.Yes, QMessageBox.No|QMessageBox.Default|QMessageBox.Escape) != QMessageBox.Yes:
+        if QMessageBox.question(self, "Are you sure", "There are unsaved changes in the control data, are you sure", QMessageBox.Yes, QMessageBox.No|QMessageBox.Default|QMessageBox.Escape) != QMessageBox.Yes:
             return False
         return True
 
-    def set_ctrl_file(self, filename):
+    def dirty_rangefile(self):
+        """Report if range file needs saving."""
+        return self.unsavedr
+
+    def ask_dirty_rangefile(self):
+        """If range file is dirty, ask before zapping"""
+        if not self.dirty_ctrlfile(): return True
+        if QMessageBox.question(self, "Are you sure", "There are unsaved changes in the range data, are you sure", QMessageBox.Yes, QMessageBox.No|QMessageBox.Default|QMessageBox.Escape) != QMessageBox.Yes:
+            return False
+        return True
+    
+    def ask_dirty(self):
+        """Ask before proceeding if anything is unsaved"""
+        return self.ask_dirty_ctrlfile() and self.ask_dirty_ctrlfile()
+
+    def set_info_file(self, filename):
         """Set control file up to given file name, possibly from argument or from dialog"""
         try:
-            newlist = specdatactrl.Load_specctrl(filename)
-        except specdatactrl.SpecDataError as e:
-            QMessageBox.warning(self, "Load control file data error", e.args[0])
+            newsinf = specinfo.SpecInfo()
+            newsinf.loadfile(filename)
+            clist = newsinf.get_ctrlfile()
+            rlist = newsinf.get_rangelist()
+        except specinfo.SpecInfoError as e:
+            QMessageBox.warning(self, "Load file data error", e.args[0])
             return
+        self.sinf = newsinf
+        self.currentlist = clist
+        self.rangelist = rlist
         self.unsavedc = False
-        self.currentfile = filename
-        self.currentlist = newlist
+        self.unsavedr = False
+        self.resetTitle(self.currentlist.dirname)
         self.updateUI()
 
-    def on_action_New_Control_File_triggered(self, checked = None):
+    def on_action_new_info_file_triggered(self, checked = None):
         if checked is None: return
-        if not self.ask_dirty_ctrlfile(): return
+        if not self.ask_dirty(): return
+        self.sinf = None
+        self.currentlist = specdatactrl.SpecDataList()
+        self.rangelist = datarange.init_default_ranges()
         self.unsavedc = False
-        self.currentfile = ""
-        self.currentlist = None
-        self.setWindowTitle("Spectral data file admin")
+        self.unsavedr = False
+        self.resetTitle()
         self.updateUI()
     
-    def on_action_Select_Control_File_triggered(self, checked = None):
+    def on_action_select_info_file_triggered(self, checked = None):
         if checked is None: return
-        if not self.ask_dirty_ctrlfile(): return
-        newfile = QFileDialog.getOpenFileName(self, self.tr("Select control file"), self.currentfile, self.tr("Sadmin control files (*.sac)"))
+        if not self.ask_dirty(): return
+        existing = ""
+        if self.sinf is not None and self.sinf.filename is not None: existing = self.sinf.filename
+        newfile = QFileDialog.getOpenFileName(self, self.tr("Select spectrum info file"), existing, self.tr("Spectrum info files (*." + specinfo.SUFFIX + ")"))
         if len(newfile) == 0: return
-        self.set_ctrl_file(str(newfile))
-        cdir = os.path.basename(self.currentlist.dirname)
-        self.setWindowTitle("Processing - " + cdir)
+        self.set_info_file(str(newfile))
     
-    def on_action_Select_observation_directory_triggered(self, checked = None):
+    def on_action_select_observation_directory_triggered(self, checked = None):
         if checked is None: return
         olddir = ""
         if self.currentlist is not None:
@@ -152,13 +197,14 @@ class SadminMain(QMainWindow, ui_sdadminmain.Ui_sdadminmain):
         newdir = QFileDialog.getExistingDirectory(self, self.tr("Select observations directory"), olddir)
         if len(newdir) == 0: return
         newdir = str(newdir)
+        if newdir == olddir: return
         if self.currentlist is None:
             self.currentlist = specdatactrl.SpecDataList(newdir)
         else:
             self.currentlist.set_dirname(newdir)
-        self.setWindowTitle("Processing - " + os.path.basename(newdir))
+        self.resetTitle((newdir))
 
-    def on_action_Select_Observation_times_file_triggered(self, checked = None):
+    def on_action_select_observation_times_file_triggered(self, checked = None):
         if checked is None: return
         dlg = obsfileseldlg.ObsFileDlg(self)
         if self.currentlist is None:
@@ -194,47 +240,30 @@ class SadminMain(QMainWindow, ui_sdadminmain.Ui_sdadminmain):
             self.updateUI()
             return
 
-    def dirty_rangefile(self):
-        """Report if range file needs saving."""
-        return self.unsavedr
-
-    def ask_dirty_rangefile(self):
-        """If range file is dirty, ask before zapping"""
-        if not self.dirty_ctrlfile(): return True
-        if QMessageBox.question(self, "Are you sure", "There are unsaved changes in the range data, are you sure", QMessageBox.Yes, QMessageBox.No|QMessageBox.Default|QMessageBox.Escape) != QMessageBox.Yes:
-            return False
-        return True
-
-    def set_rangefile(self, filename):
-        """Set up range file"""
-        try:
-            self.rangelist = datarange.load_ranges(filename)
-            self.rangefile = filename
-            self.unsavedr = False
-            self.updateUI()
-        except datarange.DataRangeError as e:
-            QMessageBox.warning(self, "Range load error", e.args[0])
-            return
-
-    def on_action_New_Range_file_triggered(self, checked = None):
+    def on_action_reinit_ranges_triggered(self, checked = None):
         if checked is None: return
         if not self.ask_dirty_rangefile(): return
-        self.unsavedr = False
-        self.rangefile = ""
-        self.rangelist = None
+        self.rangelist = datarange.init_default_ranges()
+        self.unsavedr = True
+        self.updateUI()
+        
+    def on_action_reload_control_triggered(self, checked = None):
+        if checked is None: return
+        if not self.ask_dirty_ctrlfile(): return
+        if not self.sinf or not self.sinf.is_complete(): return
+        self.currentlist = self.sinf.get_ctrlfile()
+        self.unsavedc = False
+        self.updateUI()
+        
+    def on_action_reload_ranges_triggered(self, checked = None):
+        if checked is None: return
+        if not self.ask_dirty_rangefile(): return
+        if not self.sinf or not self.sinf.is_complete(): return
+        self.rangelist = self.sint.get_rangelist()
+        save.unsavedr = False
         self.updateUI()
 
-    def on_action_Select_Range_file_triggered(self, checked = None):
-        if checked is None: return
-        if not self.ask_dirty_rangefile(): return
-        newfile = QFileDialog.getOpenFileName(self, self.tr("Select range file"), self.rangefile, self.tr("Range file (*.spcr)"))
-        if len(newfile) == 0: return
-        newfile = str(newfile)
-        if not miscutils.hassuffix(newfile, ".spcr"):
-            newfile += ".spcr"
-        self.set_rangefile(newfile)
-
-    def on_action_X_Scaling_and_offsets_triggered(self, checked = None):
+    def on_action_X_scaling_and_offsets_triggered(self, checked = None):
         if checked is None: return
         if self.currentlist is None:
             QMessageBox.warning(self, "No current obs file", "Please set up an observation times file first")
@@ -242,9 +271,10 @@ class SadminMain(QMainWindow, ui_sdadminmain.Ui_sdadminmain):
         dlg = scaleoffdlg.XScaleOffDlg(self)
         dlg.initdata(self.currentlist)
         dlg.exec_()
+        self.unsavedc = True
         self.updateUI()
 
-    def on_action_Y_Scaling_and_offsets_triggered(self, checked = None):
+    def on_action_Y_scaling_and_offsets_triggered(self, checked = None):
         if checked is None: return
         if self.currentlist is None:
             QMessageBox.warning(self, "No current obs file", "Please set up an observation times file first")
@@ -252,9 +282,10 @@ class SadminMain(QMainWindow, ui_sdadminmain.Ui_sdadminmain):
         dlg = scaleoffdlg.YScaleOffDlg(self)
         dlg.initdata(self.currentlist)
         dlg.exec_()
+        self.unsavedc = True
         self.updateUI()
         
-    def on_action_Tune_Ranges_triggered(self, checked = None):
+    def on_action_tune_ranges_triggered(self, checked = None):
         if checked is None: return
         if self.currentlist is None:
             QMessageBox.warning(self, "No current obs file", "Please set up an observation times file first")
@@ -265,6 +296,7 @@ class SadminMain(QMainWindow, ui_sdadminmain.Ui_sdadminmain):
         dlg.copyin_ranges(self.rangelist, self.currentlist)
         if dlg.exec_():
             self.rangelist = dlg.copyout_ranges()
+            self.unsavedc = True
             self.unsavedr = True
             self.updateUI()
         dlg.closefigure()
@@ -278,7 +310,7 @@ class SadminMain(QMainWindow, ui_sdadminmain.Ui_sdadminmain):
             return False
         return True
 
-    def on_action_Mark_Exceptional_triggered(self, checked = None):
+    def on_action_mark_exceptional_triggered(self, checked = None):
         if checked is None: return
         if not self.ready_to_calc(): return
         nc = markexceptdlg.run_exception_marks(self.currentlist, self.rangelist)
@@ -286,12 +318,13 @@ class SadminMain(QMainWindow, ui_sdadminmain.Ui_sdadminmain):
             self.currentlist = nc
             self.updateUI()
 
-    def on_action_Calculate_continuum_triggered(self, checked = None):
+    def on_action_calculate_continuum_triggered(self, checked = None):
         if checked is None: return
         if not self.ready_to_calc(): return
         nc = contcalcdlg.run_continuum_calc(self.currentlist, self.rangelist)
         if nc is not None:
             self.currentlist = nc
+            self.unsavedc = True
             self.updateUI()
 
     def on_action_individual_continuum_triggered(self, checked = None):
@@ -300,87 +333,48 @@ class SadminMain(QMainWindow, ui_sdadminmain.Ui_sdadminmain):
         nc = contcalcdlg.run_indiv_continuum_calc(self.currentlist, self.rangelist)
         if nc is not None:
             self.currentlist = nc
+            self.unsavedc = True
             self.updateUI()
             
-    def on_action_Equivalent_widths_triggered(self, checked = None):
+    def on_action_equivalent_widths_triggered(self, checked = None):
         if checked is None: return
         if not self.ready_to_calc(): return
-        ewcalc.run_ew_calc(self.currentlist, self.rangelist)  
-
-    def save_cf_ops(self, fname):
-        """Guts of saving control file"""
+        ewcalc.run_ew_calc(self.currentlist, self.rangelist)
+        
+    def save_ops(self, filename = None):
         try:
-            specdatactrl.Save_specctrl(fname, self.currentlist)
-            return True
-        except specdatactrl.SpecDataError as e:
-            QMessageBox.warning(self, "Save control file error", e.args[0])
-            return False
-
-    def on_action_Save_Control_triggered(self, checked = None):
+            if self.sinf is None:
+                self.sinf = specinfo.SpecInfo()
+            self.sinf.set_ctrlfile(self.currentlist)
+            self.sinf.set_rangelist(self.rangelist)
+            self.sinf.savefile(filename)
+            self.unsavedc = False
+            self.unsavedr = False
+            self.updateUI()
+        except specinfo.SpecInfoError as e:
+            QMessageBox.warning(self, "File save error", "Cannot save file, error was " + e.args[0])
+    
+    def on_action_save_info_triggered(self, checked = None):
         if checked is None: return
-        if not self.dirty_ctrlfile(): return
-        if len(self.currentfile) == 0:
-            self.on_action_Save_Control_as_triggered(True)
+        if not self.dirty_either(): return
+        if self.sinf is None or not self.sinf.has_file():
+            self.on_action_save_info_as_triggered(True)
             return
-        if not self.save_cf_ops(self.currentfile): return
-        self.unsavedc = False
-        self.updateUI()
+        self.save_ops()
 
-    def on_action_Save_Control_as_triggered(self, checked = None):
+    def on_action_save_info_as_triggered(self, checked = None):
         if checked is None: return
-        if self.currentlist is None:
+        if self.currentlist is None or not self.currentlist.is_complete():
             QMessageBox.warning(self, "No observation list", "No observation list set up yet")
             return
-        fname = QFileDialog.getSaveFileName(self, self.tr("Select save file"), self.currentfile, self.tr("Sadmin control files (*.sac)"))
+        existing = ""
+        if self.sinf is not None and self.sinf.filename is not None:
+            existing = self.sinf.filename
+        fname = QFileDialog.getSaveFileName(self, self.tr("Select save file"), existing, self.tr("Spectral info files (*." + specinfo.SUFFIX + ")"))
         if len(fname) == 0: return
-        fname = str(fname)
-        if not miscutils.hassuffix(fname, ".sac"):
-            fname += ".sac"
-        if not self.save_cf_ops(fname): return
-        self.unsavedc = False
-        self.currentfile = fname
-        self.updateUI()
-
-    def save_rf_ops(self, fname):
-        """Guts of saving range file"""
-        try:
-            datarange.save_ranges(fname, self.rangelist)
-            return True
-        except datarange.DataRangeError as e:
-            QMessageBox.warning(self, "Save range file error", e.args[0])
-            return False
-
-    def on_action_Save_ranges_triggered(self, checked = None):
-        if checked is None: return
-        if not self.unsavedr: return
-        if len(self.rangefile) == 0:
-            self.on_action_Save_ranges_as_triggered(True)
-            return
-        if not self.save_rf_ops(self.rangefile): return
-        self.unsavedr = False
-        self.updateUI()
-
-    def on_action_Save_ranges_as_triggered(self, checked = None):
-        if checked is None: return
-        if self.rangelist is None:
-            QMessageBox.warning(self, "No range list", "No range list set up yet")
-            return
-        fname = QFileDialog.getSaveFileName(self, self.tr("Select range file"), self.rangefile, self.tr("Range file (*.spcr)"))
-        if len(fname) == 0: return
-        fname = str(fname)
-        if not miscutils.hassuffix(fname, ".spcr"):
-            fname += ".spcr"
-        if not self.save_rf_ops(fname): return
-        self.unsavedr = False
-        self.rangefile = fname
-        self.updateUI()
-    
-    def on_action_Save_control_and_ranges_triggered(self, checked = None):
-        if checked is None: return
-        self.on_action_Save_Control_triggered(True)
-        self.on_action_Save_ranges_triggered(True)
-        
-    def on_action_Options_triggered(self, checked = None):
+        self.save_ops(miscutils.replacesuffix(str(fname), specinfo.SUFFIX))
+      
+    def on_action_options_triggered(self, checked = None):
         global cfg
         if checked is None: return
         dlg = ProgoptsDlg(self)
@@ -391,11 +385,12 @@ class SadminMain(QMainWindow, ui_sdadminmain.Ui_sdadminmain):
             cfg.sheight = dlg.pheight.value()
             mpplotter.Setdims(width = cfg.swidth, height = cfg.sheight)
 
-    def on_action_Quit_triggered(self, checked = None):
+    def on_action_quit_triggered(self, checked = None):
         global cfg
         if checked is None: return
-        if (self.dirty_ctrlfile() or self.dirty_rangefile()) and \
-            QMessageBox.question(self, "Unsaved data", "There are unsaved changes, sure you want to quit", QMessageBox.Yes, QMessageBox.No|QMessageBox.Default|QMessageBox.Escape) != QMessageBox.Yes:
+        if self.dirty_either() and \
+            QMessageBox.question(self, "Unsaved data", "There are unsaved changes, sure you want to quit",
+                                 QMessageBox.Yes, QMessageBox.No|QMessageBox.Default|QMessageBox.Escape) != QMessageBox.Yes:
             return
         try:
             cdoc, croot = configfile.init_save(CONFIGROOT)
@@ -406,7 +401,7 @@ class SadminMain(QMainWindow, ui_sdadminmain.Ui_sdadminmain):
         QApplication.exit(0)
 
     def closeEvent(self, event):
-        self.on_action_Quit_triggered(True)
+        self.on_action_quit_triggered(True)
 
 app = QApplication(sys.argv)
 mw = SadminMain()
@@ -427,22 +422,22 @@ except xmlutil.XMLError as e:
 # Parse arguments
     
 parsearg = argparse.ArgumentParser(description='Spectrum data files admin')
-parsearg.add_argument('--rangefile', type=str, help='Range file')
-parsearg.add_argument('--specfile', type=str, help='Spectrum data controlfile')
+parsearg.add_argument('--infofile', type=str, help='Existing spectrum info file')
 parsearg.add_argument('--width', type=float, default=0.0, help='Plotting width display')
 parsearg.add_argument('--height', type=float, default=0.0, help='Plotting height display')
 res = vars(parsearg.parse_args())
-rf = res['rangefile']
-sf = res['specfile']
+infofile = res['infofile']
 if res['width'] >= 2.0:
     cfg.swidth = res['width']
 if res['height'] >= 2.0:
     cfg.sheight = res['height']            
 mpplotter.Setdims(width = cfg.swidth, height = cfg.sheight)
 
-if sf is not None:
-    mw.set_ctrl_file(sf)
-if rf is not None:
-    mw.set_rangefile(rf)
+if infofile is not None:
+    if not os.path.isfile(infofile):
+        infofile = miscutils.replacesuffix(infofile, specinfo.SUFFIX)
+    mw.set_info_file(infofile)
+else:
+    mw.on_action_new_info_file_triggered(True)
 mw.show()
 app.exec_()              
