@@ -111,7 +111,7 @@ for daynum, xrf in enumerate(xrayfiles):
     
     # Get ourselves an array of 3 rows with 4 columns, times, amps, gradients and times converted to dates
      
-    xraydata.append((xray_time, xray_amp, xray_gradient, xray_dates))
+    xraydata.append((xray_time, xray_amp, xray_err, xray_gradient, xray_dates))
 
 # Formatting operation to display times as hh:mm
 
@@ -125,7 +125,7 @@ ln = 1
 commonax = None
 plt.subplots_adjust(hspace = 0)
 
-for xray_time, xray_amp, xray_gradient, xray_dates in xraydata:
+for xray_time, xray_amp, xray_err, xray_gradient, xray_dates in xraydata:
     
     # Display of one column 3 axes
     
@@ -144,7 +144,7 @@ for xray_time, xray_amp, xray_gradient, xray_dates in xraydata:
     if logxray:
         plt.semilogy(xray_dates, xray_amp, color='black')
     else:
-        plt.plot(xray_dates, xray_amp, color='black')
+        plt.errorbar(xray_dates, xray_amp, yerr=xray_err, ecolor='red', color='black')
 
     plt.legend(["Day %d" % ln])
     plt.xlabel('Time')
@@ -204,7 +204,7 @@ for day_dates, day_ews, day_prs, day_xrayvs, day_xraygrads in dateparts:
     minew = np.min(day_ews)
     maxew = np.max(day_ews)
     
-    xray_time, xray_amp, xray_gradient, xray_dates = xraydata.pop(0)
+    xray_time, xray_amp, xray_err, xray_gradient, xray_dates = xraydata.pop(0)
     
     fig = plt.figure(figsize=(width,height))   
     plt.subplots_adjust(hspace = 0)    
