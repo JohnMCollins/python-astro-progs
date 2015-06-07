@@ -29,12 +29,14 @@ parsearg = argparse.ArgumentParser(description='Correlate wavelengths')
 parsearg.add_argument('--infofile', type=str, help='Input spectral info file', required=True)
 parsearg.add_argument('--rangename', type=str, default='halpha', help='Range name to calculate equivalent widths')
 parsearg.add_argument('--specnum', type=int, default=0, help='Spectrum number as base')
+parsearg.add_argument('--expandbase', type=float, default=0.1, help='Amount to expand base range for correlation')
 
 resargs = vars(parsearg.parse_args())
 
 infofile = resargs['infofile']
 rangename = resargs['rangename']
 specnum = resargs['specnum']
+expansion = resargs['expandbase']
 
 # Now read the info file
 
@@ -64,11 +66,13 @@ try:
     basespec = ctrllist.datalist[0]
     basex = basespec.get_xvalues(False)
     basey = basespec.get_yvalues(False)
+    basex, basey = selected_range.select(basex, basey, expansion)
 except specdatactrl.SpecDataError as e:
     print "Error selecting base spectrum", e.args[0]
     sys.exit(15)
 
 basefrom, baseto = selected_range.argselect(basex)
+meany = np.mean(basey)
 
 for snum, spectrum in enumerate(ctrllist.datalist):
 
@@ -83,7 +87,7 @@ for snum, spectrum in enumerate(ctrllist.datalist):
 
     selx, sely = selected_range.select(xvalues,  yvalues)
     
-    corr = ss.correlate(basey, sely, 'same')
+    corr = ss.correlate(basey-meany, sely-meany, 'same')
     corrmax = argmaxmin.maxmaxes(corr,corr)
     print "Spectrum", snum, "offset", corrmax[0], "diff", corrmax[0]-basefrom
 
