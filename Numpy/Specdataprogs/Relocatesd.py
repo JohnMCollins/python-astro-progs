@@ -31,6 +31,7 @@ if listonly:
         print "New directory not appropriate for list option"
         sys.exit(10)  
     errors = 0
+    warnings = 0
     for inff in inffiles:
         if not os.path.isfile(inff):
             inff = miscutils.replacesuffix(inff, specinfo.SUFFIX)
@@ -50,7 +51,10 @@ if listonly:
             print olddir
         else:
             print olddir, " (does not exist)"
+            warnings += 1
     if errors > 0:
+        sys.exit(2)
+    if warnings > 0:
         sys.exit(1)
     sys.exit(0)
 
