@@ -1,6 +1,6 @@
 #! /usr/bin/env python
 
-# Display ratio calculation vs EW
+# Display ranges in spec data info file
 
 import argparse
 import os.path
