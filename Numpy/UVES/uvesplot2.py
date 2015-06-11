@@ -111,8 +111,8 @@ hfmt = dates.DateFormatter('%H:%M')
 fig = plt.figure(figsize=(width, height))
 fig.canvas.set_window_title("Xray values all to same scale")
 ln = 1
-commonax = None
 plt.subplots_adjust(hspace = 0)
+commonax = None
 
 for xray_time, xray_amp, xray_err, xray_gradient, xray_dates in xraydata:
     
@@ -138,12 +138,12 @@ for xray_time, xray_amp, xray_err, xray_gradient, xray_dates in xraydata:
     plt.legend(["Day %d" % ln])
     plt.xlabel('Time')
     plt.ylabel('Intensity')
-    rax = plt.twinx(ax1)
-    plt.ylim(mingrad, maxgrad)
-    plt.plot(xray_dates, xray_gradient, color='purple', ls=':')
-    plt.ylabel('Gradient')
-    rax.yaxis.label.set_color('purple')
-    rax.tick_params(axis='y', colors='purple')
+    #rax = plt.twinx(ax1)
+    #plt.ylim(mingrad, maxgrad)
+    #plt.plot(xray_dates, xray_gradient, color='purple', ls=':')
+    #plt.ylabel('Gradient')
+    #rax.yaxis.label.set_color('purple')
+    #rax.tick_params(axis='y', colors='purple')
     ln += 1
 
 if outfile is not None:
@@ -165,102 +165,70 @@ except IOError as e:
 datelist = [jdate.jdate_to_datetime(jd) for jd in jdates]
 dateparts = splittime.splittime(SECSPERDAY, datelist, ews, prs, xrayvs, xraygrads)
 
-# Create legends for each specified level
 # Remember the selected EWs for each level
 
-legends = []
 ewlevs = []
+ewlevs.append(np.empty(0,))
+ewlevs.append(np.empty(0,))
+ewlevs.append(np.empty(0,))
+prlevs = []
+prlevs.append(np.empty(0,))
+prlevs.append(np.empty(0,))
+prlevs.append(np.empty(0,))
 
-for minxr, maxxr, isg in xraylevels:
-    ewlevs.append(np.empty(0,))
-    if minxr <= -1e30:
-        if maxxr >= 1e30:
-            leg = "No X-ray"
-        else:
-            leg = "X-ray < %.3g" % maxxr
-    elif maxxr >= 1e30:
-        leg = "X-ray > %.3g" % minxr
-    else:
-        leg = "%.3g > X-ray > %.3g" % (maxxr, minxr)
-    if isg:
-        leg += " (gr)"
-    legends.append(leg)
+legends = ('Below %.6g' % loxray, '%.6g < Xr < %.6g' % (loxray, hixray), 'Abpve %.6g' % hixray)
+hc = ('red', 'blue', 'green')
 
 # Plot for each day
 
 for day_dates, day_ews, day_prs, day_xrayvs, day_xraygrads in dateparts:
-    
-    minew = np.min(day_ews)
-    maxew = np.max(day_ews)
-    
+        
     xray_time, xray_amp, xray_err, xray_gradient, xray_dates = xraydata.pop(0)
     
     fig = plt.figure(figsize=(width,height))   
     plt.subplots_adjust(hspace = 0)    
     plt.xlim(day_dates[0], day_dates[-1])
     fig.canvas.set_window_title(day_dates[0].strftime("For %d %b %Y"))
-    
-    ax1 = None
-    
-    # We remember the selected EWs for each X-ray level in "ewforday"
-    
     ewforday = []
+    ax1 = plt.subplot(3, 1, 1)
+    sello = day_xrayvs < loxray
+    selhi = day_xrayvs > hixray
+    selmid = ~(sello | selhi)
     
-    for ln, xrl in enumerate(xraylevels):
-        pax = plt.subplot(1+nlevs,1,1+ln, sharex=ax1)
-        plt.ylim(minew, maxew)
-        if ax1 is None: ax1=pax
-        minxr, maxxr, isg = xrl
-        if isg:
-            selection = (day_xraygrads > minxr) & (day_xraygrads < maxxr)
-        else:
-            selection = (day_xrayvs > minxr) & (day_xrayvs < maxxr)
-
-        plot_ews = day_ews[selection]
-        plot_times = day_dates[selection]
-        
-        for t,e in splittime.splittime(splitem, plot_times, plot_ews):
-            plt.plot(t, e, color=colours[ln])
-        
-        for t,pr in zip(day_dates, day_prs):
-            if pr < 1.0:
-                plt.axvline(t, color='#102590', alpha=.5)
-        plt.legend([legends[ln]])
-        
-        # Append EWs to that for day and total for X-ray level
-        
-        ewforday.append(plot_ews)
-        ewlevs[ln] = np.append(ewlevs[ln], plot_ews)
-  
-    # Stick X-ray plot at the bottom
+    plt.plot(day_dates, day_ews, color='blue')
+    for t in day_dates[selmid]:
+        plt.axvline(t, color='red', alpha=.5)
+    for t in day_dates[selhi]:
+        plt.axvline(t, color='green', alpha=.5)
+    plt.legend(['EWs'])
     
-    ax2 = plt.subplot(1+nlevs,1,1+nlevs,sharex=ax1)
-
+    ax2 = plt.subplot(3, 1, 2, sharex=ax1)
+    plt.plot(day_dates, day_prs, color='purple')
+    for t in day_dates[selmid]:
+        plt.axvline(t, color='red', alpha=.5)
+    for t in day_dates[selhi]:
+        plt.axvline(t, color='green', alpha=.5)
+    plt.legend(['Ratios'])
+    
+    ax3 = plt.subplot(3, 1, 3, sharex=ax1)
+   
     if logxray:
-        plt.semilogy(xray_dates, xray_amp)
+        plt.semilogy(xray_dates, xray_amp, color='black')
     else:    
-        plt.plot(xray_dates, xray_amp)
-    for ln, xrl in enumerate(xraylevels):
-        minxr, maxxr, isg = xrl
-        if not isg:
-            if minxr > -1e30: plt.axhline(minxr, color=colours[ln])
-            if maxxr < 1e30: plt.axhline(maxxr, color=colours[ln])
-    
+        plt.plot(xray_dates, xray_amp, color='black')
+    plt.axhline(loxray, color='red')
+    plt.axhline(hixray, color='green')
     plt.legend(["X-ray amp"])
     plt.xlim(xray_dates[0], xray_dates[-1])
     ax2.xaxis.set_major_formatter(hfmt)
     plt.gcf().autofmt_xdate()
     
-    # Overlay gradient plot
-    
-    ax3 = plt.twinx(ax2)
-    plt.plot(xray_dates, xray_gradient, color='purple', ls=':')
-    #plt.legend(['X-ray grad'])
-    for ln, xrl in enumerate(xraylevels):
-        minxr, maxxr, isg = xrl
-        if isg:
-            if minxr > -1e30: plt.axhline(minxr, color=colours[ln], ls=':')
-            if maxxr < 1e30: plt.axhline(maxxr, color=colours[ln], ls=':')
+    ewforday.append(day_ews[sello])
+    ewforday.append(day_ews[selmid])
+    ewforday.append(day_ews[selhi])
+    ewlevs[0] = np.append(ewlevs[0], day_ews[sello])
+    ewlevs[1] = np.append(ewlevs[1], day_ews[selmid])
+    ewlevs[2] = np.append(ewlevs[2], day_ews[selhi])
     
     if outfile is not None:
         fig.savefig(outfile + day_dates[0].strftime("plot_%d%b.png"))
@@ -271,7 +239,7 @@ for day_dates, day_ews, day_prs, day_xrayvs, day_xraygrads in dateparts:
     
     fig = plt.figure(figsize=(hwidth, hheight))
     fig.canvas.set_window_title(day_dates[0].strftime("Equivalent widths for %d %b %Y combined"))
-    plt.hist(ewforday, bins=bins)
+    plt.hist(ewforday, bins=bins, color=hc)
     plt.legend(legends)
     if outfile is not None:
         fig.savefig(outfile + day_dates[0].strftime("cewhist_%d%b.png"))
@@ -284,10 +252,10 @@ for day_dates, day_ews, day_prs, day_xrayvs, day_xraygrads in dateparts:
     plt.subplots_adjust(hspace = 0)
     ax1 = None
     for ln, ewd in enumerate(ewforday):
-        ax = plt.subplot(nlevs, 1, 1+ln, sharex=ax1)
-        histandgauss.histandgauss(ewd, bins=bins, colour=colours[ln])
-        if ax1 is None: ax1 = ax
+        ax = plt.subplot(3, 1, 1+ln, sharex=ax1)
+        histandgauss.histandgauss(ewd, bins=bins, colour=hc[ln])
         plt.legend([legends[ln]])
+        if ax1 is None: ax1 = ax
     if outfile is not None:
         fig.savefig(outfile + day_dates[0].strftime("ewhist_%d%b.png"))
 
@@ -296,7 +264,7 @@ for day_dates, day_ews, day_prs, day_xrayvs, day_xraygrads in dateparts:
 
 fig = plt.figure(figsize=(hwidth, hheight))
 fig.canvas.set_window_title("Equivalent widths (all days) combined")
-plt.hist(ewlevs, bins=bins)
+plt.hist(ewlevs, bins=bins, color=hc)
 plt.legend(legends)
 if outfile is not None:
     fig.savefig(outfile + "cewhistall.png")
@@ -308,10 +276,10 @@ fig.canvas.set_window_title("Equivalent widths (all days)")
 plt.subplots_adjust(hspace = 0)
 ax1 = None
 for ln, ewd in enumerate(ewlevs):
-    ax = plt.subplot(nlevs, 1, 1+ln, sharex=ax1)
-    histandgauss.histandgauss(ewd, bins=bins, colour=colours[ln])
-    if ax1 is None: ax1 = ax
+    ax = plt.subplot(3, 1, 1+ln, sharex=ax1)
+    histandgauss.histandgauss(ewd, bins=bins, colour=hc[ln])
     plt.legend([legends[ln]])
+    if ax1 is None: ax1 = ax
 if outfile is not None:
     fig.savefig(outfile + "ewhistall.png")
     
