@@ -32,7 +32,7 @@ class EWResdlg(QDialog, ui_ewresdlg.Ui_ewresdlg):
         d = QFileDialog.getExistingDirectory(self, "Select browse directory")
         if d is None: return
         self.resdir.setText(d)
-        
+
     def on_browsefile_clicked(self, b = None):
         if b is None: return
         ename = self.resfile.text()
@@ -49,11 +49,11 @@ class EWResdlg(QDialog, ui_ewresdlg.Ui_ewresdlg):
             self.plotfile.setText(self.starname + '-plot')
 
 class EWCalcDlg(QDialog, ui_ewcalcdlg.Ui_ewcalcdlg):
-    
+
     def __init__(self, parent = None):
         super(EWCalcDlg, self).__init__(parent)
         self.setupUi(self)
-        
+
     def initrange(self, rangefile):
         """Initialise range combo box"""
         rlist = rangefile.listranges()
@@ -86,28 +86,28 @@ def run_ew_calc(ctrlfile, rangefile):
         return
 
     # Put up the dialog box to work out what we're doing
-    
+
     dlg = EWCalcDlg()
     dlg.initrange(rangefile)
-    
+
     # Loop until happy
-    
+
     while dlg.exec_():
         selrange = dlg.peakrange.currentIndex()
         if selrange <= 0:
             QMessageBox.warning(dlg, "No range given", "You didn't give an integrations range")
             continue
-    
+
         halphar = rangefile.getrange(str(dlg.peakrange.itemData(selrange).toString()))
         scaling = dlg.scaling.value()
-    
+
         skipped = 0
         elist = exclusions.Exclusions()
         datelu = dict()
-    
+
         # Compile list of equivalent widths for each spectrum
         # Note the ones we are excluding separately
-        
+
         for dataset in ctrlfile.datalist:
             try:
                 xvalues = dataset.get_xvalues(False)
@@ -120,9 +120,9 @@ def run_ew_calc(ctrlfile, rangefile):
             har, hir = meanval.mean_value(halphar, xvalues, yvalues)
             ew = (hir - scaling * har) / har
             datelu[dataset.modbjdate] = ew
-    
+
             # Now sort the result so we've got dates in an array with parallel ews.
-    
+
         ds = datelu.keys()
         ds.sort()
         dates = []
@@ -130,9 +130,9 @@ def run_ew_calc(ctrlfile, rangefile):
         for d in ds:
             dates.append(d)
             ews.append(datelu[d])
-    
+
         # Draw the histogram
-        
+
         histfig = plt.gcf()
         histfig.canvas.set_window_title("Equivalent widths histogram")
         histews = np.array(ews)
@@ -161,19 +161,19 @@ def run_ew_calc(ctrlfile, rangefile):
         plt.ylabel(str(dlg.histyaxis.text()))
         plt.xlabel(str(dlg.histxaxis.text()))
         plt.show()
-    
+
         # rxarray is an array of arrays of x values for each separate day
         # ditto ryarray for y values
-        
+
         rxarray = []
         ryarray = []
         rxvalues = []
         ryvalues = []
-    
+
         lastdate = 1e12         # Force new date
-        
+
         sepdays = dlg.sepdays.value()
-    
+
         for d, v in zip(dates,ews):
             if d - lastdate > sepdays and len(rxvalues) != 0:
                 # Starting new day
@@ -186,34 +186,34 @@ def run_ew_calc(ctrlfile, rangefile):
             lastdate = d
 
         # Pick up stragglers
-       
+
         if len(rxvalues) != 0:
            rxarray.append(rxvalues)
            ryarray.append(ryvalues)
-    
+
         colours = Plotcolours * ((len(rxarray) + len(Plotcolours) - 1) / len(Plotcolours))
-        
+
         # Assign colours to reasons for exclusion
-        
+
         rlist = elist.reasons()
         excolours = Exclcolours * ((len(rlist) + len(Exclcolours) - 1) / len(Exclcolours))
         rlookup = dict()
         for r, c in zip(rlist, excolours):
             rlookup[r] = c
-    
+
         xlab = str(dlg.plotxaxis.text())
         ylab = str(dlg.plotyaxis.text())
 
         # Separate plots if we've asked for them and we have actually split across days
-        
+
         sepplots = dlg.sepplot.isChecked() and len(rxarray) > 1
-        
+
         if  sepplots:
-            
+
             # Plot each separately, list figures in figlist
-            
+
             figlist = []
-            
+
             for xarr, yarr, col in zip(rxarray,ryarray,colours):
                 offs = xarr[0]
                 xa = np.array(xarr) - offs
@@ -264,10 +264,10 @@ def run_ew_calc(ctrlfile, rangefile):
             for xpl, creas in lines:
                 plt.axvline(xpl, color=creas, ls="--")
         plt.show()
-    
+
         resdlg = EWResdlg()
         resdlg.starname = os.path.basename(ctrlfile.dirname)
-        
+
         # Loop until we get a sensible answer or he gives up
 
         while resdlg.exec_():
@@ -293,12 +293,12 @@ def run_ew_calc(ctrlfile, rangefile):
                 if not miscutils.hassuffix(plotfile, '.png'): plotfile += '.png'
                 ppath = os.path.join(resdir, plotfile)
                 plt.savefig(ppath)
-            
+
             if len(resfile) != 0:
                 nparr = np.array([dates, ews]).transpose()
                 np.savetxt(resfile, nparr)
             break
-    
+
         plt.figure(histfig.number)
         plt.close()
         if sepplots:

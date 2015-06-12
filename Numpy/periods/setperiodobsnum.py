@@ -9,15 +9,15 @@ import periodtrial
 import threading
 
 class ProcessRow(threading.Thread):
-    
+
     # Thread to run all the SNRs over the given period fraction
-    
+
     def __init__(self, rownum):
         threading.Thread.__init__(self)
         self.rownum = rownum
-    
+
     def run(self):
-        
+
         global X, Y, LY, Z, tlock
 
         colresult = []
@@ -33,7 +33,7 @@ class ProcessRow(threading.Thread):
                                                             snrnoise = Logy[col],
                                                             normpropnoise = 0.5,
                                                             samples = searchn))
-        
+
         tlock.acquire()
         Z[self.rownum] = colresult
         tlock.release()

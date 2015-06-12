@@ -70,36 +70,36 @@ maxgrad = -1e20
 
 for daynum, xrf in enumerate(xrayfiles):
     try:
-        
+
         # Columns of file are amplitude, error (currently ignored) and time.
         # Time is seconds since 1/1/98 midnight don't ask me why.
-         
+
         xray_amp, xray_err, xray_time = np.loadtxt(xrf, unpack=True)
 
         xray_time += xrayoffset
         xray_time /= SECSPERDAY
         xray_time += 50814.0            # 1/1/1998 for whatever reason
-        
+
         # Get the difference between observations
         # Work out the gradient
-        
+
         xray_timediff = np.mean(np.diff(xray_time))
         xray_gradient = np.gradient(xray_amp, xray_timediff)
-        
+
         maxamp = max(maxamp, np.max(xray_amp))
         mingrad = min(mingrad, np.min(xray_gradient))
         maxgrad = max(maxgrad, np.max(xray_gradient))
-        
+
         # Get sates as datetime array
-        
-        xray_dates = [jdate.jdate_to_datetime(d) for d in xray_time] 
-        
+
+        xray_dates = [jdate.jdate_to_datetime(d) for d in xray_time]
+
     except IOError as e:
         print "Cannoot open", xrf, "Error was", e.args[1]
         sys.exit(11)
-    
+
     # Get ourselves an array of 3 rows with 4 columns, times, amps, gradients and times converted to dates
-     
+
     xraydata.append((xray_time, xray_amp, xray_err, xray_gradient, xray_dates))
 
 # Formatting operation to display times as hh:mm
@@ -115,20 +115,20 @@ plt.subplots_adjust(hspace = 0)
 commonax = None
 
 for xray_time, xray_amp, xray_err, xray_gradient, xray_dates in xraydata:
-    
+
     # Display of one column 3 axes
-    
+
     ax1 = plt.subplot(3, 1, ln, sharex=commonax)
     if commonax is None: commonax=ax1
-    
+
     # Limit each display to maxamp as we worked out when we read it in
-    
+
     plt.ylim(0, maxamp)
     ax1.xaxis.set_major_formatter(hfmt)
     fig.autofmt_xdate()
-    
+
     # Recalc this to put them on the same axis
-    
+
     xray_dates = np.array([jdate.jdate_to_datetime(d - ln*2 - 2) for d in xray_time])
     if logxray:
         plt.semilogy(xray_dates, xray_amp, color='black')
@@ -153,9 +153,9 @@ if outfile is not None:
 # This is dates, barycentric dates (not currently used), EWs, interpolated amp and gradients
 
 try:
-    
+
     jdates, bjdates, ews, prs, xrayvs, xraygrads = np.loadtxt(ewfile, unpack=True)
-    
+
 except IOError as e:
     print "Cannot open info file, error was", e.args[1]
     sys.exit(12)
@@ -182,11 +182,11 @@ hc = ('red', 'blue', 'green')
 # Plot for each day
 
 for day_dates, day_ews, day_prs, day_xrayvs, day_xraygrads in dateparts:
-        
+
     xray_time, xray_amp, xray_err, xray_gradient, xray_dates = xraydata.pop(0)
-    
-    fig = plt.figure(figsize=(width,height))   
-    plt.subplots_adjust(hspace = 0)    
+
+    fig = plt.figure(figsize=(width,height))
+    plt.subplots_adjust(hspace = 0)
     plt.xlim(day_dates[0], day_dates[-1])
     fig.canvas.set_window_title(day_dates[0].strftime("For %d %b %Y"))
     ewforday = []
@@ -194,14 +194,14 @@ for day_dates, day_ews, day_prs, day_xrayvs, day_xraygrads in dateparts:
     sello = day_xrayvs < loxray
     selhi = day_xrayvs > hixray
     selmid = ~(sello | selhi)
-    
+
     plt.plot(day_dates, day_ews, color='blue')
     for t in day_dates[selmid]:
         plt.axvline(t, color='red', alpha=.5)
     for t in day_dates[selhi]:
         plt.axvline(t, color='green', alpha=.5)
     plt.legend(['EWs'])
-    
+
     ax2 = plt.subplot(3, 1, 2, sharex=ax1)
     plt.plot(day_dates, day_prs, color='purple')
     for t in day_dates[selmid]:
@@ -209,12 +209,12 @@ for day_dates, day_ews, day_prs, day_xrayvs, day_xraygrads in dateparts:
     for t in day_dates[selhi]:
         plt.axvline(t, color='green', alpha=.5)
     plt.legend(['Ratios'])
-    
+
     ax3 = plt.subplot(3, 1, 3, sharex=ax1)
-   
+
     if logxray:
         plt.semilogy(xray_dates, xray_amp, color='black')
-    else:    
+    else:
         plt.plot(xray_dates, xray_amp, color='black')
     plt.axhline(loxray, color='red')
     plt.axhline(hixray, color='green')
@@ -222,31 +222,31 @@ for day_dates, day_ews, day_prs, day_xrayvs, day_xraygrads in dateparts:
     plt.xlim(xray_dates[0], xray_dates[-1])
     ax2.xaxis.set_major_formatter(hfmt)
     plt.gcf().autofmt_xdate()
-    
+
     ewforday.append(day_ews[sello])
     ewforday.append(day_ews[selmid])
     ewforday.append(day_ews[selhi])
     ewlevs[0] = np.append(ewlevs[0], day_ews[sello])
     ewlevs[1] = np.append(ewlevs[1], day_ews[selmid])
     ewlevs[2] = np.append(ewlevs[2], day_ews[selhi])
-    
+
     if outfile is not None:
         fig.savefig(outfile + day_dates[0].strftime("plot_%d%b.png"))
-    
+
     # Do EW histograms for day.
     # We recorded the selected EW for each x-ray level in ewlevs
     # First a combined histogram
-    
+
     fig = plt.figure(figsize=(hwidth, hheight))
     fig.canvas.set_window_title(day_dates[0].strftime("Equivalent widths for %d %b %Y combined"))
     plt.hist(ewforday, bins=bins, color=hc)
     plt.legend(legends)
     if outfile is not None:
         fig.savefig(outfile + day_dates[0].strftime("cewhist_%d%b.png"))
-    
+
     # Redo as a separate histogram for each day
-    
-    fig = plt.figure(figsize=(hwidth, hheight))   
+
+    fig = plt.figure(figsize=(hwidth, hheight))
     plt.subplots_adjust(hspace = 0)
     fig.canvas.set_window_title(day_dates[0].strftime("Equivalent widths for %d %b %Y"))
     plt.subplots_adjust(hspace = 0)
@@ -282,7 +282,7 @@ for ln, ewd in enumerate(ewlevs):
     if ax1 is None: ax1 = ax
 if outfile is not None:
     fig.savefig(outfile + "ewhistall.png")
-    
+
 # Only display if we're not saving
 
 if outfile is None:

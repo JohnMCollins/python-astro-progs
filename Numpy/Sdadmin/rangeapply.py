@@ -60,11 +60,11 @@ def get_selected_specdata(dataset, exclist, inclist):
 
     xvalues = dataset.get_xvalues(False)
     yvalues = dataset.get_yvalues(False)
-    
+
     # Apply exclusions
 
     xvalues, yvalues = apply_excluded_ranges(exclist, xvalues, yvalues)
-    
+
     xypairs = apply_included_ranges(inclist, xvalues, yvalues)
     yvalues = np.empty((0,),dtype=np.float64)
     xvalues = np.empty((0,),dtype=np.float64)

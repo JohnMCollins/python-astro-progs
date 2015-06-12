@@ -53,7 +53,7 @@ except specinfo.SpecInfoError as e:
 except datarange.DataRangeError as e:
     print "Cannot open range file error was", e.args[0]
     sys.exit(13)
-    
+
 try:
     ctrllist.loadfiles()
 except specdatactrl.SpecDataError as e:
@@ -63,7 +63,7 @@ except specdatactrl.SpecDataError as e:
 for spectrum in ctrllist.datalist:
 
     # Get spectral data but skip over ones we've already marked to ignore
-    
+
     try:
         xvalues = spectrum.get_xvalues(False)
         yvalues = spectrum.get_yvalues(False)

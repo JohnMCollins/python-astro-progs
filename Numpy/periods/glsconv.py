@@ -19,7 +19,7 @@ parsearg.add_argument('--type', help='ew/ps/pr/lpr to select display', type=str,
 parsearg.add_argument('--outspec', type=str, help='Output spectrum file')
 parsearg.add_argument('--start', type=float, default=1, help='Starting point for range of periods')
 parsearg.add_argument('--stop', type=float, default=100, help='End point for range of periods')
-parsearg.add_argument('--step', type=float, default=.01, help='Interval for range of periods') 
+parsearg.add_argument('--step', type=float, default=.01, help='Interval for range of periods')
 parsearg.add_argument('--error', type=float, default=.01, help='Error bar')
 parsearg.add_argument('--sqamps', action='store_true', help='Square input amplitudes')
 parsearg.add_argument('--rootres', action='store_true', help='Take root of results')
@@ -62,7 +62,7 @@ if step <= 0.0:
 if err <= 0.0:
     print "Error value must be +ve"
     errors += 1
-  
+
 if errors > 0:
     sys.exit(10)
 

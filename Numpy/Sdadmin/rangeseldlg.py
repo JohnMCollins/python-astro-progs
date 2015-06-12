@@ -7,6 +7,7 @@ import os
 import os.path
 import math
 import copy
+import matplotlib.pyplot as plt
 
 import mpplotter
 import datarange
@@ -77,10 +78,6 @@ class NewRangeDlg(QDialog, ui_newrangedlg.Ui_newrangedlg):
         if not nc.isValid(): return
         self.colourdisp.scene().setForegroundBrush(nc)
 
-    def on_adjrange_clicked(self, b = None):
-        if b is None: return
-        dlg_rangeadj(self)
-
 colourlist = ('black', 'brown', 'red', 'orange', 'yellow', 'green', 'blue', 'magenta', 'cyan', 'lightgrey')
 
 class Rangeseldlg(QDialog, ui_rangeseldlg.Ui_rangeseldlg):
@@ -146,7 +143,7 @@ class Rangeseldlg(QDialog, ui_rangeseldlg.Ui_rangeseldlg):
             self.editrange.addItem(r.description, QVariant(rnam))
 
         self.plotter = mpplotter.Plotter()
-        
+
         self.colourlist = colourlist * ((len(self.specctl.datalist) + len(colourlist) - 1) / len(colourlist))
 
         for n in xrange(0, len(self.specctl.datalist)):
@@ -221,7 +218,7 @@ class Rangeseldlg(QDialog, ui_rangeseldlg.Ui_rangeseldlg):
         """Revise plot when anything changes"""
 
         # If we're just setting up, ignore it all
-        
+
         if self.plotter is None:  return
 
         selected = [ p.data(Qt.UserRole).toInt()[0] for p in self.datafiles.selectedItems() ]
@@ -273,7 +270,7 @@ class Rangeseldlg(QDialog, ui_rangeseldlg.Ui_rangeseldlg):
     def on_selecty_stateChanged(self, b = None):
         if b is None: return
         self.updateplot()
-    
+
     def on_turnoffrangedisp_stateChanged(self, b = None):
         if b is None: return
         self.updateplot()
@@ -327,6 +324,30 @@ class Rangeseldlg(QDialog, ui_rangeseldlg.Ui_rangeseldlg):
         self.currentrange.notused = not self.rinuse.isChecked()
         self.updateplot()
 
+    def dispadj(self, lzoom, rzoom):
+        """When one of the range adjust buttons for x/y ranges is clicked,
+        work out amounts and do the appropriate adjustment"""
+
+        sliderval = self.boundslide.value() / 200.0
+
+        if self.zoomy.isChecked():
+            yll, ylu = plt.gca().get_ylim()
+            amt = (ylu-yll) * sliderval
+            rangeadj(self.yrangemin, self.yrangemax, amt * lzoom, amt * rzoom)
+        else:
+            xll, xlu = plt.gca().get_xlim()
+            amt = (xlu-xll) * sliderval
+            rangeadj(self.xrangemin, self.xrangemax, amt * lzoom, amt * rzoom)
+
+    def rdispadj(self, lzoom, rzoom):
+        """When one of the range adjust buttons for subranges is clicked,
+        work out amounts and do the appropriate adjustment"""
+
+        sliderval = self.rboundslide.value() / 200.0
+        xll, xlu = plt.gca().get_xlim()
+        amt = (xlu-xll) * sliderval
+        rangeadj(self.srmin, self.srmax, amt * lzoom, amt * rzoom)
+
     def getxyamounts(self):
         """Get adjustments for X or Y ranges"""
         amt = float(self.adjby.currentText())
@@ -339,21 +360,71 @@ class Rangeseldlg(QDialog, ui_rangeseldlg.Ui_rangeseldlg):
             ramt = 0.0
         elif self.zright.isChecked():
             lamt = 0.0
-        return (lamt, ramt)      
+        return (lamt, ramt)
 
-    def on_adjustx_clicked(self, b = None):
+    def on_leftout_clicked(self, b = None):
         if b is None: return
-        lamt, ramt = self.getxyamounts()
-        rangeadj(self.xrangemin, self.xrangemax, lamt, ramt)
+        self.dispadj(-1, 0)
 
-    def on_adjusty_clicked(self, b = None):
+    def on_leftin_clicked(self, b = None):
         if b is None: return
-        lamt, ramt = self.getxyamounts()
-        rangeadj(self.yrangemin, self.yrangemax, lamt, ramt)
+        self.dispadj(1, 0)
 
-    def on_adjrange_clicked(self, b = None):
+    def on_rightout_clicked(self, b = None):
         if b is None: return
-        dlg_rangeadj(self)
+        self.dispadj(0, 1)
+
+    def on_rightin_clicked(self, b = None):
+        if b is None: return
+        self.dispadj(0, -1)
+
+    def on_bothout_clicked(self, b = None):
+        if b is None: return
+        self.dispadj(-1, 1)
+
+    def on_bothin_clicked(self, b = None):
+        if b is None: return
+        self.dispadj(1, -1)
+
+    def on_bothleft_clicked(self, b = None):
+        if b is None: return
+        self.dispadj(-1, -1)
+
+    def on_bothright_clicked(self, b = None):
+        if b is None: return
+        self.dispadj(1, 1)
+
+    def on_rleftout_clicked(self, b = None):
+        if b is None: return
+        self.rdispadj(-1, 0)
+
+    def on_rleftin_clicked(self, b = None):
+        if b is None: return
+        self.rdispadj(1, 0)
+
+    def on_rrightout_clicked(self, b = None):
+        if b is None: return
+        self.rdispadj(0, 1)
+
+    def on_rrightin_clicked(self, b = None):
+        if b is None: return
+        self.rdispadj(0, -1)
+
+    def on_rbothout_clicked(self, b = None):
+        if b is None: return
+        self.rdispadj(-1, 1)
+
+    def on_rbothin_clicked(self, b = None):
+        if b is None: return
+        self.rdispadj(1, -1)
+
+    def on_rbothleft_clicked(self, b = None):
+        if b is None: return
+        self.rdispadj(-1, -1)
+
+    def on_rbothright_clicked(self, b = None):
+        if b is None: return
+        self.rdispadj(1, 1)
 
     def on_datafiles_itemSelectionChanged(self):
         if self.hangon: return
@@ -422,13 +493,13 @@ class Rangeseldlg(QDialog, ui_rangeseldlg.Ui_rangeseldlg):
                 self.datafiles.takeItem(nsel)
                 self.datafiles.insertItem(nsel, make_listitem(self.specctl.datalist, self.colourlist, nsel))
                 self.datafiles.setCurrentRow(nsel)
-    
+
     def on_savedisp_clicked(self, b = None):
         if b is None: return
         fname = QFileDialog.getSaveFileName(self, self.tr("Select save file"), "unnamed.png", self.tr("Saved plot (*.png)"))
         if fname is None: return
         self.plotter.savefig(str(fname))
- 
+
     def closefigure(self):
         if self.plotter is not None:
             self.plotter.close()

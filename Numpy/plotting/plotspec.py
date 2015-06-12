@@ -44,7 +44,7 @@ yrangelims = rangearg.parserange(resargs['yrange'])
 legnum = resargs['legnum']
 obstimes = dict()
 if legnum > 0:
-    obstimefile = resargs['obstimes']    
+    obstimefile = resargs['obstimes']
     if obstimefile is not None:
         obstimes = fakeobs.getfakeobs(obstimefile)
         if obstimes is None:
@@ -90,7 +90,7 @@ for sf in spec:
 
     if sf in obstimes:
         legends.append("%.4f" % obstimes[sf])
-    else: 
+    else:
         legbits = string.split(sf, '.')
         legends.append(legbits[0])
 

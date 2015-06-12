@@ -81,36 +81,36 @@ maxgrad = -1e20
 
 for daynum, xrf in enumerate(xrayfiles):
     try:
-        
+
         # Columns of file are amplitude, error (currently ignored) and time.
         # Time is seconds since 1/1/98 midnight don't ask me why.
-         
+
         xray_amp, xray_err, xray_time = np.loadtxt(xrf, unpack=True)
 
         xray_time += xrayoffset
         xray_time /= SECSPERDAY
         xray_time += 50814.0            # 1/1/1998 for whatever reason
-        
+
         # Get the difference between observations
         # Work out the gradient
-        
+
         xray_timediff = np.mean(np.diff(xray_time))
         xray_gradient = np.gradient(xray_amp, xray_timediff)
-        
+
         maxamp = max(maxamp, np.max(xray_amp))
         mingrad = min(mingrad, np.min(xray_gradient))
         maxgrad = max(maxgrad, np.max(xray_gradient))
-        
+
         # Get sates as datetime array
-        
-        xray_dates = [jdate.jdate_to_datetime(d) for d in xray_time] 
-        
+
+        xray_dates = [jdate.jdate_to_datetime(d) for d in xray_time]
+
     except IOError as e:
         print "Cannoot open", xrf, "Error was", e.args[1]
         sys.exit(11)
-    
+
     # Get ourselves an array of 3 rows with 4 columns, times, amps, gradients and times converted to dates
-     
+
     xraydata.append((xray_time, xray_amp, xray_err, xray_gradient, xray_dates))
 
 # Formatting operation to display times as hh:mm
@@ -126,20 +126,20 @@ commonax = None
 plt.subplots_adjust(hspace = 0)
 
 for xray_time, xray_amp, xray_err, xray_gradient, xray_dates in xraydata:
-    
+
     # Display of one column 3 axes
-    
+
     ax1 = plt.subplot(3, 1, ln, sharex=commonax)
     if commonax is None: commonax=ax1
-    
+
     # Limit each display to maxamp as we worked out when we read it in
-    
+
     plt.ylim(0, maxamp)
     ax1.xaxis.set_major_formatter(hfmt)
     fig.autofmt_xdate()
-    
+
     # Recalc this to put them on the same axis
-    
+
     xray_dates = np.array([jdate.jdate_to_datetime(d - ln*2 - 2) for d in xray_time])
     if logxray:
         plt.semilogy(xray_dates, xray_amp, color='black')
@@ -164,9 +164,9 @@ if outfile is not None:
 # This is dates, barycentric dates (not currently used), EWs, interpolated amp and gradients
 
 try:
-    
+
     jdates, bjdates, ews, prs, xrayvs, xraygrads = np.loadtxt(ewfile, unpack=True)
-    
+
 except IOError as e:
     print "Cannot open info file, error was", e.args[1]
     sys.exit(12)
@@ -200,23 +200,23 @@ for minxr, maxxr, isg in xraylevels:
 # Plot for each day
 
 for day_dates, day_ews, day_prs, day_xrayvs, day_xraygrads in dateparts:
-    
+
     minew = np.min(day_ews)
     maxew = np.max(day_ews)
-    
+
     xray_time, xray_amp, xray_err, xray_gradient, xray_dates = xraydata.pop(0)
-    
-    fig = plt.figure(figsize=(width,height))   
-    plt.subplots_adjust(hspace = 0)    
+
+    fig = plt.figure(figsize=(width,height))
+    plt.subplots_adjust(hspace = 0)
     plt.xlim(day_dates[0], day_dates[-1])
     fig.canvas.set_window_title(day_dates[0].strftime("For %d %b %Y"))
-    
+
     ax1 = None
-    
+
     # We remember the selected EWs for each X-ray level in "ewforday"
-    
+
     ewforday = []
-    
+
     for ln, xrl in enumerate(xraylevels):
         pax = plt.subplot(1+nlevs,1,1+ln, sharex=ax1)
         plt.ylim(minew, maxew)
@@ -229,41 +229,41 @@ for day_dates, day_ews, day_prs, day_xrayvs, day_xraygrads in dateparts:
 
         plot_ews = day_ews[selection]
         plot_times = day_dates[selection]
-        
+
         for t,e in splittime.splittime(splitem, plot_times, plot_ews):
             plt.plot(t, e, color=colours[ln])
-        
+
         for t,pr in zip(day_dates, day_prs):
             if pr < 1.0:
                 plt.axvline(t, color='#102590', alpha=.5)
         plt.legend([legends[ln]])
-        
+
         # Append EWs to that for day and total for X-ray level
-        
+
         ewforday.append(plot_ews)
         ewlevs[ln] = np.append(ewlevs[ln], plot_ews)
-  
+
     # Stick X-ray plot at the bottom
-    
+
     ax2 = plt.subplot(1+nlevs,1,1+nlevs,sharex=ax1)
 
     if logxray:
         plt.semilogy(xray_dates, xray_amp)
-    else:    
+    else:
         plt.plot(xray_dates, xray_amp)
     for ln, xrl in enumerate(xraylevels):
         minxr, maxxr, isg = xrl
         if not isg:
             if minxr > -1e30: plt.axhline(minxr, color=colours[ln])
             if maxxr < 1e30: plt.axhline(maxxr, color=colours[ln])
-    
+
     plt.legend(["X-ray amp"])
     plt.xlim(xray_dates[0], xray_dates[-1])
     ax2.xaxis.set_major_formatter(hfmt)
     plt.gcf().autofmt_xdate()
-    
+
     # Overlay gradient plot
-    
+
     ax3 = plt.twinx(ax2)
     plt.plot(xray_dates, xray_gradient, color='purple', ls=':')
     #plt.legend(['X-ray grad'])
@@ -272,24 +272,24 @@ for day_dates, day_ews, day_prs, day_xrayvs, day_xraygrads in dateparts:
         if isg:
             if minxr > -1e30: plt.axhline(minxr, color=colours[ln], ls=':')
             if maxxr < 1e30: plt.axhline(maxxr, color=colours[ln], ls=':')
-    
+
     if outfile is not None:
         fig.savefig(outfile + day_dates[0].strftime("plot_%d%b.png"))
-    
+
     # Do EW histograms for day.
     # We recorded the selected EW for each x-ray level in ewlevs
     # First a combined histogram
-    
+
     fig = plt.figure(figsize=(hwidth, hheight))
     fig.canvas.set_window_title(day_dates[0].strftime("Equivalent widths for %d %b %Y combined"))
     plt.hist(ewforday, bins=bins)
     plt.legend(legends)
     if outfile is not None:
         fig.savefig(outfile + day_dates[0].strftime("cewhist_%d%b.png"))
-    
+
     # Redo as a separate histogram for each day
-    
-    fig = plt.figure(figsize=(hwidth, hheight))   
+
+    fig = plt.figure(figsize=(hwidth, hheight))
     plt.subplots_adjust(hspace = 0)
     fig.canvas.set_window_title(day_dates[0].strftime("Equivalent widths for %d %b %Y"))
     plt.subplots_adjust(hspace = 0)
@@ -325,7 +325,7 @@ for ln, ewd in enumerate(ewlevs):
     plt.legend([legends[ln]])
 if outfile is not None:
     fig.savefig(outfile + "ewhistall.png")
-    
+
 # Only display if we're not saving
 
 if outfile is None:

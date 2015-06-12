@@ -10,4 +10,4 @@ def digs(mn, mx):
     print "Predigs=", predigs, "Postdigs=", postdigs, "step=", step, "max=",scrange,"lower=",lower,"upper=",upper
 
 
-    
+

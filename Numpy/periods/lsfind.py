@@ -56,7 +56,7 @@ if strt >= stop:
     sys.stdout = sys.stderr
     print "Start value > stop"
     sys.exit(4)
-    
+
 if outspec is not None:
     try:
         outf = open(outspec, 'a')
@@ -71,7 +71,7 @@ tfreqs = (2 * np.pi) / tdays
 dayrange = np.max(tdays) - np.min(tdays)
 
 for ifl in integ:
-    
+
     # Load up array of timings/intensities
 
     try:
@@ -83,19 +83,19 @@ for ifl in integ:
     except ValueError:
         print "Conversion error on", ifl
         sys.exit(7)
-    
+
     timings = arr[0]
-    
+
     results = []
     for ycolumn in range(1,4):
-        if not cols[ycolumn]: continue      
+        if not cols[ycolumn]: continue
         sums = arr[ycolumn]
         if np.min(sums) == np.max(sums):
             results.append(0.0)
             continue
         spectrum = ss.lombscargle(timings, sums, tfreqs)
         spectrum /= si.simps(spectrum, tdays) / dayrange
-        
+
         maxes = argmaxmin.argrelmax(tdays, spectrum)
         if len(maxes) > 0:
             ret = np.argsort(spectrum[maxes])

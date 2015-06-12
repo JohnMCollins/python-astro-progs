@@ -26,7 +26,7 @@ class ObsFileDlg(QDialog, ui_obsfileseldlg.Ui_obsfileseldlg):
     def __init__(self, parent = None):
         super(ObsFileDlg, self).__init__(parent)
         self.setupUi(self)
-        
+
         # Set up combo boxes with possible fields in
 
         for fn, descr in Obsfields:
@@ -53,10 +53,10 @@ class ObsFileDlg(QDialog, ui_obsfileseldlg.Ui_obsfileseldlg):
             item = QListWidgetItem(descr)
             item.setData(Qt.UserRole, QVariant(fn))
             self.specfields.addItem(item)
-    
+
     def copyin_fields(self, listw, namelist, flist):
         """Function to copy existing fields into one of the list widgets"""
-        
+
         dlu = dict()
         for p in namelist:
             dlu[p[0]] = p[1]
@@ -68,7 +68,7 @@ class ObsFileDlg(QDialog, ui_obsfileseldlg.Ui_obsfileseldlg):
                 listw.addItem(item)
             except KeyError:
                 pass
-        
+
     def copyin_specfields(self, oflist, sflist):
         """Copy in existing fields to dialog"""
         self.copyin_fields(self.obsfields, Obsfields, oflist)
@@ -117,4 +117,4 @@ class ObsFileDlg(QDialog, ui_obsfileseldlg.Ui_obsfileseldlg):
         selitem = self.specfields.currentRow()
         if selitem < 0: return
         self.specfields.takeItem(selitem)
-        
+

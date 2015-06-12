@@ -51,10 +51,10 @@ if not useall:
             print e.args[0]
             sys.exit(101)
     else:
-        
+
         # Have specified a range file and name of range
         # Load it up and get the range from that
-        
+
         rname = resvars['range']
         if rname is None:
             print "No range name given"
@@ -139,7 +139,7 @@ print "Load complete, generating reference x/y values"
 
 
 for n, dataset in enumerate(spclist.datalist):
-    
+
     if n == sel: continue
-    
+
     print "Doing spectrum for", jdate.display(dataset.modbjdate)

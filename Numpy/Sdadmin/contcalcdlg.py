@@ -100,14 +100,14 @@ class ContCalcResDlg(QDialog, ui_contcalcresdlg.Ui_contcalcresdlg):
                 else:
                     jd += " " + rems
             self.datafiles.addItem(QListWidgetItem(jd))
-    
+
     def coeff_display(self, cs):
         """Display the coefficients supplied in the box.
-        
+
         The 0th index is that of the highest coeff"""
-        
+
         # Zap anything else that was there
-        
+
         while self.coeffs.count() != 0:
             self.coeffs.takeItem(0)
 
@@ -126,7 +126,7 @@ class ContCalcResDlg(QDialog, ui_contcalcresdlg.Ui_contcalcresdlg):
         """Revise plot when anything changes"""
 
         # If we're just setting up, ignore it all
-        
+
         if self.settingup: return
         plt.clf()
 
@@ -169,7 +169,7 @@ class ContCalcResDlg(QDialog, ui_contcalcresdlg.Ui_contcalcresdlg):
 
         pxv = np.linspace(minx, maxx, 300)
         relpv = pxv - self.refwl
-        
+
         if self.indiv:
             coeffs = selected.tmpcoeffs
             if coeffs is None:
@@ -190,8 +190,8 @@ class ContCalcResDlg(QDialog, ui_contcalcresdlg.Ui_contcalcresdlg):
             ustd = pyv + self.upstd
             # Put in std devs
             plt.plot(pxv, lstd, color='g', ls=':', label='Lower lim')
-            plt.plot(pxv, ustd, color='g', ls=':', label='Upper lim')         
-            
+            plt.plot(pxv, ustd, color='g', ls=':', label='Upper lim')
+
         plt.legend()
         plt.show()
 
@@ -207,7 +207,7 @@ class ContCalcResDlg(QDialog, ui_contcalcresdlg.Ui_contcalcresdlg):
             ramt = 0.0
         elif self.zright.isChecked():
             lamt = 0.0
-        return (lamt, ramt)      
+        return (lamt, ramt)
 
     def on_xrangemin_valueChanged(self, value):
         if isinstance(value, QString): return
@@ -245,7 +245,7 @@ class ContCalcResDlg(QDialog, ui_contcalcresdlg.Ui_contcalcresdlg):
 
     def on_datafiles_itemSelectionChanged(self):
         self.updateplot()
-        
+
     def on_alpha_valueChanged(self, v):
         if not isinstance(v, float): return
         if self.indiv: return
@@ -347,7 +347,7 @@ def run_continuum_calc(ctrlfile, rangefile):
         # scratch by resetting everything.
 
         if allxvalues is None or dlg.restart.isChecked():
-        
+
             if not dlg.entirespec.isChecked() and dlg.inclrange1.currentIndex() <= 0 and dlg.inclrange2.currentIndex() <= 0 and dlg.inclrange3.currentIndex() <= 0:
                 QMessageBox.warning(dlg, "No range selected", "No range to include selected")
                 continue
@@ -358,7 +358,7 @@ def run_continuum_calc(ctrlfile, rangefile):
             copy_ctrlfile.reset_indiv_y()
             copy_ctrlfile.reset_y()
             copy_ctrlfile.set_yscale(1.0)
-            
+
             # Accumulate all known X and Y values for overall plot
 
             totxvalues = np.empty((0,),dtype=np.float64)
@@ -380,9 +380,9 @@ def run_continuum_calc(ctrlfile, rangefile):
             rls = dlg.getrangelists(rangefile)
             if rls is None: continue
             inclist, exclist = rls
-            
+
             # Get ourselves the values
- 
+
             copy_ctrlfile.refwavelength = dlg.refwavel.value()
             allxvalues, allyvalues = rangeapply.get_all_selected_specdata(copy_ctrlfile, exclist, inclist)
             origvals = len(allxvalues)
@@ -392,9 +392,9 @@ def run_continuum_calc(ctrlfile, rangefile):
             sortind = allxvalues.argsort()
             allxvalues = allxvalues[sortind]
             allyvalues = allyvalues[sortind]
- 
+
         # Get rest of parameters from dlg
-       
+
         degree = dlg.degree.value()
         iterations = dlg.iterations.value()
         uprstd = dlg.upperlim.value()
@@ -406,13 +406,13 @@ def run_continuum_calc(ctrlfile, rangefile):
         stuffed = False
 
         for itn in xrange(0, iterations):
-    
+
             # Get ourselves the master fitting polynomial
             # First get a revised set of X values as offsets from the ref value
 
             relx = allxvalues - copy_ctrlfile.refwavelength
             coeffs = np.polyfit(relx, allyvalues, degree)
-        
+
             # Get the Y values corresponding to the polynomial we've fitted
 
             polyyvalues = np.polyval(coeffs, relx)
@@ -421,12 +421,12 @@ def run_continuum_calc(ctrlfile, rangefile):
 
             diffs = allyvalues - polyyvalues
             stddeviation = diffs.std()
-            
+
             mindiff = - (lwrstd * stddeviation)
             maxdiff = uprstd * stddeviation
 
             removing = (diffs < mindiff) | (diffs > maxdiff)
-            
+
             # If that didn't do anything, we're done however many iterations we've got to go
 
             nrem = np.count_nonzero(removing)
@@ -446,7 +446,7 @@ def run_continuum_calc(ctrlfile, rangefile):
             allyvalues = allyvalues[notremoving]
 
             removals += nrem
-        
+
         if stuffed:
             dlg.restart.setChecked(True)
             continue
@@ -492,7 +492,7 @@ def run_continuum_calc(ctrlfile, rangefile):
 
         dlg.restart.setEnabled(True)
         dlg.restart.setChecked(False)
-        
+
         # Now we should be ready to loop again
 
     # Cancel pressed, return None to say we're not doing anything
@@ -529,7 +529,7 @@ def run_indiv_continuum_calc(ctrlfile, rangefile):
         # scratch by resetting everything.
 
         if tries <= 0 or dlg.restart.isChecked():
-        
+
             if not dlg.entirespec.isChecked() and dlg.inclrange1.currentIndex() <= 0 and dlg.inclrange2.currentIndex() <= 0 and dlg.inclrange3.currentIndex() <= 0:
                 QMessageBox.warning(dlg, "No range selected", "No range to include selected")
                 continue
@@ -540,17 +540,17 @@ def run_indiv_continuum_calc(ctrlfile, rangefile):
             copy_ctrlfile = copy.deepcopy(ctrlfile)
             copy_ctrlfile.reset_indiv_y()
             copy_ctrlfile.tmpreset()
-            
+
             # Get what we're including and excluding
 
             rls = dlg.getrangelists(rangefile)
             if rls is None: continue
             inclist, exclist = rls
-            
+
             prevexcl = None
-            
+
         # Get rest of parameters from dlg
-       
+
         degree = dlg.degree.value()
         iterations = dlg.iterations.value()
         uprstd = dlg.upperlim.value()
@@ -560,12 +560,12 @@ def run_indiv_continuum_calc(ctrlfile, rangefile):
 
         totremovals = 0
         stuffed = False
-        
+
         for dataset in copy_ctrlfile.datalist:
-            
+
             # Grab each spectrum we're not excluding
-           
-            if dataset.tmpxvals is None: 
+
+            if dataset.tmpxvals is None:
                 try:
                     xvalues, yvalues = rangeapply.get_selected_specdata(dataset, exclist, inclist)
                 except specdatactrl.SpecDataError:
@@ -573,28 +573,28 @@ def run_indiv_continuum_calc(ctrlfile, rangefile):
             else:
                 xvalues = dataset.tmpxvals
                 yvalues = dataset.tmpyvals
-            
+
             # We iterate each spectrum in turn, using the
             # tmpcoeffs entry in each to remember the result of
             # the last iteration.
-        
+
             for itn in xrange(0, iterations):
-            
+
                 relx = xvalues - copy_ctrlfile.refwavelength
                 coeffs = np.polyfit(relx, yvalues, degree)
-                
+
                 # Get yvalues corresponding to fitted polynomial
-                
+
                 polyyvalues = np.polyval(coeffs, relx)
                 diffs = yvalues - polyyvalues
-                
+
                 stddeviation = diffs.std()
-                
+
                 mindiff = - (lwrstd * stddeviation)
                 maxdiff = uprstd * stddeviation
 
                 removing = (diffs < mindiff) | (diffs > maxdiff)
-                
+
                 # If that didn't do anything, we're done however many iterations we've got to go
 
                 nrem = np.count_nonzero(removing)
@@ -607,25 +607,25 @@ def run_indiv_continuum_calc(ctrlfile, rangefile):
                     break
 
                 # Prune away the ones we are removing.
-            
+
                 xvalues = xvalues[notremoving]
                 yvalues = yvalues[notremoving]
 
                 totremovals += nrem
                 tries += 1
-            
+
             # Out of iterations loop, break to previous loop if
             # we hit an error otherwise save the last lot of coeffs
-            
+
             if stuffed: break
-            
+
             dataset.tmpcoeffs = coeffs
             dataset.tmpxvals = xvalues
             dataset.tmpyvals = yvalues
             dataset.stddev = stddeviation
-        
+
         # Finished iteration over datasets, now display results
-        
+
         resdlg = ContCalcResDlg(dlg, True)
 
         resdlg.exclpoints.setText("%d" % totremovals)

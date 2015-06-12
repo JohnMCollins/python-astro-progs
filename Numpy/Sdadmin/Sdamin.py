@@ -40,18 +40,18 @@ CONFIGROOT = 'SDADMIN'
 
 class SdaminConfig(object):
     """Bits and pieces of program options"""
-    
+
     def __init__(self):
         self.swidth = 15.0
         self.sheight = 10.0
-    
+
     def load(self, node):
         """Load from XML DOM node"""
         for child in node:
             tagn = child.tag
             if tagn == "geom":
                 self.load_geom(child)
-    
+
     def load_geom(self, node):
         """Load geom parameters"""
         for child in node:
@@ -60,7 +60,7 @@ class SdaminConfig(object):
                 self.swidth = xmlutil.getfloat(child)
             elif tagn == "height":
                 self.sheight = xmlutil.getfloat(child)
-    
+
     def save_geom(self, doc, pnode, name):
         """Save geom parameters"""
         node = ET.SubElement(pnode, name)
@@ -146,7 +146,7 @@ class SadminMain(QMainWindow, ui_sdadminmain.Ui_sdadminmain):
         if QMessageBox.question(self, "Are you sure", "There are unsaved changes in the range data, are you sure", QMessageBox.Yes, QMessageBox.No|QMessageBox.Default|QMessageBox.Escape) != QMessageBox.Yes:
             return False
         return True
-    
+
     def ask_dirty(self):
         """Ask before proceeding if anything is unsaved"""
         return self.ask_dirty_ctrlfile() and self.ask_dirty_ctrlfile()
@@ -179,7 +179,7 @@ class SadminMain(QMainWindow, ui_sdadminmain.Ui_sdadminmain):
         self.unsavedr = False
         self.resetTitle()
         self.updateUI()
-    
+
     def on_action_select_info_file_triggered(self, checked = None):
         if checked is None: return
         if not self.ask_dirty(): return
@@ -188,7 +188,7 @@ class SadminMain(QMainWindow, ui_sdadminmain.Ui_sdadminmain):
         newfile = QFileDialog.getOpenFileName(self, self.tr("Select spectrum info file"), existing, self.tr("Spectrum info files (*." + specinfo.SUFFIX + ")"))
         if len(newfile) == 0: return
         self.set_info_file(str(newfile))
-    
+
     def on_action_select_observation_directory_triggered(self, checked = None):
         if checked is None: return
         olddir = ""
@@ -246,7 +246,7 @@ class SadminMain(QMainWindow, ui_sdadminmain.Ui_sdadminmain):
         self.rangelist = datarange.init_default_ranges()
         self.unsavedr = True
         self.updateUI()
-        
+
     def on_action_reload_control_triggered(self, checked = None):
         if checked is None: return
         if not self.ask_dirty_ctrlfile(): return
@@ -254,7 +254,7 @@ class SadminMain(QMainWindow, ui_sdadminmain.Ui_sdadminmain):
         self.currentlist = self.sinf.get_ctrlfile()
         self.unsavedc = False
         self.updateUI()
-        
+
     def on_action_reload_ranges_triggered(self, checked = None):
         if checked is None: return
         if not self.ask_dirty_rangefile(): return
@@ -284,7 +284,7 @@ class SadminMain(QMainWindow, ui_sdadminmain.Ui_sdadminmain):
         dlg.exec_()
         self.unsavedc = True
         self.updateUI()
-        
+
     def on_action_tune_ranges_triggered(self, checked = None):
         if checked is None: return
         if self.currentlist is None:
@@ -335,12 +335,12 @@ class SadminMain(QMainWindow, ui_sdadminmain.Ui_sdadminmain):
             self.currentlist = nc
             self.unsavedc = True
             self.updateUI()
-            
+
     def on_action_equivalent_widths_triggered(self, checked = None):
         if checked is None: return
         if not self.ready_to_calc(): return
         ewcalc.run_ew_calc(self.currentlist, self.rangelist)
-        
+
     def save_ops(self, filename = None):
         try:
             if self.sinf is None:
@@ -353,7 +353,7 @@ class SadminMain(QMainWindow, ui_sdadminmain.Ui_sdadminmain):
             self.updateUI()
         except specinfo.SpecInfoError as e:
             QMessageBox.warning(self, "File save error", "Cannot save file, error was " + e.args[0])
-    
+
     def on_action_save_info_triggered(self, checked = None):
         if checked is None: return
         if not self.dirty_either(): return
@@ -373,7 +373,7 @@ class SadminMain(QMainWindow, ui_sdadminmain.Ui_sdadminmain):
         fname = QFileDialog.getSaveFileName(self, self.tr("Select save file"), existing, self.tr("Spectral info files (*." + specinfo.SUFFIX + ")"))
         if len(fname) == 0: return
         self.save_ops(miscutils.replacesuffix(str(fname), specinfo.SUFFIX))
-      
+
     def on_action_options_triggered(self, checked = None):
         global cfg
         if checked is None: return
@@ -420,7 +420,7 @@ except xmlutil.XMLError as e:
     QMessageBox.warning(mw, "Config file XML error", e.args[0])
 
 # Parse arguments
-    
+
 parsearg = argparse.ArgumentParser(description='Spectrum data files admin')
 parsearg.add_argument('--infofile', type=str, help='Existing spectrum info file')
 parsearg.add_argument('--width', type=float, default=0.0, help='Plotting width display')
@@ -430,7 +430,7 @@ infofile = res['infofile']
 if res['width'] >= 2.0:
     cfg.swidth = res['width']
 if res['height'] >= 2.0:
-    cfg.sheight = res['height']            
+    cfg.sheight = res['height']
 mpplotter.Setdims(width = cfg.swidth, height = cfg.sheight)
 
 if infofile is not None:
@@ -440,4 +440,4 @@ if infofile is not None:
 else:
     mw.on_action_new_info_file_triggered(True)
 mw.show()
-app.exec_()              
+app.exec_()

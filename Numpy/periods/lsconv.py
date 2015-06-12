@@ -56,12 +56,12 @@ if strt <= 0:
 if strt >= stop:
     print "Start value > stop"
     errors += 1
-  
+
 if resargs['byperiod']:
     tperiods = np.linspace(stop, strt, steps)
     tfreqs = 2 * np.pi / tperiods
 else:
-    
+
     # I did get these round the right way.....
 
     start_freq = 2 * np.pi / stop

@@ -61,7 +61,7 @@ try:
 except specdatactrl.SpecDataError as e:
     sys.stdout = sys.stderr
     print "Cannot load/parse files", sname, "-", e.args[0]
-    sys.exit(3)    
+    sys.exit(3)
 
 rlist = datarange.init_default_ranges()
 

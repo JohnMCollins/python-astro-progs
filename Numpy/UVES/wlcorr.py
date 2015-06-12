@@ -55,7 +55,7 @@ except specinfo.SpecInfoError as e:
 except datarange.DataRangeError as e:
     print "Cannot open range file error was", e.args[0]
     sys.exit(13)
-    
+
 try:
     ctrllist.loadfiles()
 except specdatactrl.SpecDataError as e:
@@ -77,7 +77,7 @@ meany = np.mean(basey)
 for snum, spectrum in enumerate(ctrllist.datalist):
 
     # Get spectral data but skip over ones we've already marked to ignore
-    
+
     try:
         xvalues = spectrum.get_xvalues(False)
         yvalues = spectrum.get_yvalues(False)
@@ -86,7 +86,7 @@ for snum, spectrum in enumerate(ctrllist.datalist):
         continue
 
     selx, sely = selected_range.select(xvalues,  yvalues)
-    
+
     corr = ss.correlate(basey-meany, sely-meany, 'same')
     corrmax = argmaxmin.maxmaxes(corr,corr)
     print "Spectrum", snum, "offset", corrmax[0], "diff", corrmax[0]-basefrom

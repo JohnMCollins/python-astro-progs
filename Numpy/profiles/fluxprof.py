@@ -22,7 +22,7 @@ class fluxprofdlg(QDialog, ui_fluxprofdlgui.Ui_fluxprofdlg):
         self.xvals = None
         self.yvals = None
         self.setupUi(self)
-    
+
     def updateplot(self):
         npoints = self.npoints.value()
         pixwidth = self.pixwidth.value()
@@ -68,36 +68,36 @@ class fluxprofdlg(QDialog, ui_fluxprofdlgui.Ui_fluxprofdlg):
         plt.plot(xvals, yvals)
         self.xvals = xvals
         self.yvals = yvals
-    
+
     def on_npoints_valueChanged(self, value):
         if isinstance(value, QString): return
         self.updateplot()
-    
+
     def on_noadj_toggled(self, st):
         if st: self.updateplot(
                                )
     def on_clipy_toggled(self, st):
         if st: self.updateplot()
-    
+
     def on_scaley_toggled(self, st):
         if st: self.updateplot()
-    
+
     def on_pixwidth_valueChanged(self, value):
         if isinstance(value, QString): return
         self.updateplot()
-    
+
     def on_gauss1_toggled(self, st):
         if st: self.updateplot()
-    
+
     def on_lorentz1_toggled(self, st):
         if st: self.updateplot()
-    
+
     def on_igauss1_toggled(self, st):
         if st: self.updateplot()
-    
+
     def on_ilorentz1_toggled(self, st):
         if st: self.updateplot()
-    
+
     def on_none2_toggled(self, st):
         self.scale2.setEnabled(not st)
         self.offset2.setEnabled(not st)
@@ -106,20 +106,20 @@ class fluxprofdlg(QDialog, ui_fluxprofdlgui.Ui_fluxprofdlg):
 
     def on_gauss2_toggled(self, st):
         if st: self.updateplot()
-    
+
     def on_lorentz2_toggled(self, st):
         if st: self.updateplot()
-    
+
     def on_igauss2_toggled(self, st):
         if st: self.updateplot()
-    
+
     def on_ilorentz2_toggled(self, st):
         if st: self.updateplot()
 
     def on_scale1_valueChanged(self, value):
         if isinstance(value, QString): return
         self.updateplot()
-    
+
     def on_scale2_valueChanged(self, value):
         if isinstance(value, QString): return
         self.updateplot()
@@ -127,7 +127,7 @@ class fluxprofdlg(QDialog, ui_fluxprofdlgui.Ui_fluxprofdlg):
     def on_offset1_valueChanged(self, value):
         if isinstance(value, QString): return
         self.updateplot()
-    
+
     def on_offset2_valueChanged(self, value):
         if isinstance(value, QString): return
         self.updateplot()
@@ -135,11 +135,11 @@ class fluxprofdlg(QDialog, ui_fluxprofdlgui.Ui_fluxprofdlg):
     def on_fhwm1_valueChanged(self, value):
         if isinstance(value, QString): return
         self.updateplot()
-    
+
     def on_fhwm2_valueChanged(self, value):
         if isinstance(value, QString): return
         self.updateplot()
-    
+
     def on_chooserfile_clicked(self, b = None):
         if b is None: return
         fname = QFileDialog.getSaveFileName(self, self.tr("Select save file"), self.rfile.text())

@@ -72,7 +72,7 @@ for rf in rfs:
         continue
     if fulldets:
         printoffscale(clist)
-        
+
     for spn, spectrum in enumerate(clist.datalist):
         dat = spectrum.modjdate
         if dat == 0: dat = spectrum.modbjdate

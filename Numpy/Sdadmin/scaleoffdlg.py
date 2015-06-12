@@ -92,7 +92,7 @@ class XScaleOffDlg(QDialog, ui_xscaleoffdlg.Ui_xscaleoffdlg):
             self.xscale.setValue(v)
             self.xscalequot.setValue(1.0/v)
             self.xlogscale.setValue(math.log10(v))
-            
+
     def on_xscale_valueChanged(self, v):
         if not isinstance(v, float): return
         if not self.xscale.hasFocus(): return
@@ -126,7 +126,7 @@ class XScaleOffDlg(QDialog, ui_xscaleoffdlg.Ui_xscaleoffdlg):
         self.specctrl.reset_x()
         self.dispmaxmin()
         self.setup_xoffset()
-        self.setup_xscale()        
+        self.setup_xscale()
 
     def on_resetindivx_clicked(self, b = None):
         if b is None: return
@@ -174,7 +174,7 @@ class XIndScaleOffDlg(QDialog, ui_xindscaleoffdlg.Ui_xindscaleoffdlg):
             self.xscale.setValue(v)
             self.xscalequot.setValue(1.0/v)
             self.xlogscale.setValue(math.log10(v))
-            
+
     def on_xscale_valueChanged(self, v):
         if not isinstance(v, float): return
         if not self.xscale.hasFocus(): return
@@ -252,7 +252,7 @@ class YScaleOffDlg(QDialog, ui_yscaleoffdlg.Ui_yscaleoffdlg):
             self.yscale.setValue(v)
             self.yscalequot.setValue(1.0/v)
             self.ylogscale.setValue(math.log10(v))
-            
+
     def on_yscale_valueChanged(self, v):
         if not isinstance(v, float): return
         if not self.yscale.hasFocus(): return
@@ -280,7 +280,7 @@ class YScaleOffDlg(QDialog, ui_yscaleoffdlg.Ui_yscaleoffdlg):
         self.specctrl.reset_y()
         self.dispmaxmin()
         self.setup_yoffset()
-        self.setup_yscale()        
+        self.setup_yscale()
 
     def on_resetindivy_clicked(self, b = None):
         if b is None: return
@@ -330,7 +330,7 @@ class YIndScaleOffDlg(QDialog, ui_yindscaleoffdlg.Ui_yindscaleoffdlg):
             self.yscale.setValue(v)
             self.yscalequot.setValue(1.0/v)
             self.ylogscale.setValue(math.log10(v))
-            
+
     def on_yscale_valueChanged(self, v):
         if not isinstance(v, float): return
         if not self.yscale.hasFocus(): return
@@ -359,5 +359,5 @@ class YIndScaleOffDlg(QDialog, ui_yindscaleoffdlg.Ui_yindscaleoffdlg):
         self.spectrum.yoffset = None
         self.dispmaxmin()
         self.setup_yoffset()
-        self.setup_yscale()        
+        self.setup_yscale()
 

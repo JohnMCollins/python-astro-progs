@@ -150,7 +150,7 @@ def run_exception_marks(ctrlfile, rangefile):
         # If we are doing the whole list....
 
         entire = dlg.entirespec.isChecked()
-        
+
         if entire:
 
             for dataset in copy_ctrlfile.datalist:
@@ -164,7 +164,7 @@ def run_exception_marks(ctrlfile, rangefile):
 
                 if len(exclist) != 0:
                     xvalues, yvalues = rangeapply.apply_excluded_ranges(exclist, xvalues, yvalues)
-            
+
                 # Remember all Y values for median
 
                 allyvalues = np.concatenate((allyvalues, yvalues))
@@ -188,13 +188,13 @@ def run_exception_marks(ctrlfile, rangefile):
             if len(inclist) == 0:
                 QMessageBox.warning(dlg, "No valid input range", "No range was valid (probably a bug)")
                 continue
-            
+
             # Build total of each continuum in "rtotals" corresponding to range
 
             rtotals = np.zeros(len(inclist))
-            
+
             for dataset in copy_ctrlfile.datalist:      # Each spectrum
-                
+
                 try:
                     xvalues = dataset.get_xvalues(False)
                     yvalues = dataset.get_yvalues(False)
@@ -240,7 +240,7 @@ def run_exception_marks(ctrlfile, rangefile):
                 resitem = intresult(dataset)
                 resitem.contlist = contc
                 resitem.totcont = totarea / totwidth
-       
+
                 resultdict[dataset.modbjdate] = resitem
 
                 # Remember totals for each included range plus overall
@@ -290,7 +290,7 @@ def run_exception_marks(ctrlfile, rangefile):
                 plt.plot(dates, contc, color=r.rgbcolour(), label=r.description)
 
         # Put lines in for mean and median
-                  
+
         plt.axhline(y=mediancont, label="Median", color="g")
         plt.axhline(y=meancont, label="Mean", color="magenta")
 

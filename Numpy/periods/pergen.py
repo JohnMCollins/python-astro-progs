@@ -68,7 +68,7 @@ if xurand != 0.0 or xnrand != 0.0:
     # Reset first element to zero
     xv -= xv[0]
     # Scale whole lot so maxx is what it was
-    xv *= maxx / np.max(xv)   
+    xv *= maxx / np.max(xv)
 
 for f, a, p in zip(list(freqs), list(amps), list(phases)):
     yv += a * np.sin(xv * f + p)

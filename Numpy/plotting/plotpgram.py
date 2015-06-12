@@ -118,13 +118,13 @@ if maxnum > 0:
     if mtxtcol is None: mtxtcol = mcol
     maxima = argmaxmin.maxmaxes(periods, amps)
     # If that's too many, prune taking the largest
-    if len(maxima) > maxnum: maxima = maxima[0:maxnum]  
+    if len(maxima) > maxnum: maxima = maxima[0:maxnum]
     yoffssc = resargs['myoffs'] / 100.0
     yplace = np.dot(yrange, (yoffssc, 1-yoffssc))
     xoffssc = resargs['mxoffs'] / 100.0
     xoffs = (xrange[1] - xrange[0]) * xoffssc
     xscale = 1 + xoffssc
-    
+
     for m in maxima:
         maxx = periods[m]
         maxy = amps[m]

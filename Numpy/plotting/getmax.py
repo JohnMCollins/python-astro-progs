@@ -23,7 +23,7 @@ def prange(mn, mx):
     """Display a range argument"""
     rmn = rplaces(mn, False)
     rmx = rplaces(mx, True)
-    if rmn == 0.0: return "%.6g" % rmx 
+    if rmn == 0.0: return "%.6g" % rmx
     return "%.6g,%.6g" % (rmn, rmx)
 
 parsearg = argparse.ArgumentParser(description='Get maxima for histograms and plotting')

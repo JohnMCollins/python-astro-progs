@@ -33,7 +33,7 @@ degfit = res['degfit']
 dims = (res['width'], res['height'])
 xlab = res['xlab']
 ylab = res['ylab']
-ithresh = res['ithresh'] / 100.0 
+ithresh = res['ithresh'] / 100.0
 sthresh = res['sthresh'] / 100.0
 ign = res['ignedge']
 
@@ -50,7 +50,7 @@ for sf in specfiles:
     except ValueError:
         print "Conversion error on", sf
         sys.exit(212)
-    
+
     plt.figure(figsize=dims)
     if xrange is not None:
         plt.xlim(*xrange)
@@ -59,7 +59,7 @@ for sf in specfiles:
     ax = plt.gca()
     ax.get_xaxis().get_major_formatter().set_useOffset(False)
     plt.plot(wavelengths, amps, label='spectrum', color='blue')
-    
+
     prof = findprofile.Specprofile(degfit = degfit, ignoreedge=ign)
     try:
         prof.calcprofile(wavelengths, amps, central = central, sigthresh = sthresh, intthresh = ithresh)

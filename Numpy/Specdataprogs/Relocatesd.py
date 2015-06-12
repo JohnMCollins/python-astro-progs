@@ -29,7 +29,7 @@ force = resargs['force']
 if listonly:
     if newdir is not None:
         print "New directory not appropriate for list option"
-        sys.exit(10)  
+        sys.exit(10)
     errors = 0
     warnings = 0
     for inff in inffiles:

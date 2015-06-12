@@ -149,7 +149,7 @@ if outf is not None:
 if not sdp:
     fig = plt.figure(figsize=dims)
     fig.canvas.set_window_title(title + ' Value by time')
- 
+
 rxarray = []
 ryarray = []
 rxvalues = []
@@ -238,7 +238,7 @@ else:
             plt.gca().xaxis.tick_top()
             plt.gca().xaxis.set_label_position('top')
         plt.xlabel(xlab)
-    
+
     for xarr, yarr, col in zip(rxarray,ryarray,colours):
         offs = xarr[0]
         xa = np.array(xarr) - offs
@@ -251,7 +251,7 @@ else:
                 reas = sube.getreason(pl)
                 creas = rlookup[reas]
                 lines.append((xpl,creas))
-    
+
     if explicit_legend is not None:
         plt.legend([explicit_legend], handlelength=0)
 

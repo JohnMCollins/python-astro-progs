@@ -47,7 +47,7 @@ for p in flist:
     if len(fpair) != 3:
         print "Argument", p, "is not a pair of files and name"
         sys.exit(100)
-    
+
     # Load up equivalent width and ratio data
 
     ewdata = np.loadtxt(fpair[0], unpack=True)

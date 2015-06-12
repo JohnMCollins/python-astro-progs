@@ -33,7 +33,7 @@ force = resargs['force']
 # Try to construct source files out of names given
 
 prefix = resargs['name']
-if prefix is not None:    
+if prefix is not None:
     if ctrlfile is None:
         ctrlfile = miscutils.replacesuffix(prefix, CTRLSUFF)
     if rangefile is None:
@@ -43,7 +43,7 @@ if prefix is not None:
 
 else:
     # No common name given
-    
+
     if ctrlfile is None:
         if rangefile is None:
             if outfile is None:
