@@ -12,7 +12,6 @@ import numpy as np
 import miscutils
 import jdate
 import datetime
-import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib import dates
 import splittime
@@ -25,6 +24,7 @@ parsearg.add_argument('--ewfile', type=str, required=True, help='EW data produce
 parsearg.add_argument('--xrayfile', type=str, nargs='*', help='Xray data files')
 parsearg.add_argument('--xrayoffset', type=float, default=0.0, help='Offset to X-ray times')
 parsearg.add_argument('--logxray', action='store_true', help='Display X-rays on log scale')
+parsearg.add_argument('--logpr', action='store_true', help='Take log of peak ratio')
 parsearg.add_argument('--width', help="Width of plot", type=float, default=8)
 parsearg.add_argument('--height', help="Height of plot", type=float, default=8)
 parsearg.add_argument('--hwidth', help="Width of histogram", type=float, default=10)
@@ -160,6 +160,9 @@ except IOError as e:
     print "Cannot open info file, error was", e.args[1]
     sys.exit(12)
 
+if resargs['logpr']:
+    prs = np.log10(prs)
+
 # Get date list and split up spectra by day
 
 datelist = [jdate.jdate_to_datetime(jd) for jd in jdates]
@@ -176,7 +179,7 @@ prlevs.append(np.empty(0,))
 prlevs.append(np.empty(0,))
 prlevs.append(np.empty(0,))
 
-legends = ('Below %.6g' % loxray, '%.6g < Xr < %.6g' % (loxray, hixray), 'Abpve %.6g' % hixray)
+legends = ('Below %.6g' % loxray, '%.6g < Xr < %.6g' % (loxray, hixray), 'Above %.6g' % hixray)
 hc = ('red', 'blue', 'green')
 
 # Plot for each day
@@ -190,6 +193,7 @@ for day_dates, day_ews, day_prs, day_xrayvs, day_xraygrads in dateparts:
     plt.xlim(day_dates[0], day_dates[-1])
     fig.canvas.set_window_title(day_dates[0].strftime("For %d %b %Y"))
     ewforday = []
+    prforday = []
     ax1 = plt.subplot(3, 1, 1)
     sello = day_xrayvs < loxray
     selhi = day_xrayvs > hixray
@@ -226,15 +230,21 @@ for day_dates, day_ews, day_prs, day_xrayvs, day_xraygrads in dateparts:
     ewforday.append(day_ews[sello])
     ewforday.append(day_ews[selmid])
     ewforday.append(day_ews[selhi])
+    prforday.append(day_prs[sello])
+    prforday.append(day_prs[selmid])
+    prforday.append(day_prs[selhi])
     ewlevs[0] = np.append(ewlevs[0], day_ews[sello])
     ewlevs[1] = np.append(ewlevs[1], day_ews[selmid])
     ewlevs[2] = np.append(ewlevs[2], day_ews[selhi])
+    prlevs[0] = np.append(prlevs[0], day_prs[sello])
+    prlevs[1] = np.append(prlevs[1], day_prs[selmid])
+    prlevs[2] = np.append(prlevs[2], day_prs[selhi])
 
     if outfile is not None:
         fig.savefig(outfile + day_dates[0].strftime("plot_%d%b.png"))
 
-    # Do EW histograms for day.
-    # We recorded the selected EW for each x-ray level in ewlevs
+    # Do EW and PR histograms for day.
+    # We recorded the selected EW and PR for each x-ray level in ewlevs and prlevs
     # First a combined histogram
 
     fig = plt.figure(figsize=(hwidth, hheight))
@@ -243,6 +253,12 @@ for day_dates, day_ews, day_prs, day_xrayvs, day_xraygrads in dateparts:
     plt.legend(legends)
     if outfile is not None:
         fig.savefig(outfile + day_dates[0].strftime("cewhist_%d%b.png"))
+    fig = plt.figure(figsize=(hwidth, hheight))
+    fig.canvas.set_window_title(day_dates[0].strftime("Peak Ratios for %d %b %Y combined"))
+    plt.hist(prforday, bins=bins, color=hc)
+    plt.legend(legends)
+    if outfile is not None:
+        fig.savefig(outfile + day_dates[0].strftime("cprhist_%d%b.png"))
 
     # Redo as a separate histogram for each day
 
@@ -258,6 +274,21 @@ for day_dates, day_ews, day_prs, day_xrayvs, day_xraygrads in dateparts:
         if ax1 is None: ax1 = ax
     if outfile is not None:
         fig.savefig(outfile + day_dates[0].strftime("ewhist_%d%b.png"))
+    
+    # And for prs
+    
+    fig = plt.figure(figsize=(hwidth, hheight))
+    plt.subplots_adjust(hspace = 0)
+    fig.canvas.set_window_title(day_dates[0].strftime("Peak ratios for %d %b %Y"))
+    plt.subplots_adjust(hspace = 0)
+    ax1 = None
+    for ln, prd in enumerate(prforday):
+        ax = plt.subplot(3, 1, 1+ln, sharex=ax1)
+        histandgauss.histandgauss(prd, bins=bins, colour=hc[ln])
+        plt.legend([legends[ln]])
+        if ax1 is None: ax1 = ax
+    if outfile is not None:
+        fig.savefig(outfile + day_dates[0].strftime("prhist_%d%b.png"))
 
 # Finally do a histogram for all days combined
 # One histogram with different bars for each X-ray level
@@ -268,6 +299,12 @@ plt.hist(ewlevs, bins=bins, color=hc)
 plt.legend(legends)
 if outfile is not None:
     fig.savefig(outfile + "cewhistall.png")
+fig = plt.figure(figsize=(hwidth, hheight))
+fig.canvas.set_window_title("Peak ratios (all days) combined")
+plt.hist(prlevs, bins=bins, color=hc)
+plt.legend(legends)
+if outfile is not None:
+    fig.savefig(outfile + "cprhistall.png")
 
 # Now redo as separate histograms for each level
 
@@ -282,6 +319,18 @@ for ln, ewd in enumerate(ewlevs):
     if ax1 is None: ax1 = ax
 if outfile is not None:
     fig.savefig(outfile + "ewhistall.png")
+
+fig = plt.figure(figsize=(hwidth, hheight))
+fig.canvas.set_window_title("Peak ratios (all days)")
+plt.subplots_adjust(hspace = 0)
+ax1 = None
+for ln, prd in enumerate(prlevs):
+    ax = plt.subplot(3, 1, 1+ln, sharex=ax1)
+    histandgauss.histandgauss(prd, bins=bins, colour=hc[ln])
+    plt.legend([legends[ln]])
+    if ax1 is None: ax1 = ax
+if outfile is not None:
+    fig.savefig(outfile + "prhistall.png")
 
 # Only display if we're not saving
 

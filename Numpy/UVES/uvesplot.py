@@ -12,7 +12,6 @@ import numpy as np
 import miscutils
 import jdate
 import datetime
-import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib import dates
 import levelselect
