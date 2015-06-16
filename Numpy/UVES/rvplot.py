@@ -53,22 +53,22 @@ splits = splittime.splittime(splitem * SECSPERDAY, dtdates, drvs, derrs, icrv, a
 if len(splits) != 3:
     print "Expecting data to split over 3 days not", len(splits)
     sys.exit(12)
-    
+
 # Formatting operation to display times as hh:mm
 
 hfmt = dates.DateFormatter('%H:%M')
 
 for daydata in splits:
-    
+
     day_dtdates, day_rvs, day_errs, day_icrv, day_acrv = daydata
-    
+
     fig = plt.figure(figsize=figuresize)
     plt.subplots_adjust(hspace = 0)
     fig.canvas.set_window_title(day_dtdates[0].strftime("For %d %b %Y"))
-    topax = plt.subplot(2, 1, 1)  
+    topax = plt.subplot(2, 1, 1)
     plt.errorbar(day_dtdates, day_rvs, yerr=day_errs, color='black', ecolor='r')
     plt.ylabel('Uncorrected RVs m/s')
-    
+
     botax = plt.subplot(2, 1, 2, sharex=topax)
     botax.xaxis.set_major_formatter(hfmt)
     plt.gcf().autofmt_xdate()
