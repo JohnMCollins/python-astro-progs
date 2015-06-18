@@ -16,12 +16,14 @@ import specinfo
 import simbad
 import doppler
 
-parsearg = argparse.ArgumentParser(description='Batch mode mark exceptional')
+parsearg = argparse.ArgumentParser(description='Batch mode calculate continue')
 parsearg.add_argument('infofile', type=str, help='Specinfo file', nargs=1)
 parsearg.add_argument('--include', type=str, help='Comma-separated ranges to take points from (otherwise whole)')
 parsearg.add_argument('--exclude', type=str, default='halpha', help='Comma-separated ranges to exclude (default halpha)')
-parsearg.add_argument('--existing', type=str, default='leave', help='Actuion with existing marks leave/reset/clear')
-parsearg.add_argument('--median', action='store_true', help='Use median rather than mean')
+parsearg.add_argument('--indiv', action='store_true', help='Calculate individual continua')
+parsearg.add_argument('--degree', type=int, default=3, help='Degree of polynomial fit')
+parsearg.add_argument('--maxiter', type=int, default=5000, help='Maximum number of iterations')
+parsearg.add_argument('--refwl', type=float, default=6562.8, help='Reference wavelength of polynomial')
 parsearg.add_argument('--upper', type=float, default=3.0, help='Upper mult of SD to exclude above')
 parsearg.add_argument('--lower', type=float, default=2.0, help='Lower mult of SD to exclude below')
 
