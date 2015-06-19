@@ -82,122 +82,98 @@ except datarange.DataRangeError as e:
     print "Problem seting exclude ranges"
     print "Error was:", e.args[0]
     sys.exit(103)
-    
+
 totremovals = 0
 stuffed = False
 
 if indiv:
+    
+    # Make sure we're not confused about ref wavelength
+    
+    if  ctrllist.refwavelength != refwl:
+        sys.stdout = sys.stderr
+        print "Reference wavelength of %.2f conflicts with file value of %.2f" % (refwl, ctrllist.refwavelength)
+        sys.exit(9)
+    
     ctrllist.reset_indiv_y()
     
+    totiterations = 0
+    maxiterations = 0
+    
     for dataset in ctrllist.datalist:
+        
+        try:
+            xvalues = dataset.get_xvalues(False)
+            yvalues = dataset.get_yvalues(False)
+        except specdatactrl.SpecDataError:
+            continue
 
-            # Grab each spectrum we're not excluding
+        # Apply inclusions and exclusions
+        
+        if inclrange is not None:
+            xvalues, yvalues = inclrange.include(xvalues, yvalues)
+        
+        if exclrange is not None:
+            xvalues, yvalues = exclrange.exclude(xvalues, yvalues)
+        
+        iterations = 0
+        while 1:
+        
+            if iterations >= maxiter:
+                sys.stdout = sys.stderr
+                print "Too many iterations"
+                sys.exit(10)
+        
+            iterations += 1
+            relxvalues = xvalues - refwl
+            coeffs = np.polyfit(relxvalues, yvalues, degree)
+            
 
-            if dataset.tmpxvals is None:
-                try:
-                    xvalues, yvalues = rangeapply.get_selected_specdata(dataset, exclist, inclist)
-                except specdatactrl.SpecDataError:
-                    continue
-            else:
-                xvalues = dataset.tmpxvals
-                yvalues = dataset.tmpyvals
+            # Get yvalues corresponding to fitted polynomial
 
-            # We iterate each spectrum in turn, using the
-            # tmpcoeffs entry in each to remember the result of
-            # the last iteration.
+            polyyvalues = np.polyval(coeffs, relxvalues)
+            
+            diffs = yvalues - polyyvalues
+            meandiff = diffs.mean()
+            stddeviation = diffs.std()
+            mindiff = meandiff - (lowersd * stddeviation)
+            maxdiff = meandiff + uppersd * stddeviation
+            removing = (diffs < mindiff) | (diffs > maxdiff)
+            
+            # If that didn't do anything, we're done however many iterations we've got to go
 
-            for itn in xrange(0, iterations):
+            nrem = np.count_nonzero(removing)
+            if nrem == 0:
+                break
 
-                relx = xvalues - copy_ctrlfile.refwavelength
-                coeffs = np.polyfit(relx, yvalues, degree)
+            notremoving = ~ removing
+            if np.count_nonzero(notremoving) == 0:
+                sys.stdout = sys.stderr
+                print "Run out of data after", iterations, "iterations"
+                sys.exit(11)
 
-                # Get yvalues corresponding to fitted polynomial
+            # Prune away the ones we are removing.
 
-                polyyvalues = np.polyval(coeffs, relx)
-                diffs = yvalues - polyyvalues
+            xvalues = xvalues[notremoving]
+            yvalues = yvalues[notremoving]
 
-                stddeviation = diffs.std()
-
-                mindiff = - (lwrstd * stddeviation)
-                maxdiff = uprstd * stddeviation
-
-                removing = (diffs < mindiff) | (diffs > maxdiff)
-
-                # If that didn't do anything, we're done however many iterations we've got to go
-
-                nrem = np.count_nonzero(removing)
-                if nrem == 0: break
-
-                notremoving = ~ removing
-                if np.count_nonzero(notremoving) == 0:
-                    QMessageBox.warning(dlg, "No data left", "No data left after pruning")
-                    stuffed = True
-                    break
-
-                # Prune away the ones we are removing.
-
-                xvalues = xvalues[notremoving]
-                yvalues = yvalues[notremoving]
-
-                totremovals += nrem
-                tries += 1
-
-            # Out of iterations loop, break to previous loop if
-            # we hit an error otherwise save the last lot of coeffs
-
-            if stuffed: break
-
-            dataset.tmpcoeffs = coeffs
-            dataset.tmpxvals = xvalues
-            dataset.tmpyvals = yvalues
-            dataset.stddev = stddeviation
-
-        # Finished iteration over datasets, now display results
-
-        resdlg = ContCalcResDlg(dlg, True)
-
-        resdlg.exclpoints.setText("%d" % totremovals)
-        if prevexcl is None: resdlg.pexclpoints.setText("N/a")
-        else: resdlg.pexclpoints.setText(str(prevexcl))
-        prevexcl = totremovals
-        resdlg.afterits.setText("%d/%d" % (itn+1, iterations))
-
-        # Now add all the stuff for plotting with
-
-        resdlg.init_data(copy_ctrlfile)
-        resdlg.lowstd = lwrstd
-        resdlg.upstd = uprstd
-        resdlg.settingup = False
-        resdlg.datafiles.setCurrentRow(0)
-
-        # False return from result dialog means we pressed cancel
-
-        if not resdlg.exec_():
-            plt.close()
-            return None
-
-        plt.close()
-
-        # Otherwise look at "applied" to see if user pressed "Apply changes"
-
-        if resdlg.applied:
-            changes = 0
-            copy_ctrlfile.copy_coeffs()
-            return copy_ctrlfile
-
-        # Turn off restart which disables things we can't change unless we restart
-
-        dlg.restart.setEnabled(True)
-        dlg.restart.setChecked(False)
-
-        # Now we should be ready to loop again
-
-    # Cancel pressed, return None to say we're not doing anything
-
-
+            totremovals += nrem
+            
+            # End of iteration over one dataset
+        
+        dataset.yoffset = coeffs
+        
+        totiterations += iterations
+        if maxiterations < iterations:
+            maxiterations = iterations
+        
+        # End of iteration over datasets
+    
+    print "Finished calculating ceoffs after %d iterations %d max iterations %d removed" % (totiterations, maxiterations, totremovals)
 
 else:               # global one
-    
+
+    iterations = 0    
     ctrllist.reset_indiv_y()
     ctrllist.reset_y()
     ctrllist.set_yscale(1.0)
@@ -226,8 +202,6 @@ else:               # global one
     sortind = allxvalues.argsort()
     allxvalues = allxvalues[sortind]
     allyvalues = allyvalues[sortind]     
- 
-    iterations = 0
     
     while 1:
         
@@ -278,9 +252,10 @@ else:               # global one
     ctrllist.set_refwavelength(refwl)
     ctrllist.set_yoffset(coeffs)
     
-    print "Finished calculating ceoffs after %d iterations and %d removed, coeff values are:" % (iterations, totremovals)
+    print "Finished calculating ceoffs after %d iterations and %d removed." % (iterations, totremovals)
+    print "Coeff values are:"
     
-    for n, c in zip(range(degree, -1, -1), coeffs)
+    for n, c in zip(range(degree, -1, -1), coeffs):
         print "%2d: %#.8g" % (n, c)
  
  # Now save result
