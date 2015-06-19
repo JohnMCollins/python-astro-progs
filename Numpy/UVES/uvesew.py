@@ -44,7 +44,6 @@ xrayfiles = resargs['xrayfiles']
 xrayoffset = resargs['xrayoffset']
 outfile = resargs['outfile']
 
-
 if len(xrayfiles) != 3:
     print "Expecting 3 X ray files"
     sys.exit(10)
