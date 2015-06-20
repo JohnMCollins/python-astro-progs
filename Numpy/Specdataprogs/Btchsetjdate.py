@@ -16,7 +16,6 @@ import specdatactrl
 import datarange
 import specinfo
 
-
 parsearg = argparse.ArgumentParser(description='Batch mode set jdates from file names')
 parsearg.add_argument('infofiles', type=str, help='Specinfo file', nargs='+')
 parsearg.add_argument('--force', action='store_true', help='Force change even if dates set')
@@ -59,116 +58,39 @@ for infofile in infofiles:
         sys.stdout = sys.__stdout__
         continue
     
+    cerrors = 0
+    
     for spec in ctrllist.datalist:
         
+        mtch = specdatactrl.Filetimematch.search(spec.filename)
+        if mtch is None:
+            sys.stdout = sys.stderr
+            print "File name format not understood in", infofile
+            errors += 1
+            sys.stdout = sys.__stdout__
+            cerrors += 1
+            cbreak
+        mtchl = list(mtch.groups())
+        ms = mtchl.pop()
+        mtchl = [ int(m) for m in mtchl]
+        if ms is None: ms = 0
+        else: ms = int(ms) * 1000
+        mtchl.append(ms)
+        t = datetime.datetime(*mtchl)
+        spec.modjdate = jdate.datetime_to_jdate(t)
         
-
-try:
-    ctrllist.loadfiles()
-except specdatactrl.SpecDataError as e:
-    sys.stdout = sys.stderr
-    print "Problem loading files via", infofile
-    print "Error was:", e.args[0]
-    sys.exit(101)
-
-inclrange = None
-exclrange = None
-
-try:
-    if inclranges is not None and len(inclranges) != 0:
-        inclrange = datarange.Rangeset(rangl)
-        inclrange.parseset(inclranges)
-except datarange.DataRangeError as e:
-    sys.stdout = sys.stderr
-    print "Problem seting include ranges"
-    print "Error was:", e.args[0]
-    sys.exit(102)
-try:
-    if exclranges is not None and len(exclranges) != 0:
-        exclrange = datarange.Rangeset(rangl)
-        exclrange.parseset(exclranges)
-except datarange.DataRangeError as e:
-    sys.stdout = sys.stderr
-    print "Problem seting exclude ranges"
-    print "Error was:", e.args[0]
-    sys.exit(103)
-
-# Remember how many we started with
-
-pre_existing = ctrllist.count_markers()
-
-# Do what we have to to reset markers etc
-
-ndone = 0
-if existact is not None and len(existact) != 0:
-    existact = string.upper(existact[0:1])
-    if  existact == 'R':
-        ndone = ctrllist.reset_markers()
-    elif existact == 'C':
-        ndone = ctrllist.clear_remarks()
-
-# So now we actually do the job
-
-continua = []
-dsfrom = []
-
-for dataset in ctrllist.datalist:
-    
-    try:
-        xvalues = dataset.get_xvalues(False)
-        yvalues = dataset.get_yvalues(False)
-    except specdatactrl.SpecDataError:
-        continue
-          
-    lxv = len(xvalues)
+        if cerrors != 0: continue
         
-    if lxv < 3:
-        continue
-    
-    widths = np.concatenate(( (xvalues[1] - xvalues[0], ), (xvalues[2:] - xvalues[0:lxv-2]) / 2.0, (xvalues[-2] - xvalues[-1] ,)))
-    
-    if inclrange is not None:
-        xvalues, yvalues, widths = inclrange.include(xvalues, yvalues, widths)
-        if len(xvalues) < 3:
-            continue
-        
-    if exclrange is not None:
-        xvalues, yvalues, widths = exclrange.exclude(xvalues, yvalues, widths)
-
-    continua.append(np.sum(yvalues * widths))
-    dsfrom.append(dataset)
-    
-# Get median, mean and std deviation
-
-cmedian = np.median(continua)
-cmean = np.mean(continua)
-cstd = np.std(continua)
-selby = cmean
-if medians: selby = cmedian
-upperlim = selby + uppersd * cstd
-lowerlim = selby - lowersd * cstd
-
-nskipped = 0
-
-for c, dataset in zip(continua, dsfrom):
-    if lowerlim <= c <= upperlim: continue
-    if c < lowerlim:
-        dataset.skip('Below lower limit')
-    else:
-        dataset.skip('Above upper limit')
-    nskipped += 1
-
-if ndone == 0 and nskipped == 0:
-    print "Nothing done, no changes"
-    sys.exit(0)
-
-try:
-    inf.savefile()
-except specinfo.SpecInfoError as e:
-    sys.stdout = sys.stderr
-    print "Cannot re-save", infofile
-    print "Error was", e.args[0]
-    sys.exit(150)
-
-print "%d existing marks %d cleared %d newly set" % (pre_existing, ndone, nskipped)
+        try:
+            inf.savefile()
+        except specinfo.SpecInfoError as e:
+            sys.stdout = sys.stderr
+            print "Cannot re-save", infofile
+            print "Error was", e.args[0]
+            errors += 1
+            sys.stdout = sys.__stdout__
+ 
+if errors != 1:
+     print errors, "files had errors"
+     sys.exit(2)
 sys.exit(0)
