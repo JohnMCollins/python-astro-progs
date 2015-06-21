@@ -15,7 +15,7 @@ import argmaxmin
 
 # According to type of display select column
 
-optdict = dict(ew = 1, ps = 2, pr = 3, lpr = 4)
+optdict = dict(ew = 2, ps = 4, pr = 6)
 
 parsearg = argparse.ArgumentParser(description='Perform L-S FFT and report peak periods')
 parsearg.add_argument('integ', type=str, nargs='+', help='Input integration file(s) (time/intensity)')
@@ -84,7 +84,7 @@ for ifl in integ:
         print "Conversion error on", ifl
         sys.exit(7)
 
-    timings = arr[0]
+    timings = arr[1]
 
     results = []
     for ycolumn in range(1,4):

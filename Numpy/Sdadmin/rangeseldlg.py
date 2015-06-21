@@ -343,7 +343,7 @@ class Rangeseldlg(QDialog, ui_rangeseldlg.Ui_rangeseldlg):
         """When one of the range adjust buttons for subranges is clicked,
         work out amounts and do the appropriate adjustment"""
 
-        sliderval = self.rboundslide.value() / 200.0
+        sliderval = self.rboundslide.value() / 2000.0
         xll, xlu = plt.gca().get_xlim()
         amt = (xlu-xll) * sliderval
         rangeadj(self.srmin, self.srmax, amt * lzoom, amt * rzoom)

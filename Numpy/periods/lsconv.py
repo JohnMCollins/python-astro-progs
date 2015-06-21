@@ -13,7 +13,7 @@ import scipy.signal as ss
 
 # According to type of display select column
 
-optdict = dict(ew = 1, ps = 2, pr = 3, lpr = 4)
+optdict = dict(ew = 2, ps = 4, pr = 6)
 
 parsearg = argparse.ArgumentParser(description='Perform L-S FFT')
 parsearg.add_argument('integ', type=str, nargs=1, help='Input integration file (time/intensity)')
@@ -75,7 +75,7 @@ if errors > 0:
 
 try:
     arr = np.loadtxt(integ, unpack=True)
-    timings = arr[0]
+    timings = arr[1]
     sums = arr[ycolumn]
 except IOError as e:
     print "Could not load integration file", integ, "error was", e.args[1]

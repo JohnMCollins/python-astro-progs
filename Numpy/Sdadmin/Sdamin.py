@@ -29,9 +29,6 @@ import configfile
 import obsfileseldlg
 import rangeseldlg
 import scaleoffdlg
-import markexceptdlg
-import contcalcdlg
-import ewcalc
 import ui_sdadminmain
 import ui_progoptsdlg
 
@@ -111,10 +108,6 @@ class SadminMain(QMainWindow, ui_sdadminmain.Ui_sdadminmain):
         self.action_X_scaling_and_offsets.setEnabled(saveable)
         self.action_Y_scaling_and_offsets.setEnabled(saveable)
         self.action_tune_ranges.setEnabled(saveable)
-        self.action_mark_exceptional.setEnabled(saveable)
-        self.action_calculate_continuum.setEnabled(saveable)
-        self.action_individual_continuum.setEnabled(saveable)
-        self.action_equivalent_widths.setEnabled(saveable)
 
     def dirty_either(self):
         """True if anything needs saving"""
@@ -309,37 +302,6 @@ class SadminMain(QMainWindow, ui_sdadminmain.Ui_sdadminmain):
             QMessageBox.warning(self, "No current ranges", "Please set up ranges first")
             return False
         return True
-
-    def on_action_mark_exceptional_triggered(self, checked = None):
-        if checked is None: return
-        if not self.ready_to_calc(): return
-        nc = markexceptdlg.run_exception_marks(self.currentlist, self.rangelist)
-        if nc is not None:
-            self.currentlist = nc
-            self.updateUI()
-
-    def on_action_calculate_continuum_triggered(self, checked = None):
-        if checked is None: return
-        if not self.ready_to_calc(): return
-        nc = contcalcdlg.run_continuum_calc(self.currentlist, self.rangelist)
-        if nc is not None:
-            self.currentlist = nc
-            self.unsavedc = True
-            self.updateUI()
-
-    def on_action_individual_continuum_triggered(self, checked = None):
-        if checked is None: return
-        if not self.ready_to_calc(): return
-        nc = contcalcdlg.run_indiv_continuum_calc(self.currentlist, self.rangelist)
-        if nc is not None:
-            self.currentlist = nc
-            self.unsavedc = True
-            self.updateUI()
-
-    def on_action_equivalent_widths_triggered(self, checked = None):
-        if checked is None: return
-        if not self.ready_to_calc(): return
-        ewcalc.run_ew_calc(self.currentlist, self.rangelist)
 
     def save_ops(self, filename = None):
         try:

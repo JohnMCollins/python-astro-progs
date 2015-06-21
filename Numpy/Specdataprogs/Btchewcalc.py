@@ -93,7 +93,7 @@ for spectrum in ctrllist.datalist:
     #lastdate = spectrum.modjdate
     #if lastdate == 0: lastdate = spectrum.modbjdate
 
-    results.append((spectrum.modbjdate, ew, ps, pr))
+    results.append((spectrum.modjdate, spectrum.modbjdate, ew, 0.0, ps, 0.0, pr, 0.0))
 
 np.savetxt(outfile, results)
 

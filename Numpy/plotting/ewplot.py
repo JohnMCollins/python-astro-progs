@@ -10,21 +10,23 @@ import string
 import numpy as np
 import scipy.stats as ss
 import matplotlib.pyplot as plt
+from matplotlib import dates
+import datetime
 import exclusions
 import jdate
 import rangearg
 
 # According to type of display select column, xlabel  for hist, ylabel for plot
 
-optdict = dict(ew = (1, 'Equivalent width ($\AA$)', 'Equivalent width ($\AA$)'),
-               ps = (2, 'Peak size (rel to EW)', 'Peak size (rel to EW)'),
-               pr = (3, 'Peak ratio', 'Peak ratio'),
-               lpr = (4, 'Log Peak Ratio', 'Log Peak Ratio'))
+optdict = dict(ew = (2, 'Equivalent width ($\AA$)', 'Equivalent width ($\AA$)'),
+               ps = (4, 'Peak size (rel to EW)', 'Peak size (rel to EW)'),
+               pr = (6, 'Peak ratio', 'Peak ratio'))
 
 parsearg = argparse.ArgumentParser(description='Plot equivalent width results')
 parsearg.add_argument('integ', type=str, nargs=1, help='Input integration file (time/intensity)')
 parsearg.add_argument('--title', type=str, default='Equivalent widths', help='Title for window')
 parsearg.add_argument('--type', help='ew/ps/pr to select display', type=str, default="ew")
+parsearg.add_argument('--log', action='store_true', help='Take log of values to plot')
 parsearg.add_argument('--sepdays', type=int, default=10000, help='Separate plots if this number of days apart')
 parsearg.add_argument('--bins', type=int, default=20, help='Histogram bins')
 parsearg.add_argument('--clip', type=float, default=0.0, help='Number of S.D.s to clip from histogram')
@@ -68,6 +70,7 @@ histxrange = rangearg.parserange(res['histxrange'])
 forkoff = res['fork']
 explicit_legend = res['legend']
 typeplot = res['type']
+takelog = res['log']
 
 if typeplot not in optdict:
     print "Unknown type", typeplot, "specified"
@@ -117,6 +120,9 @@ if excludes is not None:
 inp = np.loadtxt(rf, unpack=True)
 dates = inp[0]
 vals = inp[ycolumn]
+if takelog and np.min(vals) < 0:
+    print "Negative values, cannot take log"
+    sys.exit(107)
 
 fig = plt.figure(figsize=dims)
 fig.canvas.set_window_title(title + ' Histogram')

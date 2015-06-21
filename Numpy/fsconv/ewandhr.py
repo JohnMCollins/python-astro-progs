@@ -98,9 +98,9 @@ for sf in spec:
         errors += 1
         nohorns += 1
         print "Error -", e.args[0], "in file", sf
-        ew = hs = lhr = 0.0
+        ew = hs = 0.0
         hr = 1.0
-        results.append([obst, ew, hs, hr, lhr])
+        results.append([obst, obst, ew, 0.0, hs, 0.0, hr, 0,0])
         continue
     
     ewleft, ewright = prof.ewinds
@@ -108,9 +108,9 @@ for sf in spec:
         print "Error, cannot find EW in", sf
         errors += 1
         nohorns += 1
-        ew = hs = lhr = 0.0
+        ew = hs = 0.0
         hr = 1.0
-        results.append([obst, ew, hs, hr])
+        results.append([obst, obst, ew, 0.0, hs, 0.0, hr, 0.0])
         continue
 
     ewsz = si.simps(amps[ewleft:ewright+1]-1.0, wavelengths[ewleft:ewright+1])
@@ -130,15 +130,17 @@ for sf in spec:
         rhorn = rhornsz / (wavelengths[rwhere] - wavelengths[minind])
 
         hr = rhorn / lhorn
-        lhr = np.log(hr)
         hs = (lhornsz + rhornsz) / ewsz
         
     else:
         hr = 1.0
-        lhr = hs = 0.0
+        hs = 0.0
         nohorns += 1
     
-    results.append([obst, ew, hs, hr, lhr])
+    # Repeat obs time as we don't distinguish between jdate and barycentric ones
+    # and we want to be compatible
+    
+    results.append([obst, obst, ew, 0.0, hs, 0.0, hr, 0.0])
 
 results = np.array(results)
 

@@ -15,6 +15,7 @@ import miscutils
 import specdatactrl
 import datarange
 import specinfo
+import jdate
 
 parsearg = argparse.ArgumentParser(description='Batch mode set jdates from file names')
 parsearg.add_argument('infofiles', type=str, help='Specinfo file', nargs='+')
@@ -62,23 +63,16 @@ for infofile in infofiles:
     
     for spec in ctrllist.datalist:
         
-        mtch = specdatactrl.Filetimematch.search(spec.filename)
-        if mtch is None:
+        jd = specdatactrl.jd_parse_from_filename(spec.filename)
+        if jd is None:
             sys.stdout = sys.stderr
             print "File name format not understood in", infofile
             errors += 1
             sys.stdout = sys.__stdout__
             cerrors += 1
-            cbreak
-        mtchl = list(mtch.groups())
-        ms = mtchl.pop()
-        mtchl = [ int(m) for m in mtchl]
-        if ms is None: ms = 0
-        else: ms = int(ms) * 1000
-        mtchl.append(ms)
-        t = datetime.datetime(*mtchl)
-        spec.modjdate = jdate.datetime_to_jdate(t)
-        
+            break
+        spec.modjdate = jd
+
         if cerrors != 0: continue
         
         try:
@@ -90,7 +84,7 @@ for infofile in infofiles:
             errors += 1
             sys.stdout = sys.__stdout__
  
-if errors != 1:
+if errors != 0:
      print errors, "files had errors"
      sys.exit(2)
 sys.exit(0)
