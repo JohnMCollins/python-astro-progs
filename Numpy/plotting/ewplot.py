@@ -15,6 +15,7 @@ import datetime
 import exclusions
 import jdate
 import rangearg
+import histandgauss
 
 # According to type of display select column, xlabel  for hist, ylabel for plot
 
@@ -25,25 +26,26 @@ optdict = dict(ew = (2, 'Equivalent width ($\AA$)', 'Equivalent width ($\AA$)'),
 parsearg = argparse.ArgumentParser(description='Plot equivalent width results')
 parsearg.add_argument('integ', type=str, nargs=1, help='Input integration file (time/intensity)')
 parsearg.add_argument('--title', type=str, default='Equivalent widths', help='Title for window')
+parsearg.add_argument('--width', type=float, default=4, help='Display width')
+parsearg.add_argument('--height', type=float, default=3, help='Display height')
 parsearg.add_argument('--type', help='ew/ps/pr to select display', type=str, default="ew")
 parsearg.add_argument('--log', action='store_true', help='Take log of values to plot')
+parsearg.add_argument('--sdplot', action='store_true', help='Put separate days in separate figures')
 parsearg.add_argument('--sepdays', type=int, default=10000, help='Separate plots if this number of days apart')
 parsearg.add_argument('--bins', type=int, default=20, help='Histogram bins')
 parsearg.add_argument('--clip', type=float, default=0.0, help='Number of S.D.s to clip from histogram')
 parsearg.add_argument('--gauss', action='store_true', help='Normalise and overlay gaussian on histogram')
-parsearg.add_argument('--sdplot', action='store_true', help='Put separate days in separate figure')
-parsearg.add_argument('--yhist', type=str, default='Occurrences', help='Label for histogram Y axis')
+parsearg.add_argument('--xtype', type=str, default='auto', help='Type X axis - auto/time/date/full/days')
 parsearg.add_argument('--xhist', type=str, help='Label for histogram X axis')
+parsearg.add_argument('--yhist', type=str, default='Occurrences', help='Label for histogram Y axis')
+parsearg.add_argument('--xplot', type=str, help='Label for plot X axis')
 parsearg.add_argument('--yplot', type=str, help='Label for plot Y axis')
-parsearg.add_argument('--xplot', type=str, default='Days offset from start', help='Label for plot X axis')
-parsearg.add_argument('--yaxr', action='store_true', help='Put Y axis label on right')
-parsearg.add_argument('--yrange', type=str, help='Range for Y axis')
-parsearg.add_argument('--histyrange', type=str, help='Range for Hist Y axis')
 parsearg.add_argument('--xaxt', action='store_true', help='Put X axis label on top')
+parsearg.add_argument('--yaxr', action='store_true', help='Put Y axis label on right')
 parsearg.add_argument('--xrange', type=str, help='Range for X axis')
+parsearg.add_argument('--yrange', type=str, help='Range for Y axis')
 parsearg.add_argument('--histxrange', type=str, help='Range for Hist X axis')
-parsearg.add_argument('--width', type=float, default=4, help='Display width')
-parsearg.add_argument('--height', type=float, default=3, help='Display height')
+parsearg.add_argument('--histyrange', type=str, help='Range for Hist Y axis')
 parsearg.add_argument('--outprefix', type=str, help='Output file prefix')
 parsearg.add_argument('--plotcolours', type=str, default='black,red,green,blue,yellow,magenta,cyan', help='Colours for successive plots')
 parsearg.add_argument('--excludes', type=str, help='File with excluded obs times and reasons')
@@ -54,28 +56,29 @@ parsearg.add_argument('--fork', action='store_true', help='Fork off daemon proce
 res = vars(parsearg.parse_args())
 rf = res['integ'][0]
 title = res['title']
-sepdays = res['sepdays']
-sdp = res['sdplot']
-outf = res['outprefix']
-excludes = res['excludes']
-clip = res['clip']
-gauss = res['gauss']
-bins = res['bins']
-ytr = res['yaxr']
-xtt = res['xaxt']
-yrange = rangearg.parserange(res['yrange'])
-xrange = rangearg.parserange(res['xrange'])
-histyrange = rangearg.parserange(res['histyrange'])
-histxrange = rangearg.parserange(res['histxrange'])
-forkoff = res['fork']
-explicit_legend = res['legend']
+dims = (res['width'], res['height'])
 typeplot = res['type']
 takelog = res['log']
+sdp = res['sdplot']
+sepdays = res['sepdays']
+bins = res['bins']
+clip = res['clip']
+gauss = res['gauss']
+xtype = res['xtype']
+xtt = res['xaxt']
+ytr = res['yaxr']
+xrange = rangearg.parserange(res['xrange'])
+yrange = rangearg.parserange(res['yrange'])
+histxrange = rangearg.parserange(res['histxrange'])
+histyrange = rangearg.parserange(res['histyrange'])
+outf = res['outprefix']
+excludes = res['excludes']
+explicit_legend = res['legend']
+forkoff = res['fork']
 
 if typeplot not in optdict:
     print "Unknown type", typeplot, "specified"
     sys.exit(2)
-
 ycolumn, histxlab, plotylab = optdict[typeplot]
 if res['xhist'] is not None:
     histxlab = res['xhist']
@@ -91,15 +94,16 @@ if res['yplot'] is not None:
 histylab = res['yhist']
 if histylab == "none":
     histylab = ""
-xlab = res['xplot']
-if xlab == "none":
-    xlab = ""
+    
+# Worry about X label for plot later
 
-dims = (res['width'], res['height'])
+# Load up EW file and excludes file
 
 if rf is None:
     print "No integration result file specified"
     sys.exit(100)
+
+# If excludes file present load up file and reasons, add in colours
 
 if excludes is not None:
     try:
@@ -117,12 +121,34 @@ if excludes is not None:
 
 # Load up file of integration results
 
-inp = np.loadtxt(rf, unpack=True)
+try:
+    inp = np.loadtxt(rf, unpack=True)
+except IOError as e:
+    print "Error loading EW file", rf
+    print "Error was", e.args[1]
+    sys.exit(102)
+
+if inp.shape[0] != 8:
+    print "Expecting new format 8-column shape, please convert"
+    print "Shape was", inp.shape
+    sys.exit(103)
+
 dates = inp[0]
 vals = inp[ycolumn]
 if takelog and np.min(vals) < 0:
     print "Negative values, cannot take log"
-    sys.exit(107)
+    sys.exit(104)
+
+if xtype == "auto":
+    
+    # If 
+    
+
+
+
+xlab = res['xplot']
+if xlab == "none":
+    xlab = ""
 
 fig = plt.figure(figsize=dims)
 fig.canvas.set_window_title(title + ' Histogram')
