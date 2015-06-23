@@ -16,6 +16,7 @@ import exclusions
 import jdate
 import rangearg
 import histandgauss
+import splittime
 
 # According to type of display select column, xlabel  for hist, ylabel for plot
 
@@ -30,8 +31,8 @@ parsearg.add_argument('--width', type=float, default=4, help='Display width')
 parsearg.add_argument('--height', type=float, default=3, help='Display height')
 parsearg.add_argument('--type', help='ew/ps/pr to select display', type=str, default="ew")
 parsearg.add_argument('--log', action='store_true', help='Take log of values to plot')
-parsearg.add_argument('--sdplot', action='store_true', help='Put separate days in separate figures')
-parsearg.add_argument('--sepdays', type=int, default=10000, help='Separate plots if this number of days apart')
+parsearg.add_argument('--sdplot', type=str, default='d', help='Action on separated plots, discontinuous/overlaid/separate')
+parsearg.add_argument('--sepdays', type=float, default=1e6, help='Separate plots if this number of days apart')
 parsearg.add_argument('--bins', type=int, default=20, help='Histogram bins')
 parsearg.add_argument('--clip', type=float, default=0.0, help='Number of S.D.s to clip from histogram')
 parsearg.add_argument('--gauss', action='store_true', help='Normalise and overlay gaussian on histogram')
@@ -47,11 +48,10 @@ parsearg.add_argument('--yrange', type=str, help='Range for Y axis')
 parsearg.add_argument('--histxrange', type=str, help='Range for Hist X axis')
 parsearg.add_argument('--histyrange', type=str, help='Range for Hist Y axis')
 parsearg.add_argument('--outprefix', type=str, help='Output file prefix')
+parsearg.add_argument('--histcolour', type=str, default='blue,black', help='Colour or colour,colour for histogram and gauss')
 parsearg.add_argument('--plotcolours', type=str, default='black,red,green,blue,yellow,magenta,cyan', help='Colours for successive plots')
 parsearg.add_argument('--excludes', type=str, help='File with excluded obs times and reasons')
 parsearg.add_argument('--exclcolours', type=str, default='red,green,blue,yellow,magenta,cyan,black', help='Colours for successive exclude reasons')
-parsearg.add_argument('--legend', type=str, help='Specify explicit legend')
-parsearg.add_argument('--fork', action='store_true', help='Fork off daemon process to show plot and exit')
 
 res = vars(parsearg.parse_args())
 rf = res['integ'][0]
@@ -60,7 +60,7 @@ dims = (res['width'], res['height'])
 typeplot = res['type']
 takelog = res['log']
 sdp = res['sdplot']
-sepdays = res['sepdays']
+sepdays = res['sepdays'] * 3600.0 * 24.0
 bins = res['bins']
 clip = res['clip']
 gauss = res['gauss']
@@ -71,10 +71,9 @@ xrange = rangearg.parserange(res['xrange'])
 yrange = rangearg.parserange(res['yrange'])
 histxrange = rangearg.parserange(res['histxrange'])
 histyrange = rangearg.parserange(res['histyrange'])
+histcolour = string.split(res['histcolour'], '.')
 outf = res['outprefix']
 excludes = res['excludes']
-explicit_legend = res['legend']
-forkoff = res['fork']
 
 if typeplot not in optdict:
     print "Unknown type", typeplot, "specified"
@@ -173,13 +172,16 @@ else:
     usedt = False
     if xlab is None: xlab = sim + "Day offset from start"
 
+# Step one is to do the histogram
+
 fig = plt.figure(figsize=dims)
 fig.canvas.set_window_title(title + ' Histogram')
 
 # If clipping histogram, iterate to remove outliers
 
+hvals = vals.copy()
+
 if clip != 0.0:
-    hvals = vals + 0.0
     lh = len(hvals)
     while 1:
         mv = np.mean(hvals)
@@ -193,57 +195,41 @@ if clip != 0.0:
         if nl == lh:
             break
         lh = nl
-    if gauss:
-        mv = np.mean(hvals)
-        std = np.std(hvals)
-        minv = np.min(hvals)
-        maxv = np.max(hvals)
-        lx = np.linspace(minv,maxv,250)
-        garr = ss.norm.pdf(lx, mv, std)
-        if histyrange is not None:
-            plt.ylim(*histyrange)
-        if histxrange is not None:
-            plt.xlim(*histxrange)
-        plt.hist(hvals, bins=bins, normed = True)
-        plt.plot(lx, garr, color='red')
-    else:
-        if histyrange is not None:
-            plt.ylim(*histyrange)
-        if histxrange is not None:
-            plt.xlim(*histxrange)
-        plt.hist(hvals,bins=bins)
+
+if histyrange is not None:
+    plt.ylim(*histyrange)
+if histxrange is not None:
+    plt.xlim(*histxrange)
+
+if gauss:
+    histandgauss.histandgauss(hvals, bins=bins, colour=histcolour)
 else:
-    if histyrange is not None:
-        plt.ylim(*histyrange)
-    if histxrange is not None:
-        plt.xlim(*histxrange)
-    if gauss:
-        mv = np.mean(vals)
-        std = np.std(vals)
-        minv = np.min(vals)
-        maxv = np.max(vals)
-        lx = np.linspace(minv, maxv, 250)
-        garr = ss.norm.pdf(lx, mv, std)
-        plt.hist(vals, bins=bins, normed = True)
-        plt.plot(lx, garr, color='red')
-    else:
-        plt.hist(vals,bins=bins)
+    plt.hist(hvals, bins=bins, color=histcolour[0])
+
+ax = plt.gca()
+
 if ytr:
-    plt.gca().yaxis.tick_right()
-    plt.gca().yaxis.set_label_position("right")
+    ax.yaxis.tick_right()
+    ax.yaxis.set_label_position("right")
 if xtt:
-    plt.gca().xaxis.tick_top()
-    plt.gca().xaxis.set_label_position("top")
+    ax.xaxis.tick_top()
+    ax.xaxis.set_label_position("top")
 if len(histylab) > 0:
     plt.ylabel(histylab)
 else:
     plt.yticks([])
 if len(histxlab) > 0:
+    if len(hvals) != len(vals):
+        diff = len(vals) - len(hvals)
+        if diff == 1: s=""
+        else: s="s"
+        histxlab += " (omitting %d outlying value%s)" % (diff, s)
     plt.xlabel(histxlab)
 else:
     plt.xticks([])
-if explicit_legend is not None:
-    plt.legend([explicit_legend], handlelength=0)
+
+# Save histogram output file if required
+
 if outf is not None:
     fname = outf + '_hist.png'
     plt.savefig(fname)
@@ -251,31 +237,31 @@ if not sdp:
     fig = plt.figure(figsize=dims)
     fig.canvas.set_window_title(title + ' Value by time')
 
-rxarray = []
-ryarray = []
-rxvalues = []
-ryvalues = []
+# Now for plot itself
+# We use our split routine to split by date, splitting the jdates as well in case we're using those
 
-lastdate = 1e12
+separated_vals = splittime.splittime(sepdays, datetimes, obsdates, vals)
 
-for d, v in zip(dates,vals):
-    if d - lastdate > sepdays and len(rxvalues) != 0:
-        rxarray.append(rxvalues)
-        ryarray.append(ryvalues)
-        rxvalues = []
-        ryvalues = []
-    rxvalues.append(d)
-    ryvalues.append(v)
-    lastdate = d
-
-if len(rxvalues) != 0:
-   rxarray.append(rxvalues)
-   ryarray.append(ryvalues)
+numplots = len(separated_vals)
 
 plotcols = string.split(res['plotcolours'], ',')
-colours = plotcols * ((len(rxarray) + len(plotcols) - 1) / len(plotcols))
+colours = plotcols * ((numplots + len(plotcols) - 1) / len(plotcols))
 
 fnum = 1
+
+# Remember starting date and time for benefit of labels/legends etc
+
+starting_datetime = separated_vals[0][0]
+
+# Now do plot according to method chosen.
+
+if len(sdp) == 0: sdp = 'd'
+
+if sdp[0] == 's':
+    
+    # Case where we have each plot on a separate day
+    
+    
 
 if sdp:
     for xarr, yarr, col in zip(rxarray,ryarray,colours):
@@ -315,8 +301,6 @@ if sdp:
                 else:
                     had[reas] = 1
                     plt.axvline(xpl, color=creas, label=reas, ls="--")
-        if explicit_legend is not None:
-            plt.legend([explicit_legend] + " (%d)" % fnum, handlelength=0)
         if outf is not None:
             fname = outf + ("_f%.3d.png" % fnum)
             f.savefig(fname)
@@ -352,9 +336,6 @@ else:
                 reas = sube.getreason(pl)
                 creas = rlookup[reas]
                 lines.append((xpl,creas))
-
-    if explicit_legend is not None:
-        plt.legend([explicit_legend], handlelength=0)
 
     for xpl, creas in lines:
         plt.axvline(xpl, color=creas, ls="--")
