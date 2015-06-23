@@ -35,7 +35,7 @@ parsearg.add_argument('--sepdays', type=int, default=10000, help='Separate plots
 parsearg.add_argument('--bins', type=int, default=20, help='Histogram bins')
 parsearg.add_argument('--clip', type=float, default=0.0, help='Number of S.D.s to clip from histogram')
 parsearg.add_argument('--gauss', action='store_true', help='Normalise and overlay gaussian on histogram')
-parsearg.add_argument('--xtype', type=str, default='auto', help='Type X axis - auto/time/date/full/days')
+parsearg.add_argument('--xtype', type=str, default='auto', help='Type X axis - time/date/full/days')
 parsearg.add_argument('--xhist', type=str, help='Label for histogram X axis')
 parsearg.add_argument('--yhist', type=str, default='Occurrences', help='Label for histogram Y axis')
 parsearg.add_argument('--xplot', type=str, help='Label for plot X axis')
@@ -133,22 +133,45 @@ if inp.shape[0] != 8:
     print "Shape was", inp.shape
     sys.exit(103)
 
-dates = inp[0]
+obsdates = inp[0]
 vals = inp[ycolumn]
 if takelog and np.min(vals) < 0:
     print "Negative values, cannot take log"
     sys.exit(104)
 
-if xtype == "auto":
-    
-    # If 
-    
+# If first element is zero, make dates as offset from "now"
 
-
+if obsdates[0] == 0.0:
+    nowt = datetime.datetime.now()
+    td = np.vectorize(datetime.timedelta)
+    datetimes = now + td(obsdates)
+    sim = "(Simulated) "
+else:
+    td = np.vectorize(jdate.jdate_to_datetime)
+    datetimes = td(obsdates)
+    sim = ""
 
 xlab = res['xplot']
-if xlab == "none":
-    xlab = ""
+
+if xtype == 'time':
+    usedt = True
+    hfmt = dates.DateFormatter('%H:%M:%S')
+    if xlab is None: xlab = datetimes[0].strftime(sim + "Times starting on %d/%m/%y")
+elif xtype == 'date':
+    usedt = True
+    hfmt = dates.DateFormatter('%d/%m/%y')
+    if xlab is None: xlab = sim + "Observation dates"
+elif xtype == "datetime":
+    usedt = True
+    hfmt = dates.DateFormatter(sim + "%d/%m/%y %H:%M:%S")
+    if xlab is None: xlab = sim + "Observation date/times"
+elif xtype == "timedate":
+    usedt = True
+    hfmt = dates.DateFormatter(sim + "%H:%M:%S %d/%m/%y")
+    if xlab is None: xlab = sim + "Observation time/dates"
+else:
+    usedt = False
+    if xlab is None: xlab = sim + "Day offset from start"
 
 fig = plt.figure(figsize=dims)
 fig.canvas.set_window_title(title + ' Histogram')
