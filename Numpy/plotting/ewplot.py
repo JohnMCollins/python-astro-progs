@@ -249,109 +249,83 @@ colours = plotcols * ((numplots + len(plotcols) - 1) / len(plotcols))
 
 fnum = 1
 
-# Remember starting date and time for benefit of labels/legends etc
-
-starting_datetime = separated_vals[0][0]
-
 # Now do plot according to method chosen.
 
 if len(sdp) == 0: sdp = 'd'
 
 if sdp[0] == 's':
     
-    # Case where we have each plot on a separate day
+    # Case where we have each separate day plot in a different figure.
     
-    
-
-if sdp:
-    for xarr, yarr, col in zip(rxarray,ryarray,colours):
-        offs = xarr[0]
-        xa = np.array(xarr) - offs
-        ya = np.array(yarr)
-        f = plt.figure(figsize=dims)
-        f.canvas.set_window_title(title + ' Day ' + str(fnum))
-        if xrange is not None:
-            plt.xlim(*xrange)
-        if yrange is not None:
-            plt.ylim(*yrange)
-        if len(plotylab) == 0:
-            plt.yticks([])
+    for day_datetimes, day_jdates, day_values in separated_vals:
+        
+        colour = colours[fnum-1]
+        fig = plt.figure(figsize=dims)
+        fig.canvas.set_window_title(title + ' Day ' + str(fnum))
+        if xrange is not None: plt.xlim(*xrange)
+        if yrange is not None: plt.ylim(*yrange)
+        ax = plt.gca()
+        if len(plotylab) == 0: plt.yticks([])
         else:
             if ytr:
-                plt.gca().yaxis.tick_right()
-                plt.gca().yaxis.set_label_position("right")
+                ax.yaxis.tick_right()
+                ax.yaxis.set_label_position("right")
             plt.ylabel(plotylab)
-        if len(xlab) == 0:
-            plt.xticks([])
+        if len(xlab) == 0: plt.xticks([])
         else:
             if xtt:
-                plt.gca().xaxis.tick_top()
-                plt.gca().xaxis.set_label_position('top')
+                ax.xaxis.tick_top()
+                ax.xaxis.set_label_position('top')
             plt.xlabel(xlab)
-        plt.plot(xa,ya,col,label=jdate.display(xarr[0]))
+        if usedt:
+            ax.xaxis.set_major_formatter(hfmt)
+            fig.autofmt_xdate()
+            plt.plot(day_datetimes, day_values, colour)
+        else:
+            plt.plot(day_jdates, day_values, colour)
         if excludes is not None:
-            sube = elist.inrange(np.min(xarr), np.max(xarr))
+            sube = elist.inrange(np.min(day_jdates), np.max(day_jdates))
             had = dict()
+            leglist = []
             for pl in sube.places():
-                xpl = pl - offs
                 reas = sube.getreason(pl)
                 creas = rlookup[reas]
+                xpl = pl
+                if usedt: xpl = jdate.jdate_to_datetime(pl)
                 if reas in had:
                     plt.axvline(xpl, color=creas, ls="--")
                 else:
                     had[reas] = 1
-                    plt.axvline(xpl, color=creas, label=reas, ls="--")
+                    (legl, ) = plt.axvline(xpl, color=creas, label=reas, ls="--")
+                    leglist.append(legl)
+            if len(leglist) > 0:
+                legend(handles=leglist)
         if outf is not None:
             fname = outf + ("_f%.3d.png" % fnum)
-            f.savefig(fname)
+            fig.savefig(fname)
         fnum += 1
+
+elif sdp[0] == 'o':
+
+    # Case where we overlay plots on top of each other
+    # Thinks: maybe worry about different plots the same day?
+
+    starting_datetime = separated_vals[0][0]
+    starting_dt_date = starting_datetime.date()
+        
+    cnum = 0
+    
+    for day_datetimes, day_jdates, day_values in separated_vals:
+        
+
 else:
-    lines = []
-    if yrange is not None:
-        plt.ylim(*yrange)
-    if len(plotylab) == 0:
-        plt.yticks([])
-    else:
-        if ytr:
-            plt.gca().yaxis.tick_right()
-            plt.gca().yaxis.set_label_position("right")
-        plt.ylabel(plotylab)
-    if len(xlab) == 0:
-        plt.xticks([])
-    else:
-        if xtt:
-            plt.gca().xaxis.tick_top()
-            plt.gca().xaxis.set_label_position('top')
-        plt.xlabel(xlab)
+    
 
-    for xarr, yarr, col in zip(rxarray,ryarray,colours):
-        offs = xarr[0]
-        xa = np.array(xarr) - offs
-        ya = np.array(yarr)
-        plt.plot(xa,ya, col)
-        if excludes is not None:
-            sube = elist.inrange(np.min(xarr), np.max(xarr))
-            for pl in sube.places():
-                xpl = pl - offs
-                reas = sube.getreason(pl)
-                creas = rlookup[reas]
-                lines.append((xpl,creas))
-
-    for xpl, creas in lines:
-        plt.axvline(xpl, color=creas, ls="--")
-    if outf is not None:
-        fname = outf + "_f.png"
-        plt.savefig(fname)
-        sys.exit(0)
-
-# Only display pic if we're not saving
-
-if forkoff:
-    if os.fork() == 0:
-        plt.show()
-else:
+if outf is None:
     try:
-        plt.show()
+        plot.show()
     except KeyboardInterrupt:
         pass
+
 sys.exit(0)
+
