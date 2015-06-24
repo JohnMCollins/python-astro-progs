@@ -71,7 +71,7 @@ xrange = rangearg.parserange(res['xrange'])
 yrange = rangearg.parserange(res['yrange'])
 histxrange = rangearg.parserange(res['histxrange'])
 histyrange = rangearg.parserange(res['histyrange'])
-histcolour = string.split(res['histcolour'], '.')
+histcolour = string.split(res['histcolour'], ',')
 outf = res['outprefix']
 excludes = res['excludes']
 
@@ -143,7 +143,7 @@ if takelog and np.min(vals) < 0:
 if obsdates[0] == 0.0:
     nowt = datetime.datetime.now()
     td = np.vectorize(datetime.timedelta)
-    datetimes = now + td(obsdates)
+    datetimes = nowt + td(obsdates)
     sim = "(Simulated) "
 else:
     td = np.vectorize(jdate.jdate_to_datetime)
@@ -262,7 +262,7 @@ if sdp[0] == 's':
         colour = colours[fnum-1]
         fig = plt.figure(figsize=dims)
         fig.canvas.set_window_title(title + ' Day ' + str(fnum))
-        if xrange is not None: plt.xlim(*xrange)
+        if xrange is not None: plt.xlim(*xrange)        # Needs fixing for dates!!!!
         if yrange is not None: plt.ylim(*yrange)
         ax = plt.gca()
         if len(plotylab) == 0: plt.yticks([])
@@ -312,18 +312,112 @@ elif sdp[0] == 'o':
 
     starting_datetime = separated_vals[0][0]
     starting_dt_date = starting_datetime.date()
+    starting_date = separated_vals[0][1]
+    
+    fig = plt.figure(figsize=dims)
+    fig.canvas.set_window_title(title + ' all days')
         
+    if xrange is not None: plt.xlim(*xrange)        # Needs fixing for dates!!!!
+    if yrange is not None: plt.ylim(*yrange)
+    ax = plt.gca()
+    
+    if usedt:
+        ax.xaxis.set_major_formatter(hfmt)
+        fig.autofmt_xdate()
+
+    if len(plotylab) == 0: plt.yticks([])
+    else:
+        if ytr:
+            ax.yaxis.tick_right()
+            ax.yaxis.set_label_position("right")
+        plt.ylabel(plotylab)
+    if len(xlab) == 0: plt.xticks([])
+    else:
+        if xtt:
+            ax.xaxis.tick_top()
+            ax.xaxis.set_label_position('top')
+        plt.xlabel(xlab)
+    
     cnum = 0
     
     for day_datetimes, day_jdates, day_values in separated_vals:
         
-
+        colour = colours[cnum]
+        cnum += 1
+        
+        if usedt:
+            plotdts = [ datetime.datetime.combine(starting_date, day_dt.time()) for day_dt in day_datetimes ]
+            plot(plotdts, day_values, colour)
+        else:
+            plotjd = day_jdates - day_jdates[0]
+            plot(plotjd, day_values, colour)
+        
+    # Don't worry about excludes for num
+    
+    if outf is not None:
+        fname = outf + ("_f.png" % fnum)
+        fig.savefig(fname)
+    
 else:
     
+    colour = colours[0]
+    
+    fig = plt.figure(figsize=dims)
+    fig.canvas.set_window_title(title + ' all days')
+        
+    if xrange is not None: plt.xlim(*xrange)        # Needs fixing for dates!!!!
+    if yrange is not None: plt.ylim(*yrange)
+    ax = plt.gca()
+    
+    if usedt:
+        ax.xaxis.set_major_formatter(hfmt)
+        fig.autofmt_xdate()
+
+    if len(plotylab) == 0: plt.yticks([])
+    else:
+        if ytr:
+            ax.yaxis.tick_right()
+            ax.yaxis.set_label_position("right")
+        plt.ylabel(plotylab)
+    if len(xlab) == 0: plt.xticks([])
+    else:
+        if xtt:
+            ax.xaxis.tick_top()
+            ax.xaxis.set_label_position('top')
+        plt.xlabel(xlab)
+        
+    for day_datetimes, day_jdates, day_values in separated_vals:      
+        if usedt:
+            plt.plot(day_datetimes, day_values, colour)
+        else:
+            plt.plot(day_jdates, day_values, colour)
+    
+    if excludes is not None:
+        had = dict()
+        leglist = []
+        for pl in elist.places():
+            reas = elist.getreason(pl)
+            creas = rlookup[reas]
+            xpl = pl
+            if usedt: xpl = jdate.jdate_to_datetime(pl)
+            if reas in had:
+                plt.axvline(xpl, color=creas, ls="--")
+            else:
+                had[reas] = 1
+                (legl, ) = plt.axvline(xpl, color=creas, label=reas, ls="--")
+                leglist.append(legl)
+        if len(leglist) > 0:
+            legend(handles=leglist)
+    
+    if outf is not None:
+        fname = outf + ("_f.png" % fnum)
+        fig.savefig(fname)
+        
+# All done now either show figure or exit.
 
 if outf is None:
     try:
-        plot.show()
+        plt.show()
     except KeyboardInterrupt:
         pass
 

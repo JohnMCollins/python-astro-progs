@@ -59,14 +59,14 @@ for ewf in ewfiles:
         
         result = np.array([dates, dates, ews, zs, psizes, zs, prats, zs])
     
-    elif infile.shape[5] == 5:
+    elif infile.shape[0] == 5:
         
         # Assume that it is date/ew/peak size/peak ratio/log peak ratio
         # Check last two
         
-        dates, ew, psizes, prats, lprats = infile
+        dates, ews, psizes, prats, lprats = infile
         
-        if np.min(prats) < 0.0 or np.max(np.abs(np.round(np.log10(prats), 5)-np.round(lprats, 5))) > 1e-4:
+        if np.min(prats) < 0.0 or np.max(np.abs(np.round(np.log(prats), 5)-np.round(lprats, 5))) > 1e-4:
             sys.stdout = sys.stderr
             print "Cannot convert", ewf
             print "Expecting 5 column file to be peak rat/log peak rat in last 2 columns"
