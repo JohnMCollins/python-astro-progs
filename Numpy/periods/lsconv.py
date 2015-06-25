@@ -17,7 +17,7 @@ optdict = dict(ew = 2, ps = 4, pr = 6)
 
 parsearg = argparse.ArgumentParser(description='Perform L-S FFT')
 parsearg.add_argument('integ', type=str, nargs=1, help='Input integration file (time/intensity)')
-parsearg.add_argument('--type', help='ew/ps/pr/lpr to select display', type=str, default="ew")
+parsearg.add_argument('--type', help='ew/ps/pr to select display', type=str, default="ew")
 parsearg.add_argument('--outspec', type=str, help='Output spectrum file')
 parsearg.add_argument('--nonorm', action='store_true', help='Do not normalise Y axis')
 parsearg.add_argument('--start', type=float, default=1, help='Starting point for range of periods')
@@ -75,7 +75,7 @@ if errors > 0:
 
 try:
     arr = np.loadtxt(integ, unpack=True)
-    timings = arr[1]
+    timings = arr[1]                    # Choosing Barycentric date
     sums = arr[ycolumn]
 except IOError as e:
     print "Could not load integration file", integ, "error was", e.args[1]
@@ -86,7 +86,7 @@ except ValueError:
 
 # Do the business
 
-spectrum = ss.lombscargle(timings, sums, tfreqs)
+spectrum = ss.lombscargle(timings, sums - sums.mean(), tfreqs)
 
 if not resargs['nonorm']:
     spectrum = np.sqrt(spectrum * 4.0 / float(len(timings)))

@@ -164,7 +164,7 @@ if outfile is not None:
 
 try:
 
-    jdates, bjdates, ews, prs, xrayvs, xraygrads = np.loadtxt(ewfile, unpack=True)
+    jdates, bjdates, ews, ewerrs, pses, pserrs, prs, prerrs, xrayvs, xraygrads = np.loadtxt(ewfile, unpack=True)
 
 except IOError as e:
     print "Cannot open info file, error was", e.args[1]

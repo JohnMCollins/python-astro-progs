@@ -144,6 +144,6 @@ for spectrum in ctrllist.datalist:
         interpfn, ginterpfn, xray_time, xray_amp, xray_gradient = xraydata.pop(0)
     lastdate = spectrum.modjdate
 
-    results.append((spectrum.modjdate, spectrum.modbjdate, ew, pr, interpfn(lastdate), ginterpfn(lastdate)))
+    results.append((spectrum.modjdate, spectrum.modbjdate, ew, 0.0, 0.0, 0.0, pr, 0.0, interpfn(lastdate), ginterpfn(lastdate)))
 
 np.savetxt(outfile, results)

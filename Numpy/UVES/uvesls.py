@@ -12,50 +12,60 @@ import numpy as np
 import miscutils
 import jdate
 import datetime
-import matplotlib.pyplot as plt
-from matplotlib import dates
 import splittime
-import histandgauss
+import periodarg
+import scipy.signal as ss
 
 SECSPERDAY = 3600.0 * 24.0
 
-parsearg = argparse.ArgumentParser(description='Process UVES data and show plots second version')
-parsearg.add_argument('--ewfile', type=str, required=True, help='EW data produced by uvesew')
+coltype = dict(ew = 2, ps = 4, pr = 6)
+
+parsearg = argparse.ArgumentParser(description='Process UVES EW data and generate periodograms')
+parsearg.add_argument('ewfile', type=str, nargs=1, help='EW data produced by uvesew')
 parsearg.add_argument('--xrayfile', type=str, nargs='*', help='Xray data files')
+parsearg.add_argument('--xraylevel', type=float, required=True, help='X-ray level for cutoff')
 parsearg.add_argument('--xrayoffset', type=float, default=0.0, help='Offset to X-ray times')
-parsearg.add_argument('--logxray', action='store_true', help='Display X-rays on log scale')
-parsearg.add_argument('--logpr', action='store_true', help='Take log of peak ratio')
-parsearg.add_argument('--width', help="Width of plot", type=float, default=8)
-parsearg.add_argument('--height', help="Height of plot", type=float, default=8)
-parsearg.add_argument('--hwidth', help="Width of histogram", type=float, default=10)
-parsearg.add_argument('--splittime', help='Split plot segs on value', type=float, default=1e10)
-parsearg.add_argument('--hheight', help="Height of histogram", type=float, default=8)
-parsearg.add_argument('--bins', help='Histogram bins', type=int, default=20)
-parsearg.add_argument('--outfile', help='Prefix for output file', type=str)
-parsearg.add_argument('--minpoints', help='Minimum number of points to try to plot', type=int, default=10)
-parsearg.add_argument('xraylevel', type=float, nargs='+', help='low and high level of X-Rays')
+parsearg.add_argument('--splittime', help='Split plot segs on value', type=float, default=1)
+parsearg.add_argument('--outfile', help='Prefix for output file', type=str, required=True)
+parsearg.add_argument('--start', help='Starting period to try', type=str, default='10m')
+parsearg.add_argument('--step', help='Step in periods to try', type=str, default='10s')
+parsearg.add_argument('--stop', help='Ending period to try', type=str, default='1d')
+parsearg.add_argument('--type', type=str, default='ew', help='Type of feature to process, ew, ps or pr default ew'
 
 resargs = vars(parsearg.parse_args())
 
 ewfile = resargs['ewfile']
 xrayfiles = resargs['xrayfile']
-width = resargs['width']
-height = resargs['height']
-hwidth = resargs['hwidth']
-hheight = resargs['hheight']
-bins = resargs['bins']
-logxray = resargs['logxray']
 xrayoffset = resargs['xrayoffset']
-xraylevels = resargs['xraylevel']
+xraylevel = resargs['xraylevel']
 splitem = resargs['splittime']
 outfile = resargs['outfile']
-minpoints = resargs['minpoints']
+typeplt = resargs['type']
 
-if len(xraylevels) != 2 or xraylevels[0] >= xraylevels[1]:
-    print "Invalid X-ray levels should be low and high"
+try:
+    typecol = coltype[typeplt]
+except ValueError:
+    print "Invalid column type", typeplt
+
+try:
+    startper = periodarg.periodarg(resargs['start'])
+    stepper = periodarg.periodarg([resargs['step']])
+    stopper = periodarg.periodarg([resargs['stop']])
+except ValueError as e:
+    print "Trouble with period argument set"
+    print "Error was:", e.args[0]
+    sys.exit(8)
+
+if startper >= stopper:
+    print "Sorry do not understand start period >= stop period"
     sys.exit(9)
+    
+perrange = np.arange(startper, stopper, stepper)
+tfreqs = 2 * np.pi / perrange
 
-loxray, hixray = xraylevels
+if len(perrange) <= 10:
+    print "Range of periods is unacceptably low"
+    sys.exit(9)
 
 if len(xrayfiles) != 3:
     print "Expecting 3 X ray files"
@@ -104,77 +114,38 @@ for daynum, xrf in enumerate(xrayfiles):
 
     xraydata.append((xray_time, xray_amp, xray_err, xray_gradient, xray_dates))
 
-# Formatting operation to display times as hh:mm
-
-hfmt = dates.DateFormatter('%H:%M')
-
-# Remember files made in case we have to delete them
-
-filesmade = []
-
-# Display of X-ray values
-
-fig = plt.figure(figsize=(width, height))
-fig.canvas.set_window_title("Xray values all to same scale")
-ln = 1
-plt.subplots_adjust(hspace = 0)
-commonax = None
-
-for xray_time, xray_amp, xray_err, xray_gradient, xray_dates in xraydata:
-
-    # Display of one column 3 axes
-
-    ax1 = plt.subplot(3, 1, ln, sharex=commonax)
-    if commonax is None: commonax=ax1
-
-    # Limit each display to maxamp as we worked out when we read it in
-
-    plt.ylim(0, maxamp)
-    ax1.xaxis.set_major_formatter(hfmt)
-    fig.autofmt_xdate()
-
-    # Recalc this to put them on the same axis
-
-    xray_dates = np.array([jdate.jdate_to_datetime(d - ln*2 - 2) for d in xray_time])
-    if logxray:
-        plt.semilogy(xray_dates, xray_amp, color='black')
-    else:
-        plt.errorbar(xray_dates, xray_amp, yerr=xray_err, ecolor='red', color='black')
-
-    plt.legend(["Day %d" % ln])
-    plt.xlabel('Time')
-    plt.ylabel('Intensity')
-    #rax = plt.twinx(ax1)
-    #plt.ylim(mingrad, maxgrad)
-    #plt.plot(xray_dates, xray_gradient, color='purple', ls=':')
-    #plt.ylabel('Gradient')
-    #rax.yaxis.label.set_color('purple')
-    #rax.tick_params(axis='y', colors='purple')
-    ln += 1
-
-if outfile is not None:
-    newf = outfile + '-xraydisp.png'
-    fig.savefig(newf)
-    filesmade.append(newf)
-
-# Now read the EW file
-# This is dates, barycentric dates (not currently used), EWs, interpolated amp and gradients
+# Now read the EW file we need the dates to marry with the xray and the barycentric dates for the calc.
 
 try:
-
-    jdates, bjdates, ews, ewerrs, pses, pserrs, prs, prerrs, xrayvs, xraygrads = np.loadtxt(ewfile, unpack=True)
+    filecontents = np.loadtxt(ewfile, unpack=True)
+    
+    jdates = filecontents[0]
+    bjdates = filecontents[1]
+    values = filecontents[typecol]
+    xrayvs = filecontents[9]
 
 except IOError as e:
     print "Cannot open info file, error was", e.args[1]
     sys.exit(12)
-
-if resargs['logpr']:
-    prs = np.log10(prs)
+except IndexError as e:
+    print "File does not seem to be correct format"
+    sys.exit(13)
 
 # Get date list and split up spectra by day
 
 datelist = [jdate.jdate_to_datetime(jd) for jd in jdates]
-dateparts = splittime.splittime(SECSPERDAY, datelist, ews, prs, xrayvs, xraygrads)
+dateparts = splittime.splittime(SECSPERDAY * splitem, datelist, jdates, bjdates, values, xrayvs)
+
+# Produce individual files if number of days > 1
+
+if len(dateparts) > 1:
+    
+    
+    sel = xrayvs <= xraylevel
+    
+    sel_datelist = datelist[sel]
+    sel_jdates = jdates[sel]
+    sel_bjdates = bj
 
 # Remember the selected EWs for each level
 
