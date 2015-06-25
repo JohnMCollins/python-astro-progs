@@ -1,0 +1,278 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>obsfileseldlg</class>
+ <widget class="QDialog" name="obsfileseldlg">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>994</width>
+    <height>633</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Select file/directory and fields</string>
+  </property>
+  <widget class="QDialogButtonBox" name="buttonBox">
+   <property name="geometry">
+    <rect>
+     <x>740</x>
+     <y>560</y>
+     <width>211</width>
+     <height>32</height>
+    </rect>
+   </property>
+   <property name="orientation">
+    <enum>Qt::Horizontal</enum>
+   </property>
+   <property name="standardButtons">
+    <set>QDialogButtonBox::Cancel|QDialogButtonBox::Ok</set>
+   </property>
+  </widget>
+  <widget class="QLabel" name="label">
+   <property name="geometry">
+    <rect>
+     <x>30</x>
+     <y>40</y>
+     <width>221</width>
+     <height>17</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>10</pointsize>
+    </font>
+   </property>
+   <property name="text">
+    <string>Observation file directory/path</string>
+   </property>
+  </widget>
+  <widget class="QLineEdit" name="obsfile">
+   <property name="geometry">
+    <rect>
+     <x>250</x>
+     <y>30</y>
+     <width>681</width>
+     <height>27</height>
+    </rect>
+   </property>
+   <property name="toolTip">
+    <string>This is the name of the observation file to use.
+You shouldn't need a directory if it is the same one already chosen
+for the observations directory.</string>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="selobsfile">
+   <property name="geometry">
+    <rect>
+     <x>790</x>
+     <y>70</y>
+     <width>141</width>
+     <height>27</height>
+    </rect>
+   </property>
+   <property name="toolTip">
+    <string>Click to select observation file</string>
+   </property>
+   <property name="text">
+    <string>Select obs file</string>
+   </property>
+  </widget>
+  <widget class="QListWidget" name="obsfields">
+   <property name="geometry">
+    <rect>
+     <x>250</x>
+     <y>90</y>
+     <width>256</width>
+     <height>192</height>
+    </rect>
+   </property>
+   <property name="toolTip">
+    <string>This is the columns in order of the obs file fields</string>
+   </property>
+   <property name="dragDropMode">
+    <enum>QAbstractItemView::InternalMove</enum>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="addobsfield">
+   <property name="geometry">
+    <rect>
+     <x>540</x>
+     <y>140</y>
+     <width>92</width>
+     <height>27</height>
+    </rect>
+   </property>
+   <property name="toolTip">
+    <string>Click to add the selected field</string>
+   </property>
+   <property name="text">
+    <string>Add</string>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="delobsfield">
+   <property name="geometry">
+    <rect>
+     <x>540</x>
+     <y>190</y>
+     <width>92</width>
+     <height>27</height>
+    </rect>
+   </property>
+   <property name="toolTip">
+    <string>Click to delete the selected field</string>
+   </property>
+   <property name="text">
+    <string>Del</string>
+   </property>
+  </widget>
+  <widget class="QLabel" name="label_2">
+   <property name="geometry">
+    <rect>
+     <x>40</x>
+     <y>170</y>
+     <width>101</width>
+     <height>17</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Obs file fields</string>
+   </property>
+  </widget>
+  <widget class="QLabel" name="label_3">
+   <property name="geometry">
+    <rect>
+     <x>40</x>
+     <y>420</y>
+     <width>121</width>
+     <height>17</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Spectral file fields</string>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="delspecfield">
+   <property name="geometry">
+    <rect>
+     <x>540</x>
+     <y>440</y>
+     <width>92</width>
+     <height>27</height>
+    </rect>
+   </property>
+   <property name="toolTip">
+    <string>Click to delete the selected field</string>
+   </property>
+   <property name="text">
+    <string>Del</string>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="addspecfield">
+   <property name="geometry">
+    <rect>
+     <x>540</x>
+     <y>390</y>
+     <width>92</width>
+     <height>27</height>
+    </rect>
+   </property>
+   <property name="toolTip">
+    <string>Click to add the selected field</string>
+   </property>
+   <property name="text">
+    <string>Add</string>
+   </property>
+  </widget>
+  <widget class="QListWidget" name="specfields">
+   <property name="geometry">
+    <rect>
+     <x>250</x>
+     <y>340</y>
+     <width>256</width>
+     <height>192</height>
+    </rect>
+   </property>
+   <property name="toolTip">
+    <string>These are the columns in order of the fields in the spectral file.</string>
+   </property>
+   <property name="dragDropMode">
+    <enum>QAbstractItemView::InternalMove</enum>
+   </property>
+  </widget>
+  <widget class="QComboBox" name="selobsfield">
+   <property name="geometry">
+    <rect>
+     <x>680</x>
+     <y>140</y>
+     <width>241</width>
+     <height>27</height>
+    </rect>
+   </property>
+   <property name="toolTip">
+    <string>Possible obs file fields</string>
+   </property>
+  </widget>
+  <widget class="QComboBox" name="selspecfield">
+   <property name="geometry">
+    <rect>
+     <x>670</x>
+     <y>390</y>
+     <width>241</width>
+     <height>27</height>
+    </rect>
+   </property>
+   <property name="toolTip">
+    <string>Possible spectrum file fields</string>
+   </property>
+  </widget>
+ </widget>
+ <tabstops>
+  <tabstop>obsfile</tabstop>
+  <tabstop>selobsfile</tabstop>
+  <tabstop>obsfields</tabstop>
+  <tabstop>addobsfield</tabstop>
+  <tabstop>delobsfield</tabstop>
+  <tabstop>selobsfield</tabstop>
+  <tabstop>specfields</tabstop>
+  <tabstop>addspecfield</tabstop>
+  <tabstop>delspecfield</tabstop>
+  <tabstop>selspecfield</tabstop>
+  <tabstop>buttonBox</tabstop>
+ </tabstops>
+ <resources/>
+ <connections>
+  <connection>
+   <sender>buttonBox</sender>
+   <signal>accepted()</signal>
+   <receiver>obsfileseldlg</receiver>
+   <slot>accept()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>950</x>
+     <y>574</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>157</x>
+     <y>274</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>buttonBox</sender>
+   <signal>rejected()</signal>
+   <receiver>obsfileseldlg</receiver>
+   <slot>reject()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>950</x>
+     <y>580</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>286</x>
+     <y>274</y>
+    </hint>
+   </hints>
+  </connection>
+ </connections>
+</ui>

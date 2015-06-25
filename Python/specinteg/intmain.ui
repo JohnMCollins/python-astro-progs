@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>intmain</class>
+ <widget class="QMainWindow" name="intmain">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>397</width>
+    <height>234</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Spectrum Integration</string>
+  </property>
+  <widget class="QWidget" name="centralwidget"/>
+  <widget class="QMenuBar" name="menubar">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>0</y>
+     <width>397</width>
+     <height>25</height>
+    </rect>
+   </property>
+   <widget class="QMenu" name="menu_File">
+    <property name="title">
+     <string>&amp;File</string>
+    </property>
+    <addaction name="action_Configuration"/>
+    <addaction name="action_Parameters"/>
+    <addaction name="separator"/>
+    <addaction name="action_Quit"/>
+   </widget>
+   <widget class="QMenu" name="menu_Action">
+    <property name="title">
+     <string>&amp;Action</string>
+    </property>
+    <addaction name="action_Batch_Integration"/>
+    <addaction name="action_Display_Results"/>
+   </widget>
+   <addaction name="menu_File"/>
+   <addaction name="menu_Action"/>
+  </widget>
+  <widget class="QStatusBar" name="statusbar"/>
+  <action name="action_Configuration">
+   <property name="text">
+    <string>&amp;Configuration</string>
+   </property>
+   <property name="toolTip">
+    <string>This option sets the configuration, notably the index file.
+
+Also set terminal size here.
+</string>
+   </property>
+   <property name="statusTip">
+    <string>Set up configuration parameters</string>
+   </property>
+   <property name="shortcut">
+    <string>Shift+C</string>
+   </property>
+  </action>
+  <action name="action_Parameters">
+   <property name="text">
+    <string>&amp;Parameters</string>
+   </property>
+   <property name="toolTip">
+    <string>Set up parameters, notably the ranges for integration.</string>
+   </property>
+   <property name="statusTip">
+    <string>Set up integration parameters</string>
+   </property>
+  </action>
+  <action name="action_Quit">
+   <property name="text">
+    <string>&amp;Quit</string>
+   </property>
+   <property name="statusTip">
+    <string>Quit program</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+Q</string>
+   </property>
+  </action>
+  <action name="action_Batch_Integration">
+   <property name="text">
+    <string>Batch &amp;Integration</string>
+   </property>
+   <property name="statusTip">
+    <string>Run integration procedure in batch</string>
+   </property>
+  </action>
+  <action name="action_Display_Results">
+   <property name="text">
+    <string>Display &amp;Results</string>
+   </property>
+   <property name="statusTip">
+    <string>Plot the results of last integration</string>
+   </property>
+  </action>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>

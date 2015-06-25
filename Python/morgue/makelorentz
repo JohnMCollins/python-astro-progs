@@ -1,0 +1,56 @@
+#!/bin/tcsh
+
+echo " "
+echo " Generate a Lorentzian of the form :  L(x) = A / (1 + 0.5*((x-B)/C)**2))"
+echo " "
+echo "						N = number of points for -N/2 - N/2"
+echo "						S = pixel width"
+echo "						A = scale"
+echo "						B = offset"
+echo "						C = FWHM (SGMA = FWHM / 2*sqrt(2)"
+echo " "
+
+if ( "$#argv" != 1 ) then
+	set noglob
+	echo -n "Enter N,S,A,B,FWHM : "
+	set vals   = ( `echo $< ` )
+else
+	set vals = $1
+endif
+
+set string = `echo $vals | sed 's:,: :g'`
+set N = $string[1]
+set S = $string[2]
+set A = $string[3]
+set B = $string[4]
+set C = `echo $string[5] | awk '{print $1/(2.0*sqrt(2.0))}'`
+
+set H = `echo $N $S | awk '{print $1*$2/2.}'`
+
+rm -f lorentz.dat
+touch lorentz.dat
+
+set i = -$H
+
+@ count = 1
+@ total = $N + 1
+
+while ($count <= $total)
+
+set L = `echo $i $A $B $C | awk '{print 1.0-($2 / (1.0 + 0.5 * ( ($3-$1)/$4)**2))}'`
+
+echo $i $L >> lorentz.dat
+
+set i = `echo $i $S | awk '{print $1+$2}'` 
+
+@ count ++
+
+end
+
+/star/bin/figaro/ascin lorentz.dat lines="[1,$N]" colaxes=1 coldata=2 out=lorentz
+
+echo " "
+echo "Lorentz profile: x = -$H to $H centred at v = $B km/s and with sigma = $C km/s (FWHM = $string[5] km/s)"
+echo "Output written to lorentz.dat and lorentz.sdf"
+echo " "
+

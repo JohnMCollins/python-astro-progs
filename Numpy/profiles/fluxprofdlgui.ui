@@ -1,0 +1,706 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>fluxprofdlg</class>
+ <widget class="QDialog" name="fluxprofdlg">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>628</width>
+    <height>572</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Create flux profiles</string>
+  </property>
+  <widget class="QDialogButtonBox" name="buttonBox">
+   <property name="geometry">
+    <rect>
+     <x>240</x>
+     <y>530</y>
+     <width>341</width>
+     <height>32</height>
+    </rect>
+   </property>
+   <property name="orientation">
+    <enum>Qt::Horizontal</enum>
+   </property>
+   <property name="standardButtons">
+    <set>QDialogButtonBox::Cancel|QDialogButtonBox::Ok</set>
+   </property>
+  </widget>
+  <widget class="QGroupBox" name="groupBox">
+   <property name="geometry">
+    <rect>
+     <x>80</x>
+     <y>110</y>
+     <width>531</width>
+     <height>161</height>
+    </rect>
+   </property>
+   <property name="title">
+    <string>Flux profile 1</string>
+   </property>
+   <widget class="QRadioButton" name="gauss1">
+    <property name="geometry">
+     <rect>
+      <x>20</x>
+      <y>30</y>
+      <width>108</width>
+      <height>22</height>
+     </rect>
+    </property>
+    <property name="toolTip">
+     <string>Select Gaussian profile</string>
+    </property>
+    <property name="text">
+     <string>&amp;Gaussian</string>
+    </property>
+    <property name="checked">
+     <bool>true</bool>
+    </property>
+   </widget>
+   <widget class="QRadioButton" name="igauss1">
+    <property name="geometry">
+     <rect>
+      <x>20</x>
+      <y>60</y>
+      <width>151</width>
+      <height>22</height>
+     </rect>
+    </property>
+    <property name="toolTip">
+     <string>Select inverse gaussian (absorption from 1)</string>
+    </property>
+    <property name="text">
+     <string>&amp;Inverse Gaussian</string>
+    </property>
+   </widget>
+   <widget class="QRadioButton" name="lorentz1">
+    <property name="geometry">
+     <rect>
+      <x>20</x>
+      <y>90</y>
+      <width>108</width>
+      <height>22</height>
+     </rect>
+    </property>
+    <property name="toolTip">
+     <string>Select Lorentz profile</string>
+    </property>
+    <property name="text">
+     <string>&amp;Lorentz</string>
+    </property>
+   </widget>
+   <widget class="QRadioButton" name="ilorentz1">
+    <property name="geometry">
+     <rect>
+      <x>20</x>
+      <y>120</y>
+      <width>141</width>
+      <height>22</height>
+     </rect>
+    </property>
+    <property name="toolTip">
+     <string>Select inverse Lorentz (downward from 1)</string>
+    </property>
+    <property name="text">
+     <string>In&amp;verse Lorentz</string>
+    </property>
+   </widget>
+   <widget class="QDoubleSpinBox" name="scale1">
+    <property name="geometry">
+     <rect>
+      <x>320</x>
+      <y>50</y>
+      <width>91</width>
+      <height>27</height>
+     </rect>
+    </property>
+    <property name="toolTip">
+     <string>Select scale, 1 is full intensity</string>
+    </property>
+    <property name="alignment">
+     <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+    </property>
+    <property name="minimum">
+     <double>0.010000000000000</double>
+    </property>
+    <property name="maximum">
+     <double>9.990000000000000</double>
+    </property>
+    <property name="singleStep">
+     <double>0.100000000000000</double>
+    </property>
+    <property name="value">
+     <double>1.000000000000000</double>
+    </property>
+   </widget>
+   <widget class="QLabel" name="label_3">
+    <property name="geometry">
+     <rect>
+      <x>220</x>
+      <y>60</y>
+      <width>62</width>
+      <height>17</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>&amp;Scale</string>
+    </property>
+    <property name="buddy">
+     <cstring>scale1</cstring>
+    </property>
+   </widget>
+   <widget class="QDoubleSpinBox" name="offset1">
+    <property name="geometry">
+     <rect>
+      <x>320</x>
+      <y>80</y>
+      <width>91</width>
+      <height>27</height>
+     </rect>
+    </property>
+    <property name="toolTip">
+     <string>Select offset from origin</string>
+    </property>
+    <property name="alignment">
+     <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+    </property>
+    <property name="maximum">
+     <double>1000.000000000000000</double>
+    </property>
+   </widget>
+   <widget class="QLabel" name="label_4">
+    <property name="geometry">
+     <rect>
+      <x>220</x>
+      <y>90</y>
+      <width>62</width>
+      <height>17</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>&amp;Offset</string>
+    </property>
+    <property name="buddy">
+     <cstring>offset1</cstring>
+    </property>
+   </widget>
+   <widget class="QLabel" name="label_5">
+    <property name="geometry">
+     <rect>
+      <x>220</x>
+      <y>120</y>
+      <width>62</width>
+      <height>17</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>&amp;FHWM</string>
+    </property>
+    <property name="buddy">
+     <cstring>fhwm1</cstring>
+    </property>
+   </widget>
+   <widget class="QDoubleSpinBox" name="fhwm1">
+    <property name="geometry">
+     <rect>
+      <x>320</x>
+      <y>110</y>
+      <width>91</width>
+      <height>27</height>
+     </rect>
+    </property>
+    <property name="toolTip">
+     <string>Select FHWM</string>
+    </property>
+    <property name="alignment">
+     <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+    </property>
+    <property name="minimum">
+     <double>0.100000000000000</double>
+    </property>
+    <property name="maximum">
+     <double>999.000000000000000</double>
+    </property>
+    <property name="value">
+     <double>1.000000000000000</double>
+    </property>
+   </widget>
+  </widget>
+  <widget class="QSpinBox" name="npoints">
+   <property name="geometry">
+    <rect>
+     <x>280</x>
+     <y>20</y>
+     <width>71</width>
+     <height>27</height>
+    </rect>
+   </property>
+   <property name="toolTip">
+    <string>This gives the number of points to evaluate on each side of the origin</string>
+   </property>
+   <property name="alignment">
+    <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+   </property>
+   <property name="minimum">
+    <number>1</number>
+   </property>
+   <property name="maximum">
+    <number>1000</number>
+   </property>
+   <property name="value">
+    <number>150</number>
+   </property>
+  </widget>
+  <widget class="QLabel" name="label">
+   <property name="geometry">
+    <rect>
+     <x>80</x>
+     <y>30</y>
+     <width>191</width>
+     <height>17</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>&amp;Points each side of origin</string>
+   </property>
+   <property name="buddy">
+    <cstring>npoints</cstring>
+   </property>
+  </widget>
+  <widget class="QDoubleSpinBox" name="pixwidth">
+   <property name="geometry">
+    <rect>
+     <x>280</x>
+     <y>60</y>
+     <width>71</width>
+     <height>27</height>
+    </rect>
+   </property>
+   <property name="toolTip">
+    <string>This gives the pixel width (distance between points on the X axis)</string>
+   </property>
+   <property name="alignment">
+    <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+   </property>
+   <property name="minimum">
+    <double>0.010000000000000</double>
+   </property>
+   <property name="value">
+    <double>1.000000000000000</double>
+   </property>
+  </widget>
+  <widget class="QLabel" name="label_2">
+   <property name="geometry">
+    <rect>
+     <x>80</x>
+     <y>70</y>
+     <width>131</width>
+     <height>17</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>&amp;Pixel Width</string>
+   </property>
+   <property name="buddy">
+    <cstring>pixwidth</cstring>
+   </property>
+  </widget>
+  <widget class="QGroupBox" name="groupBox_2">
+   <property name="geometry">
+    <rect>
+     <x>80</x>
+     <y>280</y>
+     <width>531</width>
+     <height>191</height>
+    </rect>
+   </property>
+   <property name="title">
+    <string>Flux profile 2</string>
+   </property>
+   <widget class="QRadioButton" name="gauss2">
+    <property name="geometry">
+     <rect>
+      <x>20</x>
+      <y>60</y>
+      <width>108</width>
+      <height>22</height>
+     </rect>
+    </property>
+    <property name="toolTip">
+     <string>Select Gaussian profile</string>
+    </property>
+    <property name="text">
+     <string>&amp;Gaussian</string>
+    </property>
+    <property name="checked">
+     <bool>false</bool>
+    </property>
+   </widget>
+   <widget class="QRadioButton" name="igauss2">
+    <property name="geometry">
+     <rect>
+      <x>20</x>
+      <y>90</y>
+      <width>151</width>
+      <height>22</height>
+     </rect>
+    </property>
+    <property name="toolTip">
+     <string>Select inverse gaussian (absorption from 1)</string>
+    </property>
+    <property name="text">
+     <string>&amp;Inverse Gaussian</string>
+    </property>
+   </widget>
+   <widget class="QRadioButton" name="lorentz2">
+    <property name="geometry">
+     <rect>
+      <x>20</x>
+      <y>120</y>
+      <width>108</width>
+      <height>22</height>
+     </rect>
+    </property>
+    <property name="toolTip">
+     <string>Select Lorentz profile</string>
+    </property>
+    <property name="text">
+     <string>&amp;Lorentz</string>
+    </property>
+   </widget>
+   <widget class="QRadioButton" name="ilorentz2">
+    <property name="geometry">
+     <rect>
+      <x>20</x>
+      <y>150</y>
+      <width>141</width>
+      <height>22</height>
+     </rect>
+    </property>
+    <property name="toolTip">
+     <string>Select inverse Lorentz (downward from 1)</string>
+    </property>
+    <property name="text">
+     <string>In&amp;verse Lorentz</string>
+    </property>
+   </widget>
+   <widget class="QDoubleSpinBox" name="scale2">
+    <property name="enabled">
+     <bool>false</bool>
+    </property>
+    <property name="geometry">
+     <rect>
+      <x>320</x>
+      <y>50</y>
+      <width>91</width>
+      <height>27</height>
+     </rect>
+    </property>
+    <property name="toolTip">
+     <string>Select scale, 1 is full intensity</string>
+    </property>
+    <property name="alignment">
+     <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+    </property>
+    <property name="minimum">
+     <double>0.010000000000000</double>
+    </property>
+    <property name="maximum">
+     <double>9.990000000000000</double>
+    </property>
+    <property name="singleStep">
+     <double>0.100000000000000</double>
+    </property>
+    <property name="value">
+     <double>1.000000000000000</double>
+    </property>
+   </widget>
+   <widget class="QLabel" name="label_6">
+    <property name="geometry">
+     <rect>
+      <x>220</x>
+      <y>60</y>
+      <width>62</width>
+      <height>17</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>&amp;Scale</string>
+    </property>
+    <property name="buddy">
+     <cstring>scale1</cstring>
+    </property>
+   </widget>
+   <widget class="QDoubleSpinBox" name="offset2">
+    <property name="enabled">
+     <bool>false</bool>
+    </property>
+    <property name="geometry">
+     <rect>
+      <x>320</x>
+      <y>80</y>
+      <width>91</width>
+      <height>27</height>
+     </rect>
+    </property>
+    <property name="toolTip">
+     <string>Select offset from origin</string>
+    </property>
+    <property name="alignment">
+     <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+    </property>
+    <property name="maximum">
+     <double>1000.000000000000000</double>
+    </property>
+   </widget>
+   <widget class="QLabel" name="label_7">
+    <property name="geometry">
+     <rect>
+      <x>220</x>
+      <y>90</y>
+      <width>62</width>
+      <height>17</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>&amp;Offset</string>
+    </property>
+    <property name="buddy">
+     <cstring>offset1</cstring>
+    </property>
+   </widget>
+   <widget class="QLabel" name="label_8">
+    <property name="geometry">
+     <rect>
+      <x>220</x>
+      <y>120</y>
+      <width>62</width>
+      <height>17</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>&amp;FHWM</string>
+    </property>
+    <property name="buddy">
+     <cstring>fhwm1</cstring>
+    </property>
+   </widget>
+   <widget class="QDoubleSpinBox" name="fhwm2">
+    <property name="enabled">
+     <bool>false</bool>
+    </property>
+    <property name="geometry">
+     <rect>
+      <x>320</x>
+      <y>110</y>
+      <width>91</width>
+      <height>27</height>
+     </rect>
+    </property>
+    <property name="toolTip">
+     <string>Select FHWM</string>
+    </property>
+    <property name="alignment">
+     <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+    </property>
+    <property name="minimum">
+     <double>0.100000000000000</double>
+    </property>
+    <property name="maximum">
+     <double>999.000000000000000</double>
+    </property>
+    <property name="value">
+     <double>1.000000000000000</double>
+    </property>
+   </widget>
+   <widget class="QRadioButton" name="none2">
+    <property name="geometry">
+     <rect>
+      <x>20</x>
+      <y>30</y>
+      <width>108</width>
+      <height>22</height>
+     </rect>
+    </property>
+    <property name="toolTip">
+     <string>Omit second flux profile</string>
+    </property>
+    <property name="text">
+     <string>&amp;None</string>
+    </property>
+    <property name="checked">
+     <bool>true</bool>
+    </property>
+   </widget>
+  </widget>
+  <widget class="QLineEdit" name="rfile">
+   <property name="geometry">
+    <rect>
+     <x>100</x>
+     <y>480</y>
+     <width>281</width>
+     <height>27</height>
+    </rect>
+   </property>
+   <property name="toolTip">
+    <string>File to save results to</string>
+   </property>
+  </widget>
+  <widget class="QLabel" name="label_10">
+   <property name="geometry">
+    <rect>
+     <x>20</x>
+     <y>480</y>
+     <width>71</width>
+     <height>17</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Result file</string>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="chooserfile">
+   <property name="geometry">
+    <rect>
+     <x>400</x>
+     <y>480</y>
+     <width>92</width>
+     <height>27</height>
+    </rect>
+   </property>
+   <property name="toolTip">
+    <string>Select a file name to save results</string>
+   </property>
+   <property name="text">
+    <string>Choose</string>
+   </property>
+  </widget>
+  <widget class="QGroupBox" name="groupBox_3">
+   <property name="geometry">
+    <rect>
+     <x>400</x>
+     <y>20</y>
+     <width>120</width>
+     <height>91</height>
+    </rect>
+   </property>
+   <property name="title">
+    <string>Y scaling</string>
+   </property>
+   <widget class="QRadioButton" name="noadj">
+    <property name="geometry">
+     <rect>
+      <x>0</x>
+      <y>20</y>
+      <width>108</width>
+      <height>22</height>
+     </rect>
+    </property>
+    <property name="toolTip">
+     <string>Do not make adjustment on Y values</string>
+    </property>
+    <property name="text">
+     <string>No adjust</string>
+    </property>
+    <property name="checked">
+     <bool>true</bool>
+    </property>
+   </widget>
+   <widget class="QRadioButton" name="clipy">
+    <property name="geometry">
+     <rect>
+      <x>0</x>
+      <y>40</y>
+      <width>108</width>
+      <height>22</height>
+     </rect>
+    </property>
+    <property name="toolTip">
+     <string>Clip values greater than 1 or less than 0</string>
+    </property>
+    <property name="text">
+     <string>Clip Y</string>
+    </property>
+   </widget>
+   <widget class="QRadioButton" name="scaley">
+    <property name="geometry">
+     <rect>
+      <x>0</x>
+      <y>60</y>
+      <width>108</width>
+      <height>22</height>
+     </rect>
+    </property>
+    <property name="toolTip">
+     <string>Scale Y, making maximum values 1.0</string>
+    </property>
+    <property name="text">
+     <string>Scale Y</string>
+    </property>
+   </widget>
+  </widget>
+ </widget>
+ <tabstops>
+  <tabstop>npoints</tabstop>
+  <tabstop>pixwidth</tabstop>
+  <tabstop>noadj</tabstop>
+  <tabstop>clipy</tabstop>
+  <tabstop>scaley</tabstop>
+  <tabstop>gauss1</tabstop>
+  <tabstop>igauss1</tabstop>
+  <tabstop>lorentz1</tabstop>
+  <tabstop>ilorentz1</tabstop>
+  <tabstop>scale1</tabstop>
+  <tabstop>offset1</tabstop>
+  <tabstop>fhwm1</tabstop>
+  <tabstop>none2</tabstop>
+  <tabstop>gauss2</tabstop>
+  <tabstop>igauss2</tabstop>
+  <tabstop>lorentz2</tabstop>
+  <tabstop>ilorentz2</tabstop>
+  <tabstop>scale2</tabstop>
+  <tabstop>offset2</tabstop>
+  <tabstop>fhwm2</tabstop>
+  <tabstop>rfile</tabstop>
+  <tabstop>chooserfile</tabstop>
+  <tabstop>buttonBox</tabstop>
+ </tabstops>
+ <resources/>
+ <connections>
+  <connection>
+   <sender>buttonBox</sender>
+   <signal>accepted()</signal>
+   <receiver>fluxprofdlg</receiver>
+   <slot>accept()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>248</x>
+     <y>254</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>157</x>
+     <y>274</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>buttonBox</sender>
+   <signal>rejected()</signal>
+   <receiver>fluxprofdlg</receiver>
+   <slot>reject()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>316</x>
+     <y>260</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>286</x>
+     <y>274</y>
+    </hint>
+   </hints>
+  </connection>
+ </connections>
+</ui>

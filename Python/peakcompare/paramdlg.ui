@@ -1,0 +1,1052 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>paramdlg</class>
+ <widget class="QDialog" name="paramdlg">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>930</width>
+    <height>629</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Configure parameters</string>
+  </property>
+  <property name="toolTip">
+   <string>Select the colour of the display line</string>
+  </property>
+  <widget class="QDialogButtonBox" name="buttonBox">
+   <property name="geometry">
+    <rect>
+     <x>740</x>
+     <y>550</y>
+     <width>161</width>
+     <height>32</height>
+    </rect>
+   </property>
+   <property name="orientation">
+    <enum>Qt::Horizontal</enum>
+   </property>
+   <property name="standardButtons">
+    <set>QDialogButtonBox::Cancel|QDialogButtonBox::Ok</set>
+   </property>
+  </widget>
+  <widget class="QLabel" name="label">
+   <property name="geometry">
+    <rect>
+     <x>70</x>
+     <y>80</y>
+     <width>101</width>
+     <height>17</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Loading file(s)</string>
+   </property>
+  </widget>
+  <widget class="QLabel" name="xrangelab">
+   <property name="geometry">
+    <rect>
+     <x>60</x>
+     <y>330</y>
+     <width>181</width>
+     <height>17</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Select X Range (Angstrom)</string>
+   </property>
+  </widget>
+  <widget class="QDoubleSpinBox" name="xrangemin">
+   <property name="geometry">
+    <rect>
+     <x>280</x>
+     <y>320</y>
+     <width>91</width>
+     <height>27</height>
+    </rect>
+   </property>
+   <property name="toolTip">
+    <string>Select minimum of range to display</string>
+   </property>
+   <property name="decimals">
+    <number>3</number>
+   </property>
+   <property name="minimum">
+    <double>6500.000000000000000</double>
+   </property>
+   <property name="maximum">
+    <double>6650.000000000000000</double>
+   </property>
+   <property name="singleStep">
+    <double>0.010000000000000</double>
+   </property>
+  </widget>
+  <widget class="QLabel" name="label_3">
+   <property name="geometry">
+    <rect>
+     <x>500</x>
+     <y>330</y>
+     <width>41</width>
+     <height>17</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>to</string>
+   </property>
+  </widget>
+  <widget class="QDoubleSpinBox" name="xrangemax">
+   <property name="geometry">
+    <rect>
+     <x>550</x>
+     <y>320</y>
+     <width>91</width>
+     <height>27</height>
+    </rect>
+   </property>
+   <property name="toolTip">
+    <string>Select maximum of range to display</string>
+   </property>
+   <property name="decimals">
+    <number>3</number>
+   </property>
+   <property name="minimum">
+    <double>6500.000000000000000</double>
+   </property>
+   <property name="maximum">
+    <double>6650.000000000000000</double>
+   </property>
+   <property name="singleStep">
+    <double>0.010000000000000</double>
+   </property>
+   <property name="value">
+    <double>6650.000000000000000</double>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="rlmp1">
+   <property name="geometry">
+    <rect>
+     <x>410</x>
+     <y>340</y>
+     <width>31</width>
+     <height>21</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>7</pointsize>
+    </font>
+   </property>
+   <property name="toolTip">
+    <string>Subtract .1 from range min</string>
+   </property>
+   <property name="text">
+    <string>-.1</string>
+   </property>
+   <property name="autoRepeat">
+    <bool>true</bool>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="rlmp5">
+   <property name="geometry">
+    <rect>
+     <x>440</x>
+     <y>340</y>
+     <width>31</width>
+     <height>21</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>7</pointsize>
+    </font>
+   </property>
+   <property name="toolTip">
+    <string>Subtract .5 from range min</string>
+   </property>
+   <property name="text">
+    <string>-.5</string>
+   </property>
+   <property name="autoRepeat">
+    <bool>true</bool>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="rlpp1">
+   <property name="geometry">
+    <rect>
+     <x>410</x>
+     <y>320</y>
+     <width>31</width>
+     <height>21</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>7</pointsize>
+    </font>
+   </property>
+   <property name="toolTip">
+    <string>Add .1 to range min</string>
+   </property>
+   <property name="text">
+    <string>+.1</string>
+   </property>
+   <property name="autoRepeat">
+    <bool>true</bool>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="rlpp5">
+   <property name="geometry">
+    <rect>
+     <x>440</x>
+     <y>320</y>
+     <width>31</width>
+     <height>21</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>7</pointsize>
+    </font>
+   </property>
+   <property name="toolTip">
+    <string>Add .5 to range min</string>
+   </property>
+   <property name="text">
+    <string>+.5</string>
+   </property>
+   <property name="autoRepeat">
+    <bool>true</bool>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="rump1">
+   <property name="geometry">
+    <rect>
+     <x>670</x>
+     <y>340</y>
+     <width>31</width>
+     <height>21</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>7</pointsize>
+    </font>
+   </property>
+   <property name="toolTip">
+    <string>Subtract .1 from range max</string>
+   </property>
+   <property name="text">
+    <string>-.1</string>
+   </property>
+   <property name="autoRepeat">
+    <bool>true</bool>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="rupp1">
+   <property name="geometry">
+    <rect>
+     <x>670</x>
+     <y>320</y>
+     <width>31</width>
+     <height>21</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>7</pointsize>
+    </font>
+   </property>
+   <property name="toolTip">
+    <string>Add .1 to range max</string>
+   </property>
+   <property name="text">
+    <string>+.1</string>
+   </property>
+   <property name="autoRepeat">
+    <bool>true</bool>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="rump5">
+   <property name="geometry">
+    <rect>
+     <x>700</x>
+     <y>340</y>
+     <width>31</width>
+     <height>21</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>7</pointsize>
+    </font>
+   </property>
+   <property name="toolTip">
+    <string>Subtract .5 from range max</string>
+   </property>
+   <property name="text">
+    <string>-.5</string>
+   </property>
+   <property name="autoRepeat">
+    <bool>true</bool>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="rupp5">
+   <property name="geometry">
+    <rect>
+     <x>700</x>
+     <y>320</y>
+     <width>31</width>
+     <height>21</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>7</pointsize>
+    </font>
+   </property>
+   <property name="toolTip">
+    <string>Add .5 to range max</string>
+   </property>
+   <property name="text">
+    <string>+.5</string>
+   </property>
+   <property name="autoRepeat">
+    <bool>true</bool>
+   </property>
+  </widget>
+  <widget class="QLabel" name="yrangelab">
+   <property name="geometry">
+    <rect>
+     <x>60</x>
+     <y>270</y>
+     <width>111</width>
+     <height>17</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Select Y Range</string>
+   </property>
+  </widget>
+  <widget class="QDoubleSpinBox" name="yrangemin">
+   <property name="geometry">
+    <rect>
+     <x>280</x>
+     <y>260</y>
+     <width>51</width>
+     <height>27</height>
+    </rect>
+   </property>
+   <property name="toolTip">
+    <string>Select bottom of Y range</string>
+   </property>
+   <property name="decimals">
+    <number>1</number>
+   </property>
+   <property name="minimum">
+    <double>0.000000000000000</double>
+   </property>
+   <property name="maximum">
+    <double>2.000000000000000</double>
+   </property>
+   <property name="singleStep">
+    <double>0.100000000000000</double>
+   </property>
+  </widget>
+  <widget class="QLabel" name="label_7">
+   <property name="geometry">
+    <rect>
+     <x>360</x>
+     <y>260</y>
+     <width>21</width>
+     <height>17</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>to</string>
+   </property>
+  </widget>
+  <widget class="QDoubleSpinBox" name="yrangemax">
+   <property name="geometry">
+    <rect>
+     <x>410</x>
+     <y>260</y>
+     <width>51</width>
+     <height>27</height>
+    </rect>
+   </property>
+   <property name="toolTip">
+    <string>Select maximum of Y range</string>
+   </property>
+   <property name="decimals">
+    <number>1</number>
+   </property>
+   <property name="minimum">
+    <double>1.000000000000000</double>
+   </property>
+   <property name="maximum">
+    <double>3.000000000000000</double>
+   </property>
+   <property name="singleStep">
+    <double>0.100000000000000</double>
+   </property>
+   <property name="value">
+    <double>3.000000000000000</double>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="srlmp5">
+   <property name="geometry">
+    <rect>
+     <x>330</x>
+     <y>490</y>
+     <width>31</width>
+     <height>21</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>7</pointsize>
+    </font>
+   </property>
+   <property name="toolTip">
+    <string>Subtract 0.5 from range lower bound.</string>
+   </property>
+   <property name="text">
+    <string>-.5</string>
+   </property>
+   <property name="autoRepeat">
+    <bool>true</bool>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="srlpp1">
+   <property name="geometry">
+    <rect>
+     <x>300</x>
+     <y>470</y>
+     <width>31</width>
+     <height>21</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>7</pointsize>
+    </font>
+   </property>
+   <property name="toolTip">
+    <string>Add 0.1 to range lower bound.</string>
+   </property>
+   <property name="text">
+    <string>+.1</string>
+   </property>
+   <property name="autoRepeat">
+    <bool>true</bool>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="srlpp5">
+   <property name="geometry">
+    <rect>
+     <x>330</x>
+     <y>470</y>
+     <width>31</width>
+     <height>21</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>7</pointsize>
+    </font>
+   </property>
+   <property name="toolTip">
+    <string>Add 0.5 to range lower bound.</string>
+   </property>
+   <property name="text">
+    <string>+.5</string>
+   </property>
+   <property name="autoRepeat">
+    <bool>true</bool>
+   </property>
+  </widget>
+  <widget class="QLabel" name="bkintlab">
+   <property name="geometry">
+    <rect>
+     <x>60</x>
+     <y>400</y>
+     <width>111</width>
+     <height>17</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Range to edit</string>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="srupp1">
+   <property name="geometry">
+    <rect>
+     <x>560</x>
+     <y>470</y>
+     <width>31</width>
+     <height>21</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>7</pointsize>
+    </font>
+   </property>
+   <property name="toolTip">
+    <string>Add 0.1 to range upper bound.</string>
+   </property>
+   <property name="text">
+    <string>+.1</string>
+   </property>
+   <property name="autoRepeat">
+    <bool>true</bool>
+   </property>
+  </widget>
+  <widget class="QLabel" name="label_9">
+   <property name="geometry">
+    <rect>
+     <x>390</x>
+     <y>480</y>
+     <width>41</width>
+     <height>17</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>to</string>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="srupp5">
+   <property name="geometry">
+    <rect>
+     <x>590</x>
+     <y>470</y>
+     <width>31</width>
+     <height>21</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>7</pointsize>
+    </font>
+   </property>
+   <property name="toolTip">
+    <string>Add 0.5 to range upper bound.</string>
+   </property>
+   <property name="text">
+    <string>+.5</string>
+   </property>
+   <property name="autoRepeat">
+    <bool>true</bool>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="srlmp1">
+   <property name="geometry">
+    <rect>
+     <x>300</x>
+     <y>490</y>
+     <width>31</width>
+     <height>21</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>7</pointsize>
+    </font>
+   </property>
+   <property name="toolTip">
+    <string>Subtract 0.1 from range lower bound.</string>
+   </property>
+   <property name="text">
+    <string>-.1</string>
+   </property>
+   <property name="autoRepeat">
+    <bool>true</bool>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="srump5">
+   <property name="geometry">
+    <rect>
+     <x>590</x>
+     <y>491</y>
+     <width>31</width>
+     <height>20</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>7</pointsize>
+    </font>
+   </property>
+   <property name="toolTip">
+    <string>Subtract 0.5 from range upper bound.</string>
+   </property>
+   <property name="text">
+    <string>-.5</string>
+   </property>
+   <property name="autoRepeat">
+    <bool>true</bool>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="srump1">
+   <property name="geometry">
+    <rect>
+     <x>560</x>
+     <y>490</y>
+     <width>31</width>
+     <height>21</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>7</pointsize>
+    </font>
+   </property>
+   <property name="toolTip">
+    <string>Subtract 0.1 from range upper bound.</string>
+   </property>
+   <property name="text">
+    <string>-.1</string>
+   </property>
+   <property name="autoRepeat">
+    <bool>true</bool>
+   </property>
+  </widget>
+  <widget class="QDoubleSpinBox" name="srmin">
+   <property name="geometry">
+    <rect>
+     <x>170</x>
+     <y>480</y>
+     <width>91</width>
+     <height>27</height>
+    </rect>
+   </property>
+   <property name="toolTip">
+    <string>This is the lower bound of the range</string>
+   </property>
+   <property name="decimals">
+    <number>3</number>
+   </property>
+   <property name="minimum">
+    <double>6500.000000000000000</double>
+   </property>
+   <property name="maximum">
+    <double>6650.000000000000000</double>
+   </property>
+   <property name="singleStep">
+    <double>0.010000000000000</double>
+   </property>
+   <property name="value">
+    <double>6530.000000000000000</double>
+   </property>
+  </widget>
+  <widget class="QDoubleSpinBox" name="srmax">
+   <property name="geometry">
+    <rect>
+     <x>440</x>
+     <y>480</y>
+     <width>91</width>
+     <height>27</height>
+    </rect>
+   </property>
+   <property name="toolTip">
+    <string>This is the upper bound of the range.</string>
+   </property>
+   <property name="decimals">
+    <number>3</number>
+   </property>
+   <property name="minimum">
+    <double>6500.000000000000000</double>
+   </property>
+   <property name="maximum">
+    <double>6650.000000000000000</double>
+   </property>
+   <property name="singleStep">
+    <double>0.010000000000000</double>
+   </property>
+   <property name="value">
+    <double>6600.000000000000000</double>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="srbmp1">
+   <property name="geometry">
+    <rect>
+     <x>670</x>
+     <y>490</y>
+     <width>31</width>
+     <height>21</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>7</pointsize>
+    </font>
+   </property>
+   <property name="toolTip">
+    <string>Contract ends of range by .1 each side</string>
+   </property>
+   <property name="text">
+    <string>-.1</string>
+   </property>
+   <property name="autoRepeat">
+    <bool>true</bool>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="rbmp5">
+   <property name="geometry">
+    <rect>
+     <x>810</x>
+     <y>340</y>
+     <width>31</width>
+     <height>21</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>7</pointsize>
+    </font>
+   </property>
+   <property name="toolTip">
+    <string>Contract ends of range by .5 each side</string>
+   </property>
+   <property name="text">
+    <string>-.5</string>
+   </property>
+   <property name="autoRepeat">
+    <bool>true</bool>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="rbpp1">
+   <property name="geometry">
+    <rect>
+     <x>780</x>
+     <y>320</y>
+     <width>31</width>
+     <height>21</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>7</pointsize>
+    </font>
+   </property>
+   <property name="toolTip">
+    <string>Expand ends of range by .1 each side</string>
+   </property>
+   <property name="text">
+    <string>+.1</string>
+   </property>
+   <property name="autoRepeat">
+    <bool>true</bool>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="srbpp1">
+   <property name="geometry">
+    <rect>
+     <x>670</x>
+     <y>470</y>
+     <width>31</width>
+     <height>21</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>7</pointsize>
+    </font>
+   </property>
+   <property name="toolTip">
+    <string>Expand ends of range by .1 each side</string>
+   </property>
+   <property name="text">
+    <string>+.1</string>
+   </property>
+   <property name="autoRepeat">
+    <bool>true</bool>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="rbpp5">
+   <property name="geometry">
+    <rect>
+     <x>810</x>
+     <y>320</y>
+     <width>31</width>
+     <height>21</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>7</pointsize>
+    </font>
+   </property>
+   <property name="toolTip">
+    <string>Expand ends of range by .5 each side</string>
+   </property>
+   <property name="text">
+    <string>+.5</string>
+   </property>
+   <property name="autoRepeat">
+    <bool>true</bool>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="srbpp5">
+   <property name="geometry">
+    <rect>
+     <x>700</x>
+     <y>470</y>
+     <width>31</width>
+     <height>21</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>7</pointsize>
+    </font>
+   </property>
+   <property name="toolTip">
+    <string>Expand ends of range by .5 each side</string>
+   </property>
+   <property name="text">
+    <string>+.5</string>
+   </property>
+   <property name="autoRepeat">
+    <bool>true</bool>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="rbmp1">
+   <property name="geometry">
+    <rect>
+     <x>780</x>
+     <y>340</y>
+     <width>31</width>
+     <height>21</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>7</pointsize>
+    </font>
+   </property>
+   <property name="toolTip">
+    <string>Contract ends of range by .1 each side</string>
+   </property>
+   <property name="text">
+    <string>-.1</string>
+   </property>
+   <property name="autoRepeat">
+    <bool>true</bool>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="srbmp5">
+   <property name="geometry">
+    <rect>
+     <x>700</x>
+     <y>490</y>
+     <width>31</width>
+     <height>21</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>7</pointsize>
+    </font>
+   </property>
+   <property name="toolTip">
+    <string>Contract ends of range by .5 each side</string>
+   </property>
+   <property name="text">
+    <string>-.5</string>
+   </property>
+   <property name="autoRepeat">
+    <bool>true</bool>
+   </property>
+  </widget>
+  <widget class="QLabel" name="label_10">
+   <property name="geometry">
+    <rect>
+     <x>790</x>
+     <y>280</y>
+     <width>41</width>
+     <height>17</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <weight>75</weight>
+     <bold>true</bold>
+    </font>
+   </property>
+   <property name="text">
+    <string>Both</string>
+   </property>
+  </widget>
+  <widget class="QCheckBox" name="doppleradj">
+   <property name="geometry">
+    <rect>
+     <x>680</x>
+     <y>90</y>
+     <width>151</width>
+     <height>22</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Adjust for Doppler</string>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+  </widget>
+  <widget class="QListWidget" name="datafiles">
+   <property name="geometry">
+    <rect>
+     <x>220</x>
+     <y>20</y>
+     <width>431</width>
+     <height>192</height>
+    </rect>
+   </property>
+   <property name="toolTip">
+    <string>These are the datafiles to be selected</string>
+   </property>
+   <property name="selectionMode">
+    <enum>QAbstractItemView::ExtendedSelection</enum>
+   </property>
+  </widget>
+  <widget class="QLabel" name="warningmsg">
+   <property name="geometry">
+    <rect>
+     <x>60</x>
+     <y>560</y>
+     <width>591</width>
+     <height>17</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>12</pointsize>
+     <weight>75</weight>
+     <bold>true</bold>
+    </font>
+   </property>
+   <property name="text">
+    <string/>
+   </property>
+  </widget>
+  <widget class="QComboBox" name="editrange">
+   <property name="geometry">
+    <rect>
+     <x>200</x>
+     <y>400</y>
+     <width>411</width>
+     <height>27</height>
+    </rect>
+   </property>
+   <property name="toolTip">
+    <string>This is the range we want to edit</string>
+   </property>
+   <item>
+    <property name="text">
+     <string>(none)</string>
+    </property>
+   </item>
+  </widget>
+  <widget class="QPushButton" name="selcolour">
+   <property name="geometry">
+    <rect>
+     <x>630</x>
+     <y>400</y>
+     <width>121</width>
+     <height>27</height>
+    </rect>
+   </property>
+   <property name="toolTip">
+    <string>Select colour on display</string>
+   </property>
+   <property name="text">
+    <string>Choose Colour</string>
+   </property>
+  </widget>
+  <widget class="QGraphicsView" name="colourdisp">
+   <property name="geometry">
+    <rect>
+     <x>760</x>
+     <y>380</y>
+     <width>151</width>
+     <height>61</height>
+    </rect>
+   </property>
+  </widget>
+ </widget>
+ <tabstops>
+  <tabstop>datafiles</tabstop>
+  <tabstop>doppleradj</tabstop>
+  <tabstop>yrangemin</tabstop>
+  <tabstop>yrangemax</tabstop>
+  <tabstop>xrangemin</tabstop>
+  <tabstop>rlpp1</tabstop>
+  <tabstop>rlpp5</tabstop>
+  <tabstop>rlmp1</tabstop>
+  <tabstop>rlmp5</tabstop>
+  <tabstop>xrangemax</tabstop>
+  <tabstop>rupp1</tabstop>
+  <tabstop>rupp5</tabstop>
+  <tabstop>rump1</tabstop>
+  <tabstop>rump5</tabstop>
+  <tabstop>rbpp1</tabstop>
+  <tabstop>rbpp5</tabstop>
+  <tabstop>rbmp1</tabstop>
+  <tabstop>rbmp5</tabstop>
+  <tabstop>editrange</tabstop>
+  <tabstop>selcolour</tabstop>
+  <tabstop>srmin</tabstop>
+  <tabstop>srlpp1</tabstop>
+  <tabstop>srlpp5</tabstop>
+  <tabstop>srlmp1</tabstop>
+  <tabstop>srlmp5</tabstop>
+  <tabstop>srmax</tabstop>
+  <tabstop>srupp1</tabstop>
+  <tabstop>srupp5</tabstop>
+  <tabstop>srump1</tabstop>
+  <tabstop>srump5</tabstop>
+  <tabstop>srbpp1</tabstop>
+  <tabstop>srbpp5</tabstop>
+  <tabstop>srbmp1</tabstop>
+  <tabstop>srbmp5</tabstop>
+  <tabstop>buttonBox</tabstop>
+ </tabstops>
+ <resources/>
+ <connections>
+  <connection>
+   <sender>buttonBox</sender>
+   <signal>accepted()</signal>
+   <receiver>paramdlg</receiver>
+   <slot>accept()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>248</x>
+     <y>254</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>157</x>
+     <y>274</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>buttonBox</sender>
+   <signal>rejected()</signal>
+   <receiver>paramdlg</receiver>
+   <slot>reject()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>316</x>
+     <y>260</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>286</x>
+     <y>274</y>
+    </hint>
+   </hints>
+  </connection>
+ </connections>
+</ui>

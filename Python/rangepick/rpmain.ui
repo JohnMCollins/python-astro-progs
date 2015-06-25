@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>rpmain</class>
+ <widget class="QMainWindow" name="rpmain">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>400</width>
+    <height>277</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Range Picking</string>
+  </property>
+  <widget class="QWidget" name="centralwidget"/>
+  <widget class="QMenuBar" name="menubar">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>0</y>
+     <width>400</width>
+     <height>25</height>
+    </rect>
+   </property>
+   <widget class="QMenu" name="menu_File">
+    <property name="title">
+     <string>&amp;File</string>
+    </property>
+    <addaction name="action_Select_files"/>
+    <addaction name="action_Tune_Ranges"/>
+    <addaction name="separator"/>
+    <addaction name="action_Quit"/>
+   </widget>
+   <addaction name="menu_File"/>
+  </widget>
+  <widget class="QStatusBar" name="statusbar"/>
+  <action name="action_Select_files">
+   <property name="text">
+    <string>&amp;Select files</string>
+   </property>
+   <property name="toolTip">
+    <string>This option sets files to use
+
+Also set terminal size here.
+</string>
+   </property>
+   <property name="statusTip">
+    <string>Set up configuration parameters</string>
+   </property>
+   <property name="shortcut">
+    <string>Shift+C</string>
+   </property>
+  </action>
+  <action name="action_Tune_Ranges">
+   <property name="text">
+    <string>&amp;Tune Ranges</string>
+   </property>
+   <property name="iconText">
+    <string>Tune Ranges</string>
+   </property>
+   <property name="toolTip">
+    <string>Adjust ranges in the range file.</string>
+   </property>
+  </action>
+  <action name="action_Quit">
+   <property name="text">
+    <string>&amp;Quit</string>
+   </property>
+   <property name="statusTip">
+    <string>Quit program</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+Q</string>
+   </property>
+  </action>
+  <action name="action_Peak_Comparison">
+   <property name="text">
+    <string>&amp;Calculate comparison</string>
+   </property>
+   <property name="statusTip">
+    <string>Run comparison procedure in batch</string>
+   </property>
+  </action>
+  <action name="action_Display_Results">
+   <property name="text">
+    <string>Display &amp;Results</string>
+   </property>
+   <property name="toolTip">
+    <string>Display Results of last comparison
+</string>
+   </property>
+  </action>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>

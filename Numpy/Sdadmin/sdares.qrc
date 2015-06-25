@@ -1,0 +1,12 @@
+<RCC>
+  <qresource prefix="buttons/">
+    <file>buttons/rightin.png</file>
+    <file>buttons/rightout.png</file>
+    <file>buttons/bothin.png</file>
+    <file>buttons/bothout.png</file>
+    <file>buttons/bothleft.png</file>
+    <file>buttons/bothright.png</file>
+    <file>buttons/leftin.png</file>
+    <file>buttons/leftout.png</file>
+  </qresource>
+</RCC>

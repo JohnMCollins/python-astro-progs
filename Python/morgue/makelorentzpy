@@ -1,0 +1,66 @@
+#! /usr/bin/python
+# Python version of Makelorentz
+
+import argparse
+import sys
+import numpy as np
+import math
+import os.path
+import os
+import matplotlib.pyplot as plt
+
+parsearg = argparse.ArgumentParser(description='Generate Lorentzian flux profile')
+parsearg.add_argument('--npoints', type=int, default=150, help='Number of points in -n/2 to n/2')
+parsearg.add_argument('--pixwidth', type=float, help='Pixel width', default=1.0)
+parsearg.add_argument('--scale', type=float, default=1.0, help='Scale')
+parsearg.add_argument('--offset', type=float, help='Offset', default=0.0)
+parsearg.add_argument('--fhwm', type=float, default=1.0, help='FHWM')
+parsearg.add_argument('--outfile', type=str, default='lorentz', help='Prefix for files, text .dat sf .sdf')
+parsearg.add_argument('--overwrite', action='store_true', help='OK to overwrite files')
+parsearg.add_argument('--plot', action='store_true', help='Plot result')
+
+resargs = vars(parsearg.parse_args())
+
+npoints = resargs['npoints']
+pixwidth = resargs['pixwidth']
+scale = resargs['scale']
+offset = resargs['offset']
+fhwm = resargs['fhwm']
+outfilepref = resargs['outfile']
+okover = resargs['overwrite']
+
+sigma = fhwm / (2.0 * math.sqrt(2.0))
+
+if npoints <= 0  or  npoints & 1 != 0:
+    print "Have to have even number of points"
+    sys.exit(9)
+if pixwidth <= 0.0:
+    print "Invalid pix width"
+    sys.exit(10)
+
+# First check we aren't overwriting
+
+txtfile = outfilepref + '.dat'
+# sffile = outfilepref + '.sdf'
+
+if not okover:
+    if os.path.isfile(txtfile):
+        print "Will not overwrite existing", txtfile
+        sys.exit(11)
+#     if os.path.isfile(sffile):
+#         print "Will not overwrite existing", sffile
+#         sys.exit(12)
+
+lims = pixwidth * npoints / 2.0
+xvals = np.arange(-lims, lims+pixwidth, pixwidth)
+yvals = 1.0 - scale /  (1.0 + 0.5 * ((offset-xvals) / sigma) ** 2)
+arr = np.array([xvals,yvals])
+arr = np.transpose(arr)
+np.savetxt(txtfile, arr, "%.2f %.6f")
+#os.system("/star/bin/figaro/ascin " + txtfile + ' lines="[1,' + str(npoints) + ']" colaxes=1 coldata=2 out=' + outfilepref)
+if resargs['plot']:
+    plt.plot(xvals, yvals)
+    plt.ylabel('Intensity')
+    plt.xlabel('Wavelength')
+    plt.show()
+
