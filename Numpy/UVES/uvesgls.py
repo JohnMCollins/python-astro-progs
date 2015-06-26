@@ -14,14 +14,14 @@ import jdate
 import datetime
 import splittime
 import periodarg
-import scipy.signal as ss
+from gatspy.periodic import LombScargle
 import matplotlib.pyplot as plt
 
 SECSPERDAY = 3600.0 * 24.0
 
 coltype = dict(ew = 2, ps = 4, pr = 6)
 
-parsearg = argparse.ArgumentParser(description='Process UVES EW data and generate periodograms')
+parsearg = argparse.ArgumentParser(description='Process UVES EW data and generate periodograms (Gatspy version)')
 parsearg.add_argument('ewfile', type=str, nargs=1, help='EW data produced by uvesew')
 parsearg.add_argument('--xraylevel', type=float, required=True, help='X-ray level for cutoff')
 parsearg.add_argument('--splittime', help='Split plot segs on value', type=float, default=1)
@@ -29,7 +29,8 @@ parsearg.add_argument('--outfile', help='Prefix for output file', type=str, requ
 parsearg.add_argument('--periods', help='Period range', type=str, default='10m:10s:1d')
 parsearg.add_argument('--idperiods', help='Individual day periods', type=str)
 parsearg.add_argument('--type', type=str, default='ew', help='Type of feature to process, ew, ps or pr default ew')
-parsearg.add_argument('--normalise', action='store_true', help='Apply normalisation to L-S result')
+parsearg.add_argument('--errorlev', type=float, default=0.5, help='Error parameter')
+parsearg.add_argument('--abs', action='store_false', help='Take abs value of result')
 parsearg.add_argument('--plot', action='store_true', help='Plot figures taken')
 
 resargs = vars(parsearg.parse_args())
@@ -39,7 +40,8 @@ xraylevel = resargs['xraylevel']
 splitem = resargs['splittime']
 outfile = resargs['outfile']
 typeplt = resargs['type']
-norm = resargs['normalise']
+errorlev = resargs['errorlev']
+abss = resargs['abs']
 plotit = resargs['plot']
 
 try:
@@ -57,18 +59,7 @@ except ValueError as e:
     print "Trouble with period argument set"
     print "Error was:", e.args[0]
     sys.exit(8)
-
-if startper >= stopper:
-    print "Sorry do not understand start period >= stop period"
-    sys.exit(9)
-    
-tfreqs = 2 * np.pi / allrange
-idtfreqs = 2 * np.pi / idrange
-
-if len(perrange) <= 10:
-    print "Range of periods is unacceptably low"
-    sys.exit(9)
-
+   
 # Now read the EW file we need the dates to marry with the xray and the barycentric dates for the calc.
 
 try:
@@ -106,16 +97,15 @@ if len(dateparts) > 1:
         sel = day_xrayvs <= xraylevel
         bjd = day_bjdates[sel]
         dv = day_values[sel]
-        dv -= dv.mean()                     # Need this for ss.lombscargle to work
+        #dv -= dv.mean()                     # Need this for ss.lombscargle to work
         
         if plotit:
             plt.figure()
             plt.plot(bjd, dv)
-
-        spectrum = ss.lombscargle(bjd, dv, idtfreqs)
-        if norm:
-            spectrum = np.sqrt(spectrum * 4.0 / float(len(bjd)))
         
+        model = LombScargle().fit(bjd, dv, errorlev)
+        spectrum = model.periodogram(idrange)
+        if abss: spectrum = np.abs(spectrum)        
         np.savetxt(outfile + "_day_%d.ls" % fnum, np.transpose(np.array([idrange, spectrum])))
         fnum += 1
 
@@ -123,13 +113,14 @@ bjdates -= bjdates[0]
 sel = xrayvs < xraylevel
 bjd = bjdates[sel]
 dv = values[sel]
-dv -= dv.mean()
+#dv -= dv.mean()
 
 if plotit:
     plt.figure()
     plt.plot(bjd, dv)
-spectrum = ss.lombscargle(bjd, dv, tfreqs)
-if norm:
-    spectrum = np.sqrt(spectrum * 4.0 / float(len(bjd)))
+model = LombScargle().fit(bjd, dv, errorlev)
+spectrum = model.periodogram(allrange)
+if abss: spectrum = np.abs(spectrum)      
 np.savetxt(outfile + "_all.ls", np.transpose(np.array([allrange, spectrum])))
-plt.show()
+if plotit:
+    plt.show()
