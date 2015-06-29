@@ -311,7 +311,7 @@ elif sdp[0] == 'o':
     # Thinks: maybe worry about different plots the same day?
 
     starting_datetime = separated_vals[0][0]
-    starting_dt_date = starting_datetime.date()
+    #starting_dt_date = starting_datetime.date()
     starting_date = separated_vals[0][1]
     
     fig = plt.figure(figsize=dims)
@@ -347,10 +347,10 @@ elif sdp[0] == 'o':
         
         if usedt:
             plotdts = [ datetime.datetime.combine(starting_date, day_dt.time()) for day_dt in day_datetimes ]
-            plot(plotdts, day_values, colour)
+            plt.plot(plotdts, day_values, colour)
         else:
             plotjd = day_jdates - day_jdates[0]
-            plot(plotjd, day_values, colour)
+            plt.plot(plotjd, day_values, colour)
         
     # Don't worry about excludes for num
     
