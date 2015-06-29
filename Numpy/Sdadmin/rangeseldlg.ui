@@ -755,7 +755,7 @@ p, li { white-space: pre-wrap; }
    </property>
    <property name="icon">
     <iconset resource="sdares.qrc">
-     <normaloff>:/buttons/buttons/rightout.png</normaloff>:/buttons/buttons/rightout.png</iconset>
+     <normaloff>:/buttons/buttons/rightin.png</normaloff>:/buttons/buttons/rightin.png</iconset>
    </property>
    <property name="autoRepeat">
     <bool>true</bool>
