@@ -14,6 +14,7 @@ import jdate
 import datetime
 import splittime
 import periodarg
+import argmaxmin
 from gatspy.periodic import LombScargle
 
 SECSPERDAY = 3600.0 * 24.0
@@ -62,7 +63,7 @@ try:
     inputdata = np.loadtxt(ewfile, unpack=True)
     jdates = inputdata[0]
     bjdates = inputdata[1]
-    ewdata = inputdata[typecol]
+    values = inputdata[typecol]
     xrayvs = inputdata[8]
 except IOError as e:
     print "Cannot open info file, error was", e.args[1]
@@ -70,6 +71,10 @@ except IOError as e:
 except IndexError, ValueError:
     print "Input data wrong format"
     sys.exit(12)
+
+datelist = [jdate.jdate_to_datetime(jd) for jd in jdates]
+dateparts = splittime.splittime(splitem, datelist, jdates, bjdates, values, xrayvs)
+
 
 # Plot for each day
 
