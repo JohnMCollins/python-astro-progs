@@ -464,12 +464,12 @@ class Rangeseldlg(QDialog, ui_rangeseldlg.Ui_rangeseldlg):
         selected = [ p.data(Qt.UserRole).toInt()[0] for p in self.datafiles.selectedItems() ]
         if len(selected) != 1: return
         spectrum = self.specctl.datalist[selected[0]]
-        dlg = scaleoffdlg.XIndScaleOffDlg(self)
-        dlg.initdata(copy.deepcopy(spectrum))
+        dlg = scaleoffdlg.XIndHvDlg(self)
+        dlg.initdata(copy.deepcopy(spectrum), self.specctl)
         if dlg.exec_():
-            spectrum.xscale = dlg.spectrum.xscale
-            spectrum.xoffset = dlg.spectrum.xoffset
-            # Possibly redisplay line if different
+            spectrum.hvcorrect = dlg.spectrum.hvcorrect
+            self.specctl.dirty = True
+            self.updateplot()
 
     def on_edity_clicked(self, b = None):
         if b is None: return

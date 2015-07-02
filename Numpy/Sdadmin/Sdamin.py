@@ -261,7 +261,7 @@ class SadminMain(QMainWindow, ui_sdadminmain.Ui_sdadminmain):
         if self.currentlist is None:
             QMessageBox.warning(self, "No current obs file", "Please set up an observation times file first")
             return
-        dlg = scaleoffdlg.XScaleOffDlg(self)
+        dlg = scaleoffdlg.XRvDlg(self)
         dlg.initdata(self.currentlist)
         dlg.exec_()
         self.unsavedc = True
@@ -384,11 +384,16 @@ except xmlutil.XMLError as e:
 # Parse arguments
 
 parsearg = argparse.ArgumentParser(description='Spectrum data files admin')
+parsearg.add_argument('infofilearg', nargs='*', type=str, help='Existing spectrum info file')
 parsearg.add_argument('--infofile', type=str, help='Existing spectrum info file')
 parsearg.add_argument('--width', type=float, default=0.0, help='Plotting width display')
 parsearg.add_argument('--height', type=float, default=0.0, help='Plotting height display')
 res = vars(parsearg.parse_args())
-infofile = res['infofile']
+infofileargs = res['infofilearg']
+if len(infofileargs) != 0:
+    infofile = infofileargs[0]
+else:
+    infofile = res['infofile']
 if res['width'] >= 2.0:
     cfg.swidth = res['width']
 if res['height'] >= 2.0:

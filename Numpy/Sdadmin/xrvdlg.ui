@@ -1,23 +1,23 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
- <class>xscaleoffdlg</class>
- <widget class="QDialog" name="xscaleoffdlg">
+ <class>xrvdlg</class>
+ <widget class="QDialog" name="xrvdlg">
   <property name="geometry">
    <rect>
     <x>0</x>
     <y>0</y>
     <width>575</width>
-    <height>374</height>
+    <height>289</height>
    </rect>
   </property>
   <property name="windowTitle">
-   <string>X Scaling and Offsets</string>
+   <string>X Radial Velocity</string>
   </property>
   <widget class="QDialogButtonBox" name="buttonBox">
    <property name="geometry">
     <rect>
-     <x>320</x>
-     <y>310</y>
+     <x>300</x>
+     <y>220</y>
      <width>221</width>
      <height>32</height>
     </rect>
@@ -74,74 +74,6 @@
     <string>to</string>
    </property>
   </widget>
-  <widget class="QDoubleSpinBox" name="xscale">
-   <property name="geometry">
-    <rect>
-     <x>110</x>
-     <y>120</y>
-     <width>181</width>
-     <height>27</height>
-    </rect>
-   </property>
-   <property name="toolTip">
-    <string>This is the scaling factor to be applied to the X values</string>
-   </property>
-   <property name="decimals">
-    <number>6</number>
-   </property>
-   <property name="minimum">
-    <double>0.000001000000000</double>
-   </property>
-   <property name="maximum">
-    <double>1000000000.000000000000000</double>
-   </property>
-   <property name="value">
-    <double>1.000000000000000</double>
-   </property>
-  </widget>
-  <widget class="QLabel" name="label_5">
-   <property name="geometry">
-    <rect>
-     <x>320</x>
-     <y>130</y>
-     <width>31</width>
-     <height>17</height>
-    </rect>
-   </property>
-   <property name="font">
-    <font>
-     <pointsize>10</pointsize>
-    </font>
-   </property>
-   <property name="text">
-    <string>Log</string>
-   </property>
-  </widget>
-  <widget class="QDoubleSpinBox" name="xlogscale">
-   <property name="geometry">
-    <rect>
-     <x>370</x>
-     <y>120</y>
-     <width>181</width>
-     <height>27</height>
-    </rect>
-   </property>
-   <property name="toolTip">
-    <string>This is the base 10 log of the scaling factor to be applied to the X values.</string>
-   </property>
-   <property name="decimals">
-    <number>6</number>
-   </property>
-   <property name="minimum">
-    <double>-5.000000000000000</double>
-   </property>
-   <property name="maximum">
-    <double>9.000000000000000</double>
-   </property>
-   <property name="singleStep">
-    <double>0.010000000000000</double>
-   </property>
-  </widget>
   <widget class="QLabel" name="label">
    <property name="geometry">
     <rect>
@@ -155,32 +87,12 @@
     <string>From</string>
    </property>
   </widget>
-  <widget class="QDoubleSpinBox" name="xoffset">
-   <property name="geometry">
-    <rect>
-     <x>110</x>
-     <y>220</y>
-     <width>181</width>
-     <height>27</height>
-    </rect>
-   </property>
-   <property name="toolTip">
-    <string>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
-&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
-p, li { white-space: pre-wrap; }
-&lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:'Sans'; font-size:10pt; font-weight:400; font-style:normal;&quot;&gt;
-&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;This is the offset to be applied to the X values &lt;span style=&quot; font-weight:600;&quot;&gt;after&lt;/span&gt; scaling.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-   </property>
-   <property name="decimals">
-    <number>6</number>
-   </property>
-  </widget>
   <widget class="QPushButton" name="resetx">
    <property name="geometry">
     <rect>
-     <x>10</x>
-     <y>320</y>
-     <width>221</width>
+     <x>20</x>
+     <y>220</y>
+     <width>161</width>
      <height>27</height>
     </rect>
    </property>
@@ -190,10 +102,10 @@ p, li { white-space: pre-wrap; }
     </font>
    </property>
    <property name="toolTip">
-    <string>Reset global X scale and offsets.</string>
+    <string>Reset global radial velocity</string>
    </property>
    <property name="text">
-    <string>Reset Offset and Scaling</string>
+    <string>Reset RV</string>
    </property>
   </widget>
   <widget class="QLabel" name="label_4">
@@ -211,25 +123,7 @@ p, li { white-space: pre-wrap; }
     </font>
    </property>
    <property name="text">
-    <string>Scale by</string>
-   </property>
-  </widget>
-  <widget class="QLabel" name="label_6">
-   <property name="geometry">
-    <rect>
-     <x>20</x>
-     <y>230</y>
-     <width>71</width>
-     <height>17</height>
-    </rect>
-   </property>
-   <property name="font">
-    <font>
-     <pointsize>10</pointsize>
-    </font>
-   </property>
-   <property name="text">
-    <string>Offset by</string>
+    <string>Global RV</string>
    </property>
   </widget>
   <widget class="QLabel" name="label_3">
@@ -247,7 +141,7 @@ p, li { white-space: pre-wrap; }
     </font>
    </property>
    <property name="text">
-    <string>Adjustments to scaling and offset for X (wavelength) axis</string>
+    <string>Adjustments to overall radial velocity of object</string>
    </property>
   </widget>
   <widget class="QLabel" name="label_7">
@@ -255,62 +149,19 @@ p, li { white-space: pre-wrap; }
     <rect>
      <x>10</x>
      <y>50</y>
-     <width>411</width>
+     <width>441</width>
      <height>17</height>
     </rect>
    </property>
    <property name="text">
-    <string>Current Range of X values (after scaling and offset)</string>
-   </property>
-  </widget>
-  <widget class="QDoubleSpinBox" name="xscalequot">
-   <property name="geometry">
-    <rect>
-     <x>110</x>
-     <y>170</y>
-     <width>181</width>
-     <height>27</height>
-    </rect>
-   </property>
-   <property name="toolTip">
-    <string>This is the scaling factor to be applied to the X values</string>
-   </property>
-   <property name="decimals">
-    <number>6</number>
-   </property>
-   <property name="minimum">
-    <double>0.000001000000000</double>
-   </property>
-   <property name="maximum">
-    <double>1000000000.000000000000000</double>
-   </property>
-   <property name="value">
-    <double>1.000000000000000</double>
-   </property>
-  </widget>
-  <widget class="QLabel" name="label_8">
-   <property name="geometry">
-    <rect>
-     <x>20</x>
-     <y>180</y>
-     <width>62</width>
-     <height>17</height>
-    </rect>
-   </property>
-   <property name="font">
-    <font>
-     <pointsize>10</pointsize>
-    </font>
-   </property>
-   <property name="text">
-    <string>Divide by</string>
+    <string>Current Range of wavelength values (after current adjustments)</string>
    </property>
   </widget>
   <widget class="QPushButton" name="resetindivx">
    <property name="geometry">
     <rect>
-     <x>330</x>
-     <y>270</y>
+     <x>300</x>
+     <y>170</y>
      <width>221</width>
      <height>27</height>
     </rect>
@@ -325,24 +176,24 @@ p, li { white-space: pre-wrap; }
 &lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
 p, li { white-space: pre-wrap; }
 &lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:'Sans'; font-size:10pt; font-weight:400; font-style:normal;&quot;&gt;
-&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Cancel any individual scales or offsets on X values.&lt;/p&gt;
+&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Cancel any individual HV corrections on X values.&lt;/p&gt;
 &lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;Be careful&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
    </property>
    <property name="text">
-    <string>Reset Individual Scales</string>
+    <string>Reset Individual HVs</string>
    </property>
   </widget>
   <widget class="QLineEdit" name="xindivnum">
    <property name="geometry">
     <rect>
      <x>110</x>
-     <y>270</y>
+     <y>170</y>
      <width>81</width>
      <height>27</height>
     </rect>
    </property>
    <property name="toolTip">
-    <string>Number of X values with indiv scales</string>
+    <string>Number of X values with indiv HV corrections</string>
    </property>
    <property name="readOnly">
     <bool>true</bool>
@@ -352,7 +203,7 @@ p, li { white-space: pre-wrap; }
    <property name="geometry">
     <rect>
      <x>20</x>
-     <y>280</y>
+     <y>180</y>
      <width>62</width>
      <height>16</height>
     </rect>
@@ -366,25 +217,64 @@ p, li { white-space: pre-wrap; }
     <string>Indivs</string>
    </property>
   </widget>
+  <widget class="QDoubleSpinBox" name="rvcorrect">
+   <property name="geometry">
+    <rect>
+     <x>110</x>
+     <y>120</y>
+     <width>151</width>
+     <height>27</height>
+    </rect>
+   </property>
+   <property name="toolTip">
+    <string>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
+&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
+p, li { white-space: pre-wrap; }
+&lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:'Sans'; font-size:10pt; font-weight:400; font-style:normal;&quot;&gt;
+&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;This is the RV for the object.&lt;/p&gt;
+&lt;p style=&quot;-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;/p&gt;
+&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Note that if the RV is -ve it will be blue-shifted so setting this negative will correct for a blue shift, the spectra will move to the &lt;span style=&quot; font-weight:600;&quot;&gt;right&lt;/span&gt; on the display.&lt;/p&gt;
+&lt;p style=&quot;-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;/p&gt;
+&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Likewise setting a positive value will correct for red shift and the spectra will move to the &lt;span style=&quot; font-weight:600;&quot;&gt;left&lt;/span&gt;.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+   </property>
+   <property name="alignment">
+    <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+   </property>
+   <property name="suffix">
+    <string> km/s</string>
+   </property>
+   <property name="decimals">
+    <number>6</number>
+   </property>
+   <property name="minimum">
+    <double>-1000.000000000000000</double>
+   </property>
+   <property name="maximum">
+    <double>1000.000000000000000</double>
+   </property>
+   <property name="singleStep">
+    <double>1.000000000000000</double>
+   </property>
+   <property name="value">
+    <double>0.000000000000000</double>
+   </property>
+  </widget>
  </widget>
  <tabstops>
   <tabstop>xmin</tabstop>
-  <tabstop>xmax</tabstop>
-  <tabstop>xscale</tabstop>
-  <tabstop>xlogscale</tabstop>
-  <tabstop>xscalequot</tabstop>
-  <tabstop>xoffset</tabstop>
+  <tabstop>rvcorrect</tabstop>
   <tabstop>xindivnum</tabstop>
   <tabstop>resetindivx</tabstop>
   <tabstop>resetx</tabstop>
   <tabstop>buttonBox</tabstop>
+  <tabstop>xmax</tabstop>
  </tabstops>
  <resources/>
  <connections>
   <connection>
    <sender>buttonBox</sender>
    <signal>accepted()</signal>
-   <receiver>xscaleoffdlg</receiver>
+   <receiver>xrvdlg</receiver>
    <slot>accept()</slot>
    <hints>
     <hint type="sourcelabel">
@@ -400,7 +290,7 @@ p, li { white-space: pre-wrap; }
   <connection>
    <sender>buttonBox</sender>
    <signal>rejected()</signal>
-   <receiver>xscaleoffdlg</receiver>
+   <receiver>xrvdlg</receiver>
    <slot>reject()</slot>
    <hints>
     <hint type="sourcelabel">
