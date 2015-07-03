@@ -96,7 +96,7 @@ class XIndHvDlg(QDialog, ui_xindhvdlg.Ui_xindhvdlg):
         minv, maxv = self.spectrum.getmaxminx()
         self.xmin.setText(str(minv))
         self.xmax.setText(str(maxv))
-        self.netrv.setText("%.6g" % (self.clist.rvcorrect + newhv))
+        self.netrv.setText("%.6g" % (self.clist.rvcorrect + newhv/1000.0))
 
     def on_resetx_clicked(self, b = None):
         if b is None: return

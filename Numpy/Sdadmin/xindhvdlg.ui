@@ -52,13 +52,13 @@
     </rect>
    </property>
    <property name="toolTip">
-    <string>This is the individual RV for this data point</string>
+    <string>This is the individual RV for this data point in m/s</string>
    </property>
    <property name="alignment">
     <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
    </property>
    <property name="suffix">
-    <string> km/s</string>
+    <string> m/s</string>
    </property>
    <property name="decimals">
     <number>6</number>

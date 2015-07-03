@@ -4,23 +4,7 @@ from PyQt4.QtCore import *
 from PyQt4.QtGui import *
 
 import ui_obsfileseldlg
-
-# Possible columns in observation times file
-
-Obsfields = (('specfile', 'Spectrum filename'),
-             ('jdate', 'Julian Date'),
-             ('modjdate', 'Modified Julian Date'),
-             ('bjdate', 'Barycentric Julian Date'),
-             ('modbjdate', 'Modified Barycentric Date'),
-             ('hvcorrect', 'Heliocentric Velocity Correction'),
-             ('yerror', 'Y error for all of dataset'))
-
-# Possible columns in spectral data file
-
-Specfields = (('xvalues', 'X (wavelength) values'),
-              ('yvalues', 'Y (intensity) values'),
-              ('yerr', 'Y errors individual point'),
-              ('ignored', 'Ignored column'))
+import specdatactrl
 
 class ObsFileDlg(QDialog, ui_obsfileseldlg.Ui_obsfileseldlg):
 
@@ -30,10 +14,10 @@ class ObsFileDlg(QDialog, ui_obsfileseldlg.Ui_obsfileseldlg):
 
         # Set up combo boxes with possible fields in
 
-        for fn, descr in Obsfields:
+        for fn, descr in specdatactrl.Obsfields:
             self.selobsfield.addItem(descr, QVariant(fn))
 
-        for fn, descr in Specfields:
+        for fn, descr in specdatactrl.Specfields:
             self.selspecfield.addItem(descr, QVariant(fn))
 
     def default_fields(self):
@@ -42,7 +26,7 @@ class ObsFileDlg(QDialog, ui_obsfileseldlg.Ui_obsfileseldlg):
         # First set up obs times default
 
         for fnum in (0,2,4,5):
-            fn, descr = Obsfields[fnum]
+            fn, descr = specdatactrl.Obsfields[fnum]
             item = QListWidgetItem(descr)
             item.setData(Qt.UserRole, QVariant(fn))
             self.obsfields.addItem(item)
@@ -50,7 +34,7 @@ class ObsFileDlg(QDialog, ui_obsfileseldlg.Ui_obsfileseldlg):
         # Now for spec data
 
         for fnum in (0,1,2):
-            fn, descr = Specfields[fnum]
+            fn, descr = specdatactrl.Specfields[fnum]
             item = QListWidgetItem(descr)
             item.setData(Qt.UserRole, QVariant(fn))
             self.specfields.addItem(item)
@@ -72,8 +56,8 @@ class ObsFileDlg(QDialog, ui_obsfileseldlg.Ui_obsfileseldlg):
 
     def copyin_specfields(self, oflist, sflist):
         """Copy in existing fields to dialog"""
-        self.copyin_fields(self.obsfields, Obsfields, oflist)
-        self.copyin_fields(self.specfields, Specfields, sflist)
+        self.copyin_fields(self.obsfields, specdatactrl.Obsfields, oflist)
+        self.copyin_fields(self.specfields, specdatactrl.Specfields, sflist)
 
     def extract_fields(self):
         """Return pair with lists of selected fields for spec data and obs"""
