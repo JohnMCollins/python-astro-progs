@@ -12,13 +12,14 @@ Obsfields = (('specfile', 'Spectrum filename'),
              ('modjdate', 'Modified Julian Date'),
              ('bjdate', 'Barycentric Julian Date'),
              ('modbjdate', 'Modified Barycentric Date'),
-             ('hvcorrect', 'Heliocentric Velocity Correction'))
+             ('hvcorrect', 'Heliocentric Velocity Correction'),
+             ('yerror', 'Y error for all of dataset'))
 
 # Possible columns in spectral data file
 
 Specfields = (('xvalues', 'X (wavelength) values'),
               ('yvalues', 'Y (intensity) values'),
-              ('yerr', 'Y errors'),
+              ('yerr', 'Y errors individual point'),
               ('ignored', 'Ignored column'))
 
 class ObsFileDlg(QDialog, ui_obsfileseldlg.Ui_obsfileseldlg):
