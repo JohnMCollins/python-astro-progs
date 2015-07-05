@@ -127,7 +127,7 @@ except IOError as e:
     print "Error was", e.args[1]
     sys.exit(102)
 
-if inp.shape[0] != 8:
+if inp.shape[0] < 8:
     print "Expecting new format 8-column shape, please convert"
     print "Shape was", inp.shape
     sys.exit(103)

@@ -46,7 +46,7 @@
     <property name="title">
      <string>&amp;Data</string>
     </property>
-    <addaction name="action_X_scaling_and_offsets"/>
+    <addaction name="action_rvcorrect"/>
     <addaction name="action_Y_scaling_and_offsets"/>
     <addaction name="separator"/>
     <addaction name="action_tune_ranges"/>
@@ -133,9 +133,9 @@
     <string>Ctrl+F</string>
    </property>
   </action>
-  <action name="action_X_scaling_and_offsets">
+  <action name="action_rvcorrect">
    <property name="text">
-    <string>&amp;X Scaling and offsets</string>
+    <string>&amp;X Radial velocity</string>
    </property>
    <property name="shortcut">
     <string>Shift+X</string>

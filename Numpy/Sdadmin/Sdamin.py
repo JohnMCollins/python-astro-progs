@@ -105,7 +105,7 @@ class SadminMain(QMainWindow, ui_sdadminmain.Ui_sdadminmain):
         self.action_save_info_as.setEnabled(saveable)
         self.action_reload_control.setEnabled(reloadable)
         self.action_reload_ranges.setEnabled(reloadable)
-        self.action_X_scaling_and_offsets.setEnabled(saveable)
+        self.action_rvcorrect.setEnabled(saveable)
         self.action_Y_scaling_and_offsets.setEnabled(saveable)
         self.action_tune_ranges.setEnabled(saveable)
 
@@ -256,7 +256,7 @@ class SadminMain(QMainWindow, ui_sdadminmain.Ui_sdadminmain):
         save.unsavedr = False
         self.updateUI()
 
-    def on_action_X_scaling_and_offsets_triggered(self, checked = None):
+    def on_action_rvcorrect_triggered(self, checked = None):
         if checked is None: return
         if self.currentlist is None:
             QMessageBox.warning(self, "No current obs file", "Please set up an observation times file first")

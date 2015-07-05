@@ -8,6 +8,7 @@ import os.path
 import math
 import copy
 import jdate
+import simbad
 
 import ui_xrvdlg
 import ui_yscaleoffdlg
@@ -42,6 +43,7 @@ class XRvDlg(QDialog, ui_xrvdlg.Ui_xrvdlg):
     def initdata(self, slist):
         """Copy in and set up parameters"""
         self.specctrl = slist
+        self.objname.setText(slist.objectname)
         nindivs = self.specctrl.count_indiv_x()
         self.xindivnum.setText(str(nindivs))
         if nindivs == 0:
@@ -73,6 +75,19 @@ class XRvDlg(QDialog, ui_xrvdlg.Ui_xrvdlg):
         self.specctrl.reset_indiv_x()
         self.xindivnum.setText("0")
         self.resetindivx.setEnabled(False)
+    
+    def on_fetchsimbad_clicked(self, b = None):
+        if b is None: return
+        objn = str(self.objname.text())
+        if len(objn) == 0:
+            QMessageBox.warning(self, "No current object name", "Please set up an object name")
+            return
+        rv = simbad.getrv(objn)
+        if rv is None:
+            QMessageBox.warning(self, "Cannot locate object", "Cannot find object name " + objn + " RV value in SIMBAD")
+            return
+        self.rvcorrect.setValue(rv)
+        self.specctrl.objectname = objn
 
 class XIndHvDlg(QDialog, ui_xindhvdlg.Ui_xindhvdlg):
 
