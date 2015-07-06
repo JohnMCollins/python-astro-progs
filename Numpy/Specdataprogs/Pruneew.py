@@ -50,7 +50,7 @@ orign = len(ews)
 mv = ews.mean()
 stv = ews.std()
 
-sel = (ews - mv) > lowerlim * stv
+sel = (ews - mv) > - lowerlim * stv
 inp = inp[:,sel]
 ews = inp[2]
 afterlower = len(ews)
