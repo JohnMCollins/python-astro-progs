@@ -17,6 +17,7 @@ import specinfo
 import specdatactrl
 import datarange
 import jdate
+import equivwidth
 import meanval
 import datetime
 import numpy as np
@@ -125,18 +126,14 @@ for spectrum in ctrllist.datalist:
     except specdatactrl.SpecDataError:
         continue
 
-    # Calculate equivalent width using meanval calc
+    # Calculate equivalent width
 
-    har, hir = meanval.mean_value(selected_range, xvalues, yvalues)
-    ew = (hir - har) / har
-
-    minew = min(minew, ew)
-    maxew = max(maxew, ew)
-
+    ew = equivwidth.equivalent_width(selected_range, xvalues, yvalues)
+    
     peak1w, peak1s = meanval.mean_value(integ1, xvalues, yvalues)
     peak2w, peak2s = meanval.mean_value(integ2, xvalues, yvalues)
-
-    pr = (peak2s * peak1w) / (peak1s * peak2w)
+    ps = (peak2s * peak1w) / (peak1s * peak2w)
+    pr = equivwidth.equivalent_width(integ2, xvalues, yvalues) / equivwidth.equivalent_width(integ1, xvalues, yvalues)
 
     # Select next X-ray file if we're on next day
 
@@ -144,6 +141,6 @@ for spectrum in ctrllist.datalist:
         interpfn, ginterpfn, xray_time, xray_amp, xray_gradient = xraydata.pop(0)
     lastdate = spectrum.modjdate
 
-    results.append((spectrum.modjdate, spectrum.modbjdate, ew, 0.0, 0.0, 0.0, pr, 0.0, interpfn(lastdate), ginterpfn(lastdate)))
+    results.append((spectrum.modjdate, spectrum.modbjdate, ew, 0.0, ps, 0.0, pr, 0.0, interpfn(lastdate), ginterpfn(lastdate)))
 
 np.savetxt(outfile, results)

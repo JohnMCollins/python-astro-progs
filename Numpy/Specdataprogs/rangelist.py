@@ -74,7 +74,7 @@ for rf in rfs:
         print "\\multicolumn{4}{|c|}{%s}" % rf, "\\\\\\hline"
         print "Description & Low & High & Difference \\\\\\hline"
         for r in rlist:
-            print "%s & %#.6g & %#.6g & %#.6g \\\\" % (r.description, r.lower, r.upper, r.upper-r.lower)
+            print "%s & %#.7g & %#.7g & %#.7g \\\\" % (r.description, r.lower, r.upper, r.upper-r.lower)
         print "\\hline"
         print "\\end{tabular}"
         print "\\end{center}"
@@ -88,7 +88,7 @@ for rf in rfs:
         print "=" * len(rf)
         print tf % ('Description', 'Short', 'Low', 'High', 'Diff')
         print tf % ('=' * 11, '=' * 5, '===', '====', '====')
-        fmt = "%-" + str(dw) + "s %-" + str(sw) + "s %#10.6g %#10.6g %#10.6g%s"
+        fmt = "%-" + str(dw) + "s %-" + str(sw) + "s %#11.7g %#11.7g %#11.7g%s"
         for r in rlist:
             niu = ""
             if r.notused: niu = " (not in use)"

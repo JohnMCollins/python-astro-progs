@@ -114,7 +114,7 @@ for sf in spec:
         continue
 
     ewsz = si.simps(amps[ewleft:ewright+1]-1.0, wavelengths[ewleft:ewright+1])
-    ew = ewsz / (wavelengths[ewright] - wavelengths[ewleft])
+    ew = ewsz - (wavelengths[ewright] - wavelengths[ewleft])
 
     if prof.twinpeaks:
                 

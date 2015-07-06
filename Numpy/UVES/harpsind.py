@@ -17,10 +17,14 @@ import specinfo
 import specdatactrl
 import datarange
 import jdate
-import meanval
 import datetime
 import numpy as np
 import splittime
+
+def integ_value(range, xvalues, yvalues):
+    """Calculate intensity as per S-M paper"""
+    xv, yv = range.select(xyvalues, yvalues)
+    return si.trapz(yv, xv)
 
 SECSPERDAY = 3600.0 * 24.0
 
@@ -79,9 +83,9 @@ for spectrum in ctrllist.datalist:
     except specdatactrl.SpecDataError:
         continue
 
-    mw, mha = meanval.mean_value(selected_range, xvalues, yvalues)
-    mw, mrc = meanval.mean_value(cont2, xvalues, yvalues)
-    mw, mbc = meanval.mean_value(cont1, xvalues, yvalues)
+    mha = integ_value(selected_range, xvalues, yvalues)
+    mrc = integ_value(cont2, xvalues, yvalues)
+    mbc = integ_value(cont1, xvalues, yvalues)
     
     results.append((spectrum.modjdate, spectrum.modbjdate, mha / (mbc + mrc), 0.0, 0.0, 0.0, 1.0, 0.0))
 

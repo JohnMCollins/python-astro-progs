@@ -17,6 +17,7 @@ import jdate
 import rangearg
 import histandgauss
 import splittime
+import periodarg
 
 # According to type of display select column, xlabel  for hist, ylabel for plot
 
@@ -33,6 +34,7 @@ parsearg.add_argument('--type', help='ew/ps/pr to select display', type=str, def
 parsearg.add_argument('--log', action='store_true', help='Take log of values to plot')
 parsearg.add_argument('--sdplot', type=str, default='d', help='Action on separated plots, discontinuous/overlaid/separate')
 parsearg.add_argument('--sepdays', type=float, default=1e6, help='Separate plots if this number of days apart')
+parsearg.add_argument('--indaysep',type=str, default='1000d', help='Separate sections within day if this period apart')
 parsearg.add_argument('--bins', type=int, default=20, help='Histogram bins')
 parsearg.add_argument('--clip', type=float, default=0.0, help='Number of S.D.s to clip from histogram')
 parsearg.add_argument('--gauss', action='store_true', help='Normalise and overlay gaussian on histogram')
@@ -60,7 +62,12 @@ dims = (res['width'], res['height'])
 typeplot = res['type']
 takelog = res['log']
 sdp = res['sdplot']
-sepdays = res['sepdays'] * 3600.0 * 24.0
+sepdays = res['sepdays'] * periodarg.SECSPERDAY
+try:
+    indaysep = periodarg.periodarg(res['indaysep'])
+except ValueError as e:
+    print "Unknown sep period", res['indaysep']
+    sys.exit(2)
 bins = res['bins']
 clip = res['clip']
 gauss = res['gauss']
@@ -277,12 +284,17 @@ if sdp[0] == 's':
                 ax.xaxis.tick_top()
                 ax.xaxis.set_label_position('top')
             plt.xlabel(xlab)
+        subday_sep = splittime.splittime(indaysep, day_datetimes, day_jdates, day_values)
         if usedt:
             ax.xaxis.set_major_formatter(hfmt)
             fig.autofmt_xdate()
-            plt.plot(day_datetimes, day_values, colour)
+            for subday_datetimes, subday_jdates, subday_values in subday_sep:
+                if len(subday_datetimes) != 0:
+                    plt.plot(subday_datetimes, subday_values, colour)
         else:
-            plt.plot(day_jdates, day_values, colour)
+            for subday_datetimes, subday_jdates, subday_values in subday_sep:
+                if len(subday_datetimes) != 0:
+                    plt.plot(subday_jdates, subday_values, colour)
         if excludes is not None:
             sube = elist.inrange(np.min(day_jdates), np.max(day_jdates))
             had = dict()
@@ -344,13 +356,17 @@ elif sdp[0] == 'o':
         
         colour = colours[cnum]
         cnum += 1
-        
+        plotdts = [ datetime.datetime.combine(starting_date, day_dt.time()) for day_dt in day_datetimes ]
+        subday_sep = splittime.splittime(indaysep, plotdts, day_jdates, day_values)
         if usedt:
-            plotdts = [ datetime.datetime.combine(starting_date, day_dt.time()) for day_dt in day_datetimes ]
-            plt.plot(plotdts, day_values, colour)
+            for subday_dts, subday_jdates, subday_values in subday_sep:
+                if len(subday_dts) != 0:       
+                    plt.plot(subday_dts, subday_values, colour)
         else:
-            plotjd = day_jdates - day_jdates[0]
-            plt.plot(plotjd, day_values, colour)
+            for subday_dts, subday_jdates, subday_values in subday_sep:
+                if len(subday_dts) != 0:
+                    plotjd = subday_jdates - day_jdates[0]
+                    plt.plot(plotjd, subday_values, colour)
         
     # Don't worry about excludes for num
     
@@ -387,10 +403,15 @@ else:
         plt.xlabel(xlab)
         
     for day_datetimes, day_jdates, day_values in separated_vals:      
+        subday_sep = splittime.splittime(indaysep, day_datetimes, day_jdates, day_values)
         if usedt:
-            plt.plot(day_datetimes, day_values, colour)
+            for subday_datetimes, subday_jdates, subday_values in subday_sep:
+                if len(subday_datetimes) != 0:
+                    plt.plot(subday_datetimes, subday_values, colour)
         else:
-            plt.plot(day_jdates, day_values, colour)
+            for subday_datetimes, subday_jdates, subday_values in subday_sep:
+                if len(subday_datetimes) != 0:
+                    plt.plot(subday_jdates, subday_values, colour)
     
     if excludes is not None:
         had = dict()
