@@ -49,4 +49,3 @@ for spec in specs:
         for m in maxima:
             print "\t%.4g" % periods[m],
     print
-    

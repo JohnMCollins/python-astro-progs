@@ -52,7 +52,7 @@ def dlg_rangeadj(box):
 def make_listitem(spectra, colourlist, num):
     """Make a list item widget out of a spectrum structure for display"""
     spectrum = spectra[num]
-    jd = jdate.display(spectrum.modbjdate)
+    jd = jdate.display(spectrum.modjdate)
     rems = spectrum.remarks
     if rems is not None:
         if spectrum.discount:
@@ -229,7 +229,7 @@ class Rangeseldlg(QDialog, ui_rangeseldlg.Ui_rangeseldlg):
 
         plotlist = [self.specctl.datalist[n] for n in selected]
         clist = [self.colourlist[n] for n in selected]
-        legends = [ jdate.display(spectrum.modbjdate) for spectrum in plotlist]
+        legends = [ jdate.display(spectrum.modjdate) for spectrum in plotlist]
         if len(legends) > 5:
             legends = legends[0:5]
             legends.append("...etc")

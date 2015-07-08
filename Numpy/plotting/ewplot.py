@@ -284,7 +284,10 @@ if sdp[0] == 's':
                 ax.xaxis.tick_top()
                 ax.xaxis.set_label_position('top')
             plt.xlabel(xlab)
-        subday_sep = splittime.splittime(indaysep, day_datetimes, day_jdates, day_values)
+        if len(day_datetimes) > 10:
+            subday_sep = splittime.splittime(indaysep, day_datetimes, day_jdates, day_values)
+        else:
+            subday_sep = ((day_datetimes, day_jdates, day_values), )
         if usedt:
             ax.xaxis.set_major_formatter(hfmt)
             fig.autofmt_xdate()
@@ -357,7 +360,10 @@ elif sdp[0] == 'o':
         colour = colours[cnum]
         cnum += 1
         plotdts = [ datetime.datetime.combine(starting_date, day_dt.time()) for day_dt in day_datetimes ]
-        subday_sep = splittime.splittime(indaysep, plotdts, day_jdates, day_values)
+        if len(day_datetimes) > 10:
+            subday_sep = splittime.splittime(indaysep, plotdts, day_jdates, day_values)
+        else:
+            subday_sep = ((plotdts, day_jdates, day_values), )
         if usedt:
             for subday_dts, subday_jdates, subday_values in subday_sep:
                 if len(subday_dts) != 0:       
@@ -402,8 +408,11 @@ else:
             ax.xaxis.set_label_position('top')
         plt.xlabel(xlab)
         
-    for day_datetimes, day_jdates, day_values in separated_vals:      
-        subday_sep = splittime.splittime(indaysep, day_datetimes, day_jdates, day_values)
+    for day_datetimes, day_jdates, day_values in separated_vals:
+        if len(day_datetimes) > 10:
+            subday_sep = splittime.splittime(indaysep, day_datetimes, day_jdates, day_values)
+        else:
+            subday_sep = ((day_datetimes, day_jdates, day_values),)
         if usedt:
             for subday_datetimes, subday_jdates, subday_values in subday_sep:
                 if len(subday_datetimes) != 0:

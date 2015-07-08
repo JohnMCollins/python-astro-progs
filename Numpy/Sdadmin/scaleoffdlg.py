@@ -59,7 +59,6 @@ class XRvDlg(QDialog, ui_xrvdlg.Ui_xrvdlg):
 
     def on_rvcorrect_valueChanged(self, v):
         if not isinstance(v, float): return
-        self.specctrl.set_rvcorrect(v)
         self.dispmaxmin()
         self.resetx.setEnabled(v != 0.0)
 
@@ -78,7 +77,7 @@ class XRvDlg(QDialog, ui_xrvdlg.Ui_xrvdlg):
     
     def on_fetchsimbad_clicked(self, b = None):
         if b is None: return
-        objn = str(self.objname.text())
+        objn = string.strip(str(self.objname.text()))
         if len(objn) == 0:
             QMessageBox.warning(self, "No current object name", "Please set up an object name")
             return
@@ -87,7 +86,6 @@ class XRvDlg(QDialog, ui_xrvdlg.Ui_xrvdlg):
             QMessageBox.warning(self, "Cannot locate object", "Cannot find object name " + objn + " RV value in SIMBAD")
             return
         self.rvcorrect.setValue(rv)
-        self.specctrl.objectname = objn
 
 class XIndHvDlg(QDialog, ui_xindhvdlg.Ui_xindhvdlg):
 

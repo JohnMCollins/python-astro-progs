@@ -263,9 +263,13 @@ class SadminMain(QMainWindow, ui_sdadminmain.Ui_sdadminmain):
             return
         dlg = scaleoffdlg.XRvDlg(self)
         dlg.initdata(self.currentlist)
-        dlg.exec_()
-        self.unsavedc = True
-        self.updateUI()
+        if dlg.exec_():
+            self.currentlist.set_rvcorrect(dlg.rvcorrect.value())
+            objn = string.strip(str(dlg.objname.text()))
+            if len(objn) != 0:
+                self.currentlist.objectname = objn
+            self.unsavedc = True
+            self.updateUI()
 
     def on_action_Y_scaling_and_offsets_triggered(self, checked = None):
         if checked is None: return
