@@ -98,21 +98,20 @@ C  (C) Copr. 1986-92 Numerical Recipes Software X!.
 
 C  Main program Fortran L-S, JMC Apr 2015
 
-       integer nmax, rmax, dims, nout, jmax
+       integer nmax, rmax, dims, nout, jmax, cnum
        parameter (nmax=1000)
        parameter (rmax=1000000)
+       parameter (ndcols=8)
        DOUBLE PRECISION TWOPID
        PARAMETER (TWOPID=6.2831853071795865D0)
 
-       real x(nmax), y(nmax), t2, t3, ofac, hifac
-       real resx(rmax), resy(rmax), prob, scale
-       character*64 infile, outfile, cofac, chifac, cscl
-       logical has4
+       real x(nmax), y(nmax), tn(ndcols), ofac, hifac
+       real resx(rmax), resy(rmax), prob, scale, nyfreq
+       character*64 infile, outfile, cofac, chifac, cscl, ctyp
 
        dims = iargc()
-       if (dims .lt. 5 .or. dims .gt. 6) then
-            write(*,*) 'Usage: lombs infile outfile ofac hifac scale [4c
-     * ol]'
+       if (dims .ne. 6) then
+            write(*,*) 'Usage: lombs infile outfile ofac hifac sc ty'
             call exit(10)
        end if
 
@@ -121,26 +120,39 @@ C  Main program Fortran L-S, JMC Apr 2015
        call getarg(3, cofac)
        call getarg(4, chifac)
        call getarg(5, cscl)
-       has4 = dims .eq. 6
+       call getarg(6, ctyp)
        read (cofac, *) ofac
        read (chifac, *) hifac
        read (cscl, *) scale
 
+       if (ctyp .eq. 'ew') then
+            cnum = 3
+       else
+        if (ctyp .eq. 'ps') then
+            cnum = 5
+        else
+            if (ctyp .eq. 'pr') then
+                cnum = 7
+            else
+                write(*,*) 'Unknown type expecting ew,ps,pr'
+                call exit(11)
+            end if
+        end if
+       end if
+
        open(17, file=infile)
        open(18, file=outfile)
        dims = 0
-       if (has4) then
-           do 10 i=1, nmax
-             read(17, *, end=30) x(i), y(i), t2, t3
-             dims = dims + 1
-10           continue
-       else
-           do 11 i=1, nmax
-             read(17, *, end=30) x(i), y(i)
-             dims = dims + 1
-11           continue
-       end if
+       do 10 i=1, nmax
+          read(17, *, end=30) tn
+          x(i) = tn(1)
+          y(i) = tn(cnum)
+          dims = dims + 1
+10        continue
 30     continue
+
+       nyfreq = dims / (2.0 * (x(dims) - x(1)))
+       write (*,*) 'Nyfreq=', nyfreq
 
        if (scale .ne. 1.0) then
        do 40 i = 1, nmax
@@ -151,7 +163,7 @@ C  Main program Fortran L-S, JMC Apr 2015
      *             jmax, prob)
 
        do 50 i = 1, nout
-50     write(18, 51) TWOPID * scale / resx(i), resy(i)
+50     write(18, 51) scale * nyfreq * TWOPID / resx(i), resy(i)
 51     format(2E25.16)
        write(*,*) 'nout = ', nout,'  jmax = ', jmax, '  prob = ', prob
        stop

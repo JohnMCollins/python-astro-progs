@@ -116,6 +116,10 @@ if maxnum > 0:
     mrot = resargs['rottxt']
     mtxtcol = resargs['mtxtcol']
     if mtxtcol is None: mtxtcol = mcol
+    if xrange is not None:
+        selx = (periods >= xrange[0]) & (periods <= xrange[1])
+        periods = periods[selx]
+        amps = amps[selx]
     maxima = argmaxmin.maxmaxes(periods, amps)
     # If that's too many, prune taking the largest
     if len(maxima) > maxnum: maxima = maxima[0:maxnum]
