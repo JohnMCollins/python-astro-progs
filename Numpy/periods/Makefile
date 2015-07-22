@@ -2,8 +2,8 @@
 # NB relies on GNU make
 
 build_host:=$(shell hostname)
-PROGS=lsfort
-OBJECTS=lsfort.o
+PROGS=lsfort lsfort2
+OBJECTS=lsfort.o lsfort2.o
 CFILES=$(OBJECTS:.o=.c)
 
 LDFLAGS=-s
@@ -25,11 +25,17 @@ ifneq (,$(findstring ac.uk, $(build_host)))
 lsfort: lsfort.o
 	$(G77) $(LDFLAGS) -o lsfort lsfort.o $(G77LIBS)
 
+lsfort2: lsfort2.o
+	$(G77) $(LDFLAGS) -o lsfort2 lsfort2.o $(G77LIBS)
+
 %.o: %.f
 	$(G77) $(G77FLAGS) -c $<
 else
 lsfort: lsfort.o
 	$(CC) $(LDFLAGS) -o lsfort lsfort.o $(F2CLIBS) $(MATHLIB)
+
+lsfort2: lsfort2.o
+	$(CC) $(LDFLAGS) -o lsfort2 lsfort2.o $(F2CLIBS) $(MATHLIB)
 
 %.o: %.f
 	$(F2C) $<
@@ -42,4 +48,3 @@ clean:
 ifeq (,$(findstring ac.uk, $(build_host)))
 	$(RM) $(CFILES)
 endif
-
