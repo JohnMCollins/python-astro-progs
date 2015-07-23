@@ -97,16 +97,17 @@ C  (C) Copr. 1986-92 Numerical Recipes Software X!.
 
 C  Main program Fortran L-S, JMC Jul 2015
 
-       integer nmax, rmax, dims, nout, jmax, cnum
-       parameter (nmax=2000)
-       parameter (rmax=1000000)
-       parameter (ndcols=8)
-       DOUBLE PRECISION TWOPID
-       PARAMETER (TWOPID=6.2831853071795865D0)
+      integer nmax, rmax, dims, cnum
+      parameter (nmax=2000)
+      parameter (rmax=1000000)
+      parameter (ndcols=8)
+      DOUBLE PRECISION TWOPID
+      PARAMETER (TWOPID=6.2831853071795865D0)
 
-        DOUBLE PRECISION x(nmax), y(nmax), tn(ndcols)
-        DOUBLE PRECISION resxp(rmax), resx(rmax), resy(rmax), startp, stepp, endp
-       character*64 infile, outfile, cstartp, cstepp, cendp, ctyp
+      DOUBLE PRECISION x(nmax), y(nmax), tn(ndcols)
+      DOUBLE PRECISION resxp(rmax), resx(rmax), resy(rmax), startp
+      DOUBLE PRECISION stepp, endp
+      character*64 infile, outfile, cstartp, cstepp, cendp, ctyp
 
        dims = iargc()
        if (dims .ne. 6) then
@@ -166,7 +167,7 @@ C  Main program Fortran L-S, JMC Jul 2015
        dims = 0
        do 10 i=1, nmax
           read(17, *, end=30) tn
-          x(i) = tn(1)
+          x(i) = tn(2)
           y(i) = tn(cnum)
           dims = dims + 1
 10        continue

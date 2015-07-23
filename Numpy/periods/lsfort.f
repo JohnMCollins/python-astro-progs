@@ -145,7 +145,7 @@ C  Main program Fortran L-S, JMC Apr 2015
        dims = 0
        do 10 i=1, nmax
           read(17, *, end=30) tn
-          x(i) = tn(1)
+          x(i) = tn(2)
           y(i) = tn(cnum)
           dims = dims + 1
 10        continue

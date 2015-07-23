@@ -12,6 +12,7 @@ import specdatactrl
 import datarange
 import specinfo
 import equivwidth
+import meanval
 
 parsearg = argparse.ArgumentParser(description='Batch mode calculate continue')
 parsearg.add_argument('infofile', type=str, help='Specinfo file', nargs=1)
