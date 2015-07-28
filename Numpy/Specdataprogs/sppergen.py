@@ -39,7 +39,7 @@ class sigdets(object):
             else:
                 self.col = [True, True, True]
             if len(bits) > 2:
-                self.phase = float(bits[3]) * TWOPI
+                self.phase = float(bits[2]) * TWOPI
             else:
                 self.phase = 0.0
             if len(bits) > 1:
