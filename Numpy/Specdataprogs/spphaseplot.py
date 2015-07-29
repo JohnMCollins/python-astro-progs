@@ -9,6 +9,7 @@ import argparse
 import numpy as np
 import noise
 from astroML.time_series import lomb_scargle as lsas
+from gatspy.periodic import LombScargle
 import periodarg
 import argmaxmin
 import matplotlib.pyplot as plt
@@ -31,6 +32,7 @@ def parseperamp(arg):
 
 parsearg = argparse.ArgumentParser(description='Generate periodic data fitting times')
 parsearg.add_argument('ewfile', type=str, help='EW file to take times from', nargs=1)
+parsearg.add_argument('--double', type=int, default=0, help='Number of times to double data')
 parsearg.add_argument('--width', help="Width of plot", type=float, default=8)
 parsearg.add_argument('--height', help="Height of plot", type=float, default=6)
 parsearg.add_argument('--xlab', type=str, default='Phase as proportion of full cycle', help='X asis label')
@@ -41,6 +43,7 @@ parsearg.add_argument('--per2', help='Second period[:amp]', type=str, required=T
 parsearg.add_argument('--pstep', help='Phase step', type=float, default=0.01)
 parsearg.add_argument('--periods', type=str, default="1d:.01d:100d", help='Periods as start:step:stop or start:stop/number')
 parsearg.add_argument('--error', type=float, default=.01, help='Error bar')
+parsearg.add_argument('--gatspy', action='store_true', help='Use gatspy rather than AstroML')
 parsearg.add_argument('--snr', type=float, default=0.0, help='SNR of noise to add 0=none (default)')
 parsearg.add_argument('--gauss', type=float, default=0.0, help='Proportion uniform to gauss noise 0=all uniform 1=all gauss')
 parsearg.add_argument('--outfile', help='Output file prefix to save plot', type=str)
@@ -51,6 +54,8 @@ dims = (res['width'], res['height'])
 xlab = res['xlab']
 ylab1 = res['ylab1']
 ylab2 = res['ylab2']
+usegatspy = res['gatspy']
+doublings = res['double']
 
 p1, a1 = parseperamp(res['per1'])
 p2, a2 = parseperamp(res['per2'])
@@ -91,6 +96,10 @@ except ValueError as e:
 # Get barycentric times
 
 times = ewf[1]
+times -= times[0]
+for d in range(0, doublings):
+    times = np.concatenate((times, (times[1:]+times[0:len(times)-1]) / 2.0))
+    times.sort(kind='mergesort')
 
 phasesr = np.arange(0.0, 1.0, res['pstep'])
 phases = phasesr  * TWOPI
@@ -108,7 +117,11 @@ for p in phases:
     sig = a1 * np.sin(f1 * times) + a2 * np.sin(f2 * times + p)
     if snr != 0:
         sig = noise.noise(sig, snr, gauss)
-    pgram = lsas(times, sig, errs, freqs)
+    if usegatspy:
+        model = LombScargle().fit(times, sig, err)
+        pgram = model.periodogram(periods)
+    else:
+        pgram = lsas(times, sig, errs, freqs)
     maxima = argmaxmin.maxmaxes(periods, pgram)
     if len(maxima) > 3:
         maxima = maxima[0:3]
