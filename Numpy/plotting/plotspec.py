@@ -2,12 +2,16 @@
 
 import argparse
 import matplotlib.pyplot as plt
+import matplotlib.patches as mptch
 import numpy as np
 import string
 import sys
 import os
+import os.path
 import fakeobs
-import rangearg
+import datarange
+import specdatactrl
+import jdate
 import calcticks
 
 parsearg = argparse.ArgumentParser(description='Display spectrum with ranges')
@@ -15,20 +19,17 @@ parsearg.add_argument('--outfig', type=str, help='Output figure')
 parsearg.add_argument('spec', type=str, help='Spectrum file', nargs='+')
 parsearg.add_argument('--xlab', type=str, help='Label for X axis', default='Wavelength ($\AA$)')
 parsearg.add_argument('--ylab', type=str, help='Label for Y axis', default='Intensity')
-parsearg.add_argument('--fork', action='store_true', help='Fork off daemon process to show plots and exit')
 parsearg.add_argument('--width', help="Width of plot", type=float, default=8)
 parsearg.add_argument('--height', help="Height of plot", type=float, default=6)
-parsearg.add_argument('--xpad', help='Padding round x', type=float, default=.25)
-parsearg.add_argument('--ypad', help='Padding round y', type=float, default=.01)
-parsearg.add_argument('--intrange', help='Integration range as nnn,nnn', type=str)
+parsearg.add_argument('--intranges', help='Ranges to highlight', nargs='*', type=str)
 parsearg.add_argument('--title', help='Set window title', type=str, default="Spectrum display")
-parsearg.add_argument('--linecolour', help='Set line colour for range', type=str, default='black')
 parsearg.add_argument('--xcolumn', help='Column in data for X values', type=int, default=0)
 parsearg.add_argument('--ycolumn', help='Column in data for Y values', type=int, default=1)
 parsearg.add_argument('--xrange', help='Range of X values', type=str)
 parsearg.add_argument('--yrange', help='Range of Y values', type=str)
 parsearg.add_argument('--legnum', type=int, default=5, help='Number of plots in legend')
-parsearg.add_argument('--obstimes', type=str, help='File for observation times')
+parsearg.add_argument('--obstimes', type=str, help='File for observation times if not given in files')
+parsearg.add_argument('--datefmt', type=str, default='%d/%m/%y %H:%M', help='Format for date display')
 
 resargs = vars(parsearg.parse_args())
 
@@ -36,27 +37,40 @@ spec = resargs['spec']
 outfig = resargs['outfig']
 xlab = resargs['xlab']
 ylab = resargs['ylab']
-forkoff = resargs['fork']
 xcolumn = resargs['xcolumn']
 ycolumn = resargs['ycolumn']
-xrangelims = rangearg.parserange(resargs['xrange'])
-yrangelims = rangearg.parserange(resargs['yrange'])
 legnum = resargs['legnum']
+datefmt = resargs['datefmt']
+
 obstimes = dict()
-if legnum > 0:
-    obstimefile = resargs['obstimes']
-    if obstimefile is not None:
-        obstimes = fakeobs.getfakeobs(obstimefile)
-        if obstimes is None:
-            print "Cannot read fake obs file", obstimefile
-            sys.exit(9)
+obstimefile = resargs['obstimes']
+if obstimefile is not None:
+    obstimes = fakeobs.getfakeobs(obstimefile)
+    if obstimes is None:
+        print "Cannot read obs file", obstimefile
+        sys.exit(9)
 
 if xcolumn == ycolumn:
     print "Cannot have X and Y columns the same"
     sys.exit(8)
 
-plt.rcParams['figure.figsize'] = (resargs['width'], resargs['height'])
-fig = plt.gcf()
+xrangelims = resargs['xrange']
+yrangelims = resargs['yrange']
+intrangeargs = resargs['intranges']
+intranges = []
+
+try:
+    if xrangelims is not None: xrangelims = datarange.ParseArg(xrangelims)
+    if yrangelims is not None: yrangelims = datarange.ParseArg(yrangelims)
+    if intrangeargs is not None:
+        for ir in intrangeargs:
+            intranges.append(datarange.ParseArg(ir))
+except datarange.DataRangeError as e:
+    print e.args[0]
+    sys.exit(7)
+
+dims = (resargs['width'], resargs['height'])
+fig = plt.figure(figsize=dims)
 fig.canvas.set_window_title(resargs['title'])
 
 yupper = -1e6
@@ -80,50 +94,48 @@ for sf in spec:
     except IndexError:
         print "Do not believe columns x column", xcolumn, "y column", ycolumn
         sys.exit(13)
+    
+    sf = os.path.basename(sf)
 
     plotlist.append((wavelengths, amps))
 
-    yupper = max(yupper, np.max(amps))
-    ylower = min(ylower, np.min(amps))
-    xupper = max(xupper, np.max(wavelengths))
-    xlower = min(xlower, np.min(wavelengths))
-
     if sf in obstimes:
-        legends.append("%.4f" % obstimes[sf])
+        dt = jdate.jdate_to_datetime(obstimes[sf])
+        legends.append(dt.strftime(datefmt))
     else:
-        legbits = string.split(sf, '.')
-        legends.append(legbits[0])
-
-xlower -= resargs['xpad']
-xupper += resargs['xpad']
-ylower -= resargs['ypad']
-yupper += resargs['ypad']
+        jd = specdatactrl.jd_parse_from_filename(sf)
+        if jd is not None:
+            dt = jdate.jdate_to_datetime(jd)
+            legends.append(dt.strftime(datefmt))
+        else:
+            legbits = string.split(sf, '.')
+            legends.append(legbits[0])
 
 if xrangelims is not None:
-    xlower, xupper = xrangelims
+    plt.xlim(xrangelims.lower, xrangelims.upper)
 if yrangelims is not None:
-    ylower, yupper = yrangelims
-plt.xlim(xlower, xupper)
-plt.ylim(ylower, yupper)
-lline = uline = 0.0
-intrange = rangearg.parserange(resargs['intrange'])
-if intrange is not None:
-    lline, uline = intrange
+    plt.ylim(yrangelims.lower, yrangelims.upper)
 
-linecol = resargs['linecolour']
-
-if lline > 0.0:
-    plt.axvline(x=lline, ymin=0, ymax=yupper, color=linecol, label='Lower')
-if uline > 0.0:
-    plt.axvline(x=uline, ymin=0, ymax=yupper, color=linecol, label='Upper')
-
-xt, xtl = calcticks.calcticks(resargs['width'], xlower, xupper)
-plt.xticks(xt, xtl)
-plt.xlabel(xlab)
-plt.ylabel(ylab)
+ax = plt.gca()
+ax.get_xaxis().get_major_formatter().set_useOffset(False)
+ax.get_yaxis().get_major_formatter().set_useOffset(False)
 
 for wavelengths,amps in plotlist:
     plt.plot(wavelengths, amps)
+
+ylower, yupper = ax.get_ylim()
+for ir in intranges:
+    colu = ir.rgbcolour()
+    if ir.alpha == 0.0:
+        plt.axvline(ir.lower, color=colu)
+        plt.axvline(ir.upper, color=colu)
+    else:
+        p = mptch.Rectangle((ir.lower,ylower), ir.upper-ir.lower, yupper-ylower, color=colu, alpha=ir.alpha)
+        ax.add_patch(p)
+#ax.canvas.draw()
+
+plt.xlabel(xlab)
+plt.ylabel(ylab)
 
 if legnum > 0:
     if len(legends) > legnum:
@@ -133,5 +145,5 @@ if legnum > 0:
 
 if outfig is not None:
     plt.savefig(outfig)
-elif not forkoff or os.fork() == 0:
+else:
     plt.show()

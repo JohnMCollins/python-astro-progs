@@ -176,6 +176,7 @@ class Rangeseldlg(QDialog, ui_rangeseldlg.Ui_rangeseldlg):
             dlg.rinuse.setChecked(self.rinuse.isChecked())
             dlg.srmin.setValue(self.srmin.value())
             dlg.srmax.setValue(self.srmax.value())
+            dlg.sralpha.setValue(0.0)
             dlg.colourdisp.scene().setForegroundBrush(self.colourdisp.scene().foregroundBrush().color())
         else:
             dlg.shortname.setText("newrange")
@@ -196,7 +197,8 @@ class Rangeseldlg(QDialog, ui_rangeseldlg.Ui_rangeseldlg):
                 QMessageBox.warning(self, "Range name null", "No name for range")
                 continue
             col = dlg.colourdisp.scene().foregroundBrush().color()
-            nrange = datarange.DataRange(dlg.srmin.value(), dlg.srmax.value(), fname, sname, col.red(), col.green(), col.blue(), not dlg.rinuse.isChecked())
+            nrange = datarange.DataRange(dlg.srmin.value(), dlg.srmax.value(), fname, sname,
+                         red=col.red(), green=col.green(), blue=col.blue(), alpha=dlg.sralpha.value(), notused=not dlg.rinuse.isChecked())
             try:
                 nrange.checkvalid()
             except datarange.DataRangeError as e:
@@ -289,6 +291,7 @@ class Rangeseldlg(QDialog, ui_rangeseldlg.Ui_rangeseldlg):
             sc.setForegroundBrush(QColor(r.red, r.green, r.blue))
             self.srmin.setValue(r.lower)
             self.srmax.setValue(r.upper)
+            self.sralpha.setValue(r.alpha)
             self.rinuse.setChecked(not r.notused)
             self.shortname.setText(r.shortname)
         else:
@@ -307,14 +310,22 @@ class Rangeseldlg(QDialog, ui_rangeseldlg.Ui_rangeseldlg):
         r.blue = nc.blue()
         self.colourdisp.scene().setForegroundBrush(nc)
         self.updateplot()
+    
+    def on_sralpha_valueChanged(self, value):
+        if self.currentrange is None: return
+        if not isinstance(value, float): return
+        self.currentrange.alpha = value
+        self.updateplot()
 
     def on_srmin_valueChanged(self, value):
         if self.currentrange is None: return
+        if not isinstance(value, float): return
         self.currentrange.lower = value
         self.updateplot()
 
     def on_srmax_valueChanged(self, value):
         if self.currentrange is None: return
+        if not isinstance(value, float): return
         self.currentrange.upper = value
         self.updateplot()
 
