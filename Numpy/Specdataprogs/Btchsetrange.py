@@ -71,6 +71,7 @@ parsearg.add_argument('--limits', type=str, help='Range limits as from:to or cen
 parsearg.add_argument('--notused', action='store_true', help='Set not-in-use marker')
 parsearg.add_argument('--description', type=str, help='Description of range')
 parsearg.add_argument('--colour', type=str, help='Colour of display as hex RRGGBB')
+parsearg.add_argument('--alpha', type=float, default=0.0, help='Alpha value of display colour')
 
 res = vars(parsearg.parse_args())
 
@@ -82,6 +83,7 @@ limits = res['limits']
 notused = res['notused']
 descr = res['description']
 colour = res['colour']
+alpha = res['alpha']
 
 if not os.path.isfile(infofile):
     infofile = miscutils.replacesuffix(infofile, specinfo.SUFFIX)
@@ -131,6 +133,7 @@ elif updating:
         existing_range.red = r
         existing_range.green = g
         existing_range.blue = b
+    existing_range.alpha = alpha
     rlist.setrange(existing_range)
 else:
     if limits is None:
@@ -144,7 +147,8 @@ else:
     r = g = b = 0
     if colour is not None:
         r, g, b = parse_colour(colour)
-    newrange = datarange.DataRange(shortname = rangename, descr = descr, lbound = lower, ubound = upper, notused = notused, red = r, green = g, blue = b)
+    newrange = datarange.DataRange(shortname = rangename, descr = descr, lbound = lower, ubound = upper,
+                                   notused = notused, red = r, green = g, blue = b, alpha = alpha)
     rlist.setrange(newrange)  
 
 try:
