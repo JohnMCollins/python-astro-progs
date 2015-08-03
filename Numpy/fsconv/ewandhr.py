@@ -129,8 +129,8 @@ for sf in spec:
         lwl = wavelengths[minind] - wavelengths[lwhere]
         rwl = wavelengths[rwhere] - wavelengths[minind]
 
-        hr = (rhorn - rwl) / (lhorn - lwl)
-        hs = (rhorn * lwl) / (lhorn * rwl)
+        hr = (rhornsz - rwl) / (lhornsz - lwl)
+        hs = (rhornsz * lwl) / (lhornsz * rwl)
         
     else:
         hr = hs = 1.0
