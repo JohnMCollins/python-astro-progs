@@ -12,6 +12,7 @@ import fakeobs
 import datarange
 import specdatactrl
 import jdate
+import datetime
 
 parsearg = argparse.ArgumentParser(description='Display spectrum with ranges')
 parsearg.add_argument('--outfig', type=str, help='Output figure')
@@ -22,17 +23,22 @@ parsearg.add_argument('--width', help="Width of plot", type=float, default=8)
 parsearg.add_argument('--height', help="Height of plot", type=float, default=6)
 parsearg.add_argument('--intranges', help='Ranges to highlight', nargs='*', type=str)
 parsearg.add_argument('--title', help='Set window title', type=str, default="Spectrum display")
+parsearg.add_argument('--plotcolours', type=str, default='blue,green,red,cyan,yellow,magenta,black')
 parsearg.add_argument('--xcolumn', help='Column in data for X values', type=int, default=0)
 parsearg.add_argument('--ycolumn', help='Column in data for Y values', type=int, default=1)
 parsearg.add_argument('--xrange', help='Range of X values', type=str)
 parsearg.add_argument('--yrange', help='Range of Y values', type=str)
 parsearg.add_argument('--legnum', type=int, default=5, help='Number of plots in legend')
 parsearg.add_argument('--obstimes', type=str, help='File for observation times if not given in files')
+parsearg.add_argument('--dateoff', type=str, help='Date to add to observation times now for today')
 parsearg.add_argument('--datefmt', type=str, default='%d/%m/%y %H:%M', help='Format for date display')
 
 resargs = vars(parsearg.parse_args())
 
 spec = resargs['spec']
+plotc = string.split(resargs['plotcolours'], ',')
+while len(plotc) < len(spec):
+    plotc *= 2
 outfig = resargs['outfig']
 xlab = resargs['xlab']
 ylab = resargs['ylab']
@@ -40,6 +46,28 @@ xcolumn = resargs['xcolumn']
 ycolumn = resargs['ycolumn']
 legnum = resargs['legnum']
 datefmt = resargs['datefmt']
+dateoff = 0.0
+dateoffs = resargs['dateoff']
+if dateoffs is not None:
+    datebits = string.split(dateoffs, '/')
+    try:
+        if len(datebits) < 2 or len(datebits) > 3:
+            raise ValueError("length of date")
+        datebits = map(lambda x: int(x), datebits)
+        now = datetime.datetime.now()
+        if len(datebits) == 2:
+            year = now.year
+        else:
+            year = datebits[2]
+            if year < 1900:
+                year += 2000
+                if year > now.year:
+                    year -= 100
+        doff = datetime.datetime(year, datebits[1], datebits[0], 0, 0, 0)
+        dateoff = jdate.datetime_to_jdate(doff)
+    except ValueError:
+        print "Cannot understand date offset", dateoffs
+        sys.exit(7)    
 
 obstimes = dict()
 obstimefile = resargs['obstimes']
@@ -91,10 +119,11 @@ for sf in spec:
     
     sf = os.path.basename(sf)
 
-    plotlist.append((wavelengths, amps))
+    plotlist.append((wavelengths, amps, plotc.pop(0)))
 
     if sf in obstimes:
-        dt = jdate.jdate_to_datetime(obstimes[sf])
+        jd = obstimes[sf] + dateoff
+        dt = jdate.jdate_to_datetime(jd)
         legends.append(dt.strftime(datefmt))
     else:
         jd = specdatactrl.jd_parse_from_filename(sf)
@@ -114,8 +143,8 @@ ax = plt.gca()
 ax.get_xaxis().get_major_formatter().set_useOffset(False)
 ax.get_yaxis().get_major_formatter().set_useOffset(False)
 
-for wavelengths,amps in plotlist:
-    plt.plot(wavelengths, amps)
+for wavelengths,amps,c in plotlist:
+    plt.plot(wavelengths, amps, color=c)
 
 ylower, yupper = ax.get_ylim()
 for ir in intranges:

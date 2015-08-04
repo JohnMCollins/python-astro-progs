@@ -23,6 +23,7 @@ parsearg.add_argument('--width', help="Width of plot", type=float, default=8)
 parsearg.add_argument('--height', help="Height of plot", type=float, default=6)
 parsearg.add_argument('--intranges', help='Ranges to highlight', nargs='*', type=str)
 parsearg.add_argument('--title', help='Set window title', type=str, default="Spectrum display")
+parsearg.add_argument('--plotcolours', type=str, default='blue,green,red,cyan,yellow,magenta,black')
 parsearg.add_argument('--xrange', help='Range of X values', type=str)
 parsearg.add_argument('--yrange', help='Range of Y values', type=str)
 parsearg.add_argument('--legnum', type=int, default=5, help='Number of plots in legend')
@@ -32,6 +33,9 @@ resargs = vars(parsearg.parse_args())
 
 infofile = resargs['infofile']
 spec = resargs['spec']
+plotc = string.split(resargs['plotcolours'], ',')
+while len(plotc) < len(spec):
+    plotc *= 2
 outfig = resargs['outfig']
 xlab = resargs['xlab']
 ylab = resargs['ylab']
@@ -105,7 +109,7 @@ for sf in spec:
 
     wavelengths = df.get_xvalues()
     amps = df.get_yvalues()
-    plotlist.append((wavelengths, amps))
+    plotlist.append((wavelengths, amps, plotc.pop(0)))
 
     dt = jdate.jdate_to_datetime(df.modjdate)
     legends.append(dt.strftime(datefmt))
@@ -119,8 +123,8 @@ ax = plt.gca()
 ax.get_xaxis().get_major_formatter().set_useOffset(False)
 ax.get_yaxis().get_major_formatter().set_useOffset(False)
 
-for wavelengths,amps in plotlist:
-    plt.plot(wavelengths, amps)
+for wavelengths,amps,c in plotlist:
+    plt.plot(wavelengths, amps, color=c)
 
 ylower, yupper = ax.get_ylim()
 for ir in intranges:
