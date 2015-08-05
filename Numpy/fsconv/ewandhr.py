@@ -11,11 +11,13 @@ import glob
 import rangearg
 import fakeobs
 import findprofile
+import noise
 
 parsearg = argparse.ArgumentParser(description='Compute ew and subpeak profiles (fake specs)')
 parsearg.add_argument('spec', type=str, help='Spectrum files', nargs='+')
 parsearg.add_argument('--glob', action='store_true', help='Apply glob to arguments')
 parsearg.add_argument('--obstimes', type=str, help='File for observation times')
+parsearg.add_argument('--otsuff', type=str, help='Suffix to add to file names in obs time file')
 parsearg.add_argument('--xcolumn', help='Column in data for X values', type=int, default=0)
 parsearg.add_argument('--ycolumn', help='Column in data for Y values', type=int, default=1)
 parsearg.add_argument('--central', type=float, default=6563.0, help='Central wavelength value def=6563')
@@ -25,6 +27,8 @@ parsearg.add_argument('--sthresh', type=float, default=50.0, help='Percent thres
 parsearg.add_argument('--ignedge', type=float, default=5.0, help='Percentage of edges we ignore')
 parsearg.add_argument('--outfile', type=str, help='Output file')
 parsearg.add_argument('--rounding', type=int, default=5, help='Decimal rounding in peak search')
+parsearg.add_argument('--snr', type=float, default=-1e6, help='SNR of noise to add (db)')
+parsearg.add_argument('--gauss', type=float, default=1.0, help='Proportion uniform to gauss noise 0=all uniform 1=all gauss')
 parsearg.add_argument('--errs', type=str, help='File for output errors')
 
 resargs = vars(parsearg.parse_args())
@@ -38,6 +42,12 @@ if resargs['glob']:
         gs = glob.glob(sf)
         gs.sort()
         spec.extend(gs)
+
+snr = resargs['snr']
+gauss = resargs['gauss']
+if gauss < 0.0 or gauss > 1.0:
+    print "Invalid gauss %#.3g should be 0 to 1" % gauss
+    sys.exit(10)
 
 xcolumn = resargs['xcolumn']
 ycolumn = resargs['ycolumn']
@@ -59,7 +69,7 @@ obstimefile = resargs['obstimes']
 if obstimefile is None:
     print "No obs times file given"
     sys.exit(208)
-obstimes = fakeobs.getfakeobs(obstimefile)
+obstimes = fakeobs.getfakeobs(obstimefile, resargs['otsuff'])
 if obstimes is None:
     print "Cannot read fake obs file", obstimefile
     sys.exit(209)
@@ -113,6 +123,8 @@ for sf in spec:
         results.append([obst, obst, ew, 0.0, hs, 0.0, hr, 0.0])
         continue
 
+    if snr > -1000.0:
+        amps = noise.noise(amps, snr, gauss)
     ewsz = si.simps(amps[ewleft:ewright+1]-1.0, wavelengths[ewleft:ewright+1])
     ew = ewsz - (wavelengths[ewright] - wavelengths[ewleft])
 
