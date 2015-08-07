@@ -16,11 +16,13 @@ parsearg = argparse.ArgumentParser(description='List ranges in spectrum data inp
 parsearg.add_argument('infofile', help="XML file of ranges or spec info", nargs='+', type=str)
 parsearg.add_argument('--outfile', help="Output file if not STDOUT", type=str)
 parsearg.add_argument('--latex', help='Latex output format', action='store_true')
+parsearg.add_argument('--asarg', help='Generate arguments for other programs', action='store_true')
 
 res = vars(parsearg.parse_args())
 rfs = res['infofile']
 outf = res['outfile']
 latex = res['latex']
+asarg = res['asarg']
 
 save_stdout = sys.stdout
 ofil = sys.stdout
@@ -78,6 +80,9 @@ for rf in rfs:
         print "\\hline"
         print "\\end{tabular}"
         print "\\end{center}"
+    elif asarg:
+        for r in rlist:
+            print r.as_arg()
     else:
         dw = reduce(lambda x,y: max(x,len(y.description)), rlist, 0)
         sw = reduce(lambda x,y: max(x,len(y.shortname)), rlist, 0)
