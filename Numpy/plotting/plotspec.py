@@ -24,6 +24,8 @@ parsearg.add_argument('--height', help="Height of plot", type=float, default=6)
 parsearg.add_argument('--intranges', help='Ranges to highlight', nargs='*', type=str)
 parsearg.add_argument('--title', help='Set window title', type=str, default="Spectrum display")
 parsearg.add_argument('--plotcolours', type=str, default='blue,green,red,cyan,yellow,magenta,black')
+parsearg.add_argument('--linecolour', type=str, help='Colour to force range lines')
+parsearg.add_argument('--linestyle', type=str, default='-', help='Line style for range lines')
 parsearg.add_argument('--xcolumn', help='Column in data for X values', type=int, default=0)
 parsearg.add_argument('--ycolumn', help='Column in data for Y values', type=int, default=1)
 parsearg.add_argument('--xrange', help='Range of X values', type=str)
@@ -39,6 +41,8 @@ spec = resargs['spec']
 plotc = string.split(resargs['plotcolours'], ',')
 while len(plotc) < len(spec):
     plotc *= 2
+linecolour = resargs['linecolour']
+linestyle = resargs['linestyle']
 outfig = resargs['outfig']
 xlab = resargs['xlab']
 ylab = resargs['ylab']
@@ -150,8 +154,9 @@ ylower, yupper = ax.get_ylim()
 for ir in intranges:
     colu = ir.rgbcolour()
     if ir.alpha == 0.0:
-        plt.axvline(ir.lower, color=colu)
-        plt.axvline(ir.upper, color=colu)
+        if linecolour is not None: colu = linecolour
+        plt.axvline(ir.lower, color=colu, ls=linestyle)
+        plt.axvline(ir.upper, color=colu, ls=linestyle)
     else:
         p = mptch.Rectangle((ir.lower,ylower), ir.upper-ir.lower, yupper-ylower, color=colu, alpha=ir.alpha)
         ax.add_patch(p)

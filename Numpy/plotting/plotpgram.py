@@ -23,8 +23,9 @@ parsearg.add_argument('--mtxtcol', type=str, help='Colour of text denoting maxim
 parsearg.add_argument('--rottxt', type=float, default=45, help='Rotation of text')
 parsearg.add_argument('--mxoffs', type=float, default=2.0, help='Offset of maxima line labels X (percent) -ve for LHS of line')
 parsearg.add_argument('--myoffs', type=float, default=10.0, help='Offset of maxima line labels Y (percent)')
+parsearg.add_argument('--addinten', action='store_true', help='Put amplitudes on line labels')
 parsearg.add_argument('--xlab', type=str, help='Label for X axis', default='Period in days')
-parsearg.add_argument('--ylab', type=str, help='Label for Y axis', default='Likelihood')
+parsearg.add_argument('--ylab', type=str, help='Label for Y axis', default='Amplitude of signal')
 parsearg.add_argument('--yaxr', action='store_true', help='Put Y axis label on right')
 parsearg.add_argument('--yrange', type=str, help='Range for Y axis')
 parsearg.add_argument('--xaxt', action='store_true', help='Put X axis label on top')
@@ -110,6 +111,7 @@ else:
 if exlegend is not None:
     plt.legend([exlegend], handlelength=0)
 
+addinten = resargs['addinten']
 maxnum = resargs['maxnum']
 if maxnum > 0:
     mcol = resargs['maxcol']
@@ -138,7 +140,10 @@ if maxnum > 0:
         else:
 			xplace = maxx+xoffs
         if xrange[0] < xplace < xrange[1]:
-			plt.text(xplace, yplace, "%.4g, %.4g" % (maxx, maxy), color=mtxtcol, rotation=mrot)
+            if addinten:
+                plt.text(xplace, yplace, "%#.4g, %#.4g" % (maxx, maxy), color=mtxtcol, rotation=mrot)
+            else:
+                plt.text(xplace, yplace, "%#.4g" % maxx, color=mtxtcol, rotation=mrot)
 
 if outfig is not None:
     plt.savefig(outfig)
