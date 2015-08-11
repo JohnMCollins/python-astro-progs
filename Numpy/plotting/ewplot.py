@@ -52,6 +52,7 @@ parsearg.add_argument('--histyrange', type=str, help='Range for Hist Y axis')
 parsearg.add_argument('--outprefix', type=str, help='Output file prefix')
 parsearg.add_argument('--histcolour', type=str, default='blue,black', help='Colour or colour,colour for histogram and gauss')
 parsearg.add_argument('--plotcolours', type=str, default='black,red,green,blue,yellow,magenta,cyan', help='Colours for successive plots')
+parsearg.add_argument('--scatter', action='store_true', help='Do scatter plot rather than plot')
 parsearg.add_argument('--excludes', type=str, help='File with excluded obs times and reasons')
 parsearg.add_argument('--exclcolours', type=str, default='red,green,blue,yellow,magenta,cyan,black', help='Colours for successive exclude reasons')
 
@@ -81,6 +82,9 @@ histyrange = rangearg.parserange(res['histyrange'])
 histcolour = string.split(res['histcolour'], ',')
 outf = res['outprefix']
 excludes = res['excludes']
+
+plotting_function = plt.plot
+if res['scatter']: plotting_function = plt.scatter
 
 if typeplot not in optdict:
     print "Unknown type", typeplot, "specified"
@@ -266,6 +270,9 @@ if sdp[0] == 's':
     
     for day_datetimes, day_jdates, day_values in separated_vals:
         
+        if len(day_datetimes) < 2:
+            continue
+        
         colour = colours[fnum-1]
         fig = plt.figure(figsize=dims)
         fig.canvas.set_window_title(title + ' Day ' + str(fnum))
@@ -293,11 +300,11 @@ if sdp[0] == 's':
             fig.autofmt_xdate()
             for subday_datetimes, subday_jdates, subday_values in subday_sep:
                 if len(subday_datetimes) != 0:
-                    plt.plot(subday_datetimes, subday_values, colour)
+                    plotting_function(subday_datetimes, subday_values, colour)
         else:
             for subday_datetimes, subday_jdates, subday_values in subday_sep:
                 if len(subday_datetimes) != 0:
-                    plt.plot(subday_jdates, subday_values, colour)
+                    plotting_function(subday_jdates, subday_values, colour)
         if excludes is not None:
             sube = elist.inrange(np.min(day_jdates), np.max(day_jdates))
             had = dict()
@@ -325,9 +332,8 @@ elif sdp[0] == 'o':
     # Case where we overlay plots on top of each other
     # Thinks: maybe worry about different plots the same day?
 
-    starting_datetime = separated_vals[0][0]
-    #starting_dt_date = starting_datetime.date()
-    starting_date = separated_vals[0][1]
+    starting_datetime = separated_vals[0][0][0]
+    starting_date = starting_datetime.date()
     
     fig = plt.figure(figsize=dims)
     fig.canvas.set_window_title(title + ' all days')
@@ -357,8 +363,13 @@ elif sdp[0] == 'o':
     
     for day_datetimes, day_jdates, day_values in separated_vals:
         
+        if len(day_datetimes) < 2:
+            continue
+
         colour = colours[cnum]
         cnum += 1
+        plotdts = []
+        # rethink this
         plotdts = [ datetime.datetime.combine(starting_date, day_dt.time()) for day_dt in day_datetimes ]
         if len(day_datetimes) > 10:
             subday_sep = splittime.splittime(indaysep, plotdts, day_jdates, day_values)
@@ -367,12 +378,12 @@ elif sdp[0] == 'o':
         if usedt:
             for subday_dts, subday_jdates, subday_values in subday_sep:
                 if len(subday_dts) != 0:       
-                    plt.plot(subday_dts, subday_values, colour)
+                    plotting_function(subday_dts, subday_values, colour)
         else:
             for subday_dts, subday_jdates, subday_values in subday_sep:
                 if len(subday_dts) != 0:
                     plotjd = subday_jdates - day_jdates[0]
-                    plt.plot(plotjd, subday_values, colour)
+                    plotting_function(plotjd, subday_values, colour)
         
     # Don't worry about excludes for num
     
@@ -409,6 +420,10 @@ else:
         plt.xlabel(xlab)
         
     for day_datetimes, day_jdates, day_values in separated_vals:
+        
+        if len(day_datetimes) < 2:
+            continue
+
         if len(day_datetimes) > 10:
             subday_sep = splittime.splittime(indaysep, day_datetimes, day_jdates, day_values)
         else:
@@ -416,11 +431,11 @@ else:
         if usedt:
             for subday_datetimes, subday_jdates, subday_values in subday_sep:
                 if len(subday_datetimes) != 0:
-                    plt.plot(subday_datetimes, subday_values, colour)
+                    plotting_function(subday_datetimes, subday_values, colour)
         else:
             for subday_datetimes, subday_jdates, subday_values in subday_sep:
                 if len(subday_datetimes) != 0:
-                    plt.plot(subday_jdates, subday_values, colour)
+                    plotting_function(subday_jdates, subday_values, colour)
     
     if excludes is not None:
         had = dict()
@@ -440,7 +455,7 @@ else:
             legend(handles=leglist)
     
     if outf is not None:
-        fname = outf + ("_f.png" % fnum)
+        fname = outf + "_f.png"
         fig.savefig(fname)
         
 # All done now either show figure or exit.

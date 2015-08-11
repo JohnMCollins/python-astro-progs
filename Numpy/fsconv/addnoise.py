@@ -6,10 +6,12 @@ import string
 import sys
 import os
 import os.path
+import glob
 import noise
 
 parsearg = argparse.ArgumentParser(description='Add noise to fake spectra')
 parsearg.add_argument('specs', type=str, nargs='+', help='Input spectra')
+parsearg.add_argument('--glob', action='store_true', help='Apply glob to arguments')
 parsearg.add_argument('--suff', type=str, help='Suffix to append to file names otherwise make one up')
 parsearg.add_argument('--snr', type=float, default=10.0, help='SNR of noise to add (db)')
 parsearg.add_argument('--gauss', type=float, default=1.0, help='Proportion uniform to gauss noise 0=all uniform 1=all gauss')
@@ -18,6 +20,14 @@ parsearg.add_argument('--ycolumn', help='Column in data for Y values', type=int,
 resargs = vars(parsearg.parse_args())
 
 specs = resargs['specs']
+if resargs['glob']:
+    sfs = specs
+    specs = []
+    for sf in sfs:
+        gs = glob.glob(sf)
+        gs.sort()
+        specs.extend(gs)
+
 ycolumn = resargs['ycolumn']
 snr = resargs['snr']
 gauss = resargs['gauss']

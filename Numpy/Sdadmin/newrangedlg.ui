@@ -192,6 +192,42 @@
     <double>6530.000000000000000</double>
    </property>
   </widget>
+  <widget class="QDoubleSpinBox" name="sralpha">
+   <property name="geometry">
+    <rect>
+     <x>640</x>
+     <y>120</y>
+     <width>62</width>
+     <height>27</height>
+    </rect>
+   </property>
+   <property name="toolTip">
+    <string>This sets the alpha (transparency) of the range display.
+
+A value of 0 (default) just puts in lines at the extremes.
+Otherwise a value of 1 is fully opaque and will obliterate the plot.
+Less than that is somewhere in between.</string>
+   </property>
+   <property name="maximum">
+    <double>1.000000000000000</double>
+   </property>
+   <property name="singleStep">
+    <double>0.010000000000000</double>
+   </property>
+  </widget>
+  <widget class="QLabel" name="label_3">
+   <property name="geometry">
+    <rect>
+     <x>540</x>
+     <y>130</y>
+     <width>62</width>
+     <height>17</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Alpha</string>
+   </property>
+  </widget>
  </widget>
  <tabstops>
   <tabstop>rangename</tabstop>
@@ -201,6 +237,7 @@
   <tabstop>selcolour</tabstop>
   <tabstop>colourdisp</tabstop>
   <tabstop>rinuse</tabstop>
+  <tabstop>sralpha</tabstop>
   <tabstop>buttonBox</tabstop>
  </tabstops>
  <resources/>
