@@ -28,8 +28,8 @@ optdict = dict(ew = (2, 'Equivalent width ($\AA$)', 'Equivalent width ($\AA$)'),
 parsearg = argparse.ArgumentParser(description='Plot equivalent width results')
 parsearg.add_argument('integ', type=str, nargs=1, help='Input integration file (time/intensity)')
 parsearg.add_argument('--title', type=str, default='Equivalent widths', help='Title for window')
-parsearg.add_argument('--width', type=float, default=4, help='Display width')
-parsearg.add_argument('--height', type=float, default=3, help='Display height')
+parsearg.add_argument('--width', type=float, default=8, help='Display width')
+parsearg.add_argument('--height', type=float, default=6, help='Display height')
 parsearg.add_argument('--type', help='ew/ps/pr to select display', type=str, default="ew")
 parsearg.add_argument('--log', action='store_true', help='Take log of values to plot')
 parsearg.add_argument('--sdplot', type=str, default='d', help='Action on separated plots, discontinuous/overlaid/separate')
@@ -39,6 +39,7 @@ parsearg.add_argument('--bins', type=int, default=20, help='Histogram bins')
 parsearg.add_argument('--clip', type=float, default=0.0, help='Number of S.D.s to clip from histogram')
 parsearg.add_argument('--gauss', action='store_true', help='Normalise and overlay gaussian on histogram')
 parsearg.add_argument('--xtype', type=str, default='auto', help='Type X axis - time/date/full/days')
+parsearg.add_argument('--daterot', type=float, default=30.0, help='Rotataion for dates on X axis')
 parsearg.add_argument('--xhist', type=str, help='Label for histogram X axis')
 parsearg.add_argument('--yhist', type=str, default='Occurrences', help='Label for histogram Y axis')
 parsearg.add_argument('--xplot', type=str, help='Label for plot X axis')
@@ -73,6 +74,7 @@ bins = res['bins']
 clip = res['clip']
 gauss = res['gauss']
 xtype = res['xtype']
+drot = res['daterot']
 xtt = res['xaxt']
 ytr = res['yaxr']
 xrange = rangearg.parserange(res['xrange'])
@@ -212,6 +214,8 @@ if histyrange is not None:
 if histxrange is not None:
     plt.xlim(*histxrange)
 
+plt.gca().get_xaxis().get_major_formatter().set_useOffset(False)
+
 if gauss:
     histandgauss.histandgauss(hvals, bins=bins, colour=histcolour)
 else:
@@ -279,6 +283,7 @@ if sdp[0] == 's':
         if xrange is not None: plt.xlim(*xrange)        # Needs fixing for dates!!!!
         if yrange is not None: plt.ylim(*yrange)
         ax = plt.gca()
+        ax.get_yaxis().get_major_formatter().set_useOffset(False)
         if len(plotylab) == 0: plt.yticks([])
         else:
             if ytr:
@@ -297,14 +302,14 @@ if sdp[0] == 's':
             subday_sep = ((day_datetimes, day_jdates, day_values), )
         if usedt:
             ax.xaxis.set_major_formatter(hfmt)
-            fig.autofmt_xdate()
+            fig.autofmt_xdate(rotation=drot)
             for subday_datetimes, subday_jdates, subday_values in subday_sep:
                 if len(subday_datetimes) != 0:
-                    plotting_function(subday_datetimes, subday_values, colour)
+                    plotting_function(subday_datetimes, subday_values, color=colour)
         else:
             for subday_datetimes, subday_jdates, subday_values in subday_sep:
                 if len(subday_datetimes) != 0:
-                    plotting_function(subday_jdates, subday_values, colour)
+                    plotting_function(subday_jdates, subday_values, color=colour)
         if excludes is not None:
             sube = elist.inrange(np.min(day_jdates), np.max(day_jdates))
             had = dict()
@@ -341,10 +346,11 @@ elif sdp[0] == 'o':
     if xrange is not None: plt.xlim(*xrange)        # Needs fixing for dates!!!!
     if yrange is not None: plt.ylim(*yrange)
     ax = plt.gca()
+    ax.get_yaxis().get_major_formatter().set_useOffset(False)
     
     if usedt:
         ax.xaxis.set_major_formatter(hfmt)
-        fig.autofmt_xdate()
+        fig.autofmt_xdate(rotation=drot)
 
     if len(plotylab) == 0: plt.yticks([])
     else:
@@ -378,12 +384,12 @@ elif sdp[0] == 'o':
         if usedt:
             for subday_dts, subday_jdates, subday_values in subday_sep:
                 if len(subday_dts) != 0:       
-                    plotting_function(subday_dts, subday_values, colour)
+                    plotting_function(subday_dts, subday_values, color=colour)
         else:
             for subday_dts, subday_jdates, subday_values in subday_sep:
                 if len(subday_dts) != 0:
                     plotjd = subday_jdates - day_jdates[0]
-                    plotting_function(plotjd, subday_values, colour)
+                    plotting_function(plotjd, subday_values, color=colour)
         
     # Don't worry about excludes for num
     
@@ -401,10 +407,11 @@ else:
     if xrange is not None: plt.xlim(*xrange)        # Needs fixing for dates!!!!
     if yrange is not None: plt.ylim(*yrange)
     ax = plt.gca()
+    ax.get_yaxis().get_major_formatter().set_useOffset(False)
     
     if usedt:
         ax.xaxis.set_major_formatter(hfmt)
-        fig.autofmt_xdate()
+        fig.autofmt_xdate(rotation=drot)
 
     if len(plotylab) == 0: plt.yticks([])
     else:
@@ -431,11 +438,11 @@ else:
         if usedt:
             for subday_datetimes, subday_jdates, subday_values in subday_sep:
                 if len(subday_datetimes) != 0:
-                    plotting_function(subday_datetimes, subday_values, colour)
+                    plotting_function(subday_datetimes, subday_values, color=colour)
         else:
             for subday_datetimes, subday_jdates, subday_values in subday_sep:
                 if len(subday_datetimes) != 0:
-                    plotting_function(subday_jdates, subday_values, colour)
+                    plotting_function(subday_jdates, subday_values, color=colour)
     
     if excludes is not None:
         had = dict()
@@ -467,4 +474,3 @@ if outf is None:
         pass
 
 sys.exit(0)
-
