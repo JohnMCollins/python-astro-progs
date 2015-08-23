@@ -15,12 +15,16 @@ parsearg = argparse.ArgumentParser(description='Print top n maximum peak')
 parsearg.add_argument('spec', type=str, nargs='+', help='Spectrum file(s)')
 parsearg.add_argument('--maxnum', type=int, default=1, help='Number of maxima to take')
 parsearg.add_argument('--plusint', action='store_true', help='Display intensity as well')
+parsearg.add_argument('--filename', action='store_true', help='Display file name')
+parsearg.add_argument('--aserror', type=float, default=0.0, help='Display as percentage error from')
 
 resargs = vars(parsearg.parse_args())
 
 specs = resargs['spec']
 maxnum = resargs['maxnum']
 plusint = resargs['plusint']
+filename = resargs['filename']
+aserror = resargs['aserror']
 
 errors = 0
 
@@ -41,11 +45,23 @@ for spec in specs:
     
     if len(maxima) > maxnum: maxima = maxima[0:maxnum]
     
-    print "%s:" % rspec,
-    if plusint:
-        for m in maxima:
-            print "\t%#.4g,%#.4g" % (periods[m], amps[m]),
-    else:
-        for m in maxima:
-            print "\t%.4g" % periods[m],
+    if filename:
+        print "%s:" % rspec,
+    
+    had = 0
+    for m in maxima:
+        if had > 0:
+            print " ",
+        had += 1
+        pv = periods[m]
+        if aserror != 0.0:
+            pv = abs(pv - aserror) * 100.0 / aserror
+        if plusint:
+            print "%#.4g,%#.4g" % (pv, amps[m]),
+        else:
+            print "%#.4g" % pv,
     print
+
+if errors > 0:
+    sys.exit(10)
+sys.exit(0)

@@ -12,7 +12,7 @@ import specinfo
 import miscutils
 import numpy.random as nr
 
-lowerupper = re.compile('([^:])+:([^:]+)$')
+lowerupper = re.compile('([^:]+):([^:]+)$')
 centrewid = re.compile('([^/]+)/([^/]+)$')
 
 def parse_range(arg):
