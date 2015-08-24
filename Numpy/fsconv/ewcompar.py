@@ -11,14 +11,19 @@ parsearg = argparse.ArgumentParser(description='Display EW/PS/PRs mean/std from 
 parsearg.add_argument('ewfiles', type=str, nargs='+', help='EW file(s)')
 parsearg.add_argument('--precision', type=int, default=8, help='Precision, default 8')
 parsearg.add_argument('--percent', action='store_true', help='Give std as percentage')
+parsearg.add_argument('--latex', action='store_true', help='Put in Latex table boundaries')
 
 resargs = vars(parsearg.parse_args())
 
 perc = resargs['percent']
+latex = resargs['latex']
 ewfiles = resargs['ewfiles']
 prec = resargs['precision']
 fmtseg = "%%#.%dg" % prec
-fmt = string.join([ fmtseg ] * 6, ' ')
+if latex:
+    fmt = string.join([ fmtseg ] * 6, ' & ') + '\\\\\\hline'
+else:
+    fmt = string.join([ fmtseg ] * 6, ' ')
 
 errors = 0
 
