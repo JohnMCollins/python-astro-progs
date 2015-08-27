@@ -24,11 +24,13 @@ parsearg.add_argument('spikes', type=str, nargs='+', help='Spikes as E/G:fhwm:am
 parsearg.add_argument('--obsfile', type=str, required=True, help='Filename/obs time file')
 parsearg.add_argument('--prefix', type=str, help='Prefix to add to spectrum file names')
 parsearg.add_argument('--suffix', type=str, help='Suffix to replace in spectrum file names')
+parsearg.add_argument('--nonorm', action='store_false', help='Do not renormalise after adding spikes')
 
 resargs = vars(parsearg.parse_args())
 
 spikes = resargs['spikes']
 obsfile = resargs['obsfile']
+nonorm = resargs['nonorm']
 
 prefix = resargs['prefix']
 suffix = resargs['suffix']
@@ -132,7 +134,8 @@ for fn, dat in obst:
         sys.exit(17)
     amps += spikelist[n]
     n += 1
-    amps /= amps[0]
+    if not nonorm:
+        amps /= amps[0]
     try:
         fname = fn
         if suffix is not None:
