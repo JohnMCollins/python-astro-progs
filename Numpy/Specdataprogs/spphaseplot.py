@@ -40,6 +40,7 @@ parsearg.add_argument('--ylab1', type=str, default='Calculated period (ordered)'
 parsearg.add_argument('--ylab2', type=str, default='Calculated period (by level)', help='Y axis label for plot by level')
 parsearg.add_argument('--per1', help='First period[:amp]', type=str, required=True)
 parsearg.add_argument('--per2', help='Second period[:amp]', type=str, required=True)
+parsearg.add_argument('--ylim', type=float, default=1e10, help='Limit on Y values')
 parsearg.add_argument('--pstep', help='Phase step', type=float, default=0.01)
 parsearg.add_argument('--periods', type=str, default="1d:.01d:100d", help='Periods as start:step:stop or start:stop/number')
 parsearg.add_argument('--error', type=float, default=.01, help='Error bar')
@@ -54,6 +55,7 @@ dims = (res['width'], res['height'])
 xlab = res['xlab']
 ylab1 = res['ylab1']
 ylab2 = res['ylab2']
+ylim = res['ylim']
 usegatspy = res['gatspy']
 doublings = res['double']
 
@@ -137,20 +139,28 @@ for p in phases:
     hi.append(h)
 
 fig1 = plt.figure(figsize=dims)
+if ylim < 1e6:
+    plt.ylim(0, ylim)
 plt.plot(phasesr, hi)
 plt.plot(phasesr, mid)
 plt.plot(phasesr, lo)
-plt.axhline(p1, color='black', ls=':')
-plt.axhline(p2, color='black', ls=':')
+if p1 < ylim:
+    plt.axhline(p1, color='black', ls=':')
+if p2 < ylim:
+    plt.axhline(p2, color='black', ls=':')
 plt.xlabel(xlab)
 plt.ylabel(ylab1)
 
 fig2 = plt.figure(figsize=dims)
+if ylim < 1e6:
+    plt.ylim(0, ylim)
 plt.plot(phasesr, s1)
 plt.plot(phasesr, s2)
 plt.plot(phasesr, s3)
-plt.axhline(p1, color='black', ls=':')
-plt.axhline(p2, color='black', ls=':')
+if p1 < ylim:
+    plt.axhline(p1, color='black', ls=':')
+if p2 < ylim:
+    plt.axhline(p2, color='black', ls=':')
 plt.xlabel(xlab)
 plt.ylabel(ylab2)
 
