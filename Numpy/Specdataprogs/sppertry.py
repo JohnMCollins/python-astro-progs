@@ -73,7 +73,7 @@ usegatspy = resargs['gatspy']
 try:
     trialperiods = periodarg.periodrange(resargs['periods'])
     periods1 = periodarg.periodrange(resargs['per1'])
-    period2 = periodarg.periodarg(resargs['per2'])
+    period2 = periodarg.periodarg(resargs['per2']) / periodarg.SECSPERDAY
 except ValueError as e:
     print e.args[0]
     sys.exit(10)
