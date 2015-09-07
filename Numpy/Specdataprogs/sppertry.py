@@ -48,14 +48,13 @@ class p2thread(threading.Thread):
         self.name = string.replace("p1_%#.6g" % p1, '.', '_')
         self.p1 = p1
     def run(self):
-        global periods2
-        for p2 in periods2:
-            trialfor(self.p1, p2)
+        global period2
+        trialfor(self.p1, period2)
 
 parsearg = argparse.ArgumentParser(description='Generate periodic data fitting times')
 parsearg.add_argument('ewfile', type=str, help='EW file to take times from', nargs=1)
 parsearg.add_argument('--per1', help='First period range', type=str, required=True)
-parsearg.add_argument('--per2', help='Second period range', type=str, required=True)
+parsearg.add_argument('--per2', help='Second period (fixed)', type=str, required=True)
 parsearg.add_argument('--amp1', type=float, default=1.0, help='Amplitude first period')
 parsearg.add_argument('--amp2', type=float, default=1.0, help='Amplitude second period')
 parsearg.add_argument('--pstep', help='Phase step', type=float, default=0.01)
@@ -74,7 +73,7 @@ usegatspy = resargs['gatspy']
 try:
     trialperiods = periodarg.periodrange(resargs['periods'])
     periods1 = periodarg.periodrange(resargs['per1'])
-    periods2 = periodarg.periodrange(resargs['per2'])
+    period2 = periodarg.periodarg(resargs['per2'])
 except ValueError as e:
     print e.args[0]
     sys.exit(10)
