@@ -13,12 +13,14 @@ import datarange
 import specinfo
 import equivwidth
 import meanval
+import noise
 
 parsearg = argparse.ArgumentParser(description='Batch mode calculate continue')
 parsearg.add_argument('infofile', type=str, help='Specinfo file', nargs=1)
 parsearg.add_argument('--rangename', type=str, default='halpha', help='Range name to calculate equivalent widths')
 parsearg.add_argument('--peakranges', type=str, default='integ1,integ2', help='Range names for subpeaks')
 parsearg.add_argument('--outfile', help='Output file name', type=str, required=True)
+parsearg.add_argument('--snr', type=float, default=-1e6, help='Omit points with SNR worse than given')
 
 res = vars(parsearg.parse_args())
 
@@ -29,6 +31,8 @@ if len(peakranges) != 2:
     print "Expecting 2 peak ranges"
     sys.exit(9)
 outfile = res['outfile']
+
+snr = res['snr']
 
 if not os.path.isfile(infofile):
     infofile = miscutils.replacesuffix(infofile, specinfo.SUFFIX)
@@ -76,8 +80,11 @@ for spectrum in ctrllist.datalist:
     try:
         xvalues = spectrum.get_xvalues(False)
         yvalues = spectrum.get_yvalues(False)
+        yerrs = spectrum.get_yerrors(False)
     except specdatactrl.SpecDataError:
         continue
+
+    if snr > -1000.0 and noise.getnoise(yvalues, yerrs) < snr: continue
 
     ew = equivwidth.equivalent_width(selected_range, xvalues, yvalues)
 

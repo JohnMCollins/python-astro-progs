@@ -18,6 +18,7 @@ parsearg.add_argument('--latex', action='store_true', help='Put in Latex table b
 parsearg.add_argument('--fcomps', type=str, help='Prefix by file name components going backwards thus 1:3')
 parsearg.add_argument('--aserror', type=float, default=0.0, help='Display as percentage error from')
 parsearg.add_argument('--asdiff', type=float, default=0.0, help='Display difference as +/-')
+parsearg.add_argument('--prec', type=int, default=4, help='Precision')
 
 resargs = vars(parsearg.parse_args())
 
@@ -27,6 +28,9 @@ plusint = resargs['plusint']
 aserror = resargs['aserror']
 asdiff = resargs['asdiff']
 latex = resargs['latex']
+prec = resargs['prec']
+
+fmt = "%%.%df" % prec
 
 fcomps = resargs['fcomps']
 if fcomps is not None:
@@ -82,16 +86,16 @@ for spec in specs:
         had += 1
         pv = periods[m]
         if asdiff != 0.0:
-            line += "%#.4g" % pv
+            line += fmt % pv
             diff = pv - asdiff
             if diff >= 0.0: line += '+'
-            line += "%#.4g" % diff
+            line += fmt % diff
         else:
             if aserror != 0.0:
                 pv = abs(pv - aserror) * 100.0 / aserror
-            line += "%#.4g" % pv
+            line += fmt % pv
         if plusint:
-            line += ",%#.4g" % amps[m]
+            line += "," + fmt % amps[m]
     print line + endl
 
 if errors > 0:

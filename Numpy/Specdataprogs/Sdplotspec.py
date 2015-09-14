@@ -30,6 +30,7 @@ parsearg.add_argument('--xrange', help='Range of X values', type=str)
 parsearg.add_argument('--yrange', help='Range of Y values', type=str)
 parsearg.add_argument('--legnum', type=int, default=5, help='Number of plots in legend')
 parsearg.add_argument('--datefmt', type=str, default='%d/%m/%y %H:%M', help='Format for date display')
+parsearg.add_argument('--linemk', type=str, nargs='+', help='Lines to mark as wl:label:colour:xoff:yoff:reotdeg')
 
 resargs = vars(parsearg.parse_args())
 
@@ -49,6 +50,25 @@ datefmt = resargs['datefmt']
 xrangelims = resargs['xrange']
 yrangelims = resargs['yrange']
 intrangeargs = resargs['intranges']
+
+linemarks = resargs['linemk']
+linmk = []
+if linemarks is not None:
+    for lm in linemarks:
+        lmparts = string.split(lm, ':')
+        try:
+            if len(lmparts) != 6:
+                raise ValueError("Not enough parts of line label")
+            wl, lab, lcol, toff, ty, trot = lmparts
+            wl = float(wl)
+            toff = float(toff)
+            ty = float(ty)
+            trot = float(trot)
+            linmk.append((wl, lab, lcol, toff, ty, trot))
+        except ValueError:
+            sys.stdout = sys.stderr
+            print "Cannot decode lime spec", lm
+            sys.exit(30)
 
 if not os.path.isfile(infofile):
     infofile = miscutils.replacesuffix(infofile, specinfo.SUFFIX)
@@ -150,6 +170,11 @@ if legnum > 0:
         legends = legends[0:legnum]
         legends.append("etc...")
     plt.legend(legends)
+
+for lm in linmk:
+    wl, lab, lcol, toff, ty, trot = lm
+    plt.axvline(wl, color=lcol)
+    plt.text(wl, ty, lab, color=lcol, rotation=trot)
 
 if outfig is not None:
     plt.savefig(outfig)
