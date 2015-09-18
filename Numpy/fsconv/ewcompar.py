@@ -105,12 +105,14 @@ for fil in ewfiles:
         tparts = splittime.splittime(sepdays, ddats, ews, pss, prs)
         if len(tparts) > 1:
             for day_dates, day_ews, day_pss, day_prs in tparts:
-                fdate = day_dates[0].strftime("%d/%m/%y")
-                tdate = day_dates[-1].strftime("%d/%m/%y")
-                if len(day_dates) == 1: tdate = "(same)"
-                pref2 = string.join([fdate, tdate, ''], fcs)
+                fdat = day_dates[0]
+                tdat = day_dates[-1]
+                fdate = fdat.strftime("%d/%m/%y")
+                tdate = tdat.strftime("%d/%m/%y")
+                if fdat.date() == tdat.date(): tdate = "(same)"
+                pref2 = string.join([fdate, tdate, str(len(day_dates)), ''], fcs)
                 printline(pref, pref2, day_ews, day_pss, day_prs, ismed, perc)
-        pref2 = sd_all
+        pref2 = sd_all + str(len(ews)) + fcs
     
     printline(pref, pref2, ews, pss, prs, ismed, perc)    
 

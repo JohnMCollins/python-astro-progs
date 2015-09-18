@@ -13,6 +13,8 @@ import specdatactrl
 import specinfo
 import jdate
 
+lslu = dict(solid = '.', dashed = '--', dashdot = '-.', dotted = ':')
+
 parsearg = argparse.ArgumentParser(description='Display spectra with ranges from info file')
 parsearg.add_argument('--infofile', type=str, required=True, help='Info file giving spectra')
 parsearg.add_argument('--outfig', type=str, help='Output figure')
@@ -30,7 +32,7 @@ parsearg.add_argument('--xrange', help='Range of X values', type=str)
 parsearg.add_argument('--yrange', help='Range of Y values', type=str)
 parsearg.add_argument('--legnum', type=int, default=5, help='Number of plots in legend')
 parsearg.add_argument('--datefmt', type=str, default='%d/%m/%y %H:%M', help='Format for date display')
-parsearg.add_argument('--linemk', type=str, nargs='+', help='Lines to mark as wl:label:colour:xoff:yoff:reotdeg')
+parsearg.add_argument('--linemk', type=str, nargs='+', help='Lines to mark as wl:label:colour:xoff:yoff:rotdeg:style')
 
 resargs = vars(parsearg.parse_args())
 
@@ -57,14 +59,19 @@ if linemarks is not None:
     for lm in linemarks:
         lmparts = string.split(lm, ':')
         try:
-            if len(lmparts) != 6:
+            if len(lmparts) != 7:
                 raise ValueError("Not enough parts of line label")
-            wl, lab, lcol, toff, ty, trot = lmparts
+            wl, lab, lcol, toff, ty, trot, sty = lmparts
             wl = float(wl)
             toff = float(toff)
             ty = float(ty)
             trot = float(trot)
-            linmk.append((wl, lab, lcol, toff, ty, trot))
+            sty = lslu[string.lower(sty)]
+            linmk.append((wl, lab, lcol, toff, ty, trot, sty))
+        except KeyError:
+            sys.stdout = sys.stderr
+            print "Unknown line style", sty, "in", lm
+            sys.exit(30)
         except ValueError:
             sys.stdout = sys.stderr
             print "Cannot decode lime spec", lm
@@ -172,8 +179,8 @@ if legnum > 0:
     plt.legend(legends)
 
 for lm in linmk:
-    wl, lab, lcol, toff, ty, trot = lm
-    plt.axvline(wl, color=lcol)
+    wl, lab, lcol, toff, ty, trot, sty = lm
+    plt.axvline(wl, ls=sty, color=lcol)
     plt.text(wl, ty, lab, color=lcol, rotation=trot)
 
 if outfig is not None:
