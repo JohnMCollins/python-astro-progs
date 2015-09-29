@@ -90,7 +90,7 @@ ifunc = None
 
 if exspec is not None:
     try:
-        ef = cfile.datalist[exspec]
+        ef = ctrllist.datalist[exspec]
         exx = ef.get_xvalues()
         exy = ef.get_yvalues()
     except IndexError:
