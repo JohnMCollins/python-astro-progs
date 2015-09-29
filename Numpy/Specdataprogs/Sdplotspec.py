@@ -4,6 +4,7 @@ import argparse
 import matplotlib.pyplot as plt
 import matplotlib.patches as mptch
 import numpy as np
+import scipy.interpolate as sint
 import string
 import sys
 import os
@@ -33,6 +34,8 @@ parsearg.add_argument('--yrange', help='Range of Y values', type=str)
 parsearg.add_argument('--legnum', type=int, default=5, help='Number of plots in legend')
 parsearg.add_argument('--datefmt', type=str, default='%d/%m/%y %H:%M', help='Format for date display')
 parsearg.add_argument('--linemk', type=str, nargs='+', help='Lines to mark as wl:label:colour:xoff:yoff:rotdeg:style')
+parsearg.add_argument('--subspec', type=int, help='Subtract given spectrum number from display')
+parsearg.add_argument('--divspec', type=int, help='Divide given spectrum number from display')
 
 resargs = vars(parsearg.parse_args())
 
@@ -76,6 +79,14 @@ if linemarks is not None:
             sys.stdout = sys.stderr
             print "Cannot decode lime spec", lm
             sys.exit(30)
+
+subspec = resargs['subspec']
+divspec = resargs['divspec']
+
+if subspec is not None and divspec is not None:
+    sys.stdout = sys.stderr
+    print "Cannot have beth subspec and divspec"
+    sys.exit(31)
 
 if not os.path.isfile(infofile):
     infofile = miscutils.replacesuffix(infofile, specinfo.SUFFIX)
@@ -130,6 +141,26 @@ fig.canvas.set_window_title(resargs['title'])
 legends = []
 plotlist = []
 cfile.loadfiles()
+
+exspec = subspec
+if exspec is None: exspec = divspec
+ifunc = None
+
+if exspec is not None:
+    try:
+        ef = cfile.datalist[exspec]
+        exx = ef.get_xvalues()
+        exy = ef.get_yvalues()
+    except IndexError:
+        sys.stdout = sys.stderr
+        print "Invalid sub/div spectrum"
+        sys.exit(12)
+    except specinfo.SpecInfoError:
+        sys.stdout = sys.stderr
+        print "Invalid spectrum number", exspec
+        sys.exit(12)
+    ifunc=sint.interp1d(exx, exy, fill_value=exy[0], bounds_error=False)
+        
 for sf in spec:
     try:
         df = cfile.datalist[sf]
@@ -140,6 +171,13 @@ for sf in spec:
 
     wavelengths = df.get_xvalues()
     amps = df.get_yvalues()
+    if ifunc is not None:
+        adjamps = ifunc(wavelengths)
+        if divspec is None:
+            amps -= adjamps
+        else:
+            amps /= adjamps
+    
     plotlist.append((wavelengths, amps, plotc.pop(0)))
 
     dt = jdate.jdate_to_datetime(df.modjdate)

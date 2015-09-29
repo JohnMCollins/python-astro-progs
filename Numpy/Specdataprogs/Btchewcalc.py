@@ -7,6 +7,7 @@ import string
 import locale
 import argparse
 import numpy as np
+import scipy.interpolate as sint
 import miscutils
 import specdatactrl
 import datarange
@@ -21,6 +22,10 @@ parsearg.add_argument('--rangename', type=str, default='halpha', help='Range nam
 parsearg.add_argument('--peakranges', type=str, default='integ1,integ2', help='Range names for subpeaks')
 parsearg.add_argument('--outfile', help='Output file name', type=str, required=True)
 parsearg.add_argument('--snr', type=float, default=-1e6, help='Omit points with SNR worse than given')
+parsearg.add_argument('--first', type=int, default=0, help='First spectrum number to use')
+parsearg.add_argument('--last', type=int, default=10000000, help='Last spectrum number to use')
+parsearg.add_argument('--subspec', type=int, help='Subtract given spectrum number from display')
+parsearg.add_argument('--divspec', type=int, help='Divide given spectrum number from display')
 
 res = vars(parsearg.parse_args())
 
@@ -33,6 +38,15 @@ if len(peakranges) != 2:
 outfile = res['outfile']
 
 snr = res['snr']
+
+firstspec = res['first']
+lastspec = res['last']
+subspec = res['subspec']
+divspec = res['divspec']
+
+if subspec is not None and divspec is not None:
+    print "Cannot have beth subspec and divspec"
+    sys.exit(31)
 
 if not os.path.isfile(infofile):
     infofile = miscutils.replacesuffix(infofile, specinfo.SUFFIX)
@@ -69,12 +83,33 @@ try:
     integ2 = rangl.getrange(peakranges[1])
 except datarange.DataRangeError:
     integ1 = integ2 = None
+
+exspec = subspec
+if exspec is None: exspec = divspec
+ifunc = None
+
+if exspec is not None:
+    try:
+        ef = cfile.datalist[exspec]
+        exx = ef.get_xvalues()
+        exy = ef.get_yvalues()
+    except IndexError:
+        sys.stdout = sys.stderr
+        print "Invalid sub/div spectrum"
+        sys.exit(12)
+    except specinfo.SpecInfoError:
+        print "Invalid spectrum number", exspec
+        sys.exit(12)
+    ifunc=sint.interp1d(exx, exy, fill_value=exy[0], bounds_error=False)
     
 # Process data according to day
 
 results = []
 
-for spectrum in ctrllist.datalist:
+for n, spectrum in enumerate(ctrllist.datalist):
+    
+    if n < firstspec or n > lastspec:
+        continue
 
     # Get spectral data but skip over ones we've already marked to ignore
     try:
@@ -85,6 +120,13 @@ for spectrum in ctrllist.datalist:
         continue
 
     if snr > -1000.0 and noise.getnoise(yvalues, yerrs) < snr: continue
+    
+    if ifunc is not None:
+        adjamps = ifunc(xvalues)
+        if divspec is None:
+            yvalues -= adjamps
+        else:
+            yvalues /= adjamps
 
     ew = equivwidth.equivalent_width(selected_range, xvalues, yvalues)
 
