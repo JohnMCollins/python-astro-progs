@@ -13,6 +13,8 @@ import specdatactrl
 import datarange
 import specinfo
 
+C = 299792.458
+
 parsearg = argparse.ArgumentParser(description='Fit polynomial to given region of spectra')
 parsearg.add_argument('infofile', type=str, help='Specinfo file', nargs=1)
 parsearg.add_argument('--rangename', type=str, default='halpha', help='Range name to fit')
@@ -99,10 +101,10 @@ yr = np.polyval(pcs, xr)
 
 yr /= yr[0]
 
-#xvs = np.linspace(-points, points, 2*points+1)
+xvs = xr * C / offset
 
-np.savetxt(outfile, np.array([xr, yr]).transpose(), fmt='%#.6g')
-plt.plot(xr, yr)
+np.savetxt(outfile, np.array([xvs, yr]).transpose(), fmt='%#.6g')
+plt.plot(xvs, yr)
 plt.show()
 
 #np.savetxt(outfile, results)

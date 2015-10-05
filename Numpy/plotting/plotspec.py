@@ -14,6 +14,8 @@ import specdatactrl
 import jdate
 import datetime
 
+lslu = dict(solid = '.', dashed = '--', dashdot = '-.', dotted = ':')
+
 parsearg = argparse.ArgumentParser(description='Display spectrum with ranges')
 parsearg.add_argument('--outfig', type=str, help='Output figure')
 parsearg.add_argument('spec', type=str, help='Spectrum file', nargs='+')
@@ -34,6 +36,7 @@ parsearg.add_argument('--legnum', type=int, default=5, help='Number of plots in 
 parsearg.add_argument('--obstimes', type=str, help='File for observation times if not given in files')
 parsearg.add_argument('--dateoff', type=str, help='Date to add to observation times now for today')
 parsearg.add_argument('--datefmt', type=str, default='%d/%m/%y %H:%M', help='Format for date display')
+parsearg.add_argument('--linemk', type=str, nargs='+', help='Lines to mark as wl:label:colour:xoff:yoff:rotdeg:style')
 
 resargs = vars(parsearg.parse_args())
 
@@ -70,6 +73,7 @@ if dateoffs is not None:
         doff = datetime.datetime(year, datebits[1], datebits[0], 0, 0, 0)
         dateoff = jdate.datetime_to_jdate(doff)
     except ValueError:
+        sys.stdout = sys.stderr
         print "Cannot understand date offset", dateoffs
         sys.exit(7)    
 
@@ -78,10 +82,12 @@ obstimefile = resargs['obstimes']
 if obstimefile is not None:
     obstimes = fakeobs.getfakeobs(obstimefile)
     if obstimes is None:
+        sys.stdout = sys.stderr
         print "Cannot read obs file", obstimefile
         sys.exit(9)
 
 if xcolumn == ycolumn:
+    sys.stdout = sys.stderr
     print "Cannot have X and Y columns the same"
     sys.exit(8)
 
@@ -97,8 +103,33 @@ try:
         for ir in intrangeargs:
             intranges.append(datarange.ParseArg(ir))
 except datarange.DataRangeError as e:
+    sys.stdout = sys.stderr
     print e.args[0]
     sys.exit(7)
+
+linemarks = resargs['linemk']
+linmk = []
+if linemarks is not None:
+    for lm in linemarks:
+        lmparts = string.split(lm, ':')
+        try:
+            if len(lmparts) != 7:
+                raise ValueError("Not enough parts of line label")
+            wl, lab, lcol, toff, ty, trot, sty = lmparts
+            wl = float(wl)
+            toff = float(toff)
+            ty = float(ty)
+            trot = float(trot)
+            sty = lslu[string.lower(sty)]
+            linmk.append((wl, lab, lcol, toff, ty, trot, sty))
+        except KeyError:
+            sys.stdout = sys.stderr
+            print "Unknown line style", sty, "in", lm
+            sys.exit(30)
+        except ValueError:
+            sys.stdout = sys.stderr
+            print "Cannot decode lime spec", lm
+            sys.exit(30)
 
 dims = (resargs['width'], resargs['height'])
 fig = plt.figure(figsize=dims)
@@ -112,12 +143,15 @@ for sf in spec:
         wavelengths = arr[xcolumn]
         amps = arr[ycolumn]
     except IOError as e:
+        sys.stdout = sys.stderr
         print "Could not load spectrum file", sf, "error was", e.args[1]
         sys.exit(11)
     except ValueError:
+        sys.stdout = sys.stderr
         print "Conversion error on", sf
         sys.exit(12)
     except IndexError:
+        sys.stdout = sys.stderr
         print "Do not believe columns x column", xcolumn, "y column", ycolumn
         sys.exit(13)
     
@@ -170,6 +204,11 @@ if legnum > 0:
         legends = legends[0:legnum]
         legends.append("etc...")
     plt.legend(legends)
+
+for lm in linmk:
+    wl, lab, lcol, toff, ty, trot, sty = lm
+    plt.axvline(wl, ls=sty, color=lcol)
+    plt.text(wl, ty, lab, color=lcol, rotation=trot)
 
 if outfig is not None:
     plt.savefig(outfig)
