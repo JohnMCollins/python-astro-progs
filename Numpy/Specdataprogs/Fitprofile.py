@@ -99,9 +99,9 @@ yr = np.polyval(pcs, xr)
 
 yr /= yr[0]
 
-xvs = np.linspace(-points, points, 2*points+1)
+#xvs = np.linspace(-points, points, 2*points+1)
 
-np.savetxt(outfile, np.array([xvs, yr]).transpose(), fmt='%#.6g')
+np.savetxt(outfile, np.array([xr, yr]).transpose(), fmt='%#.6g')
 plt.plot(xr, yr)
 plt.show()
 
