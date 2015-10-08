@@ -118,6 +118,8 @@ if maxnum > 0:
     mrot = resargs['rottxt']
     mtxtcol = resargs['mtxtcol']
     if mtxtcol is None: mtxtcol = mcol
+    mcol = string.split(mcol, ',') * maxnum
+    mtxtcol = string.split(mtxtcol, ',') * maxnum
     if xrange is not None:
         selx = (periods >= xrange[0]) & (periods <= xrange[1])
         periods = periods[selx]
@@ -131,19 +133,19 @@ if maxnum > 0:
     xoffs = (xrange[1] - xrange[0]) * xoffssc
     xscale = 1 + xoffssc
 
-    for m in maxima:
+    for n, m in enumerate(maxima):
         maxx = periods[m]
         maxy = amps[m]
-        plt.axvline(maxx, color=mcol)
+        plt.axvline(maxx, color=mcol[n])
         if lscale:
 	        xplace = maxx*xscale
         else:
 			xplace = maxx+xoffs
         if xrange[0] < xplace < xrange[1]:
             if addinten:
-                plt.text(xplace, yplace, "%#.4g, %#.4g" % (maxx, maxy), color=mtxtcol, rotation=mrot)
+                plt.text(xplace, yplace, "%#.4g, %#.4g" % (maxx, maxy), color=mtxtcol[n], rotation=mrot)
             else:
-                plt.text(xplace, yplace, "%#.4g" % maxx, color=mtxtcol, rotation=mrot)
+                plt.text(xplace, yplace, "%#.4g" % maxx, color=mtxtcol[n], rotation=mrot)
 
 if outfig is not None:
     plt.savefig(outfig)
