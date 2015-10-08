@@ -19,6 +19,7 @@ parsearg.add_argument('--fcomps', type=str, help='Prefix by file name components
 parsearg.add_argument('--aserror', type=float, default=0.0, help='Display as percentage error from')
 parsearg.add_argument('--asdiff', type=float, default=0.0, help='Display difference as +/-')
 parsearg.add_argument('--prec', type=int, default=4, help='Precision')
+parsearg.add_argument('--bfperc', type=float, default=-1.0, help='Render figure in bold if percent error <= value')
 
 resargs = vars(parsearg.parse_args())
 
@@ -29,6 +30,7 @@ aserror = resargs['aserror']
 asdiff = resargs['asdiff']
 latex = resargs['latex']
 prec = resargs['prec']
+bfperc = resargs['bfperc']
 
 fmt = "%%.%df" % prec
 
@@ -43,9 +45,12 @@ if fcomps is not None:
 if latex:
     fcs = ' & '
     endl =  ' \\\\\\hline'
+    bfb = '\\textbf{'
+    bfe = '}'
 else:
     fcs = ' '
     endl = ''
+    bfb = bfe = '*'
 
 errors = 0
 
@@ -86,10 +91,14 @@ for spec in specs:
         had += 1
         pv = periods[m]
         if asdiff != 0.0:
-            line += fmt % pv
+            nxt = fmt % pv
             diff = pv - asdiff
-            if diff >= 0.0: line += '+'
-            line += fmt % diff
+            if round(diff, prec) != 0.0:
+                if diff >= 0.0: nxt += '+'
+                nxt += fmt % diff
+            if abs(diff) * 100.0 / asdiff <= bfperc:
+                nxt = bfb + nxt + bfe
+            line += nxt
         else:
             if aserror != 0.0:
                 pv = abs(pv - aserror) * 100.0 / aserror
