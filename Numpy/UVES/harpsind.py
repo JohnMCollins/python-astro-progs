@@ -23,7 +23,7 @@ import splittime
 
 def integ_value(range, xvalues, yvalues):
     """Calculate intensity as per S-M paper"""
-    xv, yv = range.select(xyvalues, yvalues)
+    xv, yv = range.select(xvalues, yvalues)
     return si.trapz(yv, xv)
 
 SECSPERDAY = 3600.0 * 24.0
@@ -33,6 +33,8 @@ parsearg.add_argument('infofile', type=str, nargs=1, help='Input spectral info f
 parsearg.add_argument('--rangename', type=str, default='smhalpha', help='Range name for H Alpha')
 parsearg.add_argument('--contranges', type=str, default='smbc,smrc', help='Range names for continua')
 parsearg.add_argument('--outfile', help='Output file name', type=str, required=True)
+parsearg.add_argument('--first', type=int, default=0, help='First spectrum number to use')
+parsearg.add_argument('--last', type=int, default=10000000, help='Last spectrum number to use')
 
 resargs = vars(parsearg.parse_args())
 
@@ -43,6 +45,8 @@ if len(contr) != 2:
     print "Expecting 2 continuum ranges"
     sys.exit(9)
 outfile = resargs['outfile']
+firstspec = resargs['first']
+lastspec = resargs['last']
 
 # Now read the info file
 
@@ -72,13 +76,16 @@ except specdatactrl.SpecDataError as e:
 
 results = []
 
-for spectrum in ctrllist.datalist:
+for n, spectrum in enumerate(ctrllist.datalist):
+
+    if n < firstspec or n > lastspec:
+        continue
 
     # Get spectral data but skip over ones we've already marked to ignore
 
     try:
-        xvalues = spectrum.get_xvalues(False)
-        yvalues = spectrum.get_yvalues(False)
+        xvalues = spectrum.get_xvalues()
+        yvalues = spectrum.get_raw_yvalues()
 
     except specdatactrl.SpecDataError:
         continue
@@ -86,7 +93,7 @@ for spectrum in ctrllist.datalist:
     mha = integ_value(selected_range, xvalues, yvalues)
     mrc = integ_value(cont2, xvalues, yvalues)
     mbc = integ_value(cont1, xvalues, yvalues)
-    
+
     results.append((spectrum.modjdate, spectrum.modbjdate, mha / (mbc + mrc), 0.0, 0.0, 0.0, 1.0, 0.0))
 
 np.savetxt(outfile, results)
