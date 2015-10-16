@@ -15,6 +15,7 @@ parsearg.add_argument('spec', type=str, nargs='+', help='Spectrum file(s)')
 parsearg.add_argument('--maxnum', type=int, default=1, help='Number of maxima to take')
 parsearg.add_argument('--plusint', action='store_true', help='Display intensity as well')
 parsearg.add_argument('--latex', action='store_true', help='Put in Latex table boundaries')
+parsearg.add_argument('--noendl', action='store_true', help='Dont put hlines in in latex mode')
 parsearg.add_argument('--fcomps', type=str, help='Prefix by file name components going backwards thus 1:3')
 parsearg.add_argument('--aserror', type=float, default=0.0, help='Display as percentage error from')
 parsearg.add_argument('--asdiff', type=float, default=0.0, help='Display difference as +/-')
@@ -42,14 +43,15 @@ if fcomps is not None:
         sys.stdout = sys.stderr
         print "Cannot understand fcomps arg", fcomps
         sys.exit(20)
+endl = ''
 if latex:
     fcs = ' & '
-    endl =  ' \\\\\\hline'
+    if not resargs['noendl']:
+        endl =  ' \\\\\\hline'
     bfb = '\\textbf{'
     bfe = '}'
 else:
     fcs = ' '
-    endl = ''
     bfb = bfe = '*'
 
 errors = 0

@@ -36,6 +36,7 @@ parsearg.add_argument('--datefmt', type=str, default='%d/%m/%y %H:%M', help='For
 parsearg.add_argument('--linemk', type=str, nargs='+', help='Lines to mark as wl:label:colour:xoff:yoff:rotdeg:style')
 parsearg.add_argument('--subspec', type=int, help='Subtract given spectrum number from display')
 parsearg.add_argument('--divspec', type=int, help='Divide given spectrum number from display')
+parsearg.add_argument('--raw', action='store_true', help='Skip all scaling and normalisation on Y axis')
 
 resargs = vars(parsearg.parse_args())
 
@@ -146,11 +147,17 @@ exspec = subspec
 if exspec is None: exspec = divspec
 ifunc = None
 
+# Select the required routine
+
+yfetch = specdatactrl.SpecDataArray.get_yvalues
+if resargs['raw']:
+    yfetch = specdatactrl.SpecDataArray.get_raw_yvalues
+
 if exspec is not None:
     try:
         ef = cfile.datalist[exspec]
         exx = ef.get_xvalues()
-        exy = ef.get_yvalues()
+        exy = yfetch(ef)
     except IndexError:
         sys.stdout = sys.stderr
         print "Invalid sub/div spectrum"
@@ -170,7 +177,7 @@ for sf in spec:
         sys.exit(20)
 
     wavelengths = df.get_xvalues()
-    amps = df.get_yvalues()
+    amps = yfetch(df)
     if ifunc is not None:
         adjamps = ifunc(wavelengths)
         if divspec is None:

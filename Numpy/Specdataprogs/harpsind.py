@@ -26,6 +26,11 @@ def integ_value(range, xvalues, yvalues):
     xv, yv = range.select(xvalues, yvalues)
     return si.trapz(yv, xv)
 
+def sum_value(range, xvalues, yvalues):
+    """Calculate intensity as per S-M paper"""
+    xv, yv = range.select(xvalues, yvalues)
+    return yv.sum()
+
 SECSPERDAY = 3600.0 * 24.0
 
 parsearg = argparse.ArgumentParser(description='Process HARPS data and generate table of HA inds')
@@ -35,8 +40,19 @@ parsearg.add_argument('--contranges', type=str, default='smbc,smrc', help='Range
 parsearg.add_argument('--outfile', help='Output file name', type=str, required=True)
 parsearg.add_argument('--first', type=int, default=0, help='First spectrum number to use')
 parsearg.add_argument('--last', type=int, default=10000000, help='Last spectrum number to use')
+parsearg.add_argument('--noraw', action='store_true', help='Specify to use normalised values rather than raw')
+parsearg.add_argument('--integ', action='store_true', help='Use integration rather than sum')
 
 resargs = vars(parsearg.parse_args())
+
+valrout = sum_value
+fetchrout = specdatactrl.SpecDataArray.get_raw_yvalues
+
+if resargs['integ']:
+    valrout = integ_value
+
+if resargs['noraw']:
+    fetchrout = specdatactrl.DataArray.get_yvalues
 
 infofile = resargs['infofile'][0]
 rangename = resargs['rangename']
@@ -85,14 +101,14 @@ for n, spectrum in enumerate(ctrllist.datalist):
 
     try:
         xvalues = spectrum.get_xvalues()
-        yvalues = spectrum.get_raw_yvalues()
+        yvalues = fetchrout(spectrum)
 
     except specdatactrl.SpecDataError:
         continue
 
-    mha = integ_value(selected_range, xvalues, yvalues)
-    mrc = integ_value(cont2, xvalues, yvalues)
-    mbc = integ_value(cont1, xvalues, yvalues)
+    mha = valrout(selected_range, xvalues, yvalues)
+    mrc = valrout(cont2, xvalues, yvalues)
+    mbc = valrout(cont1, xvalues, yvalues)
 
     results.append((spectrum.modjdate, spectrum.modbjdate, mha / (mbc + mrc), 0.0, 0.0, 0.0, 1.0, 0.0))
 
