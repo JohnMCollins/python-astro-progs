@@ -181,7 +181,7 @@ for sf in spec:
     if ifunc is not None:
         adjamps = ifunc(wavelengths)
         if divspec is None:
-            amps -= adjamps
+            amps -= adjamps - 1.0
         else:
             amps /= adjamps
     

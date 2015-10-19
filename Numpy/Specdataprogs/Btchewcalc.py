@@ -124,7 +124,7 @@ for n, spectrum in enumerate(ctrllist.datalist):
     if ifunc is not None:
         adjamps = ifunc(xvalues)
         if divspec is None:
-            yvalues -= adjamps
+            yvalues -= adjamps - 1.0
         else:
             yvalues /= adjamps
 
