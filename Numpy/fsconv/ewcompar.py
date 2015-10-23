@@ -10,8 +10,16 @@ import jdate
 import splittime
 import periodarg
 
+def pseg(m, s):
+    """Print a value with std dev"""
+    global prec, fmtseg, pm, nopm
+    if round(s, prec) == 0.0:
+        return fmtseg % m + nopm
+    return fmtseg % m + pm + fmtseg % s
+
 def printline(pref1, pref2, ewlist, pslist, prlist, ismed, isperc):
     """Print a line of output with the various prefixes"""
+    global prec, fmtseg, nops, fcs, endl
     if ismed:
         mew = np.median(ewlist)
         mps = np.median(pslist)
@@ -23,11 +31,26 @@ def printline(pref1, pref2, ewlist, pslist, prlist, ismed, isperc):
     sew = np.std(ewlist)
     sps = np.std(pslist)
     spr = np.std(prlist)
+    
+    res = pref1 + pref2
+    reslist = []
+    
     if isperc:
         sew *= 100.0 / mew
         sps *= 100.0 / mps
         spr *= 100.0 / mpr
-    print pref1 + pref2 + fmt % (mew, sew, mps, sps, mpr, spr)
+        reslist.append(fmtseg % mew)
+        reslist.append(fmtseg % sew)
+        if not nops:
+            reslist.append(fmtseg % mps)
+            reslist.append(fmtseg % sps)
+        reslist.append(fmtseg % mpr)
+        reslist.append(fmtseg % spr)
+    else:
+        reslist.append(pseg(mew, sew))
+        if not nops: reslist.append(pseg(mps, sps))
+        reslist.append(pseg(mpr, spr))
+    print res + string.join(reslist, fcs) + endl
     
 td = np.vectorize(jdate.jdate_to_datetime)
     
@@ -39,9 +62,11 @@ parsearg.add_argument('--latex', action='store_true', help='Put in Latex table b
 parsearg.add_argument('--fcomps', type=str, help='Prefix by file name components going backwards thus 1:3')
 parsearg.add_argument('--median', action='store_true', help='Show median rather than men')
 parsearg.add_argument('--sepdays', type=float, default=0.0, help='Days to do separate rows for')
+parsearg.add_argument('--nops', action='store_true', help='Omit PS from results')
 
 resargs = vars(parsearg.parse_args())
 
+nops = resargs['nops']
 perc = resargs['percent']
 latex = resargs['latex']
 ewfiles = resargs['ewfiles']
@@ -51,15 +76,16 @@ sepdays = resargs['sepdays'] * periodarg.SECSPERDAY
 fmtseg = "%%.%df" % prec
 if latex:
     fcs = ' & '
+    pm = ' $ \\pm $ '
     sd_all = '\\multicolumn{2}{|c|}{ALL} & '
-    if perc:
-        fmt = string.join([ fmtseg ] * 6, ' & ') + ' \\\\\\hline'
-    else:
-        fmt = string.join([ fmtseg + ' $ \\pm $ ' + fmtseg ] * 3, ' & ') + ' \\\\\\hline'
+    nopm = ''
+    endl = ' \\\\\\hline'
 else:
-    fmt = string.join([ fmtseg ] * 6, ' ')
     sd_all = 'ALL - '
     fcs = ' '
+    pm = ' '
+    nopm = '-'
+    endl = ''
 
 fcomps = resargs['fcomps']
 if fcomps is not None:
