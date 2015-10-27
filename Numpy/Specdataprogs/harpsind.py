@@ -18,7 +18,6 @@ import specdatactrl
 import datarange
 import jdate
 import datetime
-import numpy as np
 import splittime
 
 def integ_value(range, xvalues, yvalues):
