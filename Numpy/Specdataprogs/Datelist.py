@@ -30,6 +30,7 @@ except specinfo.SpecInfoError as e:
 
 n = 0
 for df in ctrllist.datalist:
+    if df.is_skipped(): continue
     dt = jdate.jdate_to_datetime(df.modjdate)
     print "%d: %s" % (n, dt.strftime("%d/%m/%y %H:%M:%S"))
     n += 1

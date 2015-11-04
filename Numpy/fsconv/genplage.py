@@ -12,6 +12,7 @@ import datarange
 parsearg = argparse.ArgumentParser(description='Generate a random plage file')
 parsearg.add_argument('outfile', help="Generated plage file", nargs=1, type=str)
 parsearg.add_argument('--force', help='Force overwrite of existing file', action='store_true')
+parsearg.add_argument('--percent', type=float, default=2.0, help='Percentage of surface to fill')
 parsearg.add_argument('--number', type=int, default=10, help='Number of spots to create')
 parsearg.add_argument('--maxdeg', type=float, default=40.0, help='Maximum degrees for spot size')
 parsearg.add_argument('--mindeg', type=float, default=1.0, help='Minimum degrees for spot size')
@@ -24,6 +25,7 @@ outfile = resargs['outfile'][0]
 number = resargs['number']
 maxdeg = resargs['maxdeg']
 mindeg = resargs['mindeg']
+perc = resargs['percent']
 
 if number <= 0:
     print "Invalid number must be greater than 0"
@@ -64,6 +66,23 @@ sizes = sizes[repos]
 if resargs['taillat']:
     sizes *= np.cos(lats * np.pi / 180.0)
 
+# Prune the list down if needed to the required cover
+# Area is proportianal to the square of the radius, at most 90
+
+accsizes = np.cumsum((sizes / 90.0) ** 2) * 100.0
+pind = np.where(accsizes >= perc)[0]
+if len(pind) > 1:
+    resperc = accsizes[pind[0]]
+    pind = pind[1]
+    longs = longs[0:pind]
+    lats = lats[0:pind]
+    sizes = sizes[0:pind]
+    prop = prop[0:pind]
+    gsize = gsize[0:pind]
+else:
+    resperc = accsizes[-1]
+
 result = np.array([longs, lats, sizes, prop, gsize]).transpose()
 
 np.savetxt(outfile, result, fmt='%#12.8g')
+print "Percent cover = %.2F" % resperc

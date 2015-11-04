@@ -16,7 +16,7 @@ import equivwidth
 import meanval
 import noise
 
-parsearg = argparse.ArgumentParser(description='Batch mode calculate continue')
+parsearg = argparse.ArgumentParser(description='Batch mode calculate EW etc')
 parsearg.add_argument('infofile', type=str, help='Specinfo file', nargs=1)
 parsearg.add_argument('--rangename', type=str, default='halpha', help='Range name to calculate equivalent widths')
 parsearg.add_argument('--peakranges', type=str, default='integ1,integ2', help='Range names for subpeaks')
