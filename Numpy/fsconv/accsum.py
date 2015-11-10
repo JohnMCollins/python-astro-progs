@@ -17,6 +17,8 @@ def rootms(vals, n):
 
 parsearg = argparse.ArgumentParser(description='Process periodicity trials')
 parsearg.add_argument('resfiles', type=str, nargs='+', help='Periodogram results')
+parsearg.add_argument('--pprecision', type=int, default=1, help='Percentage precision')
+parsearg.add_argument('--mprecision', type=int, default=2, help='Mean/std dev precision')
 parsearg.add_argument('--pcomp', type=int, default=3, help='Target period component of file names counting backwards')
 parsearg.add_argument('--period', type=float, help='Target period to override file component period')
 parsearg.add_argument('--thresh', type=float, default=5.0, help='Percent threshold for accepting result')
@@ -28,12 +30,17 @@ parsearg.add_argument('--fcomps', type=str, help='File components to print out n
 resargs = vars(parsearg.parse_args())
 
 resfiles = resargs['resfiles']
+pprec = resargs['pprecision']
+mprec = resargs['mprecision']
 period = resargs['period']
 pcomp = resargs['pcomp']
 thresh = resargs['thresh'] / 100.0
 latex = resargs['latex']
 noperc = resargs['noperc']
 noval = resargs['noval']
+
+pfmt = "%%.%df" % pprec
+mfmt = "%%.%df" % mprec
 
 fcomps = resargs['fcomps']
 if fcomps is not None:
@@ -82,7 +89,7 @@ for rf in resfiles:
     nokres = results[nonsel]
    
     if not noperc:
-        outline.append('%.1f' % (100.0 * len(okres) / len(results)))
+        outline.append(pfmt % (100.0 * len(okres) / len(results)))
     if not noval:
         if len(okres) == 0:
             outline.append(nv)
@@ -90,7 +97,7 @@ for rf in resfiles:
         else:
             s = okres.std()
             if round(s, 2) == 0.0:
-                outline.append("%.2f" % okres.mean())
+                outline.append(mfmt % okres.mean())
             else:
-                outline.append("%.2f%s%.2f" % (okres.mean(), pm, s))
+                outline.append((mfmt + '%s' + mfmt) % (okres.mean(), pm, s))
     print string.join(outline, fcs)

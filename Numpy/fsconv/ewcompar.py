@@ -19,7 +19,7 @@ def pseg(m, s):
 
 def printline(pref1, pref2, ewlist, pslist, prlist, ismed, isperc):
     """Print a line of output with the various prefixes"""
-    global prec, fmtseg, nops, fcs, endl
+    global prec, fmtseg, noew, nops, nopr, fcs, endl
     if ismed:
         mew = np.median(ewlist)
         mps = np.median(pslist)
@@ -39,18 +39,20 @@ def printline(pref1, pref2, ewlist, pslist, prlist, ismed, isperc):
         sew *= 100.0 / mew
         sps *= 100.0 / mps
         spr *= 100.0 / mpr
-        reslist.append(fmtseg % mew)
-        reslist.append(fmtseg % sew)
+        if not noew:
+            reslist.append(fmtseg % mew)
+            reslist.append(fmtseg % sew)
         if not nops:
             reslist.append(fmtseg % mps)
             reslist.append(fmtseg % sps)
-        reslist.append(fmtseg % mpr)
-        reslist.append(fmtseg % spr)
+        if not nopr:
+            reslist.append(fmtseg % mpr)
+            reslist.append(fmtseg % spr)
     else:
-        reslist.append(pseg(mew, sew))
+        if not noew: reslist.append(pseg(mew, sew))
         if not nops: reslist.append(pseg(mps, sps))
-        reslist.append(pseg(mpr, spr))
-    print res + string.join(reslist, fcs) + endl
+        if not nopr: reslist.append(pseg(mpr, spr))
+    print string.strip(res) + ' ' + string.join(reslist, fcs) + endl
     
 td = np.vectorize(jdate.jdate_to_datetime)
     
@@ -62,11 +64,15 @@ parsearg.add_argument('--latex', action='store_true', help='Put in Latex table b
 parsearg.add_argument('--fcomps', type=str, help='Prefix by file name components going backwards thus 1:3')
 parsearg.add_argument('--median', action='store_true', help='Show median rather than men')
 parsearg.add_argument('--sepdays', type=float, default=0.0, help='Days to do separate rows for')
+parsearg.add_argument('--noew', action='store_true', help='Omit EW from results')
 parsearg.add_argument('--nops', action='store_true', help='Omit PS from results')
+parsearg.add_argument('--nopr', action='store_true', help='Omit PR from results')
 
 resargs = vars(parsearg.parse_args())
 
+noew = resargs['noew']
 nops = resargs['nops']
+nopr = resargs['nopr']
 perc = resargs['percent']
 latex = resargs['latex']
 ewfiles = resargs['ewfiles']

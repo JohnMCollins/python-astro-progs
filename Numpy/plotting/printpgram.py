@@ -19,6 +19,8 @@ parsearg.add_argument('--noendl', action='store_true', help='Dont put hlines in 
 parsearg.add_argument('--fcomps', type=str, help='Prefix by file name components going backwards thus 1:3')
 parsearg.add_argument('--aserror', type=float, default=0.0, help='Display as percentage error from')
 parsearg.add_argument('--asdiff', type=float, default=0.0, help='Display difference as +/-')
+parsearg.add_argument('--pcomp', type=int, help='Component of file names to compare periods with')
+parsearg.add_argument('--prange', type=str, help='Range or periods to limit consideration to')
 parsearg.add_argument('--prec', type=int, default=4, help='Precision')
 parsearg.add_argument('--bfperc', type=float, default=-1.0, help='Render figure in bold if percent error <= value')
 
@@ -29,9 +31,16 @@ maxnum = resargs['maxnum']
 plusint = resargs['plusint']
 aserror = resargs['aserror']
 asdiff = resargs['asdiff']
+pcomp = resargs['pcomp']
+prange = resargs['prange']
 latex = resargs['latex']
 prec = resargs['prec']
 bfperc = resargs['bfperc']
+
+if prange is not None:
+    prange = rangearg.parserange(prange)
+    if prange is None:
+        sys.exit(19)
 
 fmt = "%%.%df" % prec
 
@@ -66,7 +75,17 @@ for spec in specs:
         errors += 1
         continue
     
-    
+    if prange is not None:
+        sel = (periods >= prange[0]) & (periods <= prange[1])
+        periods = periods[sel]
+        amps = amps[sel]
+        if len(periods) == 0:
+            sys.stdout = sys.stderr
+            print "No periods in given period range"
+            sys.stdout = sys.__stdout
+            errors += 1
+            continue
+
     maxima = argmaxmin.maxmaxes(periods, amps)
     
     # If that's too many, prune taking the largest
@@ -74,9 +93,9 @@ for spec in specs:
     if len(maxima) > maxnum: maxima = maxima[0:maxnum]
     
     line = ''
+    ewfbits = string.split(os.path.abspath(spec), '/')
     if fcomps is not None:
         pref = []
-        ewfbits = string.split(spec, '/')
         for p in fcomps:
             try:
                 c = ewfbits[p]
@@ -86,19 +105,27 @@ for spec in specs:
         pref.append('')
         line = string.join(pref, fcs)
     
+    pcompare = asdiff
+    if pcompare is None or pcompare == 0.0:
+        pcompare = None
+        if pcomp is not None:
+            try:
+                pcompare = float(ewfbits[-pcomp])
+            except ValueError, IndexError:
+                pass
     had = 0
     for m in maxima:
         if had > 0:
             line += fcs
         had += 1
         pv = periods[m]
-        if asdiff != 0.0:
+        if pcompare is not None:
             nxt = fmt % pv
-            diff = pv - asdiff
+            diff = pv - pcompare
             if round(diff, prec) != 0.0:
                 if diff >= 0.0: nxt += '+'
                 nxt += fmt % diff
-            if abs(diff) * 100.0 / asdiff <= bfperc:
+            if abs(diff) * 100.0 / pcompare <= bfperc:
                 nxt = bfb + nxt + bfe
             line += nxt
         else:
