@@ -134,8 +134,8 @@ for n, spectrum in enumerate(ctrllist.datalist):
     if integ1 is not None:
         peak1w, peak1s = meanval.mean_value(integ1, xvalues, yvalues)
         peak2w, peak2s = meanval.mean_value(integ2, xvalues, yvalues)
-        ps = (peak2s * peak1w) / (peak1s * peak2w)
-        pr = equivwidth.equivalent_width(integ2, xvalues, yvalues) / equivwidth.equivalent_width(integ1, xvalues, yvalues)
+        pr = (peak2s * peak1w) / (peak1s * peak2w)
+        ps = equivwidth.equivalent_width(integ2, xvalues, yvalues) / equivwidth.equivalent_width(integ1, xvalues, yvalues)
 
     #lastdate = spectrum.modjdate
     #if lastdate == 0: lastdate = spectrum.modbjdate
