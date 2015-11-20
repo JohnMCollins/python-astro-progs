@@ -15,7 +15,8 @@ import miscutils
 parsearg = argparse.ArgumentParser(description='Add spikes to ew data copied from real life ones')
 parsearg.add_argument('ewfiles', type=str, nargs='*', help='EW files to add adjustments to, possibly none to just display')
 parsearg.add_argument('--inewfile', type=str, required=True, help='EW file to take from')
-parsearg.add_argument('--number', type=int, default=1, help='Number of maxima to take')
+parsearg.add_argument('--numbers', type=str, default='1', help='Numbers of maxima to apply')
+parsearg.add_argument('--stdcont', type=float, default=2.0, help='Numbers of std devs to continue to apply for')
 parsearg.add_argument('--suffix', type=str, default='spk', help='Suffix to add to files')
 parsearg.add_argument('--print', action='store_true', help='Print values of maxima and exponents even if doing something')
 
@@ -23,9 +24,16 @@ resargs = vars(parsearg.parse_args())
 
 ewfiles = resargs['ewfiles']
 infile = resargs['inewfile']
-numb = resargs['number']
+numb = resargs['numbers']
+stdcont = resargs['stdcont']
 suff = resargs['suffix']
 pvals = resargs['print']
+
+try:
+    numb = [int(x)-1 for x in string.split(numb,',')]
+except ValueError:
+    print "Invalid max number value in", numb
+    sys.exit(20)
 
 try:
     ewdata = np.loadtxt(infile, unpack = True)
@@ -47,29 +55,24 @@ maxes = argmaxmin.maxmaxes(jdates, ews)
 
 avew = ews.mean()
 diffm = ews-avew
+hadm = np.zeros_like(diffm, dtype=bool)
+sdev = ews.std() * stdcont
 
 results = []
 
-for mm in maxes:
-    
+for maxn in numb:
+    mm = maxes[maxn]  
     try:
-        curr = diffm[mm]
-        currd = jdates[mm]
-        nxt = diffm[mm+1]
-        nxtd = jdates[mm+1]
-        n = math.log(curr/nxt) / (nxtd - currd)
+        while diffm[mm] >= sdev and not hadm[mm]:
+            hadm[mm] = True
+            results.append((mm, jdates[mm], diffm[mm]))
+            mm += 1
     except IndexError:
         continue
-    except ValueError:
-        n = -1.0
-    
-    results.append((mm, currd, curr, n))
-    if len(results) >= numb:
-        break
 
 if len(ewfiles) == 0 or pvals:
-    for mm, currd, curr, n in results:    
-        print "%d: %s %.3f %.3f" % (mm, jdate.display(currd), curr, n)
+    for mm, currd, n in results:    
+        print "%d: %s %.3f" % (mm, jdate.display(currd), n)
 
 for ewf in ewfiles:
     
@@ -89,13 +92,8 @@ for ewf in ewfiles:
     jdates = newew[0]
     ews = newew[2]
     
-    for mm, currd, curr, n in results:
-        
-        if n < 0.0:
-            ews[mm] += curr
-        else:
-            datesrem = jdates[mm:] - jdates[mm]
-            ews[mm:] += curr * np.exp(-n * datesrem)
+    for mm, currd, n in results:
+        ews[mm] += n
     
     newew[2] = ews
     newfname = miscutils.replacesuffix(ewf, suff)
