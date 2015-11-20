@@ -61,6 +61,7 @@ parsearg.add_argument('ewfiles', type=str, nargs='+', help='EW file(s)')
 parsearg.add_argument('--precision', type=int, default=8, help='Precision, default 8')
 parsearg.add_argument('--percent', action='store_true', help='Give std as percentage')
 parsearg.add_argument('--latex', action='store_true', help='Put in Latex table boundaries')
+parsearg.add_argument('--noendl', action='store_true', help='Dont put hlines in in latex mode')
 parsearg.add_argument('--fcomps', type=str, help='Prefix by file name components going backwards thus 1:3')
 parsearg.add_argument('--median', action='store_true', help='Show median rather than men')
 parsearg.add_argument('--sepdays', type=float, default=0.0, help='Days to do separate rows for')
@@ -86,6 +87,8 @@ if latex:
     sd_all = '\\multicolumn{2}{|c|}{ALL} & '
     nopm = ''
     endl = ' \\\\\\hline'
+    if resargs['noendl']:
+        endl = fcs
 else:
     sd_all = 'ALL - '
     fcs = ' '

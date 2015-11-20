@@ -7,6 +7,7 @@ import sys
 import os.path
 import numpy as np
 import numpy.random as nr
+from scipy.stats import cosine
 import datarange
 
 parsearg = argparse.ArgumentParser(description='Generate a random plage file')
@@ -19,6 +20,7 @@ parsearg.add_argument('--mindeg', type=float, default=1.0, help='Minimum degrees
 parsearg.add_argument('--latrange', type=str, default='-90:90', help='Range of latitudes (default all)')
 parsearg.add_argument('--longrange', type=str, default='0:360', help='Range of longitudes (default all)')
 parsearg.add_argument('--taillat', action='store_true', help='Reduce spot size at high latitudes')
+parsearg.add_argument('--cosdist', action='store_true', help='Use cosine distribution of latitudes')
 resargs = vars(parsearg.parse_args())
 
 outfile = resargs['outfile'][0]
@@ -51,14 +53,22 @@ except datarange.DataRangeError as e:
     sys.exit(13)
 
 longs = nr.uniform(longrange.lower, longrange.upper, size=number)
-lats = nr.uniform(latrange.lower, latrange.upper, size=number)
 sizes = np.sqrt(nr.uniform(mindeg**2, maxdeg**2, size=number))
+if resargs['cosdist']:
+    cosrv = cosine(scale = 90.0 / np.pi)
+    while 1:
+        lats = cosrv.rvs(size = number * 4)
+        lats = lats[(lats >= latrange.lower) & (lats <= latrange.upper)]
+        if len(lats) >= number:
+            break
+    lats = lats[0:number]
+else:
+    lats = nr.uniform(latrange.lower, latrange.upper, size=number)
 
 prop = np.zeros_like(longs) + 1.99
 gsize = np.zeros_like(longs) + 10.0
 
 repos = longs.argsort()
-
 longs = longs[repos]
 lats = lats[repos]
 sizes = sizes[repos]

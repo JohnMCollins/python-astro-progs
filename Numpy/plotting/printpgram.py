@@ -9,6 +9,7 @@ import sys
 import string
 import rangearg
 import argmaxmin
+import math
 
 parsearg = argparse.ArgumentParser(description='Print top n maximum peak')
 parsearg.add_argument('spec', type=str, nargs='+', help='Spectrum file(s)')
@@ -17,7 +18,8 @@ parsearg.add_argument('--plusint', action='store_true', help='Display intensity 
 parsearg.add_argument('--latex', action='store_true', help='Put in Latex table boundaries')
 parsearg.add_argument('--noendl', action='store_true', help='Dont put hlines in in latex mode')
 parsearg.add_argument('--fcomps', type=str, help='Prefix by file name components going backwards thus 1:3')
-parsearg.add_argument('--aserror', type=float, default=0.0, help='Display as percentage error from')
+parsearg.add_argument('--aserror', action='store_true', help='Display error only')
+parsearg.add_argument('--errtot', action='store_true', help='Display error total')
 parsearg.add_argument('--asdiff', type=float, default=0.0, help='Display difference as +/-')
 parsearg.add_argument('--pcomp', type=int, help='Component of file names to compare periods with')
 parsearg.add_argument('--prange', type=str, help='Range or periods to limit consideration to')
@@ -29,13 +31,14 @@ resargs = vars(parsearg.parse_args())
 specs = resargs['spec']
 maxnum = resargs['maxnum']
 plusint = resargs['plusint']
-aserror = resargs['aserror']
 asdiff = resargs['asdiff']
 pcomp = resargs['pcomp']
 prange = resargs['prange']
 latex = resargs['latex']
 prec = resargs['prec']
 bfperc = resargs['bfperc']
+aserror = resargs['aserror']
+errtot = resargs['errtot']
 
 if prange is not None:
     prange = rangearg.parserange(prange)
@@ -64,6 +67,7 @@ else:
     bfb = bfe = '*'
 
 errors = 0
+errlist = []
 
 for spec in specs:
     try:
@@ -120,12 +124,13 @@ for spec in specs:
         had += 1
         pv = periods[m]
         if pcompare is not None:
-            nxt = fmt % pv
-            diff = pv - pcompare
-            if round(diff, prec) != 0.0:
-                if diff >= 0.0: nxt += '+'
-                nxt += fmt % diff
-            if abs(diff) * 100.0 / pcompare <= bfperc:
+            diff = abs(pv - pcompare)
+            if aserror:
+                nxt = fmt % diff
+            else:
+                nxt = fmt % pv
+            errlist.append(diff)
+            if diff * 100.0 / pcompare <= bfperc:
                 nxt = bfb + nxt + bfe
             line += nxt
         else:
@@ -135,6 +140,16 @@ for spec in specs:
         if plusint:
             line += "," + fmt % amps[m]
     print line + endl
+
+if errtot and len(errlist) != 0:
+    rmserr = math.sqrt((np.array(errlist)**2).sum()/len(errlist))
+    pref = []
+    pref.append('RMS')
+    if fcomps is not None:
+        for p in fcomps[1:]:
+            pref.append('')
+    pref.append(fmt % rmserr)
+    print string.join(pref, fcs) + endl
 
 if errors > 0:
     sys.exit(10)
