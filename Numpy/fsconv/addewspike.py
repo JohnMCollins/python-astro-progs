@@ -56,7 +56,8 @@ maxes = argmaxmin.maxmaxes(jdates, ews)
 avew = ews.mean()
 diffm = ews-avew
 hadm = np.zeros_like(diffm, dtype=bool)
-sdev = ews.std() * stdcont
+sd = ews.std()
+sdev = sd * stdcont
 
 results = []
 
@@ -65,7 +66,7 @@ for maxn in numb:
     try:
         while diffm[mm] >= sdev and not hadm[mm]:
             hadm[mm] = True
-            results.append((mm, jdates[mm], diffm[mm]))
+            results.append((mm, jdates[mm], diffm[mm]/sd))
             mm += 1
     except IndexError:
         continue
@@ -92,8 +93,11 @@ for ewf in ewfiles:
     jdates = newew[0]
     ews = newew[2]
     
+    ewm = ews.mean()
+    sd = ews.std()
+    
     for mm, currd, n in results:
-        ews[mm] += n
+        ews[mm] += n * sd - ewm
     
     newew[2] = ews
     newfname = miscutils.replacesuffix(ewf, suff)
