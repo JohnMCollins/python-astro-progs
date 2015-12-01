@@ -11,9 +11,41 @@ import math
 import argparse
 import numpy as np
 
-def rootms(vals, n):
-    """Return root mean square difference from n"""
-    return math.sqrt(np.mean((vals - n)**2))
+class Accdict(object):
+    """Class for supporting auto-creating dictionary of vectors"""
+    
+    def __init__(self):
+        self.dicttab = dict()
+        
+    def append(self, key, value):
+        """Append value to vector for key, creating it if it exists"""
+        try:
+            self.dicttab[key].append(value)
+        except KeyError:
+            self.dicttab[key] = [value]
+
+    def plus(self, key):
+        """Add one to value"""
+        try:
+            self.dicttab[key] += 1
+        except KeyError:
+            self.dicttab[key] = 1
+
+    def keys(self):
+        """Get sorted list of keys from dictionary"""
+        return sorted(self.dicttab.keys())
+    
+    def __getitem__(self, key):
+        try:
+            return self.dicttab[key]
+        except KeyError:
+            return 0
+    
+    def __len__(self):
+        return  len(self.dicttab)
+
+spiketypes = dict(sp3 = 1, sp2 = 2, sp1 = 3, sp23 = 4, sp13 = 5, sp12 = 6, sp123 = 7, sp1234 = 8)
+spikedescr = ('None', 'Peak 3', 'Peak 2', 'Peak 1', 'Peaks 2 & 3', 'Peaks 1 & 3', 'Peaks 1 & 2', 'Peaks 1,2,3', 'Peaks 1-4')
 
 parsearg = argparse.ArgumentParser(description='Classify noise.spike files')
 parsearg.add_argument('spfiles', type=str, nargs='+', help='Periodogram results')
@@ -24,12 +56,12 @@ resargs = vars(parsearg.parse_args())
 resfiles = resargs['spfiles']
 thresh = resargs['thresh'] / 100.0
 
-noisere = re.compile('n(\d+)')
-spre = re.compile('sp([123]+)')
+noisere = re.compile('n([-.0-9]+)')
+spre = re.compile('(sp[1234]+)')
 hasew = re.compile('ew')
 
-badres = []
-okres = []
+Byspike = Accdict()
+
 for rf in resfiles:
     
     try:
@@ -60,33 +92,32 @@ for rf in resfiles:
         if m:
             noise = float(m.group(1))
 
-        sp1 = sp2 = sp3 = False      
+        spiketype = 0     
         sp = spre.search(fname)
         if sp:
-            nn = int(sp.group(1))
-            
-            if nn >= 100:
-                sp1 = sp2 = sp3 = True
-            elif nn >= 20:
-                sp2 = sp3 = True
-            elif nn == 13:
-                sp1 = sp3 = True
-            elif nn == 12:
-                sp1 = sp2 = True
-            elif nn == 3:
-                sp3 = True
-            elif nn == 2:
-                sp2 = True
-            else:
-                sp1 = True
-             
-        res = (per, calc, incl, noise, sp1, sp2, sp3)
-        if abs(per - calc) / per <= thresh:
-            okres.append(res)
-        else:
-            badres.append(res)
+            try:
+                spiketype = spiketypes[sp.group(1)]
+            except KeyError:
+                pass
+        
+        Byspike.append(spiketype, (per, calc, incl, noise)) 
     
     fin.close()
+
+for spiketype in Byspike.keys():
     
-print "okres=", len(okres)
-print "badres=", len(badres)
+    print "spiketype", spikedescr[spiketype]
+    bynoiserr = Accdict()
+    bynoisen = Accdict()
+    bynoiseok = Accdict()
+    
+    for per, calc, incl, noise in Byspike[spiketype]:       
+        bynoisen.plus(noise)
+        err = abs(per-calc) / per
+        if err <= thresh:
+            bynoiseok.plus(noise)
+            bynoiserr.append(noise, err*err)
+    
+    for noise in bynoisen.keys():
+        err = math.sqrt(reduce(lambda x,y: x+y, bynoiserr[noise])/len(bynoiserr))
+        print "%d: %.2f %.1f" % (noise, err, float(bynoiseok[noise]) * 100.0 / float(bynoisen[noise])) 
