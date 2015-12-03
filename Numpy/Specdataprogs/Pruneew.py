@@ -5,9 +5,9 @@ import os
 import os.path
 import re
 import string
-import locale
 import argparse
 import numpy as np
+import jdate
 
 parsearg = argparse.ArgumentParser(description='Prune ew file to remove outlying entries')
 parsearg.add_argument('ewfil', type=str, help='EW file', nargs='+')
@@ -44,6 +44,9 @@ if inp.shape[0] < 8:
     sys.exit(103)
 
 ews = inp[2]
+dates = inp[0]
+
+removed_dates = np.array([], dtype=np.float64)
 
 orign = len(ews)
 
@@ -52,15 +55,23 @@ stv = ews.std()
 
 sel = (ews - mv) > - lowerlim * stv
 inp = inp[:,sel]
+removed_dates = np.concatenate((removed_dates, dates[~sel]))
 ews = inp[2]
+dates = inp[0]
 afterlower = len(ews)
 
 sel = (ews - mv) < upperlim * stv
 inp = inp[:,sel]
+removed_dates = np.concatenate((removed_dates, dates[~sel]))
 ews = inp[2]
+dates = inp[0]
 afterupper = len(ews)
 
 print "%d originally %d removed as being < lower %d removed as being >  upper" % (orign, orign-afterlower, afterlower-afterupper)
+if len(removed_dates) != 0:
+    np.sort(removed_dates)
+    for d in removed_dates:
+        print jdate.display(d)
 
 try:
     np.savetxt(outfile, np.transpose(inp))
