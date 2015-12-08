@@ -120,4 +120,4 @@ for spiketype in Byspike.keys():
     
     for noise in bynoisen.keys():
         err = math.sqrt(reduce(lambda x,y: x+y, bynoiserr[noise])/len(bynoiserr))
-        print "%d: %.2f %.1f" % (noise, err, float(bynoiseok[noise]) * 100.0 / float(bynoisen[noise])) 
+        print "%.1f: %.2f %.1f" % (noise, err, float(bynoiseok[noise]) * 100.0 / float(bynoisen[noise])) 

@@ -48,6 +48,8 @@ parsearg.add_argument('--gatspy', action='store_true', help='Use gatspy rather t
 parsearg.add_argument('--snr', type=float, default=0.0, help='SNR of noise to add 0=none (default)')
 parsearg.add_argument('--gauss', type=float, default=0.0, help='Proportion uniform to gauss noise 0=all uniform 1=all gauss')
 parsearg.add_argument('--outfile', help='Output file prefix to save plot', type=str)
+parsearg.add_argument('--tonly', action='store_true', help='Only plot highest/max peak only')
+parsearg.add_argument('--accept', type=float, default=0.1, help='Difference to count match to p1 in total')
 
 res = vars(parsearg.parse_args())
 ewfile = res['ewfile'][0]
@@ -58,6 +60,8 @@ ylab2 = res['ylab2']
 ylim = res['ylim']
 usegatspy = res['gatspy']
 doublings = res['double']
+tonly = res['tonly']
+accept = res['accept']
 
 p1, a1 = parseperamp(res['per1'])
 p2, a2 = parseperamp(res['per2'])
@@ -142,8 +146,9 @@ fig1 = plt.figure(figsize=dims)
 if ylim < 1e6:
     plt.ylim(0, ylim)
 plt.plot(phasesr, hi)
-plt.plot(phasesr, mid)
-plt.plot(phasesr, lo)
+if not tonly:
+    plt.plot(phasesr, mid)
+    plt.plot(phasesr, lo)
 if p1 < ylim:
     plt.axhline(p1, color='black', ls=':')
 if p2 < ylim:
@@ -155,14 +160,17 @@ fig2 = plt.figure(figsize=dims)
 if ylim < 1e6:
     plt.ylim(0, ylim)
 plt.plot(phasesr, s1)
-plt.plot(phasesr, s2)
-plt.plot(phasesr, s3)
+if not tonly:
+    plt.plot(phasesr, s2)
+    plt.plot(phasesr, s3)
 if p1 < ylim:
     plt.axhline(p1, color='black', ls=':')
 if p2 < ylim:
     plt.axhline(p2, color='black', ls=':')
 plt.xlabel(xlab)
 plt.ylabel(ylab2)
+
+print "Percent in range of p1 %.2f" % (100.0 * (np.abs(p1 - np.array(s1)) <= accept).sum()/len(s1))
 
 if outfile is None:
     plt.show()
