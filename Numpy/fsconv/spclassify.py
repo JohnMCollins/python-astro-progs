@@ -44,17 +44,27 @@ class Accdict(object):
     def __len__(self):
         return  len(self.dicttab)
 
-spiketypes = dict(sp3 = 1, sp2 = 2, sp1 = 3, sp23 = 4, sp13 = 5, sp12 = 6, sp123 = 7, sp1234 = 8)
+spiketypes = dict(none = 0, sp3 = 1, sp2 = 2, sp1 = 3, sp23 = 4, sp13 = 5, sp12 = 6, sp123 = 7, sp1234 = 8)
 spikedescr = ('None', 'Peak 3', 'Peak 2', 'Peak 1', 'Peaks 2 & 3', 'Peaks 1 & 3', 'Peaks 1 & 2', 'Peaks 1,2,3', 'Peaks 1-4')
 
 parsearg = argparse.ArgumentParser(description='Classify noise.spike files')
 parsearg.add_argument('spfiles', type=str, nargs='+', help='Periodogram results')
 parsearg.add_argument('--thresh', type=float, default=5.0, help='Percent threshold for accepting result')
+parsearg.add_argument('--minp', type=float,default=-1.0, help='Minimum period to count')
+parsearg.add_argument('--maxp', type=float,default=1e10, help='Maximum period to count')
+parsearg.add_argument('--imin', type=float,default=0.0, help='Minimum inclination to count')
+parsearg.add_argument('--imax', type=float,default=90.0, help='Maximum inclination to count')
+parsearg.add_argument('--spreq', type=str, help='Spike type required')
 
 resargs = vars(parsearg.parse_args())
 
 resfiles = resargs['spfiles']
 thresh = resargs['thresh'] / 100.0
+minp = resargs['minp']
+maxp = resargs['maxp']
+imin = resargs['imin']
+imax = resargs['imax']
+spreq = resargs['spreq']
 
 noisere = re.compile('n([-.0-9]+)')
 spre = re.compile('(sp[1234]+)')
@@ -81,11 +91,13 @@ for rf in resfiles:
             calc = float(calc)
         except ValueError:
             sys.stdout = sys.stderr
-            print "Could not understand", rf
+            print "Could not understand", rf, "line=", inline
             sys.stdout = sys.__stdout__
             break
-        
+
         if not hasew.search(fname): continue
+        if per < minp or per > maxp: continue
+        if incl < imin or incl > imax: continue
         
         m = noisere.search(fname)
         noise = 0.0
@@ -99,14 +111,18 @@ for rf in resfiles:
                 spiketype = spiketypes[sp.group(1)]
             except KeyError:
                 pass
-        
+
         Byspike.append(spiketype, (per, calc, incl, noise)) 
     
     fin.close()
 
 for spiketype in Byspike.keys():
     
-    print "spiketype", spikedescr[spiketype]
+    if spreq is None:
+        print "%s:" % spikedescr[spiketype]
+    elif spiketypes[spreq] != spiketype:
+        continue
+
     bynoiserr = Accdict()
     bynoisen = Accdict()
     bynoiseok = Accdict()
@@ -120,4 +136,4 @@ for spiketype in Byspike.keys():
     
     for noise in bynoisen.keys():
         err = math.sqrt(reduce(lambda x,y: x+y, bynoiserr[noise])/len(bynoiserr))
-        print "%.1f: %.2f %.1f" % (noise, err, float(bynoiseok[noise]) * 100.0 / float(bynoisen[noise])) 
+        print "%.1f %.2f %.1f" % (noise, err, float(bynoiseok[noise]) * 100.0 / float(bynoisen[noise])) 
