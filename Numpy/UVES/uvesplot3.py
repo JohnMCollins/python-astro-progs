@@ -26,6 +26,8 @@ parsearg.add_argument('--xrayoffset', type=float, default=0.0, help='Offset to X
 parsearg.add_argument('--width', help="Width of plot", type=float, default=8)
 parsearg.add_argument('--height', help="Height of plot", type=float, default=8)
 parsearg.add_argument('--outfile', help='Prefix for output file', type=str)
+parsearg.add_argument('--padtopmult', type=float, default=1.03, help='Multiply maxima in PR and EW total display')
+parsearg.add_argument('--padbotmult', type=float, default=0.97, help='Multiply minima in PR and EW total display')
 
 resargs = vars(parsearg.parse_args())
 
@@ -35,6 +37,8 @@ width = resargs['width']
 height = resargs['height']
 outfile = resargs['outfile']
 xrayoffset = resargs['xrayoffset']
+padt = resargs['padtopmult']
+padb = resargs['padbotmult']
 if len(xrayfiles) != 3:
     print "Expecting 3 X ray files"
     sys.exit(10)
@@ -143,6 +147,11 @@ except IOError as e:
     print "Cannot open info file, error was", e.args[1]
     sys.exit(12)
 
+maxew = ews.max()
+maxpr = prs.max()
+minew = ews.min()
+minpr = prs.min()
+
 # Get date list and split up spectra by day
 
 datelist = [jdate.jdate_to_datetime(jd) for jd in jdates]
@@ -183,6 +192,78 @@ for day_dates, day_ews, day_prs, day_xrayvs, day_xraygrads in dateparts:
         newf = outfile + "plot_" + dateshort + ".png"
         fig.savefig(newf)
         filesmade.append(newf)
+
+# Repeat with EWs all on same scale
+
+fig = plt.figure(figsize=(width, height))
+fig.canvas.set_window_title("EWs all to same scale")
+ln = 1
+plt.subplots_adjust(hspace = 0)
+commonax = None
+
+for day_dates, day_ews, day_prs, day_xrayvs, day_xraygrads in dateparts:
+    
+    # Display of one column 3 axes
+
+    ax1 = plt.subplot(3, 1, ln, sharex=commonax)
+    if commonax is None: commonax=ax1
+
+    # Limit each display to maxamp as we worked out when we read it in
+
+    plt.ylim(minew*padb, maxew*padt)
+    ax1.xaxis.set_major_formatter(hfmt)
+    fig.autofmt_xdate()
+
+    # Recalc this to put them on the same axis
+
+    day_dates = np.array([jdate.jdate_to_datetime(jdate.datetime_to_jdate(d) - ln*2 - 2) for d in day_dates])
+    plt.plot(day_dates, day_ews, color='blue')
+
+    #plt.legend(["Day %d" % ln])
+    plt.xlabel('Time')
+    plt.ylabel('Intensity')
+    ln += 1
+
+if outfile is not None:
+    newf = outfile + '-allew.png'
+    fig.savefig(newf)
+    filesmade.append(newf)
+
+# Repeat with PRs all on same scale
+
+fig = plt.figure(figsize=(width, height))
+fig.canvas.set_window_title("PRs all to same scale")
+ln = 1
+plt.subplots_adjust(hspace = 0)
+commonax = None
+
+for day_dates, day_ews, day_prs, day_xrayvs, day_xraygrads in dateparts:
+    
+    # Display of one column 3 axes
+
+    ax1 = plt.subplot(3, 1, ln, sharex=commonax)
+    if commonax is None: commonax=ax1
+
+    # Limit each display to maxamp as we worked out when we read it in
+
+    plt.ylim(minpr*padb, maxpr*padt)
+    ax1.xaxis.set_major_formatter(hfmt)
+    fig.autofmt_xdate()
+
+    # Recalc this to put them on the same axis
+
+    day_dates = np.array([jdate.jdate_to_datetime(jdate.datetime_to_jdate(d) - ln*2 - 2) for d in day_dates])
+    plt.plot(day_dates, day_prs, color='purple')
+
+    #plt.legend(["Day %d" % ln])
+    plt.xlabel('Time')
+    plt.ylabel('Intensity')
+    ln += 1
+
+if outfile is not None:
+    newf = outfile + '-allew.png'
+    fig.savefig(newf)
+    filesmade.append(newf)
 
 # Only display if we're not saving
 
