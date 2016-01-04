@@ -57,53 +57,53 @@ parsearg.add_argument('--scatter', action='store_true', help='Do scatter plot ra
 parsearg.add_argument('--excludes', type=str, help='File with excluded obs times and reasons')
 parsearg.add_argument('--exclcolours', type=str, default='red,green,blue,yellow,magenta,cyan,black', help='Colours for successive exclude reasons')
 
-res = vars(parsearg.parse_args())
-rf = res['integ'][0]
-title = res['title']
-dims = (res['width'], res['height'])
-typeplot = res['type']
-takelog = res['log']
-sdp = res['sdplot']
-sepdays = res['sepdays'] * periodarg.SECSPERDAY
+resargs = vars(parsearg.parse_args())
+rf = resargs['integ'][0]
+title = resargs['title']
+dims = (resargs['width'], resargs['height'])
+typeplot = resargs['type']
+takelog = resargs['log']
+sdp = resargs['sdplot']
+sepdays = resargs['sepdays'] * periodarg.SECSPERDAY
 try:
-    indaysep = periodarg.periodarg(res['indaysep'])
+    indaysep = periodarg.periodarg(resargs['indaysep'])
 except ValueError as e:
-    print "Unknown sep period", res['indaysep']
+    print "Unknown sep period", resargs['indaysep']
     sys.exit(2)
-bins = res['bins']
-clip = res['clip']
-gauss = res['gauss']
-xtype = res['xtype']
-drot = res['daterot']
-xtt = res['xaxt']
-ytr = res['yaxr']
-xrange = rangearg.parserange(res['xrange'])
-yrange = rangearg.parserange(res['yrange'])
-histxrange = rangearg.parserange(res['histxrange'])
-histyrange = rangearg.parserange(res['histyrange'])
-histcolour = string.split(res['histcolour'], ',')
-outf = res['outprefix']
-excludes = res['excludes']
+bins = resargs['bins']
+clip = resargs['clip']
+gauss = resargs['gauss']
+xtype = resargs['xtype']
+drot = resargs['daterot']
+xtt = resargs['xaxt']
+ytr = resargs['yaxr']
+xrange = rangearg.parserange(resargs['xrange'])
+yrange = rangearg.parserange(resargs['yrange'])
+histxrange = rangearg.parserange(resargs['histxrange'])
+histyrange = rangearg.parserange(resargs['histyrange'])
+histcolour = string.split(resargs['histcolour'], ',')
+outf = resargs['outprefix']
+excludes = resargs['excludes']
 
 plotting_function = plt.plot
-if res['scatter']: plotting_function = plt.scatter
+if resargs['scatter']: plotting_function = plt.scatter
 
 if typeplot not in optdict:
     print "Unknown type", typeplot, "specified"
     sys.exit(2)
 ycolumn, histxlab, plotylab = optdict[typeplot]
-if res['xhist'] is not None:
-    histxlab = res['xhist']
+if resargs['xhist'] is not None:
+    histxlab = resargs['xhist']
     if histxlab == "none":
         histxlab = ""
-if res['yplot'] is not None:
-    plotylab = res['yplot']
+if resargs['yplot'] is not None:
+    plotylab = resargs['yplot']
     if plotylab == "none":
         ylab = ""
 
 # Ones not dependent on column
 
-histylab = res['yhist']
+histylab = resargs['yhist']
 if histylab == "none":
     histylab = ""
     
@@ -125,7 +125,7 @@ if excludes is not None:
         print e.args[0] + ': ' + e.args[1]
         sys.exit(101)
     rlist = elist.reasons()
-    excols = string.split(res['exclcolours'], ',')
+    excols = string.split(resargs['exclcolours'], ',')
     excolours = excols * ((len(rlist) + len(excols) - 1) / len(excols))
     rlookup = dict()
     for r, c in zip(rlist, excolours):
@@ -163,7 +163,7 @@ else:
     datetimes = td(obsdates)
     sim = ""
 
-xlab = res['xplot']
+xlab = resargs['xplot']
 
 if xtype == 'time':
     usedt = True
@@ -213,8 +213,15 @@ if histyrange is not None:
     plt.ylim(*histyrange)
 if histxrange is not None:
     plt.xlim(*histxrange)
+    if takelog:
+        bins = np.logspace(*np.log10(histxrange), num=bins)
+    else:
+        bins = np.linspace(*histxrange, num=bins)
 
-plt.gca().get_xaxis().get_major_formatter().set_useOffset(False)
+ax = plt.gca()
+ax.get_xaxis().get_major_formatter().set_useOffset(False)
+if takelog:
+    ax.set_xscale('log')
 
 if gauss:
     histandgauss.histandgauss(hvals, bins=bins, colour=histcolour)
@@ -259,7 +266,7 @@ separated_vals = splittime.splittime(sepdays, datetimes, obsdates, vals)
 
 numplots = len(separated_vals)
 
-plotcols = string.split(res['plotcolours'], ',')
+plotcols = string.split(resargs['plotcolours'], ',')
 colours = plotcols * ((numplots + len(plotcols) - 1) / len(plotcols))
 
 fnum = 1
