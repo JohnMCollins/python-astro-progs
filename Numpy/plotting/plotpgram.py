@@ -147,6 +147,7 @@ if maxnum > 0:
             else:
                 plt.text(xplace, yplace, "%#.4g" % maxx, color=mtxtcol[n], rotation=mrot)
 
+plt.tight_layout()
 if outfig is not None:
     plt.savefig(outfig)
     sys.exit(0)

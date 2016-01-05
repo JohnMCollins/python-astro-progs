@@ -252,6 +252,7 @@ else:
 
 # Save histogram output file if required
 
+fig.tight_layout()
 if outf is not None:
     fname = outf + '_hist.png'
     plt.savefig(fname)
@@ -334,6 +335,7 @@ if sdp[0] == 's':
                     leglist.append(legl)
             if len(leglist) > 0:
                 legend(handles=leglist)
+        fig.tight_layout()
         if outf is not None:
             fname = outf + ("_f%.3d.png" % fnum)
             fig.savefig(fname)
@@ -400,6 +402,7 @@ elif sdp[0] == 'o':
         
     # Don't worry about excludes for num
     
+    fig.tight_layout()
     if outf is not None:
         fname = outf + ("_f.png" % fnum)
         fig.savefig(fname)
@@ -468,6 +471,7 @@ else:
         if len(leglist) > 0:
             legend(handles=leglist)
     
+    fig.tight_layout()
     if outf is not None:
         fname = outf + "_f.png"
         fig.savefig(fname)

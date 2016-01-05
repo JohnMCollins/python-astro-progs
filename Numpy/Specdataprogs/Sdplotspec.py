@@ -228,6 +228,7 @@ for lm in linmk:
     plt.axvline(wl, ls=sty, color=lcol)
     plt.text(wl, ty, lab, color=lcol, rotation=trot)
 
+plt.tight_layout()
 if outfig is not None:
     plt.savefig(outfig)
 else:
