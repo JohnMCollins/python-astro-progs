@@ -99,7 +99,6 @@ filesmade = []
 fig = plt.figure(figsize=(width, height))
 fig.canvas.set_window_title("Xray values all to same scale")
 ln = 1
-plt.subplots_adjust(hspace = 0)
 commonax = None
 
 for xray_time, xray_amp, xray_err, xray_gradient, xray_dates in xraydata:
@@ -120,9 +119,9 @@ for xray_time, xray_amp, xray_err, xray_gradient, xray_dates in xraydata:
     xray_dates = np.array([jdate.jdate_to_datetime(d - ln*2 - 2) for d in xray_time])
     plt.errorbar(xray_dates, xray_amp, yerr=xray_err, ecolor='red', color='black')
 
-    plt.legend(["Day %d" % ln])
+    plt.legend(["Day %d" % ln], loc='best')
     plt.xlabel('Time')
-    plt.ylabel('Intensity')
+    plt.ylabel('C/s')
     #rax = plt.twinx(ax1)
     #plt.ylim(mingrad, maxgrad)
     #plt.plot(xray_dates, xray_gradient, color='purple', ls=':')
@@ -131,6 +130,8 @@ for xray_time, xray_amp, xray_err, xray_gradient, xray_dates in xraydata:
     #rax.tick_params(axis='y', colors='purple')
     ln += 1
 
+fig.tight_layout()
+plt.subplots_adjust(hspace = 0)
 if outfile is not None:
     newf = outfile + '-xraydisp.png'
     fig.savefig(newf)
@@ -167,27 +168,31 @@ for day_dates, day_ews, day_prs, day_xrayvs, day_xraygrads in dateparts:
     dateshort = day_dates[0].strftime("%d%b")
 
     fig = plt.figure(figsize=(width,height))
-    plt.subplots_adjust(hspace = 0)
     plt.xlim(day_dates[0], day_dates[-1])
     fig.canvas.set_window_title("Plotting for " + datedescr)
     ax1 = plt.subplot(3, 1, 1)
 
+    plt.ylabel('EW ($\AA$)')
     plt.plot(day_dates, day_ews, color='blue')
-    plt.legend(['EWs'])
+    plt.legend(['EWs'], loc='best')
 
     ax2 = plt.subplot(3, 1, 2, sharex=ax1)
+    plt.ylabel("ratio")
     plt.plot(day_dates, day_prs, color='purple')
-    plt.legend(['PRs'])
+    plt.legend(['PRs'], loc='best')
 
     ax3 = plt.subplot(3, 1, 3, sharex=ax1)
 
+    plt.ylabel('c/s')
     plt.plot(xray_dates, xray_amp, color='black')
-    plt.legend(["X-ray amp"])
+    plt.legend(["X-ray c/s"], loc='best')
     plt.xlim(xray_dates[0], xray_dates[-1])
     ax2.xaxis.set_major_formatter(hfmt)
     plt.gcf().autofmt_xdate()
-    plt.xlabel("Ews / Peak ratios / X-ray amp")
-
+    plt.xlabel("Time")
+    fig.tight_layout()
+    plt.subplots_adjust(hspace = 0)
+    
     if outfile is not None:
         newf = outfile + "plot_" + dateshort + ".png"
         fig.savefig(newf)
@@ -198,7 +203,6 @@ for day_dates, day_ews, day_prs, day_xrayvs, day_xraygrads in dateparts:
 fig = plt.figure(figsize=(width, height))
 fig.canvas.set_window_title("EWs all to same scale")
 ln = 1
-plt.subplots_adjust(hspace = 0)
 commonax = None
 
 for day_dates, day_ews, day_prs, day_xrayvs, day_xraygrads in dateparts:
@@ -219,10 +223,13 @@ for day_dates, day_ews, day_prs, day_xrayvs, day_xraygrads in dateparts:
     day_dates = np.array([jdate.jdate_to_datetime(jdate.datetime_to_jdate(d) - ln*2 - 2) for d in day_dates])
     plt.plot(day_dates, day_ews, color='blue')
 
-    #plt.legend(["Day %d" % ln])
+    plt.legend(["Day %d" % ln], loc='best')
     plt.xlabel('Time')
-    plt.ylabel('Intensity')
+    plt.ylabel('EW ($\AA$)')
     ln += 1
+
+fig.tight_layout()
+plt.subplots_adjust(hspace = 0)
 
 if outfile is not None:
     newf = outfile + '-allew.png'
@@ -234,7 +241,6 @@ if outfile is not None:
 fig = plt.figure(figsize=(width, height))
 fig.canvas.set_window_title("PRs all to same scale")
 ln = 1
-plt.subplots_adjust(hspace = 0)
 commonax = None
 
 for day_dates, day_ews, day_prs, day_xrayvs, day_xraygrads in dateparts:
@@ -255,13 +261,16 @@ for day_dates, day_ews, day_prs, day_xrayvs, day_xraygrads in dateparts:
     day_dates = np.array([jdate.jdate_to_datetime(jdate.datetime_to_jdate(d) - ln*2 - 2) for d in day_dates])
     plt.plot(day_dates, day_prs, color='purple')
 
-    #plt.legend(["Day %d" % ln])
+    plt.legend(["Day %d" % ln], loc='best')
     plt.xlabel('Time')
-    plt.ylabel('Intensity')
+    plt.ylabel('PR')
     ln += 1
 
+fig.tight_layout()
+plt.subplots_adjust(hspace = 0)
+
 if outfile is not None:
-    newf = outfile + '-allew.png'
+    newf = outfile + '-allpr.png'
     fig.savefig(newf)
     filesmade.append(newf)
 
