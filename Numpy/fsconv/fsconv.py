@@ -9,7 +9,8 @@ import numpy as np
 import dotsdata
 import veltowavel
 
-parsearg = argparse.ArgumentParser(description='Convert fake spectra')
+parsearg = argparse.ArgumentParser(description='Convert fake spectra',
+                                   formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 parsearg.add_argument('--velocities', type=str, help='File giving velocities')
 parsearg.add_argument('--spectra', type=str, help='File giving fake spectra')
 parsearg.add_argument('--timings', type=str, help='Timings data file')

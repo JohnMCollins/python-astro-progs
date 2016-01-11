@@ -10,7 +10,8 @@ import numpy.random as nr
 from scipy.stats import cosine
 import datarange
 
-parsearg = argparse.ArgumentParser(description='Generate a random plage file')
+parsearg = argparse.ArgumentParser(description='Generate a random plage file',
+                                   formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 parsearg.add_argument('outfile', help="Generated plage file", nargs=1, type=str)
 parsearg.add_argument('--force', help='Force overwrite of existing file', action='store_true')
 parsearg.add_argument('--percent', type=float, default=2.0, help='Percentage of surface to fill')

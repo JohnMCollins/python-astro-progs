@@ -11,7 +11,7 @@ import matplotlib.pyplot as plt
 import exclusions
 import jdate
 
-parsearg = argparse.ArgumentParser(description='Plot peak ratio results')
+parsearg = argparse.ArgumentParser(description='Plot peak ratio results', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 parsearg.add_argument('--integ', type=str, help='Input integration file (time/intensity)')
 parsearg.add_argument('--sepdays', type=int, default=10000, help='Separate plots if this number of days apart')
 parsearg.add_argument('--sdplot', action='store_true', help='Put separate days in separate figure')

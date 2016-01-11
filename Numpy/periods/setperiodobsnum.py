@@ -38,7 +38,8 @@ class ProcessRow(threading.Thread):
         Z[self.rownum] = colresult
         tlock.release()
 
-parsearg = argparse.ArgumentParser(description='Track recovery of periods for given number of obs')
+parsearg = argparse.ArgumentParser(description='Track recovery of periods for given number of obs',
+                                   formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 parsearg.add_argument('out', type=str, nargs=1, help='Output file name')
 parsearg.add_argument('--period', type=float, default=10.0, help='Basic period')
 parsearg.add_argument('--spread', type=float, default=5.0, help='Spread of periods for L-S search')

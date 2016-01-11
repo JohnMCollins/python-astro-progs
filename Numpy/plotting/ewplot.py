@@ -25,7 +25,7 @@ optdict = dict(ew = (2, 'Equivalent width ($\AA$)', 'Equivalent width ($\AA$)'),
                ps = (4, 'Peak size (rel to EW)', 'Peak size (rel to EW)'),
                pr = (6, 'Peak ratio', 'Peak ratio'))
 
-parsearg = argparse.ArgumentParser(description='Plot equivalent width results')
+parsearg = argparse.ArgumentParser(description='Plot equivalent width results', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 parsearg.add_argument('integ', type=str, nargs=1, help='Input integration file (time/intensity)')
 parsearg.add_argument('--title', type=str, default='Equivalent widths', help='Title for window')
 parsearg.add_argument('--width', type=float, default=8, help='Display width')

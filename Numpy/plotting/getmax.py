@@ -26,7 +26,7 @@ def prange(mn, mx):
     if rmn == 0.0: return "%.6g" % rmx
     return "%.6g,%.6g" % (rmn, rmx)
 
-parsearg = argparse.ArgumentParser(description='Get maxima for histograms and plotting')
+parsearg = argparse.ArgumentParser(description='Get maxima for histograms and plotting', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 parsearg.add_argument('--histogram', action='store_true', help='Get results for histogram')
 parsearg.add_argument('--bins', type=int, default=20, help='Histogram bins')
 parsearg.add_argument('--places', type=int, default=-1000000, help='Specify decimal places')

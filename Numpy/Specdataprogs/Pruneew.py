@@ -9,7 +9,7 @@ import argparse
 import numpy as np
 import jdate
 
-parsearg = argparse.ArgumentParser(description='Prune ew file to remove outlying entries')
+parsearg = argparse.ArgumentParser(description='Prune ew file to remove outlying entries', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 parsearg.add_argument('ewfil', type=str, help='EW file', nargs='+')
 parsearg.add_argument('--lower', type=float, default=2.0, help='Prune EWs this less than mean')
 parsearg.add_argument('--upper', type=float, default=2.0, help='Prune EWs this greater than mean')

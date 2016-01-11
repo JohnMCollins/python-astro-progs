@@ -19,7 +19,8 @@ def calcgauss(xvals, offset, scale, fhwm):
     sigma = fhwm / Gaussdiv
     return  scale * np.exp(-0.5 * ((xvals - offset) / sigma)**2)
 
-parsearg = argparse.ArgumentParser(description='Add spikes to fake spectra')
+parsearg = argparse.ArgumentParser(description='Add spikes to fake spectra',
+                                   formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 parsearg.add_argument('spikes', type=str, nargs='+', help='Spikes as E/G:fhwm:amp:specnum')
 parsearg.add_argument('--obsfile', type=str, required=True, help='Filename/obs time file')
 parsearg.add_argument('--prefix', type=str, help='Prefix to add to spectrum file names')

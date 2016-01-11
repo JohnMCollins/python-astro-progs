@@ -35,7 +35,7 @@ def parsedate(arg, h, m, s):
     tim = datetime.time(h, m, s)
     return jdate.datetime_to_jdate(datetime.datetime.combine(dat, tim))
 
-parsearg = argparse.ArgumentParser(description='Extract obs times from info file')
+parsearg = argparse.ArgumentParser(description='Extract obs times from info file', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 parsearg.add_argument('infofile', type=str, help='Specinfo file', nargs=1)
 parsearg.add_argument('--outfile', type=str, help='Output file if not stdout')
 parsearg.add_argument('--after', type=str, help='Specify earliest date to use')

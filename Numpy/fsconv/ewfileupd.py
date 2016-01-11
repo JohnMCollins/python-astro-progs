@@ -8,7 +8,8 @@ import locale
 import argparse
 import numpy as np
 
-parsearg = argparse.ArgumentParser(description='Convert EW files to new standard format')
+parsearg = argparse.ArgumentParser(description='Convert EW files to new standard format',
+                                   formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 parsearg.add_argument('ewfile', type=str, help='EW file', nargs='+')
 
 resargs = vars(parsearg.parse_args())

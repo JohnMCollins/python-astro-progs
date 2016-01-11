@@ -16,7 +16,7 @@ import jdate
 
 lslu = dict(solid = '.', dashed = '--', dashdot = '-.', dotted = ':')
 
-parsearg = argparse.ArgumentParser(description='Display spectra with ranges from info file')
+parsearg = argparse.ArgumentParser(description='Display spectra with ranges from info file', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 parsearg.add_argument('--infofile', type=str, required=True, help='Info file giving spectra')
 parsearg.add_argument('--outfig', type=str, help='Output figure')
 parsearg.add_argument('spec', type=int, help='Spectrum selection', nargs='+')

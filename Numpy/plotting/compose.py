@@ -11,7 +11,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.image as mpimg
 
-parsearg = argparse.ArgumentParser(description='Compose immages into one')
+parsearg = argparse.ArgumentParser(description='Compose immages into one', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 parsearg.add_argument('images', type=str, nargs='+')
 parsearg.add_argument('--width', type=float, default=16, help='Display width max')
 parsearg.add_argument('--height', type=float, default=8, help='Display height max')

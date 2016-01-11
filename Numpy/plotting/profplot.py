@@ -11,7 +11,7 @@ import re
 
 import lutdata
 
-parsearg = argparse.ArgumentParser(description='Display flux profile file(s)')
+parsearg = argparse.ArgumentParser(description='Display flux profile file(s)', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 parsearg.add_argument('profile', type=str, nargs='+', help='Flux profile files')
 parsearg.add_argument('--outfile', type=str, help='Output file if required')
 parsearg.add_argument('--width', type=float, help='Width of figure', default=8.0)

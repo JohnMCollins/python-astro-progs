@@ -12,7 +12,8 @@ import jdate
 import argmaxmin
 import miscutils
 
-parsearg = argparse.ArgumentParser(description='Add spikes to ew data copied from real life ones')
+parsearg = argparse.ArgumentParser(description='Add spikes to ew data copied from real life ones',
+                                   formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 parsearg.add_argument('ewfiles', type=str, nargs='*', help='EW files to add adjustments to, possibly none to just display')
 parsearg.add_argument('--inewfile', type=str, required=True, help='EW file to take from')
 parsearg.add_argument('--numbers', type=str, default='1', help='Numbers of maxima to apply')

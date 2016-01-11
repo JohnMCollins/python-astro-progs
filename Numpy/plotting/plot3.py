@@ -18,7 +18,7 @@ cmapd = dict(coolwarm = plt.cm.coolwarm,
              autumn = plt.cm.autumn,
              winter = plt.cm.winter)
 
-parsearg = argparse.ArgumentParser(description='Display of 3-D data file')
+parsearg = argparse.ArgumentParser(description='Display of 3-D data file', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 parsearg.add_argument('input', type=str, nargs=1, help='Input file (numpy 3D array of X,Y,Z)')
 parsearg.add_argument('--width', type=float, default=8, help='Display width')
 parsearg.add_argument('--height', type=float, default=6, help='Display height')

@@ -13,7 +13,8 @@ import equivwidth
 import meanval
 import fakeobs
 
-parsearg = argparse.ArgumentParser(description='Compute ew and subpeak profiles from specified ranges')
+parsearg = argparse.ArgumentParser(description='Compute ew and subpeak profiles from specified ranges',
+                                   formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 parsearg.add_argument('spec', type=str, help='Spectrum files', nargs='+')
 parsearg.add_argument('--glob', action='store_true', help='Apply glob to arguments')
 parsearg.add_argument('--obstimes', type=str, help='File for observation times')

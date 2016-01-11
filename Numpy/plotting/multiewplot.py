@@ -15,7 +15,7 @@ import rangearg
 
 # According to type of display select column, xlabel  for hist, ylabel for plot
 
-parsearg = argparse.ArgumentParser(description='Plot comparative equivalent width results')
+parsearg = argparse.ArgumentParser(description='Plot comparative equivalent width results', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 parsearg.add_argument('integ', type=str, nargs='+', help='Input integration file (time/intensity)')
 parsearg.add_argument('--title', type=str, default='Equivalent widths', help='Title for window')
 parsearg.add_argument('--bins', type=int, default=20, help='Histogram bins')

@@ -28,7 +28,7 @@ def printoffscale(thing):
         if ind: print "\t",
         print "Y offset:", string.join(["%#.6g" % rp for rp in thing.yoffset], ' ')
 
-parsearg = argparse.ArgumentParser(description='List info on spectra in spectral data file')
+parsearg = argparse.ArgumentParser(description='List info on spectra in spectral data file', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 parsearg.add_argument('infofile', help="XML file of spec info", nargs='+', type=str)
 parsearg.add_argument('--outfile', help="Output file if not STDOUT", type=str)
 parsearg.add_argument('--latex', help='Latex output format', action='store_true')

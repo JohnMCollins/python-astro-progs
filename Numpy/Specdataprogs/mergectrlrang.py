@@ -16,7 +16,7 @@ import xmlutil
 CTRLSUFF = 'sac'
 RANGESUFF = 'spcr'
 
-parsearg = argparse.ArgumentParser(description='Merge control file and range file into one')
+parsearg = argparse.ArgumentParser(description='Merge control file and range file into one', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 parsearg.add_argument('--ctrlfile', type=str, help='Input control file')
 parsearg.add_argument('--rangefile', type=str, help='Range file')
 parsearg.add_argument('--outfile', help='Output file', type=str)

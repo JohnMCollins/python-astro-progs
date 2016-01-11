@@ -10,7 +10,7 @@ import string
 import noise
 import specinfo
 
-parsearg = argparse.ArgumentParser(description='Display errors in spectral data')
+parsearg = argparse.ArgumentParser(description='Display errors in spectral data', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 parsearg.add_argument('infofile', type=str, nargs=1, help='Info file')
 parsearg.add_argument('--xlab', type=str, default='Datapoint number', help='Label for X axis')
 parsearg.add_argument('--ylab', type=str, default='Signal to Noise (dB)', help='Label for Y axis')

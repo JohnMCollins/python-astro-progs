@@ -61,7 +61,7 @@ class sigdets(object):
         
         return self.amplitude * np.sin(self.phase + times * TWOPI / self.period)
 
-parsearg = argparse.ArgumentParser(description='Generate periodic data fitting times')
+parsearg = argparse.ArgumentParser(description='Generate periodic data fitting times', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 parsearg.add_argument('signals', type=str, help='Period:amplitude:phase[:col]', nargs='+')
 parsearg.add_argument('--snr', type=float, default=0.0, help='SNR of noise to add 0=none (default)')
 parsearg.add_argument('--gauss', type=float, default=0.0, help='Proportion uniform to gauss noise 0=all uniform 1=all gauss')

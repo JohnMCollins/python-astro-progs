@@ -8,7 +8,7 @@ import miscutils
 import specinfo
 import jdate
 
-parsearg = argparse.ArgumentParser(description='List dates and spectrum numbers in info file')
+parsearg = argparse.ArgumentParser(description='List dates and spectrum numbers in info file', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 parsearg.add_argument('infofile', type=str, help='Specinfo file', nargs=1)
 
 res = vars(parsearg.parse_args())

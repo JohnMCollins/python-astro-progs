@@ -12,7 +12,7 @@ import string
 import rangearg
 import argmaxmin
 
-parsearg = argparse.ArgumentParser(description='Display chart of periods')
+parsearg = argparse.ArgumentParser(description='Display chart of periods', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 parsearg.add_argument('spec', type=str, help='Spectrum file')
 parsearg.add_argument('--title', help='Set window title', type=str, default="Periodogram display")
 parsearg.add_argument('--outfig', type=str, help='Output figure')

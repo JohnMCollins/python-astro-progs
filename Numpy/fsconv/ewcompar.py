@@ -56,7 +56,8 @@ def printline(pref1, pref2, ewlist, pslist, prlist, ismed, isperc):
     
 td = np.vectorize(jdate.jdate_to_datetime)
     
-parsearg = argparse.ArgumentParser(description='Display EW/PS/PRs mean/std from files')
+parsearg = argparse.ArgumentParser(description='Display EW/PS/PRs mean/std from files',
+                                   formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 parsearg.add_argument('ewfiles', type=str, nargs='+', help='EW file(s)')
 parsearg.add_argument('--precision', type=int, default=8, help='Precision, default 8')
 parsearg.add_argument('--percent', action='store_true', help='Give std as percentage')

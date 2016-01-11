@@ -6,7 +6,7 @@ import re
 import sys
 import jdate
 
-parsearg = argparse.ArgumentParser(description='Convert to/from Julian Dates')
+parsearg = argparse.ArgumentParser(description='Convert to/from Julian Dates', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 parsearg.add_argument('--nodate', action='store_true', help='No date converting to standard dates')
 parsearg.add_argument('--notime', action='store_true', help='No time converting to standard dates')
 parsearg.add_argument('--unmod', action='store_true', help='Full unmodified jdate converting to those')

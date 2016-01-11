@@ -19,7 +19,7 @@ import datetime
 
 SECSPERDAY = 3600.0 * 24.0
 
-parsearg = argparse.ArgumentParser(description='Process UVES data marking spectra to be omitted where Xray level exceeds given')
+parsearg = argparse.ArgumentParser(description='Process UVES data marking spectra to be omitted where Xray level exceeds given', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 parsearg.add_argument('--inctrl', type=str, help='Input control file', required=True)
 parsearg.add_argument('--outctrl', type=str, help='Output control file', required=True)
 parsearg.add_argument('--xrayfile', type=str, help='Xray data file', required=True)

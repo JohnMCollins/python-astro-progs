@@ -15,7 +15,7 @@ import jdate
 import rangearg
 import re
 
-parsearg = argparse.ArgumentParser(description='Try to line up X (wavelengths)')
+parsearg = argparse.ArgumentParser(description='Try to line up X (wavelengths)', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 parsearg.add_argument('--specfile', type=str, help='Spectrum data controlfile')
 parsearg.add_argument('--rangefile', type=str, help='Range file')
 parsearg.add_argument('--range', type=str, help='Short name for range in range file or range arg')

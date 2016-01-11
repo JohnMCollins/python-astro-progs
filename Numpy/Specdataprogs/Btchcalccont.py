@@ -16,7 +16,7 @@ import specinfo
 import simbad
 import doppler
 
-parsearg = argparse.ArgumentParser(description='Batch mode calculate continue')
+parsearg = argparse.ArgumentParser(description='Batch mode calculate continue', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 parsearg.add_argument('infofile', type=str, help='Specinfo file', nargs=1)
 parsearg.add_argument('--include', type=str, help='Comma-separated ranges to take points from (otherwise whole)')
 parsearg.add_argument('--exclude', type=str, default='halpha', help='Comma-separated ranges to exclude (default halpha)')

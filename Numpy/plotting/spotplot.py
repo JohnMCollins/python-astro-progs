@@ -93,7 +93,7 @@ def equi(m, centerlon, centerlat, radius, *args, **kwargs):
     X,Y = m(X,Y)
     plt.plot(X,Y,**kwargs)
 
-parsearg = argparse.ArgumentParser(description='Display plage file')
+parsearg = argparse.ArgumentParser(description='Display plage file', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 parsearg.add_argument('plagefile', help='Plage file to display', nargs=1)
 parsearg.add_argument('--outfile', type=str, help='Output file')
 parsearg.add_argument('--width', type=float, help='Width of figure', default=9.0)

@@ -51,7 +51,7 @@ class p2thread(threading.Thread):
         global period2
         trialfor(self.p1, period2)
 
-parsearg = argparse.ArgumentParser(description='Generate periodic data fitting times')
+parsearg = argparse.ArgumentParser(description='Generate periodic data fitting times', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 parsearg.add_argument('ewfile', type=str, help='EW file to take times from', nargs=1)
 parsearg.add_argument('--per1', help='First period range', type=str, required=True)
 parsearg.add_argument('--per2', help='Second period (fixed)', type=str, required=True)

@@ -11,7 +11,7 @@ import rangearg
 import argmaxmin
 import math
 
-parsearg = argparse.ArgumentParser(description='Print top n maximum peak')
+parsearg = argparse.ArgumentParser(description='Print top n maximum peak', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 parsearg.add_argument('spec', type=str, nargs='+', help='Spectrum file(s)')
 parsearg.add_argument('--maxnum', type=int, default=1, help='Number of maxima to take')
 parsearg.add_argument('--plusint', action='store_true', help='Display intensity as well')

@@ -19,7 +19,7 @@ import histandgauss
 
 SECSPERDAY = 3600.0 * 24.0
 
-parsearg = argparse.ArgumentParser(description='Process UVES data and show plots second version')
+parsearg = argparse.ArgumentParser(description='Process UVES data and show plots second version', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 parsearg.add_argument('--ewfile', type=str, required=True, help='EW data produced by uvesew')
 parsearg.add_argument('--xrayfile', type=str, nargs='*', help='Xray data files')
 parsearg.add_argument('--xrayoffset', type=float, default=0.0, help='Offset to X-ray times')
@@ -302,7 +302,7 @@ for day_dates, day_ews, day_prs, day_xrayvs, day_xraygrads in dateparts:
     fig.canvas.set_window_title("Equivalent widths for " + datedescr)
     plt.subplots_adjust(hspace = 0)
     ax1 = None
-    for ln, ewd in enumerate(ewforday):
+    for ln, ewd in enumerate(ewforday):, formatter_class=argparse.ArgumentDefaultsHelpFormatter
         ax = plt.subplot(3, 1, 1+ln, sharex=ax1)
         histandgauss.histandgauss(ewd, bins=bins, colour=hc[ln])
         plt.legend([legends[ln]])

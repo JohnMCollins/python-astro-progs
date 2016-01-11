@@ -12,7 +12,7 @@ import miscutils
 
 RANGESUFF = 'spcr'      # Old range file
 
-parsearg = argparse.ArgumentParser(description='List ranges in spectrum data input file or old range file')
+parsearg = argparse.ArgumentParser(description='List ranges in spectrum data input file or old range file', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 parsearg.add_argument('infofile', help="XML file of ranges or spec info", nargs='+', type=str)
 parsearg.add_argument('--outfile', help="Output file if not STDOUT", type=str)
 parsearg.add_argument('--latex', help='Latex output format', action='store_true')

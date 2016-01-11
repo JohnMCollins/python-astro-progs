@@ -11,7 +11,7 @@ import xmlutil
 import specdatactrl
 import specinfo
 
-parsearg = argparse.ArgumentParser(description='List or relocate obs file directory in specinfo files')
+parsearg = argparse.ArgumentParser(description='List or relocate obs file directory in specinfo files', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 parsearg.add_argument('infofile', type=str, help='Input info file(s)', nargs='+')
 parsearg.add_argument('--verbose', action='store_true', help='Say what is going on')
 parsearg.add_argument('--list', action='store_true', help='List current directory only, no changes')

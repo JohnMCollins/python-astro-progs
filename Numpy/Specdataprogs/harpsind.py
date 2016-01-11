@@ -32,7 +32,7 @@ def sum_value(range, xvalues, yvalues):
 
 SECSPERDAY = 3600.0 * 24.0
 
-parsearg = argparse.ArgumentParser(description='Process HARPS data and generate table of HA inds')
+parsearg = argparse.ArgumentParser(description='Process HARPS data and generate table of HA inds', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 parsearg.add_argument('infofile', type=str, nargs=1, help='Input spectral info file')
 parsearg.add_argument('--rangename', type=str, default='smhalpha', help='Range name for H Alpha')
 parsearg.add_argument('--contranges', type=str, default='smbc,smrc', help='Range names for continua')

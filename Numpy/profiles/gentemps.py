@@ -6,7 +6,8 @@ import math
 import numpy as np
 import argparse
 
-parsearg = argparse.ArgumentParser(description='Calculate temps T0 and T2 for LUT given T1 and possibly diff between T0 and T2')
+parsearg = argparse.ArgumentParser(description='Calculate temps T0 and T2 for LUT given T1 and possibly diff between T0 and T2',
+                                   formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 parsearg.add_argument('t1', type=float, nargs=1, help='Temperature T1 in K')
 parsearg.add_argument('--diff', type=float, default=1000.0, help='Difference between T0 and T2 default 1000')
 

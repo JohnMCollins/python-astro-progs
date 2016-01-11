@@ -3,7 +3,7 @@
 import argparse
 import numpy as np
 
-parsearg = argparse.ArgumentParser(description='Join arrays')
+parsearg = argparse.ArgumentParser(description='Join arrays', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 parsearg.add_argument('files', type=str, nargs='+', help='Array files')
 parsearg.add_argument('--axis', type=int, default=0, help='Axis to join on')
 parsearg.add_argument('--outfile', type=str, required=True, help='Output file')

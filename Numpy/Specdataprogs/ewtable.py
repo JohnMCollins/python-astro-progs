@@ -18,7 +18,7 @@ optdict = dict(ew = (2, 'Equivalent width ($\AA$)'),
                ps = (4, 'Peak size'),
                pr = (6, 'Peak ratio'))
 
-parsearg = argparse.ArgumentParser(description='Plot equivalent width results')
+parsearg = argparse.ArgumentParser(description='Plot equivalent width results', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 parsearg.add_argument('integ', type=str, nargs=1, help='Input integration file')
 parsearg.add_argument('--type', help='ew/ps/pr/lpr to select display', type=str, default="ew")
 parsearg.add_argument('--sepdays', type=str, default='1000d', help='Separate items if this number of days apart')

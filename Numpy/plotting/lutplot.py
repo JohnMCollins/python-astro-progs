@@ -10,7 +10,7 @@ import string
 
 import lutdata
 
-parsearg = argparse.ArgumentParser(description='Display segments of LUT file')
+parsearg = argparse.ArgumentParser(description='Display segments of LUT file', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 parsearg.add_argument('args', type=str, nargs='+', help='LUT file optionally followed by point args')
 parsearg.add_argument('--basewl', type=float, default=6562.8, help='Base wavelength for when picking single wavelengths out')
 parsearg.add_argument('--outfile', type=str, help='Output file if required')

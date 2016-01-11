@@ -3,7 +3,7 @@
 import numpy as np
 import argparse
 
-parsearg = argparse.ArgumentParser(description='Display complex sin function')
+parsearg = argparse.ArgumentParser(description='Display complex sin function', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 parsearg.add_argument('out', type=str, nargs=1, help='Output file')
 
 resargs = vars(parsearg.parse_args())

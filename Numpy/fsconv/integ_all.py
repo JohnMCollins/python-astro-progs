@@ -12,7 +12,8 @@ import re
 import string
 import rangearg
 
-parsearg = argparse.ArgumentParser(description='Integration file')
+parsearg = argparse.ArgumentParser(description='Integration file',
+                                   formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 parsearg.add_argument('--timings', type=str, help='Timings data file')
 parsearg.add_argument('--outinteg', type=str, help='Output integration file')
 parsearg.add_argument('--resdir', type=str, help='Input directory if not same as timings data')

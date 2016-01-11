@@ -15,7 +15,8 @@ def rootms(vals, n):
     """Return root mean square difference from n"""
     return math.sqrt(np.mean((vals - n)**2))
 
-parsearg = argparse.ArgumentParser(description='Process periodicity trials')
+parsearg = argparse.ArgumentParser(description='Process periodicity trials',
+                                   formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 parsearg.add_argument('resfiles', type=str, nargs='+', help='Periodogram results')
 parsearg.add_argument('--pprecision', type=int, default=1, help='Percentage precision')
 parsearg.add_argument('--mprecision', type=int, default=2, help='Mean/std dev precision')

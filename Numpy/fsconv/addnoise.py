@@ -9,7 +9,8 @@ import os.path
 import glob
 import noise
 
-parsearg = argparse.ArgumentParser(description='Add noise to fake spectra')
+parsearg = argparse.ArgumentParser(description='Add noise to fake spectra',
+                                   formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 parsearg.add_argument('specs', type=str, nargs='+', help='Input spectra')
 parsearg.add_argument('--glob', action='store_true', help='Apply glob to arguments')
 parsearg.add_argument('--suff', type=str, help='Suffix to append to file names otherwise make one up')

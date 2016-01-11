@@ -25,7 +25,7 @@ import splittime
 import argmaxmin
 import matplotlib.pyplot as plt
 
-parsearg = argparse.ArgumentParser(description='Correlate wavelengths')
+parsearg = argparse.ArgumentParser(description='Correlate wavelengths', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 parsearg.add_argument('--infofile', type=str, help='Input spectral info file', required=True)
 parsearg.add_argument('--rangename', type=str, default='halpha', help='Range name to calculate equivalent widths')
 parsearg.add_argument('--specnum', type=int, default=0, help='Spectrum number as base')

@@ -30,7 +30,7 @@ def parseperamp(arg):
         return (parts[0], 1.0)
     return parts  
 
-parsearg = argparse.ArgumentParser(description='Generate periodic data fitting times')
+parsearg = argparse.ArgumentParser(description='Generate periodic data fitting times', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 parsearg.add_argument('ewfile', type=str, help='EW file to take times from', nargs=1)
 parsearg.add_argument('--double', type=int, default=0, help='Number of times to double data')
 parsearg.add_argument('--width', help="Width of plot", type=float, default=8)

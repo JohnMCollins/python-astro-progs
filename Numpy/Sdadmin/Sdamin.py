@@ -387,7 +387,8 @@ except xmlutil.XMLError as e:
 
 # Parse arguments
 
-parsearg = argparse.ArgumentParser(description='Spectrum data files admin')
+parsearg = argparse.ArgumentParser(description='Spectrum data files admin',
+                                   formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 parsearg.add_argument('infofilearg', nargs='*', type=str, help='Existing spectrum info file')
 parsearg.add_argument('--infofile', type=str, help='Existing spectrum info file')
 parsearg.add_argument('--width', type=float, default=0.0, help='Plotting width display')

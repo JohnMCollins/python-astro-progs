@@ -17,7 +17,7 @@ import datarange
 import specinfo
 import jdate
 
-parsearg = argparse.ArgumentParser(description='Batch mode set jdates from file names')
+parsearg = argparse.ArgumentParser(description='Batch mode set jdates from file names', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 parsearg.add_argument('infofiles', type=str, help='Specinfo file', nargs='+')
 parsearg.add_argument('--force', action='store_true', help='Force change even if dates set')
 

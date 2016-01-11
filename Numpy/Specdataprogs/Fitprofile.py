@@ -15,7 +15,7 @@ import specinfo
 
 C = 299792.458
 
-parsearg = argparse.ArgumentParser(description='Fit polynomial to given region of spectra')
+parsearg = argparse.ArgumentParser(description='Fit polynomial to given region of spectra', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 parsearg.add_argument('infofile', type=str, help='Specinfo file', nargs=1)
 parsearg.add_argument('--rangename', type=str, default='halpha', help='Range name to fit')
 parsearg.add_argument('--outfile', help='Output file name', type=str, required=True)

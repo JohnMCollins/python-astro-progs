@@ -16,7 +16,7 @@ import periodarg
 
 optdict = dict(ew = 2, ps = 4, pr = 6)
 
-parsearg = argparse.ArgumentParser(description='Perform L-S FFT')
+parsearg = argparse.ArgumentParser(description='Perform L-S FFT', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 parsearg.add_argument('integ', type=str, nargs=1, help='Input integration file (time/intensity)')
 parsearg.add_argument('--type', help='ew/ps/pr to select display', type=str, default="ew")
 parsearg.add_argument('--outspec', type=str, help='Output spectrum file')

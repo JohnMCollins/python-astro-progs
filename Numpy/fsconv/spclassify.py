@@ -47,7 +47,7 @@ class Accdict(object):
 spiketypes = dict(none = 0, sp3 = 1, sp2 = 2, sp1 = 3, sp23 = 4, sp13 = 5, sp12 = 6, sp123 = 7, sp1234 = 8)
 spikedescr = ('None', 'Peak 3', 'Peak 2', 'Peak 1', 'Peaks 2 & 3', 'Peaks 1 & 3', 'Peaks 1 & 2', 'Peaks 1,2,3', 'Peaks 1-4')
 
-parsearg = argparse.ArgumentParser(description='Classify noise.spike files')
+parsearg = argparse.ArgumentParser(description='Classify noise.spike files', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 parsearg.add_argument('spfiles', type=str, nargs='+', help='Periodogram results')
 parsearg.add_argument('--thresh', type=float, default=5.0, help='Percent threshold for accepting result')
 parsearg.add_argument('--minp', type=float,default=-1.0, help='Minimum period to count')

@@ -12,7 +12,7 @@ import scipy.signal as ss
 import rangearg
 import findprofile
 
-parsearg = argparse.ArgumentParser(description='Find maxima etc of plot to get equivalent width')
+parsearg = argparse.ArgumentParser(description='Find maxima etc of plot to get equivalent width', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 parsearg.add_argument('specs', type=str, nargs='+', help='Spectrum files')
 parsearg.add_argument('--xrange', type=str, help='Range for X axis')
 parsearg.add_argument('--central', type=float, default=6563.0, help='Central wavelength value def=6563')

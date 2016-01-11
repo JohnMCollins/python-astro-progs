@@ -11,7 +11,7 @@ import scipy.stats as ss
 import matplotlib.pyplot as plt
 import rangearg
 
-parsearg = argparse.ArgumentParser(description='Plot peak ratio vs EW')
+parsearg = argparse.ArgumentParser(description='Plot peak ratio vs EW', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 parsearg.add_argument('specs', type=str, help='File pairs of ratio by days and EW by days', nargs='+')
 parsearg.add_argument('--width', help="Width of plot", type=float, default=8)
 parsearg.add_argument('--height', help="Height of plot", type=float, default=6)

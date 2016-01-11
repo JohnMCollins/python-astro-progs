@@ -20,7 +20,7 @@ import histandgauss
 
 SECSPERDAY = 3600.0 * 24.0
 
-parsearg = argparse.ArgumentParser(description='Process UVES data and show plots of effectively suppressing where X-ray levels are high')
+parsearg = argparse.ArgumentParser(description='Process UVES data and show plots of effectively suppressing where X-ray levels are high', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 parsearg.add_argument('--ewfile', type=str, required=True, help='EW data produced by uvesew')
 parsearg.add_argument('--xrayfile', type=str, nargs='*', help='Xray data files')
 parsearg.add_argument('--xrayoffset', type=float, default=0.0, help='Offset to X-ray times')

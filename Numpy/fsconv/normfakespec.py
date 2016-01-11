@@ -8,7 +8,7 @@ import sys
 import numpy as np
 import glob
 
-parsearg = argparse.ArgumentParser(description='Normalise fake spectra')
+parsearg = argparse.ArgumentParser(description='Normalise fake spectra', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 parsearg.add_argument('spectra', type=str, nargs='+', help='Fake spectra files')
 parsearg.add_argument('--glob', action='store_true', help='Apply glob to arguments')
 

@@ -8,7 +8,7 @@ import os
 import sys
 import string
 
-parsearg = argparse.ArgumentParser(description='Display table of percent errors from fake spectra')
+parsearg = argparse.ArgumentParser(description='Display table of percent errors from fake spectra', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 parsearg.add_argument('pfile', type=str, nargs=1, help='Result file')
 parsearg.add_argument('--title', help='Set window title', type=str, default="Percent error plot")
 parsearg.add_argument('--outfig', type=str, help='Output figure')

@@ -11,7 +11,7 @@ import specinfo
 import simbad
 import miscutils
 
-parsearg = argparse.ArgumentParser(description='Init spectrum data files (batch mode)')
+parsearg = argparse.ArgumentParser(description='Init spectrum data files (batch mode)', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 parsearg.add_argument('obsdir', type=str, help='Directory of obs data', nargs=1)
 parsearg.add_argument('--cdir', type=str, help='Directory for control files (if not CWD')
 parsearg.add_argument('--obsfile', type=str, help='Location of obs file name in case it is not clear')

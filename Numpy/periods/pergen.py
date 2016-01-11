@@ -10,7 +10,8 @@ import numpy as np
 import numpy.random as nr
 import scipy.signal as ss
 
-parsearg = argparse.ArgumentParser(description='Generate periodic data')
+parsearg = argparse.ArgumentParser(description='Generate periodic data',
+                                   formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 parsearg.add_argument('pars', type=float, nargs='+', help='List of periods and amplitudes')
 parsearg.add_argument('--out', type=str, help='Output file')
 parsearg.add_argument('--npers', type=float, default=10, help='Number of periods (mult of max period)')

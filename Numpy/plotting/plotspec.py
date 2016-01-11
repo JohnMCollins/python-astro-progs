@@ -16,7 +16,7 @@ import datetime
 
 lslu = dict(solid = '.', dashed = '--', dashdot = '-.', dotted = ':')
 
-parsearg = argparse.ArgumentParser(description='Display spectrum with ranges')
+parsearg = argparse.ArgumentParser(description='Display spectrum with ranges', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 parsearg.add_argument('--outfig', type=str, help='Output figure')
 parsearg.add_argument('spec', type=str, help='Spectrum file', nargs='+')
 parsearg.add_argument('--xlab', type=str, help='Label for X axis', default='Wavelength ($\AA$)')

@@ -8,7 +8,7 @@ import sys
 import os
 import rangearg
 
-parsearg = argparse.ArgumentParser(description='Display range for use as range arg')
+parsearg = argparse.ArgumentParser(description='Display range for use as range arg', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
 parsearg.add_argument('--col', type=int, default=1, help='Column of data to use')
 parsearg.add_argument('--pad', type=float, default=0.1, help='Padding to add either side')

@@ -17,7 +17,7 @@ import argmaxmin
 
 optdict = dict(ew = 2, ps = 4, pr = 6)
 
-parsearg = argparse.ArgumentParser(description='Perform L-S FFT and report peak periods')
+parsearg = argparse.ArgumentParser(description='Perform L-S FFT and report peak periods', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 parsearg.add_argument('integ', type=str, nargs='+', help='Input integration file(s) (time/intensity)')
 parsearg.add_argument('--type', help='ew/ps/pr/lpr to select display', type=str, default="ew")
 parsearg.add_argument('--out', type=str, help='Output result file')
