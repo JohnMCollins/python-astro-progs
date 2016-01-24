@@ -19,16 +19,16 @@ def pseg(m, s):
 
 def printline(pref1, pref2, ewlist, pslist, prlist, ismed, isperc):
     """Print a line of output with the various prefixes"""
-    global prec, fmtseg, noew, nops, nopr, fcs, endl
+    global prec, fmtseg, noew, nops, nopr, fcs, endl, fudge
     if ismed:
-        mew = np.median(ewlist)
+        mew = np.median(ewlist) * fudge
         mps = np.median(pslist)
         mpr = np.median(prlist)
     else:
-        mew = np.mean(ewlist)
+        mew = np.mean(ewlist) * fudge
         mps = np.mean(pslist)
         mpr = np.mean(prlist)
-    sew = np.std(ewlist)
+    sew = np.std(ewlist) * fudge
     sps = np.std(pslist)
     spr = np.std(prlist)
     
@@ -59,7 +59,7 @@ td = np.vectorize(jdate.jdate_to_datetime)
 parsearg = argparse.ArgumentParser(description='Display EW/PS/PRs mean/std from files',
                                    formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 parsearg.add_argument('ewfiles', type=str, nargs='+', help='EW file(s)')
-parsearg.add_argument('--precision', type=int, default=8, help='Precision, default 8')
+parsearg.add_argument('--precision', type=int, default=3, help='Precision, default 8')
 parsearg.add_argument('--percent', action='store_true', help='Give std as percentage')
 parsearg.add_argument('--latex', action='store_true', help='Put in Latex table boundaries')
 parsearg.add_argument('--noendl', action='store_true', help='Dont put hlines in in latex mode')
@@ -67,8 +67,9 @@ parsearg.add_argument('--fcomps', type=str, help='Prefix by file name components
 parsearg.add_argument('--median', action='store_true', help='Show median rather than men')
 parsearg.add_argument('--sepdays', type=float, default=0.0, help='Days to do separate rows for')
 parsearg.add_argument('--noew', action='store_true', help='Omit EW from results')
-parsearg.add_argument('--nops', action='store_true', help='Omit PS from results')
-parsearg.add_argument('--nopr', action='store_true', help='Omit PR from results')
+parsearg.add_argument('--nops', action='store_false', help='Omit PS from results')
+parsearg.add_argument('--nopr', action='store_false', help='Omit PR from results')
+parsearg.add_argument('--fudge', type=float, default=1.0, help='Fudge factor for EWs')
 
 resargs = vars(parsearg.parse_args())
 
@@ -79,6 +80,7 @@ perc = resargs['percent']
 latex = resargs['latex']
 ewfiles = resargs['ewfiles']
 prec = resargs['precision']
+fudge = resargs['fudge']
 ismed = resargs['median']
 sepdays = resargs['sepdays'] * periodarg.SECSPERDAY
 fmtseg = "%%.%df" % prec

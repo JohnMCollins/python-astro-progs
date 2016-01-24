@@ -25,13 +25,14 @@ parsearg.add_argument('--mxoffs', type=float, default=2.0, help='Offset of maxim
 parsearg.add_argument('--myoffs', type=float, default=10.0, help='Offset of maxima line labels Y (percent)')
 parsearg.add_argument('--addinten', action='store_true', help='Put amplitudes on line labels')
 parsearg.add_argument('--xlab', type=str, help='Label for X axis', default='Period in days')
-parsearg.add_argument('--ylab', type=str, help='Label for Y axis', default='Amplitude of signal')
+parsearg.add_argument('--ylab', type=str, help='Label for Y axis', default='Power')
 parsearg.add_argument('--yaxr', action='store_true', help='Put Y axis label on right')
 parsearg.add_argument('--yrange', type=str, help='Range for Y axis')
 parsearg.add_argument('--xaxt', action='store_true', help='Put X axis label on top')
 parsearg.add_argument('--xrange', type=str, help='Range for X axis')
 parsearg.add_argument('--fork', action='store_true', help='Fork off daemon process to show plot and exit')
 parsearg.add_argument('--legend', type=str, help='Specify legend')
+parsearg.add_argument('--legloc', type=str, default='best', help='Location for legend')
 parsearg.add_argument('--width', help="Width of plot", type=float, default=8)
 parsearg.add_argument('--height', help="Height of plot", type=float, default=6)
 parsearg.add_argument('--logscale', action='store_true', help='Show X axis in log scale')
@@ -51,6 +52,7 @@ xtt = resargs['xaxt']
 yrange = rangearg.parserange(resargs['yrange'])
 xrange = rangearg.parserange(resargs['xrange'])
 exlegend = resargs['legend']
+legloc = resargs['legloc']
 
 forkoff = resargs['fork']
 
@@ -72,7 +74,9 @@ fig = plt.gcf()
 fig.canvas.set_window_title(resargs['title'])
 
 try:
-    periods, amps = np.loadtxt(spec, unpack=True)
+    f = np.loadtxt(spec, unpack=True)
+    periods = f[0]
+    amps = f[1]
 except IOError as e:
     print "Could not load spectrum file", spec, "error was", e.args[1]
     sys.exit(11)
@@ -109,7 +113,9 @@ else:
         ax.xaxis.set_label_position('top')
     plt.xlabel(xlab)
 if exlegend is not None:
-    plt.legend([exlegend], handlelength=0)
+    leg = plt.legend([exlegend], handlelength=0, handletextpad=0, fancybox=True, loc=legloc)
+    for l in leg.legendHandles:
+        l.set_visible(False)
 
 addinten = resargs['addinten']
 maxnum = resargs['maxnum']

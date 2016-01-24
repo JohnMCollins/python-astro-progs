@@ -34,8 +34,8 @@ parsearg.add_argument('--yrange', help='Range of Y values', type=str)
 parsearg.add_argument('--legnum', type=int, default=5, help='Number of plots in legend')
 parsearg.add_argument('--datefmt', type=str, default='%d/%m/%y %H:%M', help='Format for date display')
 parsearg.add_argument('--linemk', type=str, nargs='+', help='Lines to mark as wl:label:colour:xoff:yoff:rotdeg:style')
-parsearg.add_argument('--subspec', type=int, help='Subtract given spectrum number from display')
-parsearg.add_argument('--divspec', type=int, help='Divide given spectrum number from display')
+parsearg.add_argument('--subspec', type=int, nargs='+', help='Subtract given spectrum number from display')
+parsearg.add_argument('--divspec', type=int, nargs='+', help='Divide given spectrum number from display')
 parsearg.add_argument('--raw', action='store_true', help='Skip all scaling and normalisation on Y axis')
 
 resargs = vars(parsearg.parse_args())
@@ -145,7 +145,7 @@ cfile.loadfiles()
 
 exspec = subspec
 if exspec is None: exspec = divspec
-ifunc = None
+ifuncs = []
 
 # Select the required routine
 
@@ -154,20 +154,20 @@ if resargs['raw']:
     yfetch = specdatactrl.SpecDataArray.get_raw_yvalues
 
 if exspec is not None:
-    try:
-        ef = cfile.datalist[exspec]
-        exx = ef.get_xvalues()
-        exy = yfetch(ef)
-    except IndexError:
-        sys.stdout = sys.stderr
-        print "Invalid sub/div spectrum"
-        sys.exit(12)
-    except specinfo.SpecInfoError:
-        sys.stdout = sys.stderr
-        print "Invalid spectrum number", exspec
-        sys.exit(12)
-    ifunc=sint.interp1d(exx, exy, fill_value=exy[0], bounds_error=False)
-        
+    for exs in exspec:
+        try:
+            ef = cfile.datalist[exs]
+            exx = ef.get_xvalues()
+            exy = yfetch(ef)
+        except IndexError:
+            sys.stdout = sys.stderr
+            print "Invalid sub/div spectrum", exs
+            sys.exit(12)
+        except specinfo.SpecInfoError:
+            print "Invalid spectrum number", exs
+            sys.exit(12)
+        ifuncs.append(sint.interp1d(exx, exy, fill_value=exy[0], bounds_error=False))
+
 for sf in spec:
     try:
         df = cfile.datalist[sf]
@@ -178,8 +178,13 @@ for sf in spec:
 
     wavelengths = df.get_xvalues()
     amps = yfetch(df)
-    if ifunc is not None:
-        adjamps = ifunc(wavelengths)
+    if len(ifuncs) != 0:
+        xvl = len(wavelengths)
+        adjamps = np.array([]).reshape(0, xvl)
+        for ifn in ifuncs:
+            adjamps = np.concatenate((adjamps, ifn(wavelengths).reshape(1, xvl)))
+        adjamps = adjamps.mean(axis=0)
+        
         if divspec is None:
             amps -= adjamps - 1.0
         else:

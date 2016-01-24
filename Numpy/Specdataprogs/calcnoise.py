@@ -15,14 +15,16 @@ parsearg = argparse.ArgumentParser(description='Batch mode calculate noise for s
 parsearg.add_argument('infofile', type=str, help='Specinfo file', nargs=1)
 parsearg.add_argument('--first', type=int, default=0, help='First spectrum number to use')
 parsearg.add_argument('--last', type=int, default=10000000, help='Last spectrum number to use')
-parsearg.add_argument('--precison', type=int, default=2, help='Deccimal places precision')
+parsearg.add_argument('--precision', type=int, default=2, help='Deccimal places precision')
+parsearg.add_argument('--dB', action='store_true', help='Output in decibels not RMS')
 
 res = vars(parsearg.parse_args())
 
 infofile = res['infofile'][0]
 firstspec = res['first']
 lastspec = res['last']
-prec = res['precison']
+prec = res['precision']
+db = res['dB']
 
 fmt = "%%.%df" % prec
 
@@ -67,5 +69,8 @@ for n, spectrum in enumerate(ctrllist.datalist):
     resultsy = np.concatenate((resultsy, yvals))
     resultse = np.concatenate((resultse, yerrs))
 
-print fmt % noise.getnoise(resultsy, resultse)
+if db:
+    print fmt % noise.getnoise(resultsy, resultse)
+else:
+    print fmt % noise.getrmsnoise(resultsy, resultse)
 sys.exit(0)

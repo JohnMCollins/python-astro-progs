@@ -19,14 +19,14 @@
 
 	
 
-      SUBROUTINE period(x,y,n,ofac,hifac,px,py,np,nout,jmax,prob)
-      INTEGER jmax,n,nout,np,NMAX
-      REAL hifac,ofac,prob,px(np),py(np),x(n),y(n)
+      SUBROUTINE period(x,y,n,ofac,hifac,px,py,faps,np,nout)
+      INTEGER n,nout,np,NMAX
+      REAL hifac,ofac,px(np),py(np),faps(np),x(n),y(n)
       PARAMETER (NMAX=2000)
 CU    USES avevar
       INTEGER i,j
       REAL ave,c,cc,cwtau,effm,expy,pnow,pymax,s,ss,sumc,sumcy,sums,
-     *sumsh,sumsy,swtau,var,wtau,xave,xdif,xmax,xmin,yy
+     *sumsh,sumsy,swtau,var,wtau,xave,xdif,xmax,xmin,yy,prob
       DOUBLE PRECISION arg,wtemp,wi(NMAX),wpi(NMAX),wpr(NMAX),wr(NMAX),
      *TWOPID
       PARAMETER (TWOPID=6.2831853071795865D0)
@@ -88,25 +88,28 @@ CU    USES avevar
         endif
         pnow=pnow+1./(ofac*xdif)
 15    continue
-      expy=exp(-pymax)
+      do 16 i = 1, nout
+      expy=exp(-py(i))
       effm=2.*nout/ofac
       prob=effm*expy
       if(prob.gt.0.01)prob=1.-(1.-expy)**effm
+      faps(i) = prob
+16    continue
       return
       END
 C  (C) Copr. 1986-92 Numerical Recipes Software X!.
 
 C  Main program Fortran L-S, JMC Apr 2015
 
-       integer nmax, rmax, dims, nout, jmax, cnum
+       integer nmax, rmax, dims, nout, cnum
        parameter (nmax=1000)
        parameter (rmax=1000000)
        parameter (ndcols=8)
        DOUBLE PRECISION TWOPID
        PARAMETER (TWOPID=6.2831853071795865D0)
 
-       real x(nmax), y(nmax), tn(ndcols), ofac, hifac
-       real resx(rmax), resy(rmax), prob, scale, nyfreq
+       real x(nmax), y(nmax), faps(nmax), tn(ndcols), ofac, hifac
+       real resx(rmax), resy(rmax), scale, nyfreq
        character*64 infile, outfile, cofac, chifac, cscl, ctyp
 
        dims = iargc()
@@ -159,12 +162,12 @@ C  Main program Fortran L-S, JMC Apr 2015
 40     x(i) = x(i) * scale
        end if
 
-       call period(x, y, dims, ofac, hifac, resx, resy, rmax, nout,
-     *             jmax, prob)
+       call period(x, y, dims, ofac, hifac, resx,resy,faps,rmax,nout)
 
        do 50 i = 1, nout
-50     write(18, 51) scale * nyfreq * TWOPID / resx(i), resy(i)
-51     format(2E25.16)
-       write(*,*) 'nout = ', nout,'  jmax = ', jmax, '  prob = ', prob
+c50     write(18, 51) scale * nyfreq * TWOPID / resx(i), resy(i)
+50     write(18, 51) scale / resx(i), resy(i), faps(i)
+51     format(3E25.16)
+C       write(*,*) 'jmax=', scale / resx(jmax), ' prob=', prob
        stop
        end

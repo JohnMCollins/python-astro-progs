@@ -25,6 +25,7 @@ parsearg.add_argument('--pcomp', type=int, help='Component of file names to comp
 parsearg.add_argument('--prange', type=str, help='Range or periods to limit consideration to')
 parsearg.add_argument('--prec', type=int, default=4, help='Precision')
 parsearg.add_argument('--bfperc', type=float, default=-1.0, help='Render figure in bold if percent error <= value')
+parsearg.add_argument('--fap', action='store_true', help='Display False Alarm Probs')
 
 resargs = vars(parsearg.parse_args())
 
@@ -39,6 +40,7 @@ prec = resargs['prec']
 bfperc = resargs['bfperc']
 aserror = resargs['aserror']
 errtot = resargs['errtot']
+dispfap = resargs['fap']
 
 if prange is not None:
     prange = rangearg.parserange(prange)
@@ -46,6 +48,7 @@ if prange is not None:
         sys.exit(19)
 
 fmt = "%%.%df" % prec
+fapfmt = "%%.%de" % prec
 
 fcomps = resargs['fcomps']
 if fcomps is not None:
@@ -71,11 +74,20 @@ errlist = []
 
 for spec in specs:
     try:
-        periods, amps = np.loadtxt(spec, unpack=True)
+        f = np.loadtxt(spec, unpack=True)
+        periods = f[0]
+        amps = f[1]
+        fap = None
+        if dispfap: fap = f[2]
     except IOError as e:
         sys.stdout = sys.stderr
         print "Could not load spectrum file", spec, "error was", e.args[1]
         sys.stdout = sys.__stdout__
+        errors += 1
+        continue
+    except ValueError:
+        sys.stdout = sys.stderr
+        print "Insufficent columns in data file", spec
         errors += 1
         continue
     
@@ -139,6 +151,8 @@ for spec in specs:
             line += fmt % pv
         if plusint:
             line += "," + fmt % amps[m]
+        if dispfap:
+            line += fcs + fap[m] % fapfmt
     print line + endl
 
 if errtot and len(errlist) != 0:

@@ -19,14 +19,14 @@
 
 C     Hacked by jmc to use my choice of frequencies
 
-      SUBROUTINE period(x,y,n,px,py,np)
-      INTEGER n,np,NMAX
-      DOUBLE PRECISION px(np),py(np),x(n),y(n)
+      SUBROUTINE period(x,y,n,px,py,np,jmax,prob)
+      INTEGER n,np,NMAX,jmax
+      DOUBLE PRECISION prob,px(np),py(np),x(n),y(n)
       PARAMETER (NMAX=5000)
 CU    USES avevar
       INTEGER i,j
       DOUBLE PRECISION ave, c, cc, cwtau, pnow, s, ss, sumc, sumcy,sums,
-     *sumsh, sumsy, swtau, var, wtau, xave, xmax, xmin, yy
+     *sumsh, sumsy, swtau, var, wtau, xave, xmax, xmin, yy, expy, effm
       DOUBLE PRECISION arg,wtemp,wi(NMAX),wpi(NMAX),wpr(NMAX),wr(NMAX),
      *TWOPID
       PARAMETER (TWOPID=6.2831853071795865D0)
@@ -39,7 +39,7 @@ CU    USES avevar
         if(x(j).lt.xmin) xmin = x(j)
 11    continue
 
-          write (*,*) 'VAR=', var
+C          write (*,*) 'VAR=', var
 
       xave = 0.5 * (xmax + xmin)
 
@@ -88,8 +88,16 @@ CU    USES avevar
 14      continue
 
         py(i) = 0.5 * (sumcy**2 / sumc + sumsy**2 / sums) / var
+        if (py(i).ge.pymax) then
+          pymax=py(i)
+          jmax=i
+        endif
 
 15    continue
+      expy=exp(-pymax)
+      effm=2.*np/ofac
+      prob=effm*expy
+      if(prob.gt.0.01)prob=1.-(1.-expy)**effm
       return
       END
 
@@ -97,7 +105,7 @@ C  (C) Copr. 1986-92 Numerical Recipes Software X!.
 
 C  Main program Fortran L-S, JMC Jul 2015
 
-      integer nmax, rmax, dims, cnum
+      integer nmax, rmax, dims, cnum, jmax
       parameter (nmax=2000)
       parameter (rmax=1000000)
       parameter (ndcols=8)
@@ -106,7 +114,7 @@ C  Main program Fortran L-S, JMC Jul 2015
 
       DOUBLE PRECISION x(nmax), y(nmax), tn(ndcols)
       DOUBLE PRECISION resxp(rmax), resx(rmax), resy(rmax), startp
-      DOUBLE PRECISION stepp, endp
+      DOUBLE PRECISION stepp, endp, prob
       character*64 infile, outfile, cstartp, cstepp, cendp, ctyp
 
        dims = iargc()
@@ -173,7 +181,9 @@ C  Main program Fortran L-S, JMC Jul 2015
 10        continue
 30     continue
 
-       call period(x, y, dims, resx, resy, nsteps)
+       call period(x, y, dims, resx, resy, nsteps, jmax, prob)
+
+       write(*,*) 'jmax = ', resxp(jmax), '  prob = ', prob
 
        do 50 i = 1, nsteps
 50     write(18, 51) resxp(i), resy(i)

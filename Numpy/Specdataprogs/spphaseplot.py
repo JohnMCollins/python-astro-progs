@@ -38,6 +38,9 @@ parsearg.add_argument('--height', help="Height of plot", type=float, default=6)
 parsearg.add_argument('--xlab', type=str, default='Phase as proportion of full cycle', help='X asis label')
 parsearg.add_argument('--ylab1', type=str, default='Calculated period (ordered)', help='Y axis label for sorted plot')
 parsearg.add_argument('--ylab2', type=str, default='Calculated period (by level)', help='Y axis label for plot by level')
+parsearg.add_argument('--histxlab', type=str, default='Calculated strongest period', help='Histogram X asis')
+parsearg.add_argument('--histylab', type=str, default='Occurences', help='Histogram Y asis')
+parsearg.add_argument('--binsize', type=float, default=1.0, help='Bin size for histogram')
 parsearg.add_argument('--per1', help='First period[:amp]', type=str, required=True)
 parsearg.add_argument('--per2', help='Second period[:amp]', type=str, required=True)
 parsearg.add_argument('--ylim', type=float, default=1e10, help='Limit on Y values')
@@ -57,6 +60,9 @@ dims = (res['width'], res['height'])
 xlab = res['xlab']
 ylab1 = res['ylab1']
 ylab2 = res['ylab2']
+histxlab = res['histxlab']
+histylab = res['histylab']
+binsize = res['binsize']
 ylim = res['ylim']
 usegatspy = res['gatspy']
 doublings = res['double']
@@ -142,13 +148,20 @@ for p in phases:
     mid.append(m)
     hi.append(h)
 
+s1 = np.array(s1)
+s2 = np.array(s2)
+s3 = np.array(s3)
+lo = np.array(lo)
+mid = np.array(mid)
+hi = np.array(hi)
+
 fig1 = plt.figure(figsize=dims)
 if ylim < 1e6:
     plt.ylim(0, ylim)
-plt.plot(phasesr, hi)
+plt.scatter(phasesr, hi)
 if not tonly:
-    plt.plot(phasesr, mid)
-    plt.plot(phasesr, lo)
+    plt.scatter(phasesr, mid)
+    plt.scatter(phasesr, lo)
 if p1 < ylim:
     plt.axhline(p1, color='black', ls=':')
 if p2 < ylim:
@@ -159,10 +172,10 @@ plt.ylabel(ylab1)
 fig2 = plt.figure(figsize=dims)
 if ylim < 1e6:
     plt.ylim(0, ylim)
-plt.plot(phasesr, s1)
+plt.scatter(phasesr, s1)
 if not tonly:
-    plt.plot(phasesr, s2)
-    plt.plot(phasesr, s3)
+    plt.scatter(phasesr, s2)
+    plt.scatter(phasesr, s3)
 if p1 < ylim:
     plt.axhline(p1, color='black', ls=':')
 if p2 < ylim:
@@ -170,11 +183,17 @@ if p2 < ylim:
 plt.xlabel(xlab)
 plt.ylabel(ylab2)
 
-print "Percent in range of p1 %.2f" % (100.0 * (np.abs(p1 - np.array(s1)) <= accept).sum()/len(s1))
+fig3 = plt.figure(figsize=dims)
+bins = np.linspace(s1.min(), s1.max(), round((s1.max()-s1.min())/binsize)+1)
+plt.xlabel(histxlab)
+plt.ylabel(histylab)
+plt.hist(s1, bins=bins)
+
+print "%d values, Percent in range of p1 %.2f" % (len(s1), (100.0 * (np.abs(p1 - np.array(s1)) <= accept).sum()/len(s1)))
 
 if outfile is None:
     plt.show()
 else:
     fig1.savefig(outfile + '_sort.png')
     fig2.savefig(outfile + "_levs.png")
-
+    fig3.savefig(outfile + '_hist.png')

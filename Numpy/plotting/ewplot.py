@@ -42,6 +42,7 @@ parsearg.add_argument('--xtype', type=str, default='auto', help='Type X axis - t
 parsearg.add_argument('--daterot', type=float, default=30.0, help='Rotataion for dates on X axis')
 parsearg.add_argument('--xhist', type=str, help='Label for histogram X axis')
 parsearg.add_argument('--yhist', type=str, default='Occurrences', help='Label for histogram Y axis')
+parsearg.add_argument('--histlegend', type=str, help='Legend for histogram')
 parsearg.add_argument('--xplot', type=str, help='Label for plot X axis')
 parsearg.add_argument('--yplot', type=str, help='Label for plot Y axis')
 parsearg.add_argument('--xaxt', action='store_true', help='Put X axis label on top')
@@ -100,6 +101,7 @@ if resargs['yplot'] is not None:
     plotylab = resargs['yplot']
     if plotylab == "none":
         ylab = ""
+histleg = resargs['histlegend']
 
 # Ones not dependent on column
 
@@ -227,6 +229,9 @@ if gauss:
     histandgauss.histandgauss(hvals, bins=bins, colour=histcolour)
 else:
     plt.hist(hvals, bins=bins, color=histcolour[0])
+
+if histleg is not None:
+    plt.legend([histleg])
 
 ax = plt.gca()
 

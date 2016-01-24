@@ -4,7 +4,7 @@ import sys
 import os
 import os.path
 import string
-import locale
+import warnings
 import argparse
 import numpy as np
 import scipy.interpolate as sint
@@ -16,6 +16,8 @@ import equivwidth
 import meanval
 import noise
 
+warnings.simplefilter('error')
+
 parsearg = argparse.ArgumentParser(description='Batch mode calculate EW etc', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 parsearg.add_argument('infofile', type=str, help='Specinfo file', nargs=1)
 parsearg.add_argument('--rangename', type=str, default='halpha', help='Range name to calculate equivalent widths')
@@ -24,8 +26,8 @@ parsearg.add_argument('--outfile', help='Output file name', type=str, required=T
 parsearg.add_argument('--snr', type=float, default=-1e6, help='Omit points with SNR worse than given')
 parsearg.add_argument('--first', type=int, default=0, help='First spectrum number to use')
 parsearg.add_argument('--last', type=int, default=10000000, help='Last spectrum number to use')
-parsearg.add_argument('--subspec', type=int, help='Subtract given spectrum number from display')
-parsearg.add_argument('--divspec', type=int, help='Divide given spectrum number from display')
+parsearg.add_argument('--subspec', type=int, nargs='+', help='Subtract given spectrum number(s) from display')
+parsearg.add_argument('--divspec', type=int, nargs='+', help='Divide given spectrum number(s) into display')
 
 res = vars(parsearg.parse_args())
 
@@ -86,22 +88,23 @@ except datarange.DataRangeError:
 
 exspec = subspec
 if exspec is None: exspec = divspec
-ifunc = None
+ifuncs = []
 
 if exspec is not None:
-    try:
-        ef = ctrllist.datalist[exspec]
-        exx = ef.get_xvalues()
-        exy = ef.get_yvalues()
-    except IndexError:
-        sys.stdout = sys.stderr
-        print "Invalid sub/div spectrum"
-        sys.exit(12)
-    except specinfo.SpecInfoError:
-        print "Invalid spectrum number", exspec
-        sys.exit(12)
-    ifunc=sint.interp1d(exx, exy, fill_value=exy[0], bounds_error=False)
-    
+    for exs in exspec:
+        try:
+            ef = ctrllist.datalist[exs]
+            exx = ef.get_xvalues()
+            exy = ef.get_yvalues()
+        except IndexError:
+            sys.stdout = sys.stderr
+            print "Invalid sub/div spectrum", exs
+            sys.exit(12)
+        except specinfo.SpecInfoError:
+            print "Invalid spectrum number", exs
+            sys.exit(12)
+        ifuncs.append(sint.interp1d(exx, exy, fill_value=exy[0], bounds_error=False))
+
 # Process data according to day
 
 results = []
@@ -121,26 +124,37 @@ for n, spectrum in enumerate(ctrllist.datalist):
 
     if snr > -1000.0 and noise.getnoise(yvalues, yerrs) < snr: continue
     
-    if ifunc is not None:
-        adjamps = ifunc(xvalues)
+    if len(ifuncs) != 0:
+        xvl = len(xvalues)
+        adjamps = np.array([]).reshape(0, xvl)
+        for ifn in ifuncs:
+            adjamps = np.concatenate((adjamps, ifn(xvalues).reshape(1, xvl)))
+        adjamps = adjamps.mean(axis=0)
+            
         if divspec is None:
             yvalues -= adjamps - 1.0
         else:
             yvalues /= adjamps
 
-    ew = equivwidth.equivalent_width(selected_range, xvalues, yvalues)
+    ew, ewe = equivwidth.equivalent_width_err(selected_range, xvalues, yvalues, yerrs)
 
     ps = pr = 1.0
     if integ1 is not None:
         peak1w, peak1s = meanval.mean_value(integ1, xvalues, yvalues)
         peak2w, peak2s = meanval.mean_value(integ2, xvalues, yvalues)
-        pr = (peak2s * peak1w) / (peak1s * peak2w)
-        ps = equivwidth.equivalent_width(integ2, xvalues, yvalues) / equivwidth.equivalent_width(integ1, xvalues, yvalues)
+        try:
+            pr = (peak2s * peak1w) / (peak1s * peak2w)
+        except RuntimeWarning:
+            pass
+        try:
+            ps = equivwidth.equivalent_width(integ2, xvalues, yvalues) / equivwidth.equivalent_width(integ1, xvalues, yvalues)
+        except RuntimeWarning:
+            pass
 
     #lastdate = spectrum.modjdate
     #if lastdate == 0: lastdate = spectrum.modbjdate
 
-    results.append((spectrum.modjdate, spectrum.modbjdate, ew, 0.0, ps, 0.0, pr, 0.0))
+    results.append((spectrum.modjdate, spectrum.modbjdate, ew, ewe, ps, 0.0, pr, 0.0))
 
 np.savetxt(outfile, results)
 
