@@ -13,6 +13,7 @@ import datarange
 import specdatactrl
 import specinfo
 import jdate
+import miscutils
 
 lslu = dict(solid = '.', dashed = '--', dashdot = '-.', dotted = ':')
 
