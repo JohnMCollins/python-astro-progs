@@ -28,6 +28,7 @@ parsearg.add_argument('--first', type=int, default=0, help='First spectrum numbe
 parsearg.add_argument('--last', type=int, default=10000000, help='Last spectrum number to use')
 parsearg.add_argument('--subspec', type=int, nargs='+', help='Subtract given spectrum number(s) from display')
 parsearg.add_argument('--divspec', type=int, nargs='+', help='Divide given spectrum number(s) into display')
+parsearg.add_argument('--absorb', action='store_true', help='Treat peak as absorb')
 
 res = vars(parsearg.parse_args())
 
@@ -45,6 +46,7 @@ firstspec = res['first']
 lastspec = res['last']
 subspec = res['subspec']
 divspec = res['divspec']
+absorb = res['absorb']
 
 if subspec is not None and divspec is not None:
     print "Cannot have beth subspec and divspec"
@@ -137,6 +139,8 @@ for n, spectrum in enumerate(ctrllist.datalist):
             yvalues /= adjamps
 
     ew, ewe = equivwidth.equivalent_width_err(selected_range, xvalues, yvalues, yerrs)
+    if absorb:
+        ew = -ew
 
     ps = pr = 1.0
     if integ1 is not None:
@@ -154,7 +158,7 @@ for n, spectrum in enumerate(ctrllist.datalist):
     #lastdate = spectrum.modjdate
     #if lastdate == 0: lastdate = spectrum.modbjdate
 
-    results.append((spectrum.modjdate, spectrum.modbjdate, ew, ewe, ps, 0.0, pr, 0.0))
+    results.append((spectrum.modjdate, spectrum.modbjdate, ew, ewe, abs(ps), 0.0, abs(pr), 0.0))
 
 np.savetxt(outfile, results)
 

@@ -56,9 +56,13 @@ if resargs['noraw']:
 infofile = resargs['infofile'][0]
 rangename = resargs['rangename']
 contr = string.split(resargs['contranges'], ',')
+inverting = False
 if len(contr) != 2:
-    print "Expecting 2 continuum ranges"
-    sys.exit(9)
+    if len(contr) == 1:
+        inverting = True
+    else:
+        print "Expecting 2 continuum ranges"
+        sys.exit(9)
 outfile = resargs['outfile']
 firstspec = resargs['first']
 lastspec = resargs['last']
@@ -75,7 +79,10 @@ try:
     rangelist = sinfo.get_rangelist()
     selected_range = rangelist.getrange(rangename)
     cont1 = rangelist.getrange(contr[0])
-    cont2 = rangelist.getrange(contr[1])
+    if inverting:
+        cont1, cont2 = cont1.invert()
+    else:
+        cont2 = rangelist.getrange(contr[1])
 except specinfo.SpecInfoError as e:
     print "Cannot open info file, error was", e.args[0]
     sys.exit(12)
