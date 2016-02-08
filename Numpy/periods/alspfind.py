@@ -15,7 +15,7 @@ import periodarg
 optdict = dict(ew = 2, ps = 4, pr = 6)
 
 parsearg = argparse.ArgumentParser(description='Perform astroML L-S FFT', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-parsearg.add_argument('infile', type=str, nargs=1, help='Input Time/Intestity file')
+parsearg.add_argument('infile', type=str, nargs=1, help='Input Time/Intensity file')
 parsearg.add_argument('--tcol', type=int, default=0, help='Column in input data for times')
 parsearg.add_argument('--icol', type=int, default=1, help='Column in input data for intensity')
 parsearg.add_argument('--outspec', type=str, help='Output spectrum file', required=True)
