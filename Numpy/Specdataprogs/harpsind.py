@@ -9,6 +9,7 @@ import re
 import os.path
 import locale
 import argparse
+import math
 import numpy as np
 import scipy.integrate as si
 import miscutils
@@ -20,15 +21,15 @@ import jdate
 import datetime
 import splittime
 
-def integ_value(range, xvalues, yvalues):
+def integ_value(range, xvalues, yvalues, yerrs):
     """Calculate intensity as per S-M paper"""
-    xv, yv = range.select(xvalues, yvalues)
-    return si.trapz(yv, xv)
+    xv, yv, ye = range.select(xvalues, yvalues, yerrs)
+    return (si.trapz(yv, xv), math.sqrt(np.sum(np.square(ye))) * (np.max(xv) - np.min(xv)))
 
-def sum_value(range, xvalues, yvalues):
+def sum_value(range, xvalues, yvalues, yerrs):
     """Calculate intensity as per S-M paper"""
-    xv, yv = range.select(xvalues, yvalues)
-    return yv.sum()
+    xv, yv, ye = range.select(xvalues, yvalues, yerrs)
+    return (yv.sum(), math.sqrt(np.sum(np.square(ye))))
 
 SECSPERDAY = 3600.0 * 24.0
 
@@ -46,12 +47,14 @@ resargs = vars(parsearg.parse_args())
 
 valrout = sum_value
 fetchrout = specdatactrl.SpecDataArray.get_raw_yvalues
+rawvals = True
 
 if resargs['integ']:
     valrout = integ_value
 
 if resargs['noraw']:
     fetchrout = specdatactrl.DataArray.get_yvalues
+    rawvals = False
 
 infofile = resargs['infofile'][0]
 rangename = resargs['rangename']
@@ -108,14 +111,23 @@ for n, spectrum in enumerate(ctrllist.datalist):
     try:
         xvalues = spectrum.get_xvalues()
         yvalues = fetchrout(spectrum)
+        yerrs = spectrum.get_yerrors(rawvals=rawvals)
 
     except specdatactrl.SpecDataError:
         continue
 
-    mha = valrout(selected_range, xvalues, yvalues)
-    mrc = valrout(cont2, xvalues, yvalues)
-    mbc = valrout(cont1, xvalues, yvalues)
+    mha, mhae = valrout(selected_range, xvalues, yvalues, yerrs)
+    mrc, mrce = valrout(cont2, xvalues, yvalues, yerrs)
+    mbc, mbce = valrout(cont1, xvalues, yvalues, yerrs)
+    scont = mbc + mrc
+    indval = mha / scont
+    ivsq = indval * indval
+    inderr = math.sqrt((mhae**2 + ivsq*mrce**2 + ivsq*mbce**2)/(scont * scont))
+    #inderr = indval * math.sqrt((mhae/mha)**2 + (mrce**2 + mbce**2)/scont**2)
+    #print "mha=",mha,"mhae=",mhae
+    #print "mrc=",mrc,"mrce=",mrce
+    #print "mbc=",mrc,"mbce=",mbce
 
-    results.append((spectrum.modjdate, spectrum.modbjdate, mha / (mbc + mrc), 0.0, 0.0, 0.0, 1.0, 0.0))
+    results.append((spectrum.modjdate, spectrum.modbjdate, indval, inderr, 0.0, 0.0, 1.0, 0.0))
 
 np.savetxt(outfile, results)

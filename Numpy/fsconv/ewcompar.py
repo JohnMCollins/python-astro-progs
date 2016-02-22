@@ -4,6 +4,7 @@
 
 import argparse
 import sys
+import math
 import numpy as np
 import string
 import jdate
@@ -17,7 +18,22 @@ def pseg(m, s):
         return fmtseg % m + nopm
     return fmtseg % m + pm + fmtseg % s
 
-def printline(pref1, pref2, ewlist, pslist, prlist, ismed, isperc):
+def appsnr(vec, sig, err):
+    """If we are printing errors, append a SNR value to vector, but not if the value is zero"""
+    
+    global pluse    # Also gives format
+    global snrlim
+    global great
+    if pluse is None: return
+    if abs(err) < 1e-12:
+        vec.append('-')
+    rat = sig / err
+    if rat >= snrlim:
+        vec.append('%s%g' % (great, snrlim))
+    else:
+        vec.append(pluse % rat)
+
+def printline(pref1, pref2, ewlist, ewelist, pslist, pselist, prlist, prelist, ismed):
     """Print a line of output with the various prefixes"""
     global prec, fmtseg, noew, nops, nopr, fcs, endl, fudge
     if ismed:
@@ -31,27 +47,21 @@ def printline(pref1, pref2, ewlist, pslist, prlist, ismed, isperc):
     sew = np.std(ewlist) * fudge
     sps = np.std(pslist)
     spr = np.std(prlist)
+    eew = math.sqrt(np.mean(np.square(ewelist)))
+    eps = math.sqrt(np.mean(np.square(pselist)))
+    epr = math.sqrt(np.mean(np.square(prelist)))
     
     res = pref1 + pref2
     reslist = []
-    
-    if isperc:
-        sew *= 100.0 / mew
-        sps *= 100.0 / mps
-        spr *= 100.0 / mpr
-        if not noew:
-            reslist.append(fmtseg % mew)
-            reslist.append(fmtseg % sew)
-        if not nops:
-            reslist.append(fmtseg % mps)
-            reslist.append(fmtseg % sps)
-        if not nopr:
-            reslist.append(fmtseg % mpr)
-            reslist.append(fmtseg % spr)
-    else:
-        if not noew: reslist.append(pseg(mew, sew))
-        if not nops: reslist.append(pseg(mps, sps))
-        if not nopr: reslist.append(pseg(mpr, spr))
+    if not noew:
+        reslist.append(pseg(mew, sew))
+        appsnr(reslist, mew, eew)
+    if not nops:
+        reslist.append(pseg(mps, sps))
+        appsnr(reslist, mps, eps)
+    if not nopr:
+        reslist.append(pseg(mpr, spr))
+        appsnr(reslist, mpr, epr)
     print string.strip(res) + ' ' + string.join(reslist, fcs) + endl
     
 td = np.vectorize(jdate.jdate_to_datetime)
@@ -60,7 +70,6 @@ parsearg = argparse.ArgumentParser(description='Display EW/PS/PRs mean/std from 
                                    formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 parsearg.add_argument('ewfiles', type=str, nargs='+', help='EW file(s)')
 parsearg.add_argument('--precision', type=int, default=3, help='Precision, default 8')
-parsearg.add_argument('--percent', action='store_true', help='Give std as percentage')
 parsearg.add_argument('--latex', action='store_true', help='Put in Latex table boundaries')
 parsearg.add_argument('--noendl', action='store_true', help='Dont put hlines in in latex mode')
 parsearg.add_argument('--fcomps', type=str, help='Prefix by file name components going backwards thus 1:3')
@@ -70,21 +79,25 @@ parsearg.add_argument('--noew', action='store_true', help='Omit EW from results'
 parsearg.add_argument('--nops', action='store_false', help='Omit PS from results')
 parsearg.add_argument('--nopr', action='store_false', help='Omit PR from results')
 parsearg.add_argument('--fudge', type=float, default=1.0, help='Fudge factor for EWs')
+parsearg.add_argument('--pluse', type=int, help='Insert column for (RMS) SNR giving digits prec')
+parsearg.add_argument('--snrlim', type=float, default=1e6, help='Limit for SNR display')
 
 resargs = vars(parsearg.parse_args())
 
 noew = resargs['noew']
 nops = resargs['nops']
 nopr = resargs['nopr']
-perc = resargs['percent']
 latex = resargs['latex']
 ewfiles = resargs['ewfiles']
 prec = resargs['precision']
 fudge = resargs['fudge']
+pluse = resargs['pluse']
+snrlim = resargs['snrlim']
 ismed = resargs['median']
 sepdays = resargs['sepdays'] * periodarg.SECSPERDAY
 fmtseg = "%%.%df" % prec
 if latex:
+    great = '$>$'
     fcs = ' & '
     pm = ' $ \\pm $ '
     sd_all = '\\multicolumn{2}{|c|}{ALL} & '
@@ -93,11 +106,15 @@ if latex:
     if resargs['noendl']:
         endl = fcs
 else:
+    great = '>'
     sd_all = 'ALL - '
     fcs = ' '
     pm = ' '
     nopm = '-'
     endl = ''
+
+if pluse is not None:
+    pluse = "%%.%df" % abs(pluse)
 
 fcomps = resargs['fcomps']
 if fcomps is not None:
@@ -115,8 +132,11 @@ for fil in ewfiles:
         inp = np.loadtxt(fil, unpack=True)
         jdats = inp[0]
         ews = inp[2]
+        ewes = inp[3]
         pss = inp[4]
+        pses = inp[5]
         prs = inp[6]
+        pres = inp[7]
     except IOError as e:
         sys.stdout = sys.stderr
         print "Cannot read", fil, "-", e.args[1]
@@ -140,19 +160,19 @@ for fil in ewfiles:
     
     if sepdays != 0.0:
         ddats = td(jdats)
-        tparts = splittime.splittime(sepdays, ddats, ews, pss, prs)
+        tparts = splittime.splittime(sepdays, ddats, ews, ewes, pss, pses, prs, pres)
         if len(tparts) > 1:
-            for day_dates, day_ews, day_pss, day_prs in tparts:
+            for day_dates, day_ews, day_ewes, day_pss, day_pses, day_prs, day_pres in tparts:
                 fdat = day_dates[0]
                 tdat = day_dates[-1]
                 fdate = fdat.strftime("%d/%m/%y")
                 tdate = tdat.strftime("%d/%m/%y")
                 if fdat.date() == tdat.date(): tdate = "(same)"
                 pref2 = string.join([fdate, tdate, str(len(day_dates)), ''], fcs)
-                printline(pref, pref2, day_ews, day_pss, day_prs, ismed, perc)
+                printline(pref, pref2, day_ews, day_ewes, day_pss, day_pses, day_prs, day_pres, ismed)
         pref2 = sd_all + str(len(ews)) + fcs
     
-    printline(pref, pref2, ews, pss, prs, ismed, perc)    
+    printline(pref, pref2, ews, ewes, pss, pses, prs, pres, ismed)    
 
 if errors > 0:
     sys.exit(10)

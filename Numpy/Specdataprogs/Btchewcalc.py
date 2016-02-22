@@ -6,6 +6,7 @@ import os.path
 import string
 import warnings
 import argparse
+import math
 import numpy as np
 import scipy.interpolate as sint
 import miscutils
@@ -29,6 +30,7 @@ parsearg.add_argument('--last', type=int, default=10000000, help='Last spectrum 
 parsearg.add_argument('--subspec', type=int, nargs='+', help='Subtract given spectrum number(s) from display')
 parsearg.add_argument('--divspec', type=int, nargs='+', help='Divide given spectrum number(s) into display')
 parsearg.add_argument('--absorb', action='store_true', help='Treat peak as absorb')
+parsearg.add_argument('--interpolate', action='store_false', help='Interpolate at boundaries of peak ratio')
 
 res = vars(parsearg.parse_args())
 
@@ -47,6 +49,7 @@ lastspec = res['last']
 subspec = res['subspec']
 divspec = res['divspec']
 absorb = res['absorb']
+interpolate = res['interpolate']
 
 if subspec is not None and divspec is not None:
     print "Cannot have beth subspec and divspec"
@@ -143,11 +146,13 @@ for n, spectrum in enumerate(ctrllist.datalist):
         ew = -ew
 
     ps = pr = 1.0
+    pre = 0.0
     if integ1 is not None:
-        peak1w, peak1s = meanval.mean_value(integ1, xvalues, yvalues)
-        peak2w, peak2s = meanval.mean_value(integ2, xvalues, yvalues)
+        peak1w, peak1s, peak1e = meanval.mean_value(integ1, xvalues, yvalues, yerrs, interpolate=interpolate)
+        peak2w, peak2s, peak2e = meanval.mean_value(integ2, xvalues, yvalues, yerrs, interpolate=interpolate)
         try:
-            pr = (peak2s * peak1w) / (peak1s * peak2w)
+            pr = abs((peak2s * peak1w) / (peak1s * peak2w))
+            pre = math.sqrt((peak1e/peak1s)**2 + (peak2e/peak2s)**2) * pr
         except RuntimeWarning:
             pass
         try:
@@ -158,7 +163,7 @@ for n, spectrum in enumerate(ctrllist.datalist):
     #lastdate = spectrum.modjdate
     #if lastdate == 0: lastdate = spectrum.modbjdate
 
-    results.append((spectrum.modjdate, spectrum.modbjdate, ew, ewe, abs(ps), 0.0, abs(pr), 0.0))
+    results.append((spectrum.modjdate, spectrum.modbjdate, ew, ewe, abs(ps), 0.0, pr, pre))
 
 np.savetxt(outfile, results)
 

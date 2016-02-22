@@ -23,6 +23,7 @@ parsearg.add_argument('--mtxtcol', type=str, help='Colour of text denoting maxim
 parsearg.add_argument('--rottxt', type=float, default=45, help='Rotation of text')
 parsearg.add_argument('--mxoffs', type=float, default=2.0, help='Offset of maxima line labels X (percent) -ve for LHS of line')
 parsearg.add_argument('--myoffs', type=float, default=10.0, help='Offset of maxima line labels Y (percent)')
+parsearg.add_argument('--mxprec', type=int, default=1, help='Precision of maxima labels')
 parsearg.add_argument('--addinten', action='store_true', help='Put amplitudes on line labels')
 parsearg.add_argument('--xlab', type=str, help='Label for X axis', default='Period in days')
 parsearg.add_argument('--ylab', type=str, help='Label for Y axis', default='Power')
@@ -138,6 +139,8 @@ if maxnum > 0:
     xoffssc = resargs['mxoffs'] / 100.0
     xoffs = (xrange[1] - xrange[0]) * xoffssc
     xscale = 1 + xoffssc
+    mprec = resargs['mxprec']
+    mprec = "%%.%df" % mprec
 
     for n, m in enumerate(maxima):
         maxx = periods[m]
@@ -149,9 +152,9 @@ if maxnum > 0:
 			xplace = maxx+xoffs
         if xrange[0] < xplace < xrange[1]:
             if addinten:
-                plt.text(xplace, yplace, "%#.4g, %#.4g" % (maxx, maxy), color=mtxtcol[n], rotation=mrot)
+                plt.text(xplace, yplace, (mprec + ',' + '%#.3g') % (maxx, maxy), color=mtxtcol[n], rotation=mrot)
             else:
-                plt.text(xplace, yplace, "%#.4g" % maxx, color=mtxtcol[n], rotation=mrot)
+                plt.text(xplace, yplace, mprec % maxx, color=mtxtcol[n], rotation=mrot)
 
 plt.tight_layout()
 if outfig is not None:
