@@ -48,29 +48,29 @@ for p in places:
 if lastp < len(timearray):
     bits.append(inf[:,lastp:])
 
-results = []
+results = np.zeros(shape=(0,8))
 
 for b in bits:
     if b.shape[1] == 1:
-        results.append(b)
-    r = np.zeros(shape=(8,1))
-    r[0] = b[0].mean()
-    r[1] = b[1].mean()
-    r[2] = b[2].mean()
-    r[3] = math.sqrt(np.square(b[3]).sum())    
-    r[4] = b[4].mean()
-    r[5] = math.sqrt(np.square(b[5]).sum())
-    r[6] = b[6].prod() ** 1.0/b.shape[1]
-    try:
-        r[7] = math.exp(math.sqrt(np.sum(np.square(np.log(r[6]/r[7]))/b.shape[1])))
-    except RuntimeWarning:
-        pass
-    results.append(r)
-
-results = np.array(results)
-timearray = results[0]
+        results = np.concatenate((results, b.transpose()))
+    else:
+        jd = b[0].mean()
+        bjd = b[1].mean()
+        ew = b[2].mean()
+        ewe = math.sqrt(np.square(b[3]).sum())    
+        ps = b[4].mean()
+        pse = math.sqrt(np.square(b[5]).sum())
+        pr = b[6].prod() ** 1.0/b.shape[1]
+        try:
+            pre = math.exp(math.sqrt(np.sum(np.square(np.log(b[6]/b[7]))/b.shape[1])))
+        except RuntimeWarning:
+            pre = 0.0
+        results = np.concatenate((results, np.array([jd,bjd,ew,ewe,ps,pse,pr,pre]).reshape(1,8)))
+timearray = results[:,0]
 diffs = np.diff(timearray)
-places = np.where(diffs > lonely)
- 
-
+places = np.where(diffs >= lonely)[0]
+if len(places) != 0:
+    wb = np.concatenate(((-1,), places)) + 1
+    we = np.concatenate((places,(len(diffs),)))
+    results = np.delete(results, list(set(wb)&set(we)), axis=0)
 np.savetxt(outfile, results)
