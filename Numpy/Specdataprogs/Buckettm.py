@@ -6,20 +6,22 @@ import os.path
 import argparse
 import numpy as np
 import math
+import string
 import warnings
 import jdate
 
 warnings.simplefilter('error')
 
-parsearg = argparse.ArgumentParser(description='Group up EW file by bucketing obs close together', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-parsearg.add_argument('ewfiles', type=str, help='Infile Outfile', nargs=2)
+parsearg = argparse.ArgumentParser(description='Group up obs file by combining obs close together', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+parsearg.add_argument('ifiles', type=str, help='Infile Outfile', nargs=2)
 parsearg.add_argument('--sepdays', type=float, default=1.0, help='Criterion for split')
 parsearg.add_argument('--lonely', type=float, default=1e6, help='Remove single items this far from others')
+parsearg.add_argument('--tcol', type=int, default=0, help='Column used for time periods')
 parsearg.add_argument('--force', action='store_true', help='OK to overwrite existing output file')
 
 resargs = vars(parsearg.parse_args())
 
-infile, outfile = resargs['ewfiles']
+infile, outfile = resargs['ifiles']
 
 if not resargs['force'] and os.path.isfile(outfile):
     print "Will not overwrite existing", outfile
@@ -27,16 +29,16 @@ if not resargs['force'] and os.path.isfile(outfile):
 
 try:
     inf = np.loadtxt(infile, unpack=True)
-    if inf.shape[0] != 8:
-        raise ValueError("Bad shape")
 except ValueError:
-    print infile, "does not look like an EW file"
+    print infile, "is not a table of numbers"
     sys.exit(12)
+
+ncols = inf.shape[0]
 
 sepdays = resargs['sepdays']
 lonely = resargs['lonely']
-
-timearray = inf[0]
+tcol = resargs['tcol']
+timearray = inf[tcol]
 diffs = np.diff(timearray)
 places = np.where(diffs >= sepdays)[0] + 1
 bits = []
@@ -49,25 +51,12 @@ for p in places:
 if lastp < len(timearray):
     bits.append(inf[:,lastp:])
 
-results = np.zeros(shape=(0,8))
+results = np.zeros(shape=(0,ncols))
 
 for b in bits:
-    if b.shape[1] == 1:
-        results = np.concatenate((results, b.transpose()))
-    else:
-        jd = b[0].mean()
-        bjd = b[1].mean()
-        ew = b[2].mean()
-        ewe = math.sqrt(np.square(b[3]).sum())    
-        ps = b[4].mean()
-        pse = math.sqrt(np.square(b[5]).sum())
-        pr = b[6].prod() ** 1.0/b.shape[1]
-        try:
-            pre = math.exp(math.sqrt(np.sum(np.square(np.log(b[6]/b[7]))/b.shape[1])))
-        except RuntimeWarning:
-            pre = 0.0
-        results = np.concatenate((results, np.array([jd,bjd,ew,ewe,ps,pse,pr,pre]).reshape(1,8)))
-timearray = results[:,0]
+    results = np.concatenate((results, b.mean(axis=1).reshape(1,ncols)))
+
+timearray = results[:,tcol]
 diffs = np.diff(timearray)
 places = np.where(diffs >= lonely)[0]
 if len(places) != 0:
