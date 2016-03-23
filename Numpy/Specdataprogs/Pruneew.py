@@ -53,7 +53,7 @@ removed_dates = np.array([], dtype=np.float64)
 orign = len(ews)
 
 if usemed:
-    mv = ews.median()
+    mv = np.median(ews)
 else:
     mv = ews.mean()
 stv = ews.std()
