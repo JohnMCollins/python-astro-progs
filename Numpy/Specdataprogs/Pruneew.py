@@ -11,14 +11,16 @@ import jdate
 
 parsearg = argparse.ArgumentParser(description='Prune ew file to remove outlying entries', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 parsearg.add_argument('ewfil', type=str, help='EW file', nargs='+')
-parsearg.add_argument('--lower', type=float, default=2.0, help='Prune EWs this less than mean')
-parsearg.add_argument('--upper', type=float, default=2.0, help='Prune EWs this greater than mean')
+parsearg.add_argument('--lower', type=float, default=2.0, help='Prune EWs this less than mean or median')
+parsearg.add_argument('--upper', type=float, default=2.0, help='Prune EWs this greater than mean or median')
+parsearg.add_argument('--median', action='store_true', help='Use median not mean')
 
 res = vars(parsearg.parse_args())
 
 ewfiles = res['ewfil']
 lowerlim = res['lower']
 upperlim = res['upper']
+usemed = res['median']
 
 if len(ewfiles) > 2:
     sys.stdout = sys.stderr
@@ -50,7 +52,10 @@ removed_dates = np.array([], dtype=np.float64)
 
 orign = len(ews)
 
-mv = ews.mean()
+if usemed:
+    mv = ews.median()
+else:
+    mv = ews.mean()
 stv = ews.std()
 
 sel = (ews - mv) > - lowerlim * stv
