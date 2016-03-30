@@ -14,6 +14,7 @@ parsearg.add_argument('ewfil', type=str, help='EW file', nargs='+')
 parsearg.add_argument('--lower', type=float, default=2.0, help='Prune EWs this less than mean or median')
 parsearg.add_argument('--upper', type=float, default=2.0, help='Prune EWs this greater than mean or median')
 parsearg.add_argument('--median', action='store_true', help='Use median not mean')
+parsearg.add_argument('--byvalue', action='store_true', help='Apply clipping by value rather than x * std')
 
 res = vars(parsearg.parse_args())
 
@@ -21,6 +22,7 @@ ewfiles = res['ewfil']
 lowerlim = res['lower']
 upperlim = res['upper']
 usemed = res['median']
+byval = res['byvalue']
 
 if len(ewfiles) > 2:
     sys.stdout = sys.stderr
@@ -57,6 +59,8 @@ if usemed:
 else:
     mv = ews.mean()
 stv = ews.std()
+if byval:
+    stv = 1.0
 
 sel = (ews - mv) > - lowerlim * stv
 inp = inp[:,sel]
