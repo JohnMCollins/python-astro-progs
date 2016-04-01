@@ -59,17 +59,21 @@ if usemed:
 else:
     mv = ews.mean()
 stv = ews.std()
-if byval:
-    stv = 1.0
 
-sel = (ews - mv) > - lowerlim * stv
+if byval:
+    sel = ews > lowerlim
+else:
+    sel = (ews - mv) > - lowerlim * stv
 inp = inp[:,sel]
 removed_dates = np.concatenate((removed_dates, dates[~sel]))
 ews = inp[2]
 dates = inp[0]
 afterlower = len(ews)
 
-sel = (ews - mv) < upperlim * stv
+if byval:
+    sel = ews < upperlim
+else:
+    sel = (ews - mv) < upperlim * stv
 inp = inp[:,sel]
 removed_dates = np.concatenate((removed_dates, dates[~sel]))
 ews = inp[2]
