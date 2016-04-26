@@ -18,7 +18,7 @@ parsearg = argparse.ArgumentParser(description='Perform astroML L-S FFT', format
 parsearg.add_argument('integ', type=str, nargs=1, help='Input integration file (time/intensity)')
 parsearg.add_argument('--type', help='ew/ps/pr/lpr to select display', type=str, default="ew")
 parsearg.add_argument('--outspec', type=str, help='Output spectrum file')
-parsearg.add_argument('--periods', type=str, default="1d:.01d:100d", help='Periods as start:step:stop or start:stop/number')
+parsearg.add_argument('--periods', type=str, help='Periods as start:step:stop or start:stop/number')
 parsearg.add_argument('--error', type=float, default=.01, help='Error bar (if needed)')
 parsearg.add_argument('--sqamps', action='store_true', help='Square input amplitudes')
 parsearg.add_argument('--rootres', action='store_true', help='Take root of results')
@@ -28,10 +28,16 @@ resargs = vars(parsearg.parse_args())
 err = resargs['error']
 integ = resargs['integ'][0]
 outspec = resargs['outspec']
+periods = resargs['periods']
+if periods is None:
+	try:
+		periods = os.environ['PERIODS']
+	except KeyError:
+		periods = "1d:.01d:100d"
 try:
-    periods = periodarg.periodrange(resargs['periods'])
+    periods = periodarg.periodrange(periods)
 except ValueError as e:
-    print "Invalid period range", resargs['periods']
+    print "Invalid period range", periods
     sys.exit(10)
 
 typeplot = resargs['type']
@@ -45,7 +51,7 @@ except KeyError:
 errors = 0
 
 if integ is None or not os.path.isfile(integ):
-    print "No integration file"
+    print "No integration file", integ
     errors += 1
     integ = "none"
 if outspec is None:

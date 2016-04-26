@@ -21,17 +21,23 @@ parsearg.add_argument('integ', type=str, nargs=1, help='Input integration file (
 parsearg.add_argument('--type', help='ew/ps/pr to select display', type=str, default="ew")
 parsearg.add_argument('--outspec', type=str, help='Output spectrum file')
 parsearg.add_argument('--nonorm', action='store_true', help='Do not normalise Y axis')
-parsearg.add_argument('--periods', type=str, default="1d:.01d:100d", help='Periods as start:step:stop or start:stop/number')
+parsearg.add_argument('--periods', type=str, help='Periods as start:step:stop or start:stop/number')
 
 
 resargs = vars(parsearg.parse_args())
 
 integ = resargs['integ'][0]
 outspec = resargs['outspec']
+periods = resargs['periods']
+if periods is None:
+	try:
+		periods = os.environ['PERIODS']
+	except KeyError:
+		periods = "1d:.01d:100d"
 try:
-    periods = periodarg.periodrange(resargs['periods'])
+    periods = periodarg.periodrange(periods)
 except ValueError as e:
-    print "Invalid period range", resargs['periods']
+    print "Invalid period range", periods
     sys.exit(10)
 
 typeplot = resargs['type']

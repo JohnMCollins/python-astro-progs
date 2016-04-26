@@ -19,7 +19,7 @@ parsearg.add_argument('infile', type=str, nargs=1, help='Input Time/Intensity fi
 parsearg.add_argument('--tcol', type=int, default=0, help='Column in input data for times')
 parsearg.add_argument('--icol', type=int, default=1, help='Column in input data for intensity')
 parsearg.add_argument('--outspec', type=str, help='Output spectrum file', required=True)
-parsearg.add_argument('--periods', type=str, default="1d:.01d:100d", help='Periods as start:step:stop or start:stop/number')
+parsearg.add_argument('--periods', type=str, help='Periods as start:step:stop or start:stop/number')
 parsearg.add_argument('--error', type=float, default=.01, help='Error bar (if needed)')
 parsearg.add_argument('--sqamps', action='store_true', help='Square input amplitudes')
 parsearg.add_argument('--rootres', action='store_true', help='Take root of results')
@@ -29,10 +29,16 @@ resargs = vars(parsearg.parse_args())
 err = resargs['error']
 infile = resargs['infile'][0]
 outspec = resargs['outspec']
+periods = resargs['periods']
+if periods is None:
+	try:
+		periods = os.environ['PERIODS']
+	except KeyError:
+		periods = "1d:.01d:100d"
 try:
-    periods = periodarg.periodrange(resargs['periods'])
+    periods = periodarg.periodrange(periods)
 except ValueError as e:
-    print "Invalid period range", resargs['periods']
+    print "Invalid period range", periods
     sys.exit(10)
 
 tcol = resargs['tcol']
