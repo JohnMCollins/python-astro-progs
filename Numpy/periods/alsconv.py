@@ -28,17 +28,10 @@ resargs = vars(parsearg.parse_args())
 err = resargs['error']
 integ = resargs['integ'][0]
 outspec = resargs['outspec']
-periods = resargs['periods']
-if periods is None:
-	try:
-		periods = os.environ['PERIODS']
-	except KeyError:
-		periods = "1d:.01d:100d"
 try:
-    periods = periodarg.periodrange(periods)
-except ValueError as e:
-    print "Invalid period range", periods
-    sys.exit(10)
+	periods = periodarg.optperiodrange(resargs['periods'])
+except ValueError:
+	sys.exit(10)
 
 typeplot = resargs['type']
 
