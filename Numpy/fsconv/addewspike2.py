@@ -48,12 +48,13 @@ jdates = ewdata[0]
 ews = ewdata[2]
 
 mval = ews.mean()
+stdval = ews.std()
 if bymed:
     mval = np.median(ews)
 if byval:
     cutoff = ulev
 else:
-    cutoff = mval + ews.std() * ulev
+    cutoff = mval + stdval * ulev
 
 # Now forget everything below the lower limit
 
@@ -65,7 +66,7 @@ if len(ewfiles) == 0 or pvals:
         if v <= 0.0: continue
         print "%d: %s %.3f" % (n, jdate.display(d), v)
 
-ews /= mval
+ews /= stdval
 
 for ewf in ewfiles:  
     try:
@@ -86,8 +87,9 @@ for ewf in ewfiles:
         mval = np.median(newews)
     else:
         mval = newews.mean()
+    stdval = newews.std()
     
-    newews += ews * mval
+    newews += ews * stdval
     
     newew[2] = newews
     newfname = miscutils.replacesuffix(ewf, suff)
