@@ -21,6 +21,7 @@ parsearg.add_argument('infofile', type=str, help='Specinfo file', nargs=1)
 parsearg.add_argument('--include', type=str, help='Comma-separated ranges to take points from (otherwise whole)')
 parsearg.add_argument('--exclude', type=str, default='halpha', help='Comma-separated ranges to exclude (default halpha)')
 parsearg.add_argument('--individual', action='store_true', help='Calculate individual continua')
+parsearg.add_argument('--onlynull', action='store_true', help='Only calculate null offsets')
 parsearg.add_argument('--degree', type=int, default=3, help='Degree of polynomial fit')
 parsearg.add_argument('--maxiter', type=int, default=5000, help='Maximum number of iterations')
 parsearg.add_argument('--refwl', type=float, default=6562.8, help='Reference wavelength of polynomial')
@@ -33,6 +34,7 @@ infofile = res['infofile'][0]
 inclranges = res['include']
 exclranges = res['exclude']
 indiv = res['individual']
+onlynull = res['onlynull']
 degree = res['degree']
 maxiter = res['maxiter']
 refwl = res['refwl']
@@ -95,13 +97,20 @@ if indiv:
         print "Reference wavelength of %.2f conflicts with file value of %.2f" % (refwl, ctrllist.refwavelength)
         sys.exit(9)
     
-    ctrllist.reset_indiv_y()
+    if not onlynull:
+        ctrllist.reset_indiv_y()
     
     totiterations = 0
     maxiterations = 0
     
     for dataset in ctrllist.datalist:
+
+        # Don't recalculate offsets we've got already
+        # We didn't clear them all if we are just doing new ones
         
+        if dataset.yoffset is not None:
+            continue
+
         try:
             xvalues = dataset.get_xvalues(False)
             yvalues = dataset.get_yvalues(False)
@@ -172,6 +181,11 @@ if indiv:
     print "Finished calculating ceoffs after %d iterations %d max iterations %d removed" % (totiterations, maxiterations, totremovals)
 
 else:               # global one
+
+    if onlynull and ctrllist.yoffset is not None:
+        sys.stdout = sys.stderr
+        print "Already got global continuum, quitting"
+        sys.exit(1)
 
     iterations = 0    
     ctrllist.reset_indiv_y()
