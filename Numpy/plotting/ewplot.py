@@ -41,7 +41,8 @@ parsearg.add_argument('--gauss', action='store_true', help='Normalise and overla
 parsearg.add_argument('--xtype', type=str, default='auto', help='Type X axis - time/date/full/days')
 parsearg.add_argument('--daterot', type=float, default=30.0, help='Rotataion for dates on X axis')
 parsearg.add_argument('--xhist', type=str, help='Label for histogram X axis')
-parsearg.add_argument('--yhist', type=str, default='Occurrences', help='Label for histogram Y axis')
+parsearg.add_argument('--yhist', type=str, help='Label for histogram Y axis')
+parsearg.add_argument('--asperc', action='store_true', help='Display histogram Y axis as percentage')
 parsearg.add_argument('--histlegend', type=str, help='Legend for histogram')
 parsearg.add_argument('--xplot', type=str, help='Label for plot X axis')
 parsearg.add_argument('--yplot', type=str, help='Label for plot Y axis')
@@ -105,9 +106,13 @@ histleg = resargs['histlegend']
 
 # Ones not dependent on column
 
+asperc = resargs['asperc']
 histylab = resargs['yhist']
-if histylab == "none":
-    histylab = ""
+if histylab is None:
+    if asperc:
+        histylab = 'Occurrences (%)'
+    else:
+        histylab = 'Occurrences'
     
 # Worry about X label for plot later
 
@@ -226,7 +231,9 @@ if takelog:
     ax.set_xscale('log')
 
 if gauss:
-    histandgauss.histandgauss(hvals, bins=bins, colour=histcolour)
+    histandgauss.histandgauss(hvals, bins=bins, colour=histcolour, asperc=asperc)
+elif asperc:
+    plt.hist(hvals, bins=bins, color=histcolour[0], weights=np.ones_like(hvals) * 100.0 / len(hvals))
 else:
     plt.hist(hvals, bins=bins, color=histcolour[0])
 

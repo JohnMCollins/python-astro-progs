@@ -165,8 +165,8 @@ for fil in ewfiles:
             for day_dates, day_ews, day_ewes, day_pss, day_pses, day_prs, day_pres in tparts:
                 fdat = day_dates[0]
                 tdat = day_dates[-1]
-                fdate = fdat.strftime("%d/%m/%y")
-                tdate = tdat.strftime("%d/%m/%y")
+                fdate = fdat.strftime("%d/%m/%Y")
+                tdate = tdat.strftime("%d/%m/%Y")
                 if fdat.date() == tdat.date(): tdate = "(same)"
                 pref2 = string.join([fdate, tdate, str(len(day_dates)), ''], fcs)
                 printline(pref, pref2, day_ews, day_ewes, day_pss, day_pses, day_prs, day_pres, ismed)
