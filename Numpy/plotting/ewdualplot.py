@@ -31,6 +31,8 @@ parsearg.add_argument('--yplot', type=str, help='Label for plot Y axis')
 parsearg.add_argument('--xrange', type=str, help='Range for X axis')
 parsearg.add_argument('--y1range', type=str, help='Range for Y 1 axis')
 parsearg.add_argument('--y2range', type=str, help='Range for Y 2 axis')
+parsearg.add_argument('--y1ticks', type=float, help='Tick interval y1')
+parsearg.add_argument('--y2ticks', type=float, help='Tick interval y2')
 parsearg.add_argument('--outprefix', type=str, help='Output file prefix')
 parsearg.add_argument('--plotcolours', type=str, default='k,b', help='Colours for successive plots')
 parsearg.add_argument('--scatter', action='store_true', help='Do scatter plot rather than plot')
@@ -51,6 +53,8 @@ drot = resargs['daterot']
 xrange = rangearg.parserange(resargs['xrange'])
 y1range = rangearg.parserange(resargs['y1range'])
 y2range = rangearg.parserange(resargs['y2range'])
+y1ticks = resargs['y1ticks']
+y2ticks = resargs['y2ticks']
 outf = resargs['outprefix']
 
 plotting_function = plt.plot
@@ -151,10 +155,13 @@ for day_datetimes, day_jdates, day_ew1, day_ew2 in separated_vals:
     if xrange is not None: plt.xlim(*xrange)
     if y1range is not None: plt.ylim(*y1range)
     ax = plt.gca()
-    ax.get_yaxis().get_major_formatter().set_useOffset(False)
-    if len(plotylab) == 0:
-        plt.yticks([])
-    else:
+    if takelog:
+        ax.set_yscale('log')
+    if y1range is not None and y1ticks is not None:
+        ax.set_yticks(np.arange(y1range[0], y1range[1], y1ticks))
+    elif not takelog:
+        ax.get_yaxis().get_major_formatter().set_useOffset(False)
+    if len(plotylab) != 0:
         plt.ylabel(plotylab, color=plotcols[0])
     if len(xlab) == 0:
         plt.xticks([])
@@ -176,10 +183,13 @@ for day_datetimes, day_jdates, day_ew1, day_ew2 in separated_vals:
                     plotting_function(subday_jdates, subday_ew1, color=plotcols[0])
     ax = plt.twinx(ax)
     if y2range is not None: plt.ylim(*y2range)
-    ax.get_yaxis().get_major_formatter().set_useOffset(False)
-    if len(plotylab) == 0:
-        plt.yticks([])
-    else:
+    if takelog:
+        ax.set_yscale('log')
+    if y2range is not None and y2ticks is not None:
+        ax.set_yticks(np.arange(y2range[0], y2range[1], y2ticks))
+    elif not takelog:
+        ax.get_yaxis().get_major_formatter().set_useOffset(False)
+    if len(plotylab) != 0:
         plt.ylabel(plotylab, color=plotcols[1])
     for subday_datetimes, subday_jdates, subday_ew1, subday_ew2 in subday_sep:
         if len(subday_datetimes) != 0:

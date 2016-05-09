@@ -30,7 +30,8 @@ parsearg.add_argument('--last', type=int, default=10000000, help='Last spectrum 
 parsearg.add_argument('--subspec', type=int, nargs='+', help='Subtract given spectrum number(s) from display')
 parsearg.add_argument('--divspec', type=int, nargs='+', help='Divide given spectrum number(s) into display')
 parsearg.add_argument('--absorb', action='store_true', help='Treat peak as absorb')
-parsearg.add_argument('--interpolate', action='store_false', help='Interpolate at boundaries of peak ratio')
+parsearg.add_argument('--interpolate', action='store_true', help='Interpolate at boundaries of mean ratio')
+parsearg.add_argument('--printerp', action='store_true', help='Interpolate at boundaries for peak ratio')
 
 res = vars(parsearg.parse_args())
 
@@ -50,6 +51,7 @@ subspec = res['subspec']
 divspec = res['divspec']
 absorb = res['absorb']
 interpolate = res['interpolate']
+printerp = res['printerp']
 
 if subspec is not None and divspec is not None:
     print "Cannot have beth subspec and divspec"
@@ -141,15 +143,15 @@ for n, spectrum in enumerate(ctrllist.datalist):
         else:
             yvalues /= adjamps
 
-    ew, ewe = equivwidth.equivalent_width_err(selected_range, xvalues, yvalues, yerrs)
+    ew, ewe = equivwidth.equivalent_width_err(selected_range, xvalues, yvalues, yerrs, interpolate=interpolate)
     if absorb:
         ew = -ew
 
     ps = pr = 1.0
     pre = 0.0
     if integ1 is not None:
-        peak1w, peak1s, peak1e = meanval.mean_value(integ1, xvalues, yvalues, yerrs, interpolate=interpolate)
-        peak2w, peak2s, peak2e = meanval.mean_value(integ2, xvalues, yvalues, yerrs, interpolate=interpolate)
+        peak1w, peak1s, peak1e = meanval.mean_value(integ1, xvalues, yvalues, yerrs, interpolate=printerp)
+        peak2w, peak2s, peak2e = meanval.mean_value(integ2, xvalues, yvalues, yerrs, interpolate=printerp)
         try:
             pr = abs((peak2s * peak1w) / (peak1s * peak2w))
             pre = math.sqrt((peak1e/peak1s)**2 + (peak2e/peak2s)**2) * pr
