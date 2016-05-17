@@ -9,6 +9,7 @@ import argparse
 import math
 import numpy as np
 import scipy.stats as ss
+import scipy.interpolate as sint
 import miscutils
 import specdatactrl
 import datarange
