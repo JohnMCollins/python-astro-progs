@@ -32,7 +32,12 @@ except IOError as e:
     print "Error was", e.args[1]
     sys.exit(102)
 
-selected = inp[cols]
+try:
+    selected = inp[cols]
+except IndexError:
+    print "Invalid coloumns in data, shape is", inp.shape
+    sys.exit(103)
+
 if subfirst:
     selected[0] -= selected[0][0]
 
@@ -41,9 +46,5 @@ try:
 except IOError as e:
     print "Could not write output file", outfile
     print "Error was", e.args[1]
-    sys.exit(103)
+    sys.exit(104)
 
-if inp.shape[0] < 8:
-    print "Expecting new format 8-column shape, please convert"
-    print "Shape was", inp.shape
-    sys.exit(103)

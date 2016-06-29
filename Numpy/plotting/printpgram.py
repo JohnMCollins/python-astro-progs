@@ -11,6 +11,9 @@ import rangearg
 import argmaxmin
 import math
 
+enhlookup = dict(bold = '\\textbf{', italic = '\\textit{',
+                 red = '\\textcolor{red}{', blue = '\\textcolor{blue}{', green = '\\textcolor{green}{')
+
 parsearg = argparse.ArgumentParser(description='Print top n maximum peak', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 parsearg.add_argument('spec', type=str, nargs='+', help='Spectrum file(s)')
 parsearg.add_argument('--maxnum', type=int, default=1, help='Number of maxima to take')
@@ -20,12 +23,14 @@ parsearg.add_argument('--noendl', action='store_true', help='Dont put hlines in 
 parsearg.add_argument('--fcomps', type=str, help='Prefix by file name components going backwards thus 1:3')
 parsearg.add_argument('--aserror', action='store_true', help='Display error only')
 parsearg.add_argument('--errtot', action='store_true', help='Display error total')
-parsearg.add_argument('--asdiff', type=float, default=0.0, help='Display difference as +/-')
+parsearg.add_argument('--asdiff', type=float, nargs='*', help='Display difference as +/-')
 parsearg.add_argument('--pcomp', type=int, help='Component of file names to compare periods with')
 parsearg.add_argument('--prange', type=str, help='Range or periods to limit consideration to')
 parsearg.add_argument('--prec', type=int, default=4, help='Precision')
 parsearg.add_argument('--bfperc', type=float, default=-1.0, help='Render figure in bold if percent error <= value')
+parsearg.add_argument('--bfenh', type=str, nargs='*', help='List of enhancements for bold face (latex only)')
 parsearg.add_argument('--fap', action='store_true', help='Display False Alarm Probs')
+parsearg.add_argument('--fapprec', default=2, type=int, help='Precison of FAPs')
 
 resargs = vars(parsearg.parse_args())
 
@@ -38,9 +43,11 @@ prange = resargs['prange']
 latex = resargs['latex']
 prec = resargs['prec']
 bfperc = resargs['bfperc']
+bfenh = resargs['bfenh']
 aserror = resargs['aserror']
 errtot = resargs['errtot']
 dispfap = resargs['fap']
+fapprec = resargs['fapprec']
 
 if prange is not None:
     prange = rangearg.parserange(prange)
@@ -48,7 +55,7 @@ if prange is not None:
         sys.exit(19)
 
 fmt = "%%.%df" % prec
-fapfmt = "%%.%de" % prec
+fapfmt = "%%.%dg" % fapprec
 
 fcomps = resargs['fcomps']
 if fcomps is not None:
@@ -63,12 +70,24 @@ if latex:
     fcs = ' & '
     if not resargs['noendl']:
         endl =  ' \\\\\\hline'
-    bfb = '\\textbf{'
+    bfb = []
+    if bfenh is None:
+        bfb = ['\\textbf{']
+    else:
+        for etype in bfenh:
+            try:
+                bfb.append(enhlookup[etype])
+            except KeyError:
+                bfb.append(enhlookup['red'])    
+    if len(bfb) == 0:
+        bfb.append('\\textbf{')
     bfe = '}'
 else:
     fcs = ' '
-    bfb = bfe = '*'
+    bfb = ['*']
+    bfe = '*'
 
+num_enh = len(bfb)
 errors = 0
 errlist = []
 
@@ -95,6 +114,8 @@ for spec in specs:
         sel = (periods >= prange[0]) & (periods <= prange[1])
         periods = periods[sel]
         amps = amps[sel]
+        if fap is not None:
+            fap = fap[sel]
         if len(periods) == 0:
             sys.stdout = sys.stderr
             print "No periods in given period range"
@@ -122,11 +143,10 @@ for spec in specs:
         line = string.join(pref, fcs)
     
     pcompare = asdiff
-    if pcompare is None or pcompare == 0.0:
-        pcompare = None
+    if pcompare is None:
         if pcomp is not None:
             try:
-                pcompare = float(ewfbits[-pcomp])
+                pcompare = [float(ewfbits[-pcomp])]
             except ValueError, IndexError:
                 pass
     had = 0
@@ -136,14 +156,16 @@ for spec in specs:
         had += 1
         pv = periods[m]
         if pcompare is not None:
-            diff = abs(pv - pcompare)
-            if aserror:
-                nxt = fmt % diff
-            else:
-                nxt = fmt % pv
-            errlist.append(diff)
-            if diff * 100.0 / pcompare <= bfperc:
-                nxt = bfb + nxt + bfe
+            for ne, pc in enumerate(pcompare):
+                diff = abs(pv - pc)
+                if aserror:
+                    nxt = fmt % diff
+                else:
+                    nxt = fmt % pv
+                errlist.append(diff)
+                if diff * 100.0 / pc <= bfperc:
+                    nxt = bfb[ne % num_enh] + nxt + bfe
+                    break
             line += nxt
         else:
             if aserror != 0.0:
@@ -152,7 +174,7 @@ for spec in specs:
         if plusint:
             line += "," + fmt % amps[m]
         if dispfap:
-            line += fcs + fap[m] % fapfmt
+            line += fcs + fapfmt % fap[m]
     print line + endl
 
 if errtot and len(errlist) != 0:

@@ -2,7 +2,7 @@
 # NB relies on GNU make
 
 build_host:=$(shell hostname)
-PROGS=lsfort lsfort2
+PROGS=lsfort lsfort2 lsfpfind
 OBJECTS=lsfort.o lsfort2.o
 CFILES=$(OBJECTS:.o=.c)
 
@@ -28,6 +28,9 @@ lsfort: lsfort.o
 lsfort2: lsfort2.o
 	$(G77) $(LDFLAGS) -o lsfort2 lsfort2.o $(G77LIBS)
 
+lsfpfind: lsfpfind.o
+	$(G77) $(LDFLAGS) -o lsfpfind lsfpfind.o $(G77LIBS)
+
 %.o: %.f
 	$(G77) $(G77FLAGS) -c $<
 else
@@ -36,6 +39,9 @@ lsfort: lsfort.o
 
 lsfort2: lsfort2.o
 	$(CC) $(LDFLAGS) -o lsfort2 lsfort2.o $(F2CLIBS) $(MATHLIB)
+
+lsfpfind: lsfpfind.o
+	$(CC) $(LDFLAGS) -o lsfpfind lsfpfind.o $(F2CLIBS) $(MATHLIB)
 
 %.o: %.f
 	$(F2C) $<
