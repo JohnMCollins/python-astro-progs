@@ -33,10 +33,12 @@ parsearg.add_argument('--ycolumn', help='Column in data for Y values', type=int,
 parsearg.add_argument('--xrange', help='Range of X values', type=str)
 parsearg.add_argument('--yrange', help='Range of Y values', type=str)
 parsearg.add_argument('--legnum', type=int, default=5, help='Number of plots in legend')
+parsearg.add_argument('--legloc', type=str, default='best', help='Legend location')
 parsearg.add_argument('--obstimes', type=str, help='File for observation times if not given in files')
 parsearg.add_argument('--dateoff', type=str, help='Date to add to observation times now for today')
-parsearg.add_argument('--datefmt', type=str, default='%d/%m/%y %H:%M', help='Format for date display')
+parsearg.add_argument('--datefmt', type=str, default='%d/%m/%Y %H:%M', help='Format for date display')
 parsearg.add_argument('--linemk', type=str, nargs='+', help='Lines to mark as wl:label:colour:xoff:yoff:rotdeg:style')
+parsearg.add_argument('--fudge', type=float, default=1.0, help='Fudge factor for EWs')
 
 resargs = vars(parsearg.parse_args())
 
@@ -47,11 +49,13 @@ while len(plotc) < len(spec):
 linecolour = resargs['linecolour']
 linestyle = resargs['linestyle']
 outfig = resargs['outfig']
+fudge = resargs['fudge']
 xlab = resargs['xlab']
 ylab = resargs['ylab']
 xcolumn = resargs['xcolumn']
 ycolumn = resargs['ycolumn']
 legnum = resargs['legnum']
+legloc = resargs['legloc']
 datefmt = resargs['datefmt']
 dateoff = 0.0
 dateoffs = resargs['dateoff']
@@ -157,6 +161,8 @@ for sf in spec:
     
     sf = os.path.basename(sf)
 
+    if fudge != 1.0:
+        amps = (amps - 1.0) * fudge + 1.0
     plotlist.append((wavelengths, amps, plotc.pop(0)))
 
     if sf in obstimes:
@@ -203,7 +209,7 @@ if legnum > 0:
     if len(legends) > legnum:
         legends = legends[0:legnum]
         legends.append("etc...")
-    plt.legend(legends)
+    plt.legend(legends, loc=legloc)
 
 for lm in linmk:
     wl, lab, lcol, toff, ty, trot, sty = lm

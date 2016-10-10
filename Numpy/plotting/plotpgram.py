@@ -32,6 +32,7 @@ parsearg.add_argument('--yaxr', action='store_true', help='Put Y axis label on r
 parsearg.add_argument('--yrange', type=str, help='Range for Y axis')
 parsearg.add_argument('--xaxt', action='store_true', help='Put X axis label on top')
 parsearg.add_argument('--xrange', type=str, help='Range for X axis')
+parsearg.add_argument('--mxxrange', type=str, help='Range of X axis for considering maxima')
 parsearg.add_argument('--xtickint', type=float, help='Tick interval X xavis')
 parsearg.add_argument('--fork', action='store_true', help='Fork off daemon process to show plot and exit')
 parsearg.add_argument('--legend', type=str, help='Specify legend')
@@ -61,6 +62,8 @@ ytr = resargs['yaxr']
 xtt = resargs['xaxt']
 yrange = rangearg.parserange(resargs['yrange'])
 xrange = rangearg.parserange(resargs['xrange'])
+mxxrange = rangearg.parserange(resargs['mxxrange'])
+if mxxrange is None: mxxrange = xrange
 exlegend = resargs['legend']
 legloc = resargs['legloc']
 
@@ -165,8 +168,8 @@ if maxnum > 0:
     if mtxtcol is None: mtxtcol = mcol
     mcol = string.split(mcol, ',') * maxnum
     mtxtcol = string.split(mtxtcol, ',') * maxnum
-    if xrange is not None:
-        selx = (periods >= xrange[0]) & (periods <= xrange[1])
+    if mxxrange is not None:
+        selx = (periods >= mxxrange[0]) & (periods <= mxxrange[1])
         periods = periods[selx]
         amps = amps[selx]
         fapvalues = fapvalues[selx]
