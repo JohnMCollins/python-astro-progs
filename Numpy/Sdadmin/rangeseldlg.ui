@@ -61,10 +61,10 @@
     <number>3</number>
    </property>
    <property name="minimum">
-    <double>4000.000000000000000</double>
+    <double>2000.000000000000000</double>
    </property>
    <property name="maximum">
-    <double>7000.000000000000000</double>
+    <double>8000.000000000000000</double>
    </property>
    <property name="singleStep">
     <double>0.001000000000000</double>
@@ -104,10 +104,10 @@
     <number>3</number>
    </property>
    <property name="minimum">
-    <double>4000.000000000000000</double>
+    <double>2000.000000000000000</double>
    </property>
    <property name="maximum">
-    <double>7000.000000000000000</double>
+    <double>8000.000000000000000</double>
    </property>
    <property name="singleStep">
     <double>0.001000000000000</double>
@@ -132,10 +132,10 @@
     <number>6</number>
    </property>
    <property name="minimum">
-    <double>0.000000000000000</double>
+    <double>-1000.000000000000000</double>
    </property>
    <property name="maximum">
-    <double>2.000000000000000</double>
+    <double>3000.000000000000000</double>
    </property>
    <property name="singleStep">
     <double>0.100000000000000</double>
@@ -175,10 +175,10 @@
     <number>6</number>
    </property>
    <property name="minimum">
-    <double>1.000000000000000</double>
+    <double>-1000.000000000000000</double>
    </property>
    <property name="maximum">
-    <double>3.000000000000000</double>
+    <double>3000.000000000000000</double>
    </property>
    <property name="singleStep">
     <double>0.100000000000000</double>
@@ -234,10 +234,10 @@
     <number>3</number>
    </property>
    <property name="minimum">
-    <double>4000.000000000000000</double>
+    <double>2000.000000000000000</double>
    </property>
    <property name="maximum">
-    <double>7000.000000000000000</double>
+    <double>8000.000000000000000</double>
    </property>
    <property name="singleStep">
     <double>0.001000000000000</double>
@@ -262,10 +262,10 @@
     <number>3</number>
    </property>
    <property name="minimum">
-    <double>4000.000000000000000</double>
+    <double>2000.000000000000000</double>
    </property>
    <property name="maximum">
-    <double>7000.000000000000000</double>
+    <double>8000.000000000000000</double>
    </property>
    <property name="singleStep">
     <double>0.001000000000000</double>
@@ -516,7 +516,7 @@
      <string>Select this to zoom the X range</string>
     </property>
     <property name="text">
-     <string>X</string>
+     <string>&amp;X</string>
     </property>
     <property name="checked">
      <bool>true</bool>
@@ -536,7 +536,7 @@
 Note that adjusting &quot;left&quot; selects the bottom and &quot;right&quot; selects the top.</string>
     </property>
     <property name="text">
-     <string>Y</string>
+     <string>&amp;Y</string>
     </property>
    </widget>
   </widget>
