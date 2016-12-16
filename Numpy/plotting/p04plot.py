@@ -115,7 +115,7 @@ try:
     pfreq, pamp = np.loadtxt(pgramfile, unpack=True)
     if pfreq[0] == 0:
         pfreq = pfreq[1:]
-        pam = pamp[1:]
+        pamp = pamp[1:]
     per = 1.0 / pfreq
 except IOError as e:
     print "Could not load pgram file", pgramfile, "error was", e.args[1]
@@ -128,7 +128,7 @@ try:
     wfreq, wamp = np.loadtxt(winfuncfile, unpack=True)
     if wfreq[0] == 0:
         wfreq = wfreq[1:]
-        wam = wamp[1:]
+        wamp = wamp[1:]
     wer = 1.0 / wfreq
 except IOError as e:
     print "Could not load winfunc file", winfuncfile, "error was", e.args[1]
@@ -167,9 +167,9 @@ if xrange is not None:
     plt.xlim(*xrange)
 
 ax1 = plt.subplot(2, 1, 1)
-plot_with_maxima(per, pam, xrange, y1range, y1lab)
+plot_with_maxima(per, pamp, xrange, y1range, y1lab)
 ax2 = plt.subplot(2, 1, 2, sharex=ax1)
-plot_with_maxima(wer, wam, xrange, y2range, y2lab)
+plot_with_maxima(wer, wamp, xrange, y2range, y2lab)
 
 xrange = ax1.get_xlim()
 xticks = None
