@@ -10,6 +10,9 @@ import sys
 import string
 import rangearg
 import argmaxmin
+import warnings
+
+warnings.simplefilter('error')
 
 lstypes = dict(solid='-', dash='--', dot=':')
 
@@ -47,6 +50,7 @@ parsearg.add_argument('--fapx', type=float, help='Offset from lh for FAP text')
 parsearg.add_argument('--fapy', type=float, help='Offset from line from FAP text')
 parsearg.add_argument('--fapprec', type=int, default=3, help='Precision for FAP value')
 parsearg.add_argument('--textfs', type=int, default=10, help='Plot text font size')
+parsearg.add_argument('--recip', type=str, help='input is frequency take recip c=cycles/day a=angular (2pi/fred)')
 
 resargs = vars(parsearg.parse_args())
 
@@ -66,6 +70,7 @@ mxxrange = rangearg.parserange(resargs['mxxrange'])
 if mxxrange is None: mxxrange = xrange
 exlegend = resargs['legend']
 legloc = resargs['legloc']
+recip = resargs['recip']
 
 faps = resargs['faps']
 if faps is None: faps = []
@@ -100,6 +105,14 @@ try:
     f = np.loadtxt(spec, unpack=True)
     periods = f[0]
     amps = f[1]
+    if recip is not None:
+        if recip == 'c':
+            periods = 1.0 / periods
+        elif recip == 'a':
+            periods = np.pi * 2.0 / periods
+        else:
+            print "Cannot understand recip arg should be c or a not", recip
+            sys.exit(9)
     if len(faps) != 0:
         fapvalues = f[2]
     else:
@@ -115,6 +128,7 @@ except IndexError:
     if faps is not None:
         print "No FAPs"
         sys.exit(13)
+
     
 col=resargs['colour']
 lscale = resargs['logscale']
