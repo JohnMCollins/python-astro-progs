@@ -1,7 +1,6 @@
 # Manage parameters dialog
 
-from PyQt4.QtCore import *
-from PyQt4.QtGui import *
+from PyQt5 import QtCore, QtGui, QtWidgets
 import string
 import os
 import os.path
@@ -60,16 +59,16 @@ def make_listitem(spectra, colourlist, num):
         else:
            jd += " " + rems
     jd += " : " + colourlist[num]
-    item = QListWidgetItem(jd)
-    item.setData(Qt.UserRole, QVariant(num))
+    item = QtWidgets.QListWidgetItem(jd)
+    item.setData(QtCore.Qt.UserRole, QtCore.QVariant(num))
     return  item
 
-class NewRangeDlg(QDialog, ui_newrangedlg.Ui_newrangedlg):
+class NewRangeDlg(QtWidgets.QDialog, ui_newrangedlg.Ui_newrangedlg):
 
     def __init__(self, parent = None):
         super(NewRangeDlg, self).__init__(parent)
         self.setupUi(self)
-        self.colourdisp.setScene(QGraphicsScene())
+        self.colourdisp.setScene(QtWidgets.QGraphicsScene())
         self.colourdisp.show()
 
     def on_selcolour_clicked(self, b = None):
@@ -80,10 +79,10 @@ class NewRangeDlg(QDialog, ui_newrangedlg.Ui_newrangedlg):
 
 colourlist = ('black', 'brown', 'red', 'orange', 'yellow', 'green', 'blue', 'magenta', 'cyan', 'lightgrey')
 
-class Rangeseldlg(QDialog, ui_rangeseldlg.Ui_rangeseldlg):
+class Rangeseldlg(QtWidgets.QDialog, ui_rangeseldlg.Ui_rangeseldlg):
 
     def __init__(self, parent = None):
-        super(Rangeseldlg, self).__init__(parent)
+        super(Rangeseldlg, self).__init__()
         self.rangelist = None
         self.specctl = None
         self.colourlist = None
@@ -91,7 +90,7 @@ class Rangeseldlg(QDialog, ui_rangeseldlg.Ui_rangeseldlg):
         self.currentrange = None
         self.hangon = False
         self.setupUi(self)
-        self.colourdisp.setScene(QGraphicsScene())
+        self.colourdisp.setScene(QtWidgets.QGraphicsScene())
         self.colourdisp.show()
 
     def set_range_limits(self, lowerspin, upperspin, maxmin):
@@ -140,7 +139,7 @@ class Rangeseldlg(QDialog, ui_rangeseldlg.Ui_rangeseldlg):
         for rnam in rlist:
             if rnam == "xrange" or rnam == "yrange": continue
             r = self.rangelist.getrange(rnam)
-            self.editrange.addItem(r.description, QVariant(rnam))
+            self.editrange.addItem(r.description, QtCore.QVariant(rnam))
 
         self.plotter = mpplotter.Plotter()
 
@@ -184,17 +183,17 @@ class Rangeseldlg(QDialog, ui_rangeseldlg.Ui_rangeseldlg):
         while dlg.exec_():
             sname = str(dlg.shortname.text())
             if len(sname) == 0:
-                QMessageBox.warning(self, "Range name null", "No short name for range")
+                QtWidgets.QMessageBox.warning(self, "Range name null", "No short name for range")
                 continue
             try:
                 r = self.rangelist.getrange(sname)
-                QMessageBox.warning(self, "Range name error", "Short name clashes with existing")
+                QtWidgets.QMessageBox.warning(self, "Range name error", "Short name clashes with existing")
                 continue
             except datarange.DataRangeError:
                 pass
             fname = string.strip(str(dlg.rangename.text()))
             if len(fname) == 0:
-                QMessageBox.warning(self, "Range name null", "No name for range")
+                QtWidgets.QMessageBox.warning(self, "Range name null", "No name for range")
                 continue
             col = dlg.colourdisp.scene().foregroundBrush().color()
             nrange = datarange.DataRange(dlg.srmin.value(), dlg.srmax.value(), fname, sname,
@@ -202,16 +201,17 @@ class Rangeseldlg(QDialog, ui_rangeseldlg.Ui_rangeseldlg):
             try:
                 nrange.checkvalid()
             except datarange.DataRangeError as e:
-                QMessageBox.warning(self, "Data range error", e.args[0])
+                QtWidgets.QMessageBox.warning(self, "Data range error", e.args[0])
                 continue
             self.rangelist.setrange(nrange)
-            self.editrange.addItem(fname, QVariant(sname))
+            self.editrange.addItem(fname, QtCore.QVariant(sname))
             self.editrange.setCurrentIndex(self.editrange.count()-1)
             return
 
     def on_delrange_clicked(self, b = None):
         if b is None or self.currentrange is None: return
-        if QMessageBox.question(self, "OK to delete", "Are you sure you mean to delete range '" + self.currentrange.description + "'") != QMessageBox.Ok: return
+        if QtWidgets.QMessageBox.question(self, "OK to delete", "Are you sure you mean to delete range '" + self.currentrange.description + "'",
+				QtWidgets.QMessageBox.Ok|QtWidgets.QMessageBox.Cancel, QtWidgets.QMessageBox.Cancel) != QtWidgets.QMessageBox.Ok: return
         self.rangelist.removerange(self.currentrange)
         self.editrange.removeItem(self.editrange.currentIndex())
         self.updateplot()
@@ -223,7 +223,7 @@ class Rangeseldlg(QDialog, ui_rangeseldlg.Ui_rangeseldlg):
 
         if self.plotter is None:  return
 
-        selected = [ p.data(Qt.UserRole).toInt()[0] for p in self.datafiles.selectedItems() ]
+        selected = [ p.data(QtCore.Qt.UserRole) for p in self.datafiles.selectedItems() ]
         nsel = len(selected)
         self.editx.setEnabled(nsel == 1)
         self.edity.setEnabled(nsel == 1)
@@ -250,11 +250,11 @@ class Rangeseldlg(QDialog, ui_rangeseldlg.Ui_rangeseldlg):
             self.warningmsg.setText(e.args[0])
 
     def on_xrangemin_valueChanged(self, value):
-        if isinstance(value, QString): return
+        if isinstance(value, str): return
         self.updateplot()
 
     def on_xrangemax_valueChanged(self, value):
-        if isinstance(value, QString): return
+        if isinstance(value, str): return
         self.updateplot()
 
     def on_selectx_stateChanged(self, b = None):
@@ -262,11 +262,11 @@ class Rangeseldlg(QDialog, ui_rangeseldlg.Ui_rangeseldlg):
         self.updateplot()
 
     def on_yrangemin_valueChanged(self, value):
-        if isinstance(value, QString): return
+        if isinstance(value, str): return
         self.updateplot()
 
     def on_yrangemax_valueChanged(self, value):
-        if isinstance(value, QString): return
+        if isinstance(value, str): return
         self.updateplot()
 
     def on_selecty_stateChanged(self, b = None):
@@ -454,7 +454,7 @@ class Rangeseldlg(QDialog, ui_rangeseldlg.Ui_rangeseldlg):
         self.hangon = True
         for row in xrange(0, self.datafiles.count()):
             item = self.datafiles.item(row)
-            specnum = item.data(Qt.UserRole).toInt()[0]
+            specnum = item.data(QtCore.Qt.UserRole)
             spec = self.specctl.datalist[specnum]
             item.setSelected(spec.remarks is None or len(spec.remarks) == 0)
         self.hangon = False
@@ -464,7 +464,7 @@ class Rangeseldlg(QDialog, ui_rangeseldlg.Ui_rangeseldlg):
         if b is None: return
         for row in xrange(0, self.datafiles.count()):
             item = self.datafiles.item(row)
-            specnum = item.data(Qt.UserRole).toInt()[0]
+            specnum = item.data(QtCore.Qt.UserRole)
             spec = self.specctl.datalist[specnum]
             item.setSelected(not spec.discount)
         self.hangon = False
@@ -472,7 +472,7 @@ class Rangeseldlg(QDialog, ui_rangeseldlg.Ui_rangeseldlg):
 
     def on_editx_clicked(self, b = None):
         if b is None: return
-        selected = [ p.data(Qt.UserRole).toInt()[0] for p in self.datafiles.selectedItems() ]
+        selected = [ p.data(QtCore.Qt.UserRole) for p in self.datafiles.selectedItems() ]
         if len(selected) != 1: return
         spectrum = self.specctl.datalist[selected[0]]
         dlg = scaleoffdlg.XIndHvDlg(self)
@@ -484,7 +484,7 @@ class Rangeseldlg(QDialog, ui_rangeseldlg.Ui_rangeseldlg):
 
     def on_edity_clicked(self, b = None):
         if b is None: return
-        selected = [ p.data(Qt.UserRole).toInt()[0] for p in self.datafiles.selectedItems() ]
+        selected = [ p.data(QtCore.Qt.UserRole) for p in self.datafiles.selectedItems() ]
         if len(selected) != 1: return
         nsel = selected[0]
         spectrum = self.specctl.datalist[selected[0]]

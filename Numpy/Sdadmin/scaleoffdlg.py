@@ -1,7 +1,6 @@
 # Scale and offsets dialog
 
-from PyQt4.QtCore import *
-from PyQt4.QtGui import *
+from PyQt5 import QtCore, QtGui, QtWidgets
 import string
 import os
 import os.path
@@ -33,10 +32,10 @@ def setup_y_offsets(box, offlist):
         box.addItem(str(off))
     box.setCurrentIndex(0)
 
-class XRvDlg(QDialog, ui_xrvdlg.Ui_xrvdlg):
+class XRvDlg(QtWidgets.QDialog, ui_xrvdlg.Ui_xrvdlg):
 
     def __init__(self, parent = None):
-        super(XRvDlg, self).__init__(parent)
+        super(XRvDlg, self).__init__()
         self.setupUi(self)
         self.specctrl = None
 
@@ -64,13 +63,15 @@ class XRvDlg(QDialog, ui_xrvdlg.Ui_xrvdlg):
 
     def on_resetx_clicked(self, b = None):
         if b is None: return
-        if QMessageBox.question(self, "Are you sure", "This will cancel wavelength RVs, are you sure", QMessageBox.Yes, QMessageBox.No|QMessageBox.Default|QMessageBox.Escape) != QMessageBox.Yes: return
+        if QtWidgets.QMessageBox.question(self, "Are you sure", "This will cancel wavelength RVs, are you sure",
+			QtWidgets.QMessageBox.Yes|QtWidgets.QMessageBox.No, QtWidgets.QMessageBox.No) != QtWidgets.QMessageBox.Yes: return
         self.specctrl.reset_x()
         self.rvcorrect.setValue(0.0)
 
     def on_resetindivx_clicked(self, b = None):
         if b is None: return
-        if QMessageBox.question(self, "Are you sure", "This will cancel previous X scaling and offsets, are you sure", QMessageBox.Yes, QMessageBox.No|QMessageBox.Default|QMessageBox.Escape) != QMessageBox.Yes: return
+        if QtWidgets.QMessageBox.question(self, "Are you sure", "This will cancel previous X scaling and offsets, are you sure",
+			QtWidgets.QMessageBox.Yes|QtWidgets.QMessageBox.No, QtWidgets.QMessageBox.No) != QtWidgets.QMessageBox.Yes: return
         self.specctrl.reset_indiv_x()
         self.xindivnum.setText("0")
         self.resetindivx.setEnabled(False)
@@ -79,15 +80,15 @@ class XRvDlg(QDialog, ui_xrvdlg.Ui_xrvdlg):
         if b is None: return
         objn = string.strip(str(self.objname.text()))
         if len(objn) == 0:
-            QMessageBox.warning(self, "No current object name", "Please set up an object name")
+            QtWidgets.QMessageBox.warning(self, "No current object name", "Please set up an object name")
             return
         rv = simbad.getrv(objn)
         if rv is None:
-            QMessageBox.warning(self, "Cannot locate object", "Cannot find object name " + objn + " RV value in SIMBAD")
+            QtWidgets.QMessageBox.warning(self, "Cannot locate object", "Cannot find object name " + objn + " RV value in SIMBAD")
             return
         self.rvcorrect.setValue(rv)
 
-class XIndHvDlg(QDialog, ui_xindhvdlg.Ui_xindhvdlg):
+#class XIndHvDlg(QtWidgets.QDialog, ui_xindhvdlg.Ui_xindhvdlg):
 
     def __init__(self, parent = None):
         super(XIndHvDlg, self).__init__(parent)
@@ -113,7 +114,8 @@ class XIndHvDlg(QDialog, ui_xindhvdlg.Ui_xindhvdlg):
 
     def on_resetx_clicked(self, b = None):
         if b is None: return
-        if QMessageBox.question(self, "Are you sure", "This will cancel HV, are you sure", QMessageBox.Yes, QMessageBox.No|QMessageBox.Default|QMessageBox.Escape) != QMessageBox.Yes: return
+        if QtWidgets.QMessageBox.question(self, "Are you sure", "This will cancel HV, are you sure",
+			QtWidgets.QMessageBox.No|QtWidgets.QMessageBox.Yes, QtWidgets.QMessageBox.No) != QtWidgets.QMessageBox.Yes: return
         self.hvcorrect.setValue(0.0)
 
     def on_hvcorrect_valueChanged(self, v):
@@ -121,7 +123,7 @@ class XIndHvDlg(QDialog, ui_xindhvdlg.Ui_xindhvdlg):
         self.spectrum.hvcorrect = v
         self.dispmaxmin(v)
 
-class YScaleOffDlg(QDialog, ui_yscaleoffdlg.Ui_yscaleoffdlg):
+class YScaleOffDlg(QtWidgets.QDialog, ui_yscaleoffdlg.Ui_yscaleoffdlg):
 
     def __init__(self, parent = None):
         super(YScaleOffDlg, self).__init__(parent)
@@ -186,7 +188,8 @@ class YScaleOffDlg(QDialog, ui_yscaleoffdlg.Ui_yscaleoffdlg):
 
     def on_resety_clicked(self, b = None):
         if b is None: return
-        if QMessageBox.question(self, "Are you sure", "This will cancel y scaling and offsets, are you sure", QMessageBox.Yes, QMessageBox.No|QMessageBox.Default|QMessageBox.Escape) != QMessageBox.Yes: return
+        if QtWidgets.QMessageBox.question(self, "Are you sure", "This will cancel y scaling and offsets, are you sure",
+			QtWidgets.QMessageBox.Yes|QtWidgets.QMessageBox.No, QtWidgets.QMessageBox.No) != QtWidgets.QMessageBox.Yes: return
         self.specctrl.reset_y()
         self.dispmaxmin()
         self.setup_yoffset()
@@ -194,12 +197,13 @@ class YScaleOffDlg(QDialog, ui_yscaleoffdlg.Ui_yscaleoffdlg):
 
     def on_resetindivy_clicked(self, b = None):
         if b is None: return
-        if QMessageBox.question(self, "Are you sure", "This will cancel previous y scaling and offsets, are you sure", QMessageBox.Yes, QMessageBox.No|QMessageBox.Default|QMessageBox.Escape) != QMessageBox.Yes: return
+        if QtWidgets.QMessageBox.question(self, "Are you sure", "This will cancel previous y scaling and offsets, are you sure",
+			 QtWidgets.QMessageBox.Yes|QtWidgets.QMessageBox.No, QtWidgets.QMessageBox.No) != QtWidgets.QMessageBox.Yes: return
         self.specctrl.reset_indiv_y()
         self.yindivnum.setText("0")
         self.resetindivy.setEnabled(False)
 
-class YIndScaleOffDlg(QDialog, ui_yindscaleoffdlg.Ui_yindscaleoffdlg):
+class YIndScaleOffDlg(QtWidgets.QDialog, ui_yindscaleoffdlg.Ui_yindscaleoffdlg):
 
     def __init__(self, parent = None):
         super(YIndScaleOffDlg, self).__init__(parent)
@@ -264,7 +268,8 @@ class YIndScaleOffDlg(QDialog, ui_yindscaleoffdlg.Ui_yindscaleoffdlg):
 
     def on_resety_clicked(self, b = None):
         if b is None: return
-        if QMessageBox.question(self, "Are you sure", "This will cancel y scaling and offsets, are you sure", QMessageBox.Yes, QMessageBox.No|QMessageBox.Default|QMessageBox.Escape) != QMessageBox.Yes: return
+        if QtWidgets.QMessageBox.question(self, "Are you sure", "This will cancel y scaling and offsets, are you sure",
+			QtWidgets.QMessageBox.Yes|QtWidgets.QMessageBox.No, QtWidgets.QMessageBox.No) != QtWidgets.QMessageBox.Yes: return
         self.spectrum.yscale = 1.0
         self.spectrum.yoffset = None
         self.dispmaxmin()

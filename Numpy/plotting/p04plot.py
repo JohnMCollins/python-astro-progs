@@ -75,7 +75,7 @@ parsearg.add_argument('--mxoffs', type=float, default=2.0, help='Offset of maxim
 parsearg.add_argument('--myoffs', type=str, default='10.0', help='Offset of maxima line labels Y (percent)')
 parsearg.add_argument('--mxprec', type=int, default=1, help='Precision of maxima labels')
 parsearg.add_argument('--addinten', action='store_true', help='Put amplitudes on line labels')
-parsearg.add_argument('--xlab', type=str, help='Label for X axis', default='Period in days')
+parsearg.add_argument('--xlab', type=str, help='Label for X axis')
 parsearg.add_argument('--y1lab', type=str, help='Label for Y1 axis', default='Power')
 parsearg.add_argument('--y2lab', type=str, help='Label for Y2 axis', default='Power')
 parsearg.add_argument('--y1range', type=str, help='Range for Y1 axis')
@@ -88,12 +88,19 @@ parsearg.add_argument('--legloc', type=str, default='best', help='Location for l
 parsearg.add_argument('--width', help="Width of plot", type=float, default=8)
 parsearg.add_argument('--height', help="Height of plot", type=float, default=6)
 parsearg.add_argument('--textfs', type=int, default=10, help='Plot text font size')
+parsearg.add_argument('--recip', action='store_false', help='Take reciprocal of values to get frequency')
 
 resargs = vars(parsearg.parse_args())
 
 pgramfile, winfuncfile = resargs['pfiles']
 outfig = resargs['outfig']
 xlab = resargs['xlab']
+takerecip = resargs['recip']
+if xlab is None:
+    if takerecip:
+        xlab = 'Period in days'
+    else:
+        xlab = "c/day"
 y1lab = resargs['y1lab']
 y2lab = resargs['y2lab']
 if xlab == "none":
@@ -116,7 +123,10 @@ try:
     if pfreq[0] == 0:
         pfreq = pfreq[1:]
         pamp = pamp[1:]
-    per = 1.0 / pfreq
+    if takerecip:
+        per = 1.0 / pfreq
+    else:
+        per = pfreq
 except IOError as e:
     print "Could not load pgram file", pgramfile, "error was", e.args[1]
     sys.exit(11)
@@ -129,7 +139,10 @@ try:
     if wfreq[0] == 0:
         wfreq = wfreq[1:]
         wamp = wamp[1:]
-    wer = 1.0 / wfreq
+    if takerecip:
+        wer = 1.0 / wfreq
+    else:
+        wer = wfreq
 except IOError as e:
     print "Could not load winfunc file", winfuncfile, "error was", e.args[1]
     sys.exit(11)

@@ -1,24 +1,23 @@
 # Dialog for manipulation of observation file
 
-from PyQt4.QtCore import *
-from PyQt4.QtGui import *
+from PyQt5 import QtCore, QtGui, QtWidgets
 
 import ui_obsfileseldlg
 import specdatactrl
 
-class ObsFileDlg(QDialog, ui_obsfileseldlg.Ui_obsfileseldlg):
+class ObsFileDlg(QtWidgets.QDialog, ui_obsfileseldlg.Ui_obsfileseldlg):
 
     def __init__(self, parent = None):
-        super(ObsFileDlg, self).__init__(parent)
+        super(ObsFileDlg, self).__init__()
         self.setupUi(self)
 
         # Set up combo boxes with possible fields in
 
         for fn, descr in specdatactrl.Obsfields:
-            self.selobsfield.addItem(descr, QVariant(fn))
+            self.selobsfield.addItem(descr, QtCore.QVariant(fn))
 
         for fn, descr in specdatactrl.Specfields:
-            self.selspecfield.addItem(descr, QVariant(fn))
+            self.selspecfield.addItem(descr, QtCore.QVariant(fn))
 
     def default_fields(self):
         """Initialise default fields for new files"""
@@ -28,7 +27,7 @@ class ObsFileDlg(QDialog, ui_obsfileseldlg.Ui_obsfileseldlg):
         for fnum in (0,2,4,5):
             fn, descr = specdatactrl.Obsfields[fnum]
             item = QListWidgetItem(descr)
-            item.setData(Qt.UserRole, QVariant(fn))
+            item.setData(Qt.UserRole, QtCore.QVariant(fn))
             self.obsfields.addItem(item)
 
         # Now for spec data
@@ -36,7 +35,7 @@ class ObsFileDlg(QDialog, ui_obsfileseldlg.Ui_obsfileseldlg):
         for fnum in (0,1,2):
             fn, descr = specdatactrl.Specfields[fnum]
             item = QListWidgetItem(descr)
-            item.setData(Qt.UserRole, QVariant(fn))
+            item.setData(Qt.UserRole, QtCore.QVariant(fn))
             self.specfields.addItem(item)
 
     def copyin_fields(self, listw, namelist, flist):
@@ -49,7 +48,7 @@ class ObsFileDlg(QDialog, ui_obsfileseldlg.Ui_obsfileseldlg):
             try:
                 descr = dlu[fn]
                 item = QListWidgetItem(descr)
-                item.setData(Qt.UserRole, QVariant(fn))
+                item.setData(Qt.UserRole, QtCore.QVariant(fn))
                 listw.addItem(item)
             except KeyError:
                 pass
@@ -67,7 +66,7 @@ class ObsFileDlg(QDialog, ui_obsfileseldlg.Ui_obsfileseldlg):
 
     def on_selobsfile_clicked(self, b = None):
         if b is None: return
-        fname = QFileDialog.getOpenFileName(self, self.tr("Select observation time file"), self.obsfile.text())
+        fname = QtWidges.QFileDialog.getOpenFileName(self, self.tr("Select observation time file"), self.obsfile.text())
         if len(fname) == 0: return
         self.obsfile.setText(fname)
 

@@ -10,13 +10,13 @@ import xml.etree.ElementTree as ET
 
 sys.ps1 = 'FRED'            # Mystery stuff to make interactive work
 import matplotlib
-matplotlib.use('Qt4agg')
+#matplotlib.use('Qt4agg')
 matplotlib.interactive(True)
 import matplotlib.pyplot as plt
 plt.ion()
 
-from PyQt4.QtCore import *
-from PyQt4.QtGui import *
+from PyQt5 import QtCore, QtGui, QtWidgets
+from PyQt5.QtWidgets import (QWidget, QPushButton, QFrame, QApplication)
 
 import miscutils
 import xmlutil
@@ -68,15 +68,15 @@ class SdaminConfig(object):
         """Save to XML DOM node"""
         self.save_geom(doc, pnode, "geom")
 
-class ProgoptsDlg(QDialog, ui_progoptsdlg.Ui_progoptsdlg):
+class ProgoptsDlg(QtWidgets.QDialog, ui_progoptsdlg.Ui_progoptsdlg):
     def __init__(self, parent = None):
         super(ProgoptsDlg, self).__init__(parent)
         self.setupUi(self)
 
-class SadminMain(QMainWindow, ui_sdadminmain.Ui_sdadminmain):
+class SadminMain(QtWidgets.QMainWindow, ui_sdadminmain.Ui_sdadminmain):
 
     def __init__(self):
-        super(SadminMain, self).__init__(None)
+        super(QtWidgets.QMainWindow, self).__init__()
         self.sinf = None
         self.currentlist = None
         self.rangelist = datarange.init_default_ranges()
@@ -125,7 +125,8 @@ class SadminMain(QMainWindow, ui_sdadminmain.Ui_sdadminmain):
     def ask_dirty_ctrlfile(self):
         """If control file is dirty, ask before zapping"""
         if not self.dirty_ctrlfile(): return True
-        if QMessageBox.question(self, "Are you sure", "There are unsaved changes in the control data, are you sure", QMessageBox.Yes, QMessageBox.No|QMessageBox.Default|QMessageBox.Escape) != QMessageBox.Yes:
+        if QtWidgets.QMessageBox.question(self, "Are you sure", "There are unsaved changes in the control data, are you sure",
+			QtWidgets.QMessageBox.No|QtWidgets.QMessageBox.Yes, QtWidgets.QMessageBox.No) != QtWidgets.QMessageBox.Yes:
             return False
         return True
 
@@ -136,7 +137,8 @@ class SadminMain(QMainWindow, ui_sdadminmain.Ui_sdadminmain):
     def ask_dirty_rangefile(self):
         """If range file is dirty, ask before zapping"""
         if not self.dirty_ctrlfile(): return True
-        if QMessageBox.question(self, "Are you sure", "There are unsaved changes in the range data, are you sure", QMessageBox.Yes, QMessageBox.No|QMessageBox.Default|QMessageBox.Escape) != QMessageBox.Yes:
+        if QtWidgets.QMessageBox.question(self, "Are you sure", "There are unsaved changes in the range data, are you sure",
+			QtWidgets.QMessageBox.No|QtWidgets.QMessageBox.Yes, QtWidgets.QMessageBox.No) != QtWidgets.QMessageBox.Yes:
             return False
         return True
 
@@ -152,7 +154,7 @@ class SadminMain(QMainWindow, ui_sdadminmain.Ui_sdadminmain):
             clist = newsinf.get_ctrlfile()
             rlist = newsinf.get_rangelist()
         except specinfo.SpecInfoError as e:
-            QMessageBox.warning(self, "Load file data error", e.args[0])
+            QtWidgets.QMessageBox.warning(self, "Load file data error", e.args[0])
             return
         self.sinf = newsinf
         self.currentlist = clist
@@ -178,7 +180,9 @@ class SadminMain(QMainWindow, ui_sdadminmain.Ui_sdadminmain):
         if not self.ask_dirty(): return
         existing = ""
         if self.sinf is not None and self.sinf.filename is not None: existing = self.sinf.filename
-        newfile = QFileDialog.getOpenFileName(self, self.tr("Select spectrum info file"), existing, self.tr("Spectrum info files (*." + specinfo.SUFFIX + ")"))
+        newfile = QtWidgets.QFileDialog.getOpenFileName(self, self.tr("Select spectrum info file"), existing, self.tr("Spectrum info files (*." + specinfo.SUFFIX + ")"))
+        if newfile is None: return
+        newfile = newfile[0]
         if len(newfile) == 0: return
         self.set_info_file(str(newfile))
 
@@ -187,7 +191,7 @@ class SadminMain(QMainWindow, ui_sdadminmain.Ui_sdadminmain):
         olddir = ""
         if self.currentlist is not None:
             olddir = self.currentlist.dirname
-        newdir = QFileDialog.getExistingDirectory(self, self.tr("Select observations directory"), olddir)
+        newdir = QtWidgets.QFileDialog.getExistingDirectory(self, self.tr("Select observations directory"), olddir)
         if len(newdir) == 0: return
         newdir = str(newdir)
         if newdir == olddir: return
@@ -210,7 +214,7 @@ class SadminMain(QMainWindow, ui_sdadminmain.Ui_sdadminmain):
             obslist, speclist = dlg.extract_fields()
             fname = str(dlg.obsfile.text())
             if len(fname) == 0:
-                QMessageBox.warning(self, "No obs file", "No observation file given")
+                QtWidgets.QMessageBox.warning(self, "No obs file", "No observation file given")
                 continue
             if self.currentlist is None:
                 fname = os.path.abspath(fname)
@@ -220,13 +224,13 @@ class SadminMain(QMainWindow, ui_sdadminmain.Ui_sdadminmain):
                 else:
                     fname = os.path.abspath(fname)
             if not os.path.isfile(fname):
-                QMessageBox.warning(self, "No such file", "No such file as " + fname)
+                QtWidgets.QMessageBox.warning(self, "No such file", "No such file as " + fname)
                 continue
             try:
                 newlist = specdatactrl.SpecDataList(fname, obslist, speclist)
                 newlist.loadfile()
             except specdatactrl.SpecDataError as e:
-                QMessageBox.warning(self, "Load file error", "File gave error " + e.args[0])
+                QtWidgets.QMessageBox.warning(self, "Load file error", "File gave error " + e.args[0])
                 continue
             self.currentlist = newlist
             self.unsavedc = True
@@ -259,7 +263,7 @@ class SadminMain(QMainWindow, ui_sdadminmain.Ui_sdadminmain):
     def on_action_rvcorrect_triggered(self, checked = None):
         if checked is None: return
         if self.currentlist is None:
-            QMessageBox.warning(self, "No current obs file", "Please set up an observation times file first")
+            QtWidgets.QMessageBox.warning(self, "No current obs file", "Please set up an observation times file first")
             return
         dlg = scaleoffdlg.XRvDlg(self)
         dlg.initdata(self.currentlist)
@@ -274,7 +278,7 @@ class SadminMain(QMainWindow, ui_sdadminmain.Ui_sdadminmain):
     def on_action_Y_scaling_and_offsets_triggered(self, checked = None):
         if checked is None: return
         if self.currentlist is None:
-            QMessageBox.warning(self, "No current obs file", "Please set up an observation times file first")
+            QtWidgets.QMessageBox.warning(self, "No current obs file", "Please set up an observation times file first")
             return
         dlg = scaleoffdlg.YScaleOffDlg(self)
         dlg.initdata(self.currentlist)
@@ -285,7 +289,7 @@ class SadminMain(QMainWindow, ui_sdadminmain.Ui_sdadminmain):
     def on_action_tune_ranges_triggered(self, checked = None):
         if checked is None: return
         if self.currentlist is None:
-            QMessageBox.warning(self, "No current obs file", "Please set up an observation times file first")
+            QtWidgets.QMessageBox.warning(self, "No current obs file", "Please set up an observation times file first")
             return
         dlg = rangeseldlg.Rangeseldlg(self)
         if self.rangelist is None:
@@ -300,10 +304,10 @@ class SadminMain(QMainWindow, ui_sdadminmain.Ui_sdadminmain):
 
     def ready_to_calc(self):
         if self.currentlist is None:
-            QMessageBox.warning(self, "No current obs file", "Please set up an observation times file first")
+            QtWidgets.QMessageBox.warning(self, "No current obs file", "Please set up an observation times file first")
             return False
         if self.rangelist is None:
-            QMessageBox.warning(self, "No current ranges", "Please set up ranges first")
+            QtWidgets.QMessageBox.warning(self, "No current ranges", "Please set up ranges first")
             return False
         return True
 
@@ -318,7 +322,7 @@ class SadminMain(QMainWindow, ui_sdadminmain.Ui_sdadminmain):
             self.unsavedr = False
             self.updateUI()
         except specinfo.SpecInfoError as e:
-            QMessageBox.warning(self, "File save error", "Cannot save file, error was " + e.args[0])
+            QtWidgets.QMessageBox.warning(self, "File save error", "Cannot save file, error was " + e.args[0])
 
     def on_action_save_info_triggered(self, checked = None):
         if checked is None: return
@@ -331,12 +335,12 @@ class SadminMain(QMainWindow, ui_sdadminmain.Ui_sdadminmain):
     def on_action_save_info_as_triggered(self, checked = None):
         if checked is None: return
         if self.currentlist is None or not self.currentlist.is_complete():
-            QMessageBox.warning(self, "No observation list", "No observation list set up yet")
+            QtWidgets.QMessageBox.warning(self, "No observation list", "No observation list set up yet")
             return
         existing = ""
         if self.sinf is not None and self.sinf.filename is not None:
             existing = self.sinf.filename
-        fname = QFileDialog.getSaveFileName(self, self.tr("Select save file"), existing, self.tr("Spectral info files (*." + specinfo.SUFFIX + ")"))
+        fname = QtWidgets.QFileDialog.getSaveFileName(self, self.tr("Select save file"), existing, self.tr("Spectral info files (*." + specinfo.SUFFIX + ")"))
         if len(fname) == 0: return
         self.save_ops(miscutils.replacesuffix(str(fname), specinfo.SUFFIX))
 
@@ -355,15 +359,15 @@ class SadminMain(QMainWindow, ui_sdadminmain.Ui_sdadminmain):
         global cfg
         if checked is None: return
         if self.dirty_either() and \
-            QMessageBox.question(self, "Unsaved data", "There are unsaved changes, sure you want to quit",
-                                 QMessageBox.Yes, QMessageBox.No|QMessageBox.Default|QMessageBox.Escape) != QMessageBox.Yes:
+            QtWidgets.QMessageBox.question(self, "Unsaved data", "There are unsaved changes, sure you want to quit",
+                   QtWidgets.QMessageBox.Yes|QtWidgets.QMessageBox.No, QtWidgets.QMessageBox.No) != QtWidgets.QMessageBox.Yes:
             return
         try:
             cdoc, croot = configfile.init_save(CONFIGROOT)
             cfg.save(cdoc, croot)
             configfile.complete_save(cdoc, CONFIGFNAME)
         except configfile.ConfigError as e:
-            QMessageBox.warning(self, "Configuration file error", e.args[0])
+            QtWidgets.QMessageBox.warning(self, "Configuration file error", e.args[0])
         QApplication.exit(0)
 
     def closeEvent(self, event):
@@ -381,9 +385,9 @@ try:
         cdoc, croot = dp
         cfg.load(croot)
 except configfile.ConfigError as e:
-    QMessageBox.warning(mw, "Configuration file error", e.args[0])
+    QtWidgets.QMessageBox.warning(mw, "Configuration file error", e.args[0])
 except xmlutil.XMLError as e:
-    QMessageBox.warning(mw, "Config file XML error", e.args[0])
+    QtWidgets.QMessageBox.warning(mw, "Config file XML error", e.args[0])
 
 # Parse arguments
 
