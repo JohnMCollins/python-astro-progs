@@ -25,10 +25,10 @@ for my $id (@ARGV) {
         print "Fits file $id zero length\n";
         next;
     }
-    my $fn = sprintf "%s%3d.fits.gz", $prefix, $n;
+    my $fn = sprintf "%s%.3d.fits.gz", $prefix, $n;
     $n++;
     open(OUTF, ">$fn") or die "Cannot create output file $fn";
-    my $offs = 0
+    my $offs = 0;
     while ($nbytes > 0)  {
         my $nout = 4096;
         $nout = $nbytes if $nout > $nbytes;
