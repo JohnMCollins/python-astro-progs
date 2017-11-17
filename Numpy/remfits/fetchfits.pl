@@ -20,4 +20,22 @@ for my $id (@ARGV) {
         next;
     }
     my $fits = $row->[0];
+    my $nbytes = length $fits;
+    unless  ($nbytes > 0)  {
+        print "Fits file $id zero length\n";
+        next;
+    }
+    my $fn = sprintf "%s%3d.fits.gz", $prefix, $n;
+    $n++;
+    open(OUTF, ">$fn") or die "Cannot create output file $fn";
+    my $offs = 0
+    while ($nbytes > 0)  {
+        my $nout = 4096;
+        $nout = $nbytes if $nout > $nbytes;
+        my $nput = syswrite OUTF, $fits, $nout, $offs;
+        $offs += $nput;
+        $nbytes -= $nput;
+    }
+    close OUTF;
 }
+
