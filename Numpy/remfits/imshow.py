@@ -1,10 +1,12 @@
 #! /usr/bin/env python
 
 from astropy.io import fits
+from astropy import wcs
 import matplotlib.pyplot as plt
 from matplotlib import colors 
 import numpy as np
 import argparse
+import sys
 
 parsearg = argparse.ArgumentParser(description='Plot FITS image', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 parsearg.add_argument('file', type=str, nargs=1, help='FITS file to plot can be compressed')
@@ -40,6 +42,8 @@ imagedata = imagedata + 0.0
 if cutoff > 0.0:
     imagedata[imagedata > cutoff] = cutoff
 
+plt.figure(figsize=(10,12))
+
 if ubound is not None:
     mx = imagedata.max()
     if ubound > mx:
@@ -68,4 +72,21 @@ elif pwr is not None:
 else:
     img = plt.imshow(imagedata, cmap='gray', origin='lower')
     plt.colorbar(img)
+
+# OK get coords of edges of picture
+
+pixrows, pixcols = imagedata.shape
+devnull = open('/dev/null', 'w')
+
+sys.stdout = devnull
+w = wcs.WCS(ffile[0].header)
+sys.stdout = sys.__stdout__
+
+cornerpix = np.array(((0,0), (0, pixcols-1), (pixrows-1, 0), (pixrows-1, pixcols-1)), np.float)
+
+cornerradec = w.wcs_pix2world(cornerpix, 1)
+
+print cornerpix
+print cornerradec
+
 plt.show()
