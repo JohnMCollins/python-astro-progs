@@ -9,6 +9,7 @@ import numpy as np
 import argparse
 import sys
 import string
+import objcoord
 
 parsearg = argparse.ArgumentParser(description='Plot FITS image', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 parsearg.add_argument('file', type=str, nargs=1, help='FITS file to plot can be compressed')
@@ -25,7 +26,9 @@ parsearg.add_argument('--apsize', type=int, default=6, help='aperture radius')
 parsearg.add_argument('--blanksize', type=int, default=20, help='Size to blank')
 parsearg.add_argument('--numobj', type=int, default=3, help='Number of brightests objects to display')
 parsearg.add_argument('--hilcolour', type=str, default='r', help='Object colour')
-parsearg.add_argument('--hilalpha', type=float, default=0.75, help='Object alpha')                  
+parsearg.add_argument('--hilalpha', type=float, default=0.75, help='Object alpha')
+parsearg.add_argument('--objrad', type=float, default=2.0, help='Object search radius in arcmin')
+parsearg.add_argument('--laboffset', type=int, default=5, help='Offset in pixels to put text in')            
 
 resargs = vars(parsearg.parse_args())
 ffname = resargs['file'][0]
@@ -47,6 +50,8 @@ blanksize = resargs['blanksize']
 numobj = resargs['numobj']
 hilcolour = resargs['hilcolour']
 hilalpha = resargs['hilalpha']
+objrad = resargs['objrad']
+laboffset = resargs['laboffset']
 
 imagedata = ffile[0].data
 
@@ -159,6 +164,16 @@ for nb in range(0,numobj):
     bcol = bcols[0]
     ptch = mp.Circle((bcol,brow), radius=apsize, alpha=hilalpha,color=hilcolour)
     ax.add_patch(ptch)
+    tcra, tcdec = w.wcs_pix2world(((bcol, brow),), 1).flatten()
+    objnames = objcoord.coord2objs(tcra, tcdec, objrad)
+    if len(objnames) != 0:
+        lcol = bcol + laboffset
+        if float(lcol)/float(pixcols) > 0.9:
+            lcol = max(bcol - 10*laboffset, 0)
+        lrow = brow + laboffset
+        if float(lrow)/float(pixrows) > 0.9:
+            lrow = max(brow - 10*laboffset, 0)
+        plt.text(lcol, lrow, objnames[0], color='g')
     imagedata[max(0,brow-blanksize):min(pixrows-1,brow+blanksize),max(0,bcol-blanksize):min(pixcols-1,bcol+blanksize)] = med
 
 plt.title(ffhdr['OBJECT'] + ' on ' + string.replace(ffhdr['DATE'], 'T', ' at ') + ' filter ' + ffhdr['FILTER'])
