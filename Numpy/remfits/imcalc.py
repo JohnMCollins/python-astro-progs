@@ -7,21 +7,23 @@ import argparse
 import sys
 import string
 
-parsearg = argparse.ArgumentParser(description='Plot FITS image', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+parsearg = argparse.ArgumentParser(description='Calculate FTIS ADUs', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 parsearg.add_argument('file', type=str, nargs='+', help='FITS files to process')
 parsearg.add_argument('--cutoff', type=float, help='Reduce maxima to this value', default=-1.0)
 parsearg.add_argument('--trim', action='store_true', help='Trim trailing empty pixels')
 parsearg.add_argument('--apsize', type=int, default=6, help='aperture radius')
-parsearg.add_argument('--blanksize', type=int, default=20, help='Size to blank')
-parsearg.add_argument('--numobj', type=int, default=3, help='Number of brightests objects to process')
+parsearg.add_argument('--mainobj', type=str, help='Specify main object if not deduced from FITS file')
+parsearg.add_argument('--refobjs', type=str, nargs='+', help='Specify reference objects', required=True)
+parsearg.add_argument('--searchwidth', type=int, default=20, help='Width to search for object either side of coords')
 
 resargs = vars(parsearg.parse_args())
 ffnames = resargs['file']
 cutoff = resargs['cutoff']
 trimem = resargs['trim']
 apsize = resargs['apsize']
-blanksize = resargs['blanksize']
-numobj = resargs['numobj']
+mainobj = resargs['mainobj']
+refobjs = resargs['refobj']
+searchwidth = resargs['searchwidth']
 
 for ffname in ffnames:
     ffile = fits.open(ffname)
