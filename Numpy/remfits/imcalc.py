@@ -6,6 +6,7 @@ import numpy as np
 import argparse
 import sys
 import string
+import objcoord
 
 parsearg = argparse.ArgumentParser(description='Calculate FTIS ADUs', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 parsearg.add_argument('file', type=str, nargs='+', help='FITS files to process')
@@ -22,8 +23,31 @@ cutoff = resargs['cutoff']
 trimem = resargs['trim']
 apsize = resargs['apsize']
 mainobj = resargs['mainobj']
-refobjs = resargs['refobj']
+refobjs = resargs['refobjs']
 searchwidth = resargs['searchwidth']
+
+maincoords = None
+if mainobj is not None:
+    maincoords = objcoord.obj2coord(mainobj)
+    if maincoords is None:
+        print "Sorry cannot find coordinates of", mainobj, "in SIMBAD"
+        sys.exit(10)
+
+refcoords = []
+errors = 0
+for rf in refobjs:
+    rc = objcoord.obj2coord(rf)
+    if rc is None:
+        print "Sorry cannot find coordinates of ref object", rf, "in SIMBAD"
+        errors += 1
+    refcoords.append(rc)
+
+if errors != 0:
+    sys.exit(11)
+    
+print "mc:", maincoords, "rc", refcoords
+
+devnull = open('/dev/null', 'w')
 
 for ffname in ffnames:
     ffile = fits.open(ffname)
@@ -42,12 +66,34 @@ for ffname in ffnames:
 
     if cutoff > 0.0:
         imagedata = np.clip(imagedata, None, cutoff)
+ 
+    sys.stderr = devnull
+    w = wcs.WCS(ffhdr)
+    sys.stderr = sys.__stderr__
 
     med = np.median(imagedata)
     mx = imagedata.max()
 
     pixrows, pixcols = imagedata.shape
+    cornerpix = np.array(((0,0), (0, pixcols-1), (pixrows-1, 0), (pixrows-1, pixcols-1)), np.float)
+    cornerradec = w.wcs_pix2world(cornerpix, 1)
+    ramax, decmax = cornerradec.max(axis=0)
+    ramin, decmin = cornerradec.min(axis=0)
     
+    # if we didn't find main object before, find it now. Check that the thing we're looking for is
+    # in the area or we're doing something wrong
+    
+    if maincoords is None:
+        mainobj = ffhdr['OBJECT']
+        maincoords = objcoord.obj2coord(mainobj)
+        if maincoords is None:
+            print "Sorry cannot find coordinates of", mainobj, "(specified in file", ffname + ") in SIMBAD"
+            continue
+    
+    if maincoords[0] < ramin or maincoords[0] > ramax or maincoords[1] < decmin or maincoords[1] > decmax:
+        print "main object", mainobj, "is outside image in file", ffname
+        continue
+       
     imagedate = np.clip(imagedata - med, 0.0, None)
     
     adus = [ med ]
