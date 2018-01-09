@@ -46,7 +46,7 @@ for ffname in ffnames:
 
     pixrows, pixcols = imagedata.shape
     
-    imagedate = np.clip(imagedata - med, 0.0, None)
+    imagedata = np.clip(imagedata - med, 0.0, None)
     
     adus = [ med ]
     

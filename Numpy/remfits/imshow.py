@@ -91,14 +91,14 @@ sys.stderr = devnull
 w = wcs.WCS(ffhdr)
 sys.stderr = sys.__stderr__
 
-cornerpix = np.array(((0,0), (0, pixcols-1), (pixrows-1, 0), (pixrows-1, pixcols-1)), np.float)
+cornerpix = np.array(((0,0), (pixcols-1, 0), (0, pixrows-1), (pixcols-1, pixrows-1)), np.float)
 
-cornerradec = w.wcs_pix2world(cornerpix, 1)
+cornerradec = w.wcs_pix2world(cornerpix, 0)
 
 # Get matrix of ra/dec each pixel
 
 pixarray = np.array([[(x,y) for x in range(0,pixcols)] for y in range(0,pixrows)])
-pixcoords = w.wcs_pix2world(pixarray.reshape(pixrows*pixcols,2), 1).reshape(pixrows,pixcols,2)
+pixcoords = w.wcs_pix2world(pixarray.reshape(pixrows*pixcols,2), 0).reshape(pixrows,pixcols,2)
 ratable = pixcoords[:,:,0]
 dectable = pixcoords[:,:,1]
 ramax, decmax = cornerradec.max(axis=0)
@@ -164,7 +164,7 @@ for nb in range(0,numobj):
     bcol = bcols[0]
     ptch = mp.Circle((bcol,brow), radius=apsize, alpha=hilalpha,color=hilcolour)
     ax.add_patch(ptch)
-    tcra, tcdec = w.wcs_pix2world(((bcol, brow),), 1).flatten()
+    tcra, tcdec = w.wcs_pix2world(((bcol, brow),), 0).flatten()
     objnames = objcoord.coord2objs(tcra, tcdec, objrad)
     if len(objnames) != 0:
         lcol = bcol + laboffset

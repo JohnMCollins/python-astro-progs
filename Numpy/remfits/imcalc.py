@@ -7,6 +7,7 @@ import argparse
 import sys
 import string
 import objcoord
+import checkcoord
 
 parsearg = argparse.ArgumentParser(description='Calculate FTIS ADUs', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 parsearg.add_argument('file', type=str, nargs='+', help='FITS files to process')
@@ -75,8 +76,8 @@ for ffname in ffnames:
     mx = imagedata.max()
 
     pixrows, pixcols = imagedata.shape
-    cornerpix = np.array(((0,0), (0, pixcols-1), (pixrows-1, 0), (pixrows-1, pixcols-1)), np.float)
-    cornerradec = w.wcs_pix2world(cornerpix, 1)
+    cornerpix = np.array(((0,0), (pixcols-1, 0), (0, pixrows-1), (pixcols-1, pixrows-1)), np.float)
+    cornerradec = w.wcs_pix2world(cornerpix, 0)
     ramax, decmax = cornerradec.max(axis=0)
     ramin, decmin = cornerradec.min(axis=0)
     
@@ -90,26 +91,14 @@ for ffname in ffnames:
             print "Sorry cannot find coordinates of", mainobj, "(specified in file", ffname + ") in SIMBAD"
             continue
     
-    if maincoords[0] < ramin or maincoords[0] > ramax or maincoords[1] < decmin or maincoords[1] > decmax:
+    if checkcoord.checkcoord(w, imagedata, maincoords, searchwidth) != 0:
         print "main object", mainobj, "is outside image in file", ffname
         continue
-       
-    imagedate = np.clip(imagedata - med, 0.0, None)
     
-    adus = [ med ]
-    
-    for nb in range(0,numobj):
-        brows, bcols = np.where(imagedata==imagedata.max())
-        brow = brows[0]
-        bcol = bcols[0]
-        rads = np.sqrt(np.add.outer((np.arange(0,pixrows)-brow)**2,(np.arange(0,pixcols)-bcol)**2))
-        inrad = rads <= apsize
-        outrad = rads > apsize
-        rads[inrad] = 1.0
-        rads[outrad] = 0.0
-        adus.append(np.sum(imagedate*rads))
-        imagedata[max(0,brow-blanksize):min(pixrows-1,brow+blanksize),max(0,bcol-blanksize):min(pixcols-1,bcol+blanksize)] = 0.0
-    #print ffname, adus
-    fmt = ffname + "\t%.1f\t" + string.join(["%d"] * numobj, "\t")
-    print fmt % tuple(adus)
-     
+    errors = 0
+    for rf,rfname in zip(refcoords, refobjs):
+        if checkcoord.checkcoord(w, imagedata, rf, searchwidth) != 0:
+            print "ref object", rfname, "is outside range in file", ffname
+            errors += 1
+    if errors > 0: continue
+ 
