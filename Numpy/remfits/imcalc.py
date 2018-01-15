@@ -8,6 +8,7 @@ import sys
 import string
 import objcoord
 import checkcoord
+import findobjadu
 
 parsearg = argparse.ArgumentParser(description='Calculate FTIS ADUs', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 parsearg.add_argument('file', type=str, nargs='+', help='FITS files to process')
@@ -31,6 +32,7 @@ maincoords = None
 if mainobj is not None:
     maincoords = objcoord.obj2coord(mainobj)
     if maincoords is None:
+        sys.stdout = sys.stderr
         print "Sorry cannot find coordinates of", mainobj, "in SIMBAD"
         sys.exit(10)
 
@@ -39,6 +41,7 @@ errors = 0
 for rf in refobjs:
     rc = objcoord.obj2coord(rf)
     if rc is None:
+        sys.stdout = sys.stderr
         print "Sorry cannot find coordinates of ref object", rf, "in SIMBAD"
         errors += 1
     refcoords.append(rc)
@@ -46,8 +49,6 @@ for rf in refobjs:
 if errors != 0:
     sys.exit(11)
     
-print "mc:", maincoords, "rc", refcoords
-
 devnull = open('/dev/null', 'w')
 
 for ffname in ffnames:
@@ -72,9 +73,6 @@ for ffname in ffnames:
     w = wcs.WCS(ffhdr)
     sys.stderr = sys.__stderr__
 
-    med = np.median(imagedata)
-    mx = imagedata.max()
-
     pixrows, pixcols = imagedata.shape
     cornerpix = np.array(((0,0), (pixcols-1, 0), (0, pixrows-1), (pixcols-1, pixrows-1)), np.float)
     cornerradec = w.wcs_pix2world(cornerpix, 0)
@@ -88,17 +86,45 @@ for ffname in ffnames:
         mainobj = ffhdr['OBJECT']
         maincoords = objcoord.obj2coord(mainobj)
         if maincoords is None:
+            sys.stdout = sys.stderr
             print "Sorry cannot find coordinates of", mainobj, "(specified in file", ffname + ") in SIMBAD"
+            sys.stdout = sys.__stdout__
             continue
     
-    if checkcoord.checkcoord(w, imagedata, maincoords, searchwidth) != 0:
+    if checkcoord.checkcoord(w, imagedata, maincoords, searchwidth, apsize) != 0:
+        sys.stdout = sys.stderr
         print "main object", mainobj, "is outside image in file", ffname
+        sys.stdout = sys.__stdout__
         continue
     
     errors = 0
     for rf,rfname in zip(refcoords, refobjs):
-        if checkcoord.checkcoord(w, imagedata, rf, searchwidth) != 0:
+        if checkcoord.checkcoord(w, imagedata, rf, searchwidth, apsize) != 0:
+            sys.stdout = sys.stderr
             print "ref object", rfname, "is outside range in file", ffname
+            sys.stdout = sys.__stdout__
             errors += 1
     if errors > 0: continue
+    
+    mainres = findobjadu.findobjadu(w, imagedata, maincoords, searchwidth, apsize)
+    if mainres is None:
+        sys.stdout = sys.stderr
+        print "Did not find", mainobj, "in file2, ffname"
+        sys.stdout = sys.__stdout__
+        continue
+    
+    rfres = []
+    
+    for rf,rfname in zip(refcoords, refobjs):
+        rfr = findobjadu.findobjadu(w, imagedata, rf, searchwidth, apsize)
+        if rfr is None:
+            sys.stdout = sys.stderr
+            print "Did not find", rfname, "ib file", ffname
+            sys.stdout = sys.__stdout__
+            errors += 1
+        rfres.append(rfr)
+    if errors > 0: continue
  
+    rfres = np.array(rfres)
+    rfadus = np.sum(rfres[:,2])
+    print "%s: %.0f %.0f %.3f" % (ffhdr["_ATE"], mainres[2], rfadus, mainres[2]/rfadus)
