@@ -157,6 +157,7 @@ plt.yticks(dectpos, decfmt)
 plt.xlabel('RA (deg)')
 plt.ylabel('Dec (deg)')
 
+objd = dict()
 ax = plt.gca()
 for nb in range(0,numobj):
     brows, bcols = np.where(imagedata==imagedata.max())
@@ -174,7 +175,14 @@ for nb in range(0,numobj):
         if float(lrow)/float(pixrows) > 0.9:
             lrow = max(brow - 10*laboffset, 0)
         plt.text(lcol, lrow, objnames[0], color='g')
+        for ob in objnames:
+            objd[ob] = 1
     imagedata[max(0,brow-blanksize):min(pixrows-1,brow+blanksize),max(0,bcol-blanksize):min(pixcols-1,bcol+blanksize)] = med
+
+objnames = objd.keys()
+objnames.sort()
+for ob in objnames:
+    print ob
 
 plt.title(ffhdr['OBJECT'] + ' on ' + string.replace(ffhdr['DATE'], 'T', ' at ') + ' filter ' + ffhdr['FILTER'])
 plt.show()
