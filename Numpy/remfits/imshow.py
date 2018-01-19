@@ -2,6 +2,7 @@
 
 from astropy.io import fits
 from astropy import wcs
+from astropy.utils.exceptions import AstropyWarning
 import matplotlib.pyplot as plt
 import matplotlib.patches as mp
 from matplotlib import colors 
@@ -10,6 +11,7 @@ import argparse
 import sys
 import string
 import objcoord
+import warnings
 
 parsearg = argparse.ArgumentParser(description='Plot FITS image', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 parsearg.add_argument('file', type=str, nargs=1, help='FITS file to plot can be compressed')
@@ -33,6 +35,7 @@ parsearg.add_argument('--laboffset', type=int, default=5, help='Offset in pixels
 resargs = vars(parsearg.parse_args())
 ffname = resargs['file'][0]
 
+warnings.simplefilter('ignore', AstropyWarning)
 ffile = fits.open(ffname)
 ffhdr = ffile[0].header
 cutoff = resargs['cutoff']
@@ -87,9 +90,9 @@ plt.colorbar(img, norm=norm, cmap=cmap, boundaries=crange, ticks=crange)
 pixrows, pixcols = imagedata.shape
 devnull = open('/dev/null', 'w')
 
-sys.stderr = devnull
+#sys.stderr = devnull
 w = wcs.WCS(ffhdr)
-sys.stderr = sys.__stderr__
+#sys.stderr = sys.__stderr__
 
 cornerpix = np.array(((0,0), (pixcols-1, 0), (0, pixrows-1), (pixcols-1, pixrows-1)), np.float)
 
