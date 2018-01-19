@@ -62,7 +62,7 @@ else:
             print "Could not find", whichobj, "in fits file", file
             sys.stdout = sys.__stdout__
             errors += 1
-    ff.close()
+        _ff.close()
 
 if errors > 0:
     sys.exit(1)

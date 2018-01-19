@@ -94,6 +94,7 @@ sys.stderr = sys.__stderr__
 cornerpix = np.array(((0,0), (pixcols-1, 0), (0, pixrows-1), (pixcols-1, pixrows-1)), np.float)
 
 cornerradec = w.wcs_pix2world(cornerpix, 0)
+isrotated = abs(cornerradec[0,0] - cornerradec[1,0]) < abs(cornerradec[0,0] - cornerradec[2,0])
 
 # Get matrix of ra/dec each pixel
 
@@ -107,10 +108,14 @@ ramin, decmin = cornerradec.min(axis=0)
 radivs = np.linspace(ramin, ramax, divisions).round(divprec)
 decdivs = np.linspace(decmin, decmax, divisions).round(divprec)
 
-ratpos = []
-dectpos = []
-raused = []
-decused = []
+ra_x4miny = []
+ra_y4minx = []
+ra_xvals = []
+ra_yvals = []
+dec_x4miny = []
+dec_y4minx = []
+dec_xvals = []
+dec_yvals = []
 
 for r in radivs:
     ra_y = np.arange(0, pixrows)
@@ -120,9 +125,12 @@ for r in radivs:
     ra_x = ra_x[sel]
     ra_y = ra_y[sel]
     if len(ra_x) == 0: continue
-    if ra_y.min() < divthresh:
-        ratpos.append(ra_x[ra_y.argmin()])
-        raused.append(r)
+    if ra_y[0] < divthresh:
+        ra_x4miny.append(ra_x[0])
+        ra_xvals.append(r)
+    if ra_x.min() < divthresh:
+        ra_y4minx.append(ra_y[ra_x.argmin()])
+        ra_yvals.append(r)
     plt.plot(ra_x, ra_y, color=racol, alpha=0.5)
 
 for d in decdivs:
@@ -133,29 +141,30 @@ for d in decdivs:
     dec_x = dec_x[sel]
     dec_y = dec_y[sel]
     if len(dec_x) == 0: continue
-    if dec_x.min() < divthresh:
-        dectpos.append(dec_y[dec_x.argmin()])
-        decused.append(d)
+    if dec_x[0] < divthresh:
+        dec_y4minx.append(dec_y[0])
+        dec_yvals.append(d)
+    if dec_y.min() < divthresh:
+        dec_x4miny.append(dec_x[dec_y.argmin()])
+        dec_xvals.append(d)
     plt.plot(dec_x, dec_y, color=deccol, alpha=0.5)
 
-ratpos = np.array(ratpos)
-dectpos = np.array(dectpos)
-raused = np.array(raused)
-decused = np.array(decused)
-
-sel = (ratpos > 0) & (ratpos < pixcols-1)
-ratpos = ratpos[sel]
-raused = raused[sel]
-sel = (dectpos > 0) & (dectpos < pixrows-1)
-dectpos = dectpos[sel]
-decused = decused[sel]
 fmt = '%.' + str(divprec) + 'f'
-rafmt = [fmt % r for r in raused]
-decfmt = [fmt % d for d in decused]
-plt.xticks(ratpos, rafmt)
-plt.yticks(dectpos, decfmt)
-plt.xlabel('RA (deg)')
-plt.ylabel('Dec (deg)')
+
+if isrotated:
+    rafmt = [fmt % r for r in ra_yvals]
+    decfmt = [fmt % d for d in dec_xvals]
+    plt.yticks(ra_y4minx, rafmt)
+    plt.xticks(dec_x4miny, decfmt)
+    plt.ylabel('RA (deg)')
+    plt.xlabel('Dec (deg)')
+else:
+    rafmt = [fmt % r for r in ra_xvals]
+    decfmt = [fmt % d for d in dec_yvals]
+    plt.xticks(ra_x4miny, rafmt)
+    plt.yticks(dec_y4minx, decfmt)
+    plt.xlabel('RA (deg)')
+    plt.ylabel('Dec (deg)')
 
 objd = dict()
 ax = plt.gca()
