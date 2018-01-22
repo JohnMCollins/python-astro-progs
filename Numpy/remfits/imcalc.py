@@ -124,4 +124,4 @@ for ffname in ffnames:
  
     rfres = np.array(rfres)
     rfadus = np.sum(rfres[:,2])
-    print "%s: %.0f %.0f %.3f" % (ffhdr["_ATE"], mainres[2], rfadus, mainres[2]/rfadus)
+    print "%s: %.0f %.0f %.3g" % (ffhdr["_ATE"], mainres[2], rfadus, mainres[2]/rfadus)
