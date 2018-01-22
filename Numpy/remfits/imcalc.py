@@ -88,7 +88,7 @@ for ffname in ffnames:
         mcc = diffs.argmin()
         refcoords = np.delete(coords, mcc, axis=0)
     
-    if checkcoord.checkcoord(w, imagedata, maincoords, searchwidth, apsize) != 0:
+    if checkcoord.checkcoord(w, imagedata, maincoords, searchwidth, apsize) > 1:
         sys.stdout = sys.stderr
         print "main object", mainobj, "is outside image in file", ffname
         sys.stdout = sys.__stdout__
@@ -96,7 +96,7 @@ for ffname in ffnames:
     
     errors = 0
     for rf in refcoords:
-        if checkcoord.checkcoord(w, imagedata, rf, searchwidth, apsize) != 0:
+        if checkcoord.checkcoord(w, imagedata, rf, searchwidth, apsize) > 1:
             sys.stdout = sys.stderr
             print "ref object is outside range in file", ffname
             sys.stdout = sys.__stdout__
