@@ -2,7 +2,8 @@
 
 from astropy.io import fits
 from astropy import wcs
-from astropy.utils.exceptions import AstropyWarning
+from astropy.utils.exceptions import AstropyWarning, AstropyUserWarning
+import astroquery.utils as autils
 import matplotlib.pyplot as plt
 import matplotlib.patches as mp
 from matplotlib import colors 
@@ -11,6 +12,7 @@ import argparse
 import sys
 import string
 import objcoord
+import findimagelocs
 import warnings
 
 parsearg = argparse.ArgumentParser(description='Plot FITS image', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
@@ -25,17 +27,21 @@ parsearg.add_argument('--divthresh', type=int, default=5, help='Pixels from edge
 parsearg.add_argument('--racolour', type=str, default='#FFCCCC', help='Colour of RA lines')
 parsearg.add_argument('--deccolour', type=str, default='#CCCCFF', help='Colour of DEC lines')
 parsearg.add_argument('--apsize', type=int, default=6, help='aperture radius')
-parsearg.add_argument('--blanksize', type=int, default=20, help='Size to blank')
-parsearg.add_argument('--numobj', type=int, default=3, help='Number of brightests objects to display')
+parsearg.add_argument('--aduthresh', type=float, default=20000.0, help='Number of ADUs to select objects for')
 parsearg.add_argument('--hilcolour', type=str, default='r', help='Object colour')
 parsearg.add_argument('--hilalpha', type=float, default=0.75, help='Object alpha')
-parsearg.add_argument('--objrad', type=float, default=2.0, help='Object search radius in arcmin')
-parsearg.add_argument('--laboffset', type=int, default=5, help='Offset in pixels to put text in')            
+parsearg.add_argument('--objrad', type=float, default=1.0, help='Object search radius in arcmin')
+parsearg.add_argument('--laboffset', type=int, default=5, help='Offset in pixels to put text in')
+parsearg.add_argument('--labcolour', type=str, default='g', help='Colour of labels')
+parsearg.add_argument('--outcoords', type=str, help='File to output coordingates found')     
 
 resargs = vars(parsearg.parse_args())
 ffname = resargs['file'][0]
 
 warnings.simplefilter('ignore', AstropyWarning)
+warnings.simplefilter('ignore', AstropyUserWarning)
+warnings.simplefilter('ignore', UserWarning)
+autils.suppress_vo_warnings()
 ffile = fits.open(ffname)
 ffhdr = ffile[0].header
 cutoff = resargs['cutoff']
@@ -49,12 +55,13 @@ racol=resargs['racolour']
 deccol=resargs['deccolour']
 
 apsize = resargs['apsize']
-blanksize = resargs['blanksize']
-numobj = resargs['numobj']
+aduthresh = resargs['aduthresh']
 hilcolour = resargs['hilcolour']
 hilalpha = resargs['hilalpha']
 objrad = resargs['objrad']
 laboffset = resargs['laboffset']
+labcolour = resargs['labcolour']
+outcoords = resargs['outcoords']
 
 imagedata = ffile[0].data
 
@@ -88,7 +95,7 @@ plt.colorbar(img, norm=norm, cmap=cmap, boundaries=crange, ticks=crange)
 # OK get coords of edges of picture
 
 pixrows, pixcols = imagedata.shape
-devnull = open('/dev/null', 'w')
+#devnull = open('/dev/null', 'w')
 
 #sys.stderr = devnull
 w = wcs.WCS(ffhdr)
@@ -169,32 +176,29 @@ else:
     plt.xlabel('RA (deg)')
     plt.ylabel('Dec (deg)')
 
-objd = dict()
+objlist = findimagelocs.findimagelocs(imagedata - med, aduthresh, apsize)
+objpix = [(x,y) for x,y,a in objlist]
+objradec = w.wcs_pix2world(objpix, 0)
+if len(objlist) != 0 and outcoords is not None:
+    np.savetxt(outcoords, objradec)
 ax = plt.gca()
-for nb in range(0,numobj):
-    brows, bcols = np.where(imagedata==imagedata.max())
-    brow = brows[0]
-    bcol = bcols[0]
+for ob in objlist:
+    bcol, brow, dau = ob
     ptch = mp.Circle((bcol,brow), radius=apsize, alpha=hilalpha,color=hilcolour)
     ax.add_patch(ptch)
     tcra, tcdec = w.wcs_pix2world(((bcol, brow),), 0).flatten()
     objnames = objcoord.coord2objs(tcra, tcdec, objrad)
     if len(objnames) != 0:
-        lcol = bcol + laboffset
-        if float(lcol)/float(pixcols) > 0.9:
-            lcol = max(bcol - 10*laboffset, 0)
-        lrow = brow + laboffset
-        if float(lrow)/float(pixrows) > 0.9:
-            lrow = max(brow - 10*laboffset, 0)
-        plt.text(lcol, lrow, objnames[0], color='g')
-        for ob in objnames:
-            objd[ob] = 1
-    imagedata[max(0,brow-blanksize):min(pixrows-1,brow+blanksize),max(0,bcol-blanksize):min(pixcols-1,bcol+blanksize)] = med
-
-objnames = objd.keys()
-objnames.sort()
-for ob in objnames:
-    print ob
+        lab = objnames[0]
+    else:
+        lab = "(%.4f %.4f)" % (tcra, tcdec)
+    lcol = bcol + laboffset
+    if float(lcol)/float(pixcols) > 0.9:
+        lcol = max(bcol - 10*laboffset, 0)
+    lrow = brow + laboffset
+    if float(lrow)/float(pixrows) > 0.9:
+         lrow = max(brow - 10*laboffset, 0)
+    plt.text(lcol, lrow, lab, color=labcolour)
 
 plt.title(ffhdr['OBJECT'] + ' on ' + string.replace(ffhdr['DATE'], 'T', ' at ') + ' filter ' + ffhdr['FILTER'])
 plt.show()
