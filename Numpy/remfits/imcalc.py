@@ -117,7 +117,7 @@ for ffname in ffnames:
         rfr = findobjadu.findobjadu(w, imagedata, rf, searchwidth, apsize)
         if rfr is None:
             sys.stdout = sys.stderr
-            print "Did not find ref obj", rc, " (%.3f %.3f)" % rf, "in file", ffname
+            print "Did not find ref obj", rc, " (%.3f %.3f)" % (rf[0],rf[1]), "in file", ffname
             sys.stdout = sys.__stdout__
             errors += 1
         rfres.append(rfr)
