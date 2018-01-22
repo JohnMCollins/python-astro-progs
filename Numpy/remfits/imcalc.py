@@ -112,14 +112,16 @@ for ffname in ffnames:
     
     rfres = []
     
+    rc = 1
     for rf in refcoords:
         rfr = findobjadu.findobjadu(w, imagedata, rf, searchwidth, apsize)
         if rfr is None:
             sys.stdout = sys.stderr
-            print "Did not find ref obj ib file", ffname
+            print "Did not find ref obj", rc, "in file", ffname
             sys.stdout = sys.__stdout__
             errors += 1
         rfres.append(rfr)
+        rc += 1
     if errors > 0: continue
  
     rfres = np.array(rfres)
