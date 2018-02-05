@@ -33,7 +33,8 @@ parsearg.add_argument('--hilalpha', type=float, default=0.75, help='Object alpha
 parsearg.add_argument('--objrad', type=float, default=1.0, help='Object search radius in arcmin')
 parsearg.add_argument('--laboffset', type=int, default=5, help='Offset in pixels to put text in')
 parsearg.add_argument('--labcolour', type=str, default='g', help='Colour of labels')
-parsearg.add_argument('--outcoords', type=str, help='File to output coordingates found')     
+parsearg.add_argument('--minpix', type=int, default=10, help='Minimum pixels from the edge for object coords')
+parsearg.add_argument('--outcoords', type=str, help='File to output coordingates found')
 
 resargs = vars(parsearg.parse_args())
 ffname = resargs['file'][0]
@@ -62,6 +63,7 @@ objrad = resargs['objrad']
 laboffset = resargs['laboffset']
 labcolour = resargs['labcolour']
 outcoords = resargs['outcoords']
+minpix = resargs['minpix']
 
 imagedata = ffile[0].data
 
@@ -177,10 +179,16 @@ else:
     plt.ylabel('Dec (deg)')
 
 objlist = findimagelocs.findimagelocs(imagedata - med, aduthresh, apsize)
-objpix = [(x,y) for x,y,a in objlist]
-objradec = w.wcs_pix2world(objpix, 0)
-if len(objlist) != 0 and outcoords is not None:
-    np.savetxt(outcoords, objradec)
+if minpix != 0:
+    sel = []
+    for row in objlist:
+        sel.append((row[0] >= minpix) & (row[0] < minpix + pixcols) & (row[1] >= minpix) & (row[1] < minpix + pixrows))
+    objlist = objlist[sel]
+if len(objlist) != 0:
+    objpix = [(x,y) for x,y,a in objlist]
+    objradec = w.wcs_pix2world(objpix, 0)
+    if  outcoords is not None:
+        np.savetxt(outcoords, objradec)
 ax = plt.gca()
 for ob in objlist:
     bcol, brow, dau = ob
@@ -200,5 +208,11 @@ for ob in objlist:
          lrow = max(brow - 10*laboffset, 0)
     plt.text(lcol, lrow, lab, color=labcolour)
 
-plt.title(ffhdr['OBJECT'] + ' on ' + string.replace(ffhdr['DATE'], 'T', ' at ') + ' filter ' + ffhdr['FILTER'])
+odt = 'Unknown date'
+for dfld in ('DATE-OBS', 'DATE', '_ATE'):
+    if dfld in ffhdr:
+        odt = ffhdr[dfld]
+        break
+
+plt.title(ffhdr['OBJECT'] + ' on ' + string.replace(odt, 'T', ' at ') + ' filter ' + ffhdr['FILTER'])
 plt.show()

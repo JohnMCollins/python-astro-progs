@@ -50,6 +50,17 @@ if mainobj is not None:
 for ffname in ffnames:
     ffile = fits.open(ffname)
     ffhdr = ffile[0].header
+    
+    try:
+        dispdate = ffhdr['_ATE']
+    except KeyError:
+        try:
+            dispdate = ffhdr['DATE']
+        except KeyError:
+            sys.stdout = sys.stderr
+            print "No date found in file", ffname
+            sys.stdout = sys.__stdout__
+            continue
 
     imagedata = ffile[0].data
 
@@ -98,7 +109,7 @@ for ffname in ffnames:
     for rf in refcoords:
         if checkcoord.checkcoord(w, imagedata, rf, searchwidth, apsize) > 1:
             sys.stdout = sys.stderr
-            print "ref object is outside range in file", ffname
+            print "ref object", rf, "is outside range in file", ffname
             sys.stdout = sys.__stdout__
             errors += 1
     if errors > 0: continue
@@ -106,7 +117,7 @@ for ffname in ffnames:
     mainres = findobjadu.findobjadu(w, imagedata, maincoords, searchwidth, apsize)
     if mainres is None:
         sys.stdout = sys.stderr
-        print "Did not find", mainobj, "in file2, ffname"
+        print "Did not find", mainobj, "in file", ffname
         sys.stdout = sys.__stdout__
         continue
     
@@ -126,4 +137,4 @@ for ffname in ffnames:
  
     rfres = np.array(rfres)
     rfadus = np.sum(rfres[:,2])
-    print "%s: %.0f %.0f %.3g" % (ffhdr["_ATE"], mainres[2], rfadus, mainres[2]/rfadus)
+    print "%s: %.0f %.0f %#.3g" % (dispdate, mainres[2], rfadus, mainres[2]/rfadus)
