@@ -18,6 +18,7 @@ parsearg.add_argument('--height', type=float, default=12.0, help='height of plot
 parsearg.add_argument('--printdates', action='store_true', help='Print dates oN x axis')
 parsearg.add_argument('--dayint', type=int, help='Interval between dates')
 parsearg.add_argument('--outfig', type=str, help='Output file rather than display')
+parsearg.add_argument('--line', action='store_true', help='Use line plots rather than scatter')
            
 resargs = vars(parsearg.parse_args())
 fnames = resargs['file']
@@ -26,6 +27,7 @@ width = resargs['width']
 height = resargs['height']
 printdates = resargs['printdates']
 dayint = resargs['dayint']
+lineplot = resargs['line']
 
 plt.figure(figsize=(width,height))
 
@@ -53,7 +55,13 @@ for f in fnames:
     for lin in open(f):
         bits = string.split(lin, ' ')
         if len(bits) != 4: continue
-        dt = datetime.datetime.strptime(bits[0], "%Y-%m-%dT%H:%M:%S:")
+        try:
+            dt = datetime.datetime.strptime(bits[0], "%Y-%m-%dT%H:%M:%S:")
+        except ValueError:
+            try:
+                dt = datetime.datetime.strptime(bits[0], "%Y-%m-%dT%H:%M:%S.%f:")
+            except ValueError:
+                continue
         mo = float(bits[1])
         ro = float(bits[2])
         rat = float(bits[3])
@@ -79,7 +87,16 @@ for f in fnames:
     rats = np.array(rats)
     sa = dates.argsort()
     
-    plt.plot(dates[sa], rats[sa])
+    if lineplot:
+        plt.plot(dates[sa], rats[sa])
+    else:
+        pdates = dates[sa]
+        if printdates:
+            offset = datetime.timedelta(days=1)
+        else:
+            offset = datetime.timedelta(hours=1)
+        plt.xlim(pdates.min() - offset, pdates.max() + offset)
+        plt.scatter(pdates, rats[sa])
     legs.append("Filter " + fnbits[0])
 
 plt.legend(legs, loc='best')

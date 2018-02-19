@@ -51,16 +51,17 @@ for ffname in ffnames:
     ffile = fits.open(ffname)
     ffhdr = ffile[0].header
     
-    try:
-        dispdate = ffhdr['_ATE']
-    except KeyError:
-        try:
-            dispdate = ffhdr['DATE']
-        except KeyError:
-            sys.stdout = sys.stderr
-            print "No date found in file", ffname
-            sys.stdout = sys.__stdout__
-            continue
+    dispdate = None
+    for dfld in ('DATE-OBS', 'DATE', '_ATE'):
+        if dfld in ffhdr:
+            dispdate = ffhdr[dfld]
+            break
+    
+    if dispdate is None:
+        sys.stdout = sys.stderr
+        print "No date found in file", ffname
+        sys.stdout = sys.__stdout__
+        continue
 
     imagedata = ffile[0].data
 
