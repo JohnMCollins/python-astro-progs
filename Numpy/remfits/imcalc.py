@@ -43,8 +43,10 @@ ffrows = False
 if flatfile is not None:
     ff = fits.open(flatfile)
     fdat = ff[0].data
-    while np.count_nonzero(np.isnan(fdat[-1])) != 0:
+    ffrows, ffcols = fdat.shape
+    while np.count_nonzero(np.isnan(fdat[-1])) == ffrows:
         fdat = fdat[0:-1]
+        ffrows -= 1
     while np.count_nonzero(np.isnan(fdat[:,-1])) == 0:
             fdat = fdat[:,0:-1]
     ffrows, ffcols = fdat.shape
