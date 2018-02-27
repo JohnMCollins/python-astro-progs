@@ -19,11 +19,13 @@ warnings.simplefilter('ignore', UserWarning)
 parsearg = argparse.ArgumentParser(description='Calculate FTIS ADUs', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 parsearg.add_argument('file', type=str, nargs='+', help='FITS files to process')
 parsearg.add_argument('--cutoff', type=float, help='Reduce maxima to this value', default=-1.0)
-parsearg.add_argument('--trim', action='store_true', help='Trim trailing empty pixels')
+parsearg.add_argument('--trim', action='store_false', help='Trim trailing empty pixels (unless flat file)')
 parsearg.add_argument('--coordfile', type=str, required=True, help='Coordingate file to use')
 parsearg.add_argument('--apsize', type=int, default=6, help='aperture radius')
 parsearg.add_argument('--mainobj', type=str, help='Specify main object if not deduced from FITS file')
 parsearg.add_argument('--searchwidth', type=int, default=10, help='Width to search for object either side of coords')
+parsearg.add_argument('--flatfile', type=str, help='Flat file to use')
+parsearg.add_argument('--biasfile', type=str, help='Bias file to use')
 
 resargs = vars(parsearg.parse_args())
 ffnames = resargs['file']
@@ -33,6 +35,27 @@ apsize = resargs['apsize']
 mainobj = resargs['mainobj']
 coordfile = resargs['coordfile']
 searchwidth = resargs['searchwidth']
+flatfile = resargs['flatfile']
+biasfile = resargs['biasfile']
+
+ffrows = False
+
+if flatfile is not None:
+    ff = fits.open(flatfile)
+    fdat = ff[0].data
+    while np.count_nonzero(np.isnan(fdat[-1])) != 0:
+        fdat = fdat[0:-1]
+    while np.count_nonzero(np.isnan(fdat[:,-1])) == 0:
+            fdat = fdat[:,0:-1]
+    ffrows, ffcols = fdat.shape
+
+bdat = False
+if biasfile is not None:
+    bf = fits.open(biasfile)
+    bdat = bf[0].data
+    if ffrows:
+        bdat = bdat[0:ffrows,0:ffcols]
+    bdat = bdat + 0.0
 
 coords = np.loadtxt(coordfile)
 
@@ -65,17 +88,28 @@ for ffname in ffnames:
 
     imagedata = ffile[0].data
 
-    if trimem:
+    if ffrows:
+        imagedata = imagedata[0:ffrows,0:ffcols]
+    elif trimem:
         while np.count_nonzero(imagedata[-1]) == 0:
             imagedata = imagedata[0:-1]
 
         while np.count_nonzero(imagedata[:,-1]) == 0:
             imagedata = imagedata[:,0:-1]
+        
+        irows, icols = imagedata.shape
+        if bdat:
+            bdat = bdat[0:irows,0:icols]
 
     imagedata = imagedata + 0.0
+    if bdat:
+        imagedata = np.clip(imagedata - bdat, 0, None)
 
     if cutoff > 0.0:
         imagedata = np.clip(imagedata, None, cutoff)
+    
+    if ffrows:
+        imagedata /= fdat
  
     w = wcs.WCS(ffhdr)
 
