@@ -104,7 +104,7 @@ for ffname in ffnames:
             bdat = bdat[0:irows,0:icols]
 
     imagedata = imagedata + 0.0
-    if bdat:
+    if biasfile is not None:
         imagedata = np.clip(imagedata - bdat, 0, None)
 
     if cutoff > 0.0:
