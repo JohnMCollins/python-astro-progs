@@ -91,10 +91,11 @@ for f in fnames:
         plt.plot(dates[sa], rats[sa])
     else:
         pdates = dates[sa]
-        if printdates:
-            offset = datetime.timedelta(days=1)
-        else:
-            offset = datetime.timedelta(hours=1)
+	offset = min(pdates[-1]-pdates[-2],pdates[1]-pdates[0])
+        #if printdates:
+        #    offset = datetime.timedelta(days=1)
+        #else:
+        #    offset = datetime.timedelta(hours=1)
         plt.xlim(pdates.min() - offset, pdates.max() + offset)
         plt.scatter(pdates, rats[sa])
     legs.append("Filter " + fnbits[0])
