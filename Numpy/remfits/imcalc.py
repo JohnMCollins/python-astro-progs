@@ -44,10 +44,10 @@ if flatfile is not None:
     ff = fits.open(flatfile)
     fdat = ff[0].data
     ffrows, ffcols = fdat.shape
-    while np.count_nonzero(np.isnan(fdat[-1])) == ffrows:
+    while np.count_nonzero(np.isnan(fdat[-1])) == ffcols:
         fdat = fdat[0:-1]
         ffrows -= 1
-    while np.count_nonzero(np.isnan(fdat[:,-1])) == 0:
+    while np.count_nonzero(np.isnan(fdat[:,-1])) != 0:
             fdat = fdat[:,0:-1]
     ffrows, ffcols = fdat.shape
 
@@ -112,7 +112,7 @@ for ffname in ffnames:
     
     if ffrows:
         imagedata /= fdat
- 
+
     w = wcs.WCS(ffhdr)
 
     pixrows, pixcols = imagedata.shape

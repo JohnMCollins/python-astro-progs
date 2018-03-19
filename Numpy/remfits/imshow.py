@@ -21,6 +21,7 @@ parsearg.add_argument('file', type=str, nargs=1, help='FITS file to plot can be 
 parsearg.add_argument('--cutoff', type=float, help='Reduce maxima to this value', default=-1.0)
 parsearg.add_argument('--trim', action='store_true', help='Trim trailing empty pixels')
 parsearg.add_argument('--mapsize', type=int, default=8, help='Number of shades in grey scale')
+parsearg.add_argument('--invert', action='store_true', help='Invert image')
 parsearg.add_argument('--divisions', type=int, default=8, help='Divisions in RA/Dec lines')
 parsearg.add_argument('--divprec', type=int, default=3, help='Precision for axes')
 parsearg.add_argument('--pstart', type=int, default=4, help='2**-n fraction to start display at')
@@ -38,6 +39,13 @@ parsearg.add_argument('--minpix', type=int, default=10, help='Minimum pixels fro
 parsearg.add_argument('--outcoords', type=str, help='File to output coordingates found')
 parsearg.add_argument('--figout', type=str, help='File to putput figure to')
 parsearg.add_argument('--splitfig', action='store_true', help='Put identified stars in separate figure')
+parsearg.add_argument('--flatfile', type=str, help='Flat file to use')
+parsearg.add_argument('--biasfile', type=str, help='Bias file to use')
+parsearg.add_argument('--noobj', action='store_true', help='No search for objects')
+parsearg.add_argument('--trimbottom', type=int, help='Pixels to trim off bottom of picture')
+parsearg.add_argument('--trimleft', type=int, help='Pixels to trim off left of picture')
+parsearg.add_argument('--trimright', type=int, help='Pixels to trim off right of picture')
+
 
 resargs = vars(parsearg.parse_args())
 ffname = resargs['file'][0]
@@ -51,6 +59,7 @@ ffhdr = ffile[0].header
 cutoff = resargs['cutoff']
 trimem = resargs['trim']
 mapsize = resargs['mapsize']
+invertim = resargs['invert']
 divisions = resargs['divisions']
 divprec = resargs['divprec']
 pstart = resargs['pstart']
@@ -58,6 +67,9 @@ divthresh = resargs['divthresh']
 racol=resargs['racolour']
 deccol=resargs['deccolour']
 figout = resargs['figout']
+flatfile = resargs['flatfile']
+biasfile = resargs['biasfile']
+noobj = resargs['noobj']
 
 apsize = resargs['apsize']
 aduthresh = resargs['aduthresh']
@@ -71,25 +83,70 @@ minpix = resargs['minpix']
 
 splitfig = resargs['splitfig']
 
+trimbottom = resargs['trimbottom']
+trimleft = resargs['trimleft']
+trimright = resargs['trimright']
+
+ffrows = False
+
+if flatfile is not None:
+    ff = fits.open(flatfile)
+    fdat = ff[0].data
+    ffrows, ffcols = fdat.shape
+    while np.count_nonzero(np.isnan(fdat[-1])) == ffcols:
+        fdat = fdat[0:-1]
+        ffrows -= 1
+    while np.count_nonzero(np.isnan(fdat[:,-1])) != 0:
+        fdat = fdat[:,0:-1]
+    while np.count_nonzero(np.isnan(fdat[-1])) != 0:
+        fdat = fdat[0:-1]
+    while np.count_nonzero(np.isnan(fdat[0])) != 0:
+        fdat = fdat[1:]
+    ffrows, ffcols = fdat.shape
+
+bdat = None
+if biasfile is not None:
+    bf = fits.open(biasfile)
+    bdat = bf[0].data
+    if ffrows:
+        bdat = bdat[0:ffrows,0:ffcols]
+    bdat = bdat + 0.0
+
 imagedata = ffile[0].data
 
-if trimem:
+if ffrows:
+    imagedata = imagedata[0:ffrows,0:ffcols]
+elif trimem:
     while np.count_nonzero(imagedata[-1]) == 0:
         imagedata = imagedata[0:-1]
 
     while np.count_nonzero(imagedata[:,-1]) == 0:
         imagedata = imagedata[:,0:-1]
+        
+    irows, icols = imagedata.shape
+    if bdat is not None:
+        bdat = bdat[0:irows,0:icols]
 
 imagedata = imagedata + 0.0
 
 if cutoff > 0.0:
     imagedata = np.clip(imagedata, None, cutoff)
 
+if ffrows:
+    imagedata /= fdat
+
+if trimbottom is not None:
+    imagedata = imagedata[trimbottom:]
+if trimleft is not None:
+    imagedata = imagedata[:,trimleft:]
+if trimright is not None:
+    imagedata = imagedata[:,0:-trimright]
+
 plotfigure = plt.figure(figsize=(10,12))
 if splitfig:
     plotfigure.canvas.set_window_title('Image only')
 else:
-    plotfigure.canvas.set_window_title('Image wutg narjed stars')
+    plotfigure.canvas.set_window_title('Image with marked stars')
 
 med = np.median(imagedata)
 mx = imagedata.max()
@@ -98,6 +155,8 @@ fi = fi[fi > med]
 pcs = 100.0*(1.0-2.0**-np.arange(pstart,mapsize+pstart-1))
 crange = np.concatenate(((0.0,), np.percentile(fi, pcs), (mx,)))
 cl=np.log10(np.logspace(1, 256, mapsize)).round()-1
+if invertim:
+    cl = 255 - cl
 collist = ["#%.2x%.2x%.2x" % (i,i,i) for i in cl]
 cmap = colors.ListedColormap(collist)
 norm = colors.BoundaryNorm(crange, cmap.N)
@@ -199,35 +258,36 @@ if splitfig:
     plt.xlim(xls)
     plt.ylim(yls)
 
-objlist = findimagelocs.findimagelocs(imagedata - med, aduthresh, apsize)
-if minpix != 0:
-    sel = []
-    for row in objlist:
-        sel.append((row[0] >= minpix) & (row[0] < minpix + pixcols) & (row[1] >= minpix) & (row[1] < minpix + pixrows))
-    objlist = objlist[sel]
-if len(objlist) != 0:
-    objpix = [(x,y) for x,y,a in objlist]
-    objradec = w.wcs_pix2world(objpix, 0)
-    if  outcoords is not None:
-        np.savetxt(outcoords, objradec)
+if not noobj:
+    objlist = findimagelocs.findimagelocs(imagedata - med, aduthresh, apsize)
+    if minpix != 0:
+        sel = []
+        for row in objlist:
+            sel.append((row[0] >= minpix) & (row[0] < minpix + pixcols) & (row[1] >= minpix) & (row[1] < minpix + pixrows))
+        objlist = objlist[sel]
+    if len(objlist) != 0:
+        objpix = [(x,y) for x,y,a in objlist]
+        objradec = w.wcs_pix2world(objpix, 0)
+        if  outcoords is not None:
+            np.savetxt(outcoords, objradec)
 
-for ob in objlist:
-    bcol, brow, dau = ob
-    ptch = mp.Circle((bcol,brow), radius=apsize, alpha=hilalpha,color=hilcolour, fill=False)
-    labax.add_patch(ptch)
-    tcra, tcdec = w.wcs_pix2world(((bcol, brow),), 0).flatten()
-    objnames = objcoord.coord2objs(tcra, tcdec, objrad)
-    if len(objnames) != 0:
-        lab = objnames[0]
-    else:
-        lab = "(%.4f %.4f)" % (tcra, tcdec)
-    lcol = bcol + laboffset
-    if float(lcol)/float(pixcols) > 0.9:
-        lcol = max(bcol - laboffset, 0)
-    lrow = brow + laboffset
-    if float(lrow)/float(pixrows) > 0.9:
-         lrow = max(brow - laboffset, 0)
-    labax.text(lcol, lrow, lab, color=labcolour)
+    for ob in objlist:
+        bcol, brow, dau = ob
+        ptch = mp.Circle((bcol,brow), radius=apsize, alpha=hilalpha,color=hilcolour, fill=False)
+        labax.add_patch(ptch)
+        tcra, tcdec = w.wcs_pix2world(((bcol, brow),), 0).flatten()
+        objnames = objcoord.coord2objs(tcra, tcdec, objrad)
+        if len(objnames) != 0:
+            lab = objnames[0]
+        else:
+            lab = "(%.4f %.4f)" % (tcra, tcdec)
+        lcol = bcol + laboffset
+        if float(lcol)/float(pixcols) > 0.9:
+            lcol = max(bcol - laboffset, 0)
+        lrow = brow + laboffset
+        if float(lrow)/float(pixrows) > 0.9:
+            lrow = max(brow - laboffset, 0)
+        labax.text(lcol, lrow, lab, color=labcolour)
 
 odt = 'Unknown date'
 for dfld in ('DATE-OBS', 'DATE', '_ATE'):

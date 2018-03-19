@@ -100,6 +100,10 @@ for f in fnames:
         plt.scatter(pdates, rats[sa])
     legs.append("Filter " + fnbits[0])
 
+ylo, yhi = plt.ylim()
+if ylo < 0.0:
+	plt.gca().set_ylim(0, yhi)
+
 plt.legend(legs, loc='best')
 if printdates:
     if dayint is None:
