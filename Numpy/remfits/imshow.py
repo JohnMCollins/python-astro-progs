@@ -137,8 +137,12 @@ if ffrows:
 
 if trimbottom is not None:
     imagedata = imagedata[trimbottom:]
+else:
+    trimbottom = 0
 if trimleft is not None:
     imagedata = imagedata[:,trimleft:]
+else:
+    trimleft = 0
 if trimright is not None:
     imagedata = imagedata[:,0:-trimright]
 
@@ -172,14 +176,14 @@ pixrows, pixcols = imagedata.shape
 w = wcs.WCS(ffhdr)
 #sys.stderr = sys.__stderr__
 
-cornerpix = np.array(((0,0), (pixcols-1, 0), (0, pixrows-1), (pixcols-1, pixrows-1)), np.float)
+cornerpix = np.array(((trimleft,trimbottom), (trimleft+pixcols-1, trimbottom), (trimleft, trimbottom+pixrows-1), (trimleft+pixcols-1, trimbottom+pixrows-1)), np.float)
 
 cornerradec = w.wcs_pix2world(cornerpix, 0)
 isrotated = abs(cornerradec[0,0] - cornerradec[1,0]) < abs(cornerradec[0,0] - cornerradec[2,0])
 
 # Get matrix of ra/dec each pixel
 
-pixarray = np.array([[(x,y) for x in range(0,pixcols)] for y in range(0,pixrows)])
+pixarray = np.array([[(x+trimleft,y+trimbottom) for x in range(0,pixcols)] for y in range(0,pixrows)])
 pixcoords = w.wcs_pix2world(pixarray.reshape(pixrows*pixcols,2), 0).reshape(pixrows,pixcols,2)
 ratable = pixcoords[:,:,0]
 dectable = pixcoords[:,:,1]
@@ -266,7 +270,7 @@ if not noobj:
             sel.append((row[0] >= minpix) & (row[0] < minpix + pixcols) & (row[1] >= minpix) & (row[1] < minpix + pixrows))
         objlist = objlist[sel]
     if len(objlist) != 0:
-        objpix = [(x,y) for x,y,a in objlist]
+        objpix = [(x+trimleft,y+trimbottom) for x,y,a in objlist]
         objradec = w.wcs_pix2world(objpix, 0)
         if  outcoords is not None:
             np.savetxt(outcoords, objradec)
@@ -275,7 +279,7 @@ if not noobj:
         bcol, brow, dau = ob
         ptch = mp.Circle((bcol,brow), radius=apsize, alpha=hilalpha,color=hilcolour, fill=False)
         labax.add_patch(ptch)
-        tcra, tcdec = w.wcs_pix2world(((bcol, brow),), 0).flatten()
+        tcra, tcdec = w.wcs_pix2world(((bcol+trimleft, brow+trimbottom),), 0).flatten()
         objnames = objcoord.coord2objs(tcra, tcdec, objrad)
         if len(objnames) != 0:
             lab = objnames[0]
