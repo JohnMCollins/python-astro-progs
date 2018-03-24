@@ -42,7 +42,7 @@ destfields.append('exptime')
 destfields.append('fname')
 destfields.append('ffname')
 
-destfields = "INSERT INTO obs (" + string.join(destfields, ',') + ") VALUES"
+destfields = "INSERT INTO obsinf (" + string.join(destfields, ',') + ") VALUES"
 obsfields = "SELECT radeg,decdeg,object,dithID,filter,date_obs,mjdobs,exptime,fname,ffname(date_obs,fname) AS ff FROM Obslog"
 
 # Get the latest date we have copies of
@@ -61,7 +61,7 @@ else:
 	datemin = latest_got.strftime("'%Y-%m-%d 00:00:00'")
 	datemax = latest_got.strftime("'%Y-%m-%d 23:59:59'")
 	wherecl = "WHERE date_obs>=" + datemin + " AND date_obs<=" + datemax
-	mycurs.execute("SELECT ffname FROM obs " + wherecl)
+	mycurs.execute("SELECT ffname FROM obsinf " + wherecl)
 	fgot = dict()
 	for row in mycurs.fetchall():
 		fgot[row[0]] = 1

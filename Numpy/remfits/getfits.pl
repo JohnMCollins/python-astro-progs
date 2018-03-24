@@ -4,15 +4,13 @@ use dbops;
 
 my $dbase = dbops::opendb('remfits') or die "Cannot open DB";
 
-$sfh = $dbase->prepare("SELECT ind,ffname,dithID FROM obs WHERE fitsgz IS NULL ORDER by date_obs");
+$sfh = $dbase->prepare("SELECT ffname,dithID,obsind FROM obsinf WHERE ind=0 ORDER by date_obs");
 $sfh->execute;
 
 $root_url = 'http://ross.iasfbo.inaf.it';
 
 while (my $row = $sfh->fetchrow_arrayref())  {
-    my $ind = $row->[0];
-    my $ffname = $row->[1];
-    my $dithid = $row->[2];
+    my ($ffname, $dithid, $obsind) = @$row;
     if ($dithid == 0)  {
         $ffname = 'Ross/' . $ffname;
     }
@@ -30,6 +28,12 @@ while (my $row = $sfh->fetchrow_arrayref())  {
         print "Could not fetch $ffname\n";
         next;
     }
-    my $iq = $dbase->prepare("UPDATE obs SET fitsgz=? WHERE ind=$ind");
+    my $iq = $dbase->prepare("IINSERT INTO fitsfile (fitsgz) VALUES (?)");
     $iq->execute($fitsfile);
+    $iq = $dbase->prepare("SELECT LAST_INSERT_ID()");
+    $iq->execute;
+    my $rr = $iq->fetchrow_arrayref();
+    my $ind = $rr->[0];
+    $iq = $dbase->prepare("UPDATE obsinf SET ind=$ind WHERE obsind=$obsind");
+    $iq->execute;
 }
