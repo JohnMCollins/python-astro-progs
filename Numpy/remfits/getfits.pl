@@ -28,7 +28,7 @@ while (my $row = $sfh->fetchrow_arrayref())  {
         print "Could not fetch $ffname\n";
         next;
     }
-    my $iq = $dbase->prepare("IINSERT INTO fitsfile (fitsgz) VALUES (?)");
+    my $iq = $dbase->prepare("INSERT INTO fitsfile (fitsgz) VALUES (?)");
     $iq->execute($fitsfile);
     $iq = $dbase->prepare("SELECT LAST_INSERT_ID()");
     $iq->execute;
