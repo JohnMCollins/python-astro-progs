@@ -58,6 +58,7 @@ parsearg.add_argument('--todate', type=str, help='Latest date to list from (same
 parsearg.add_argument('--objects', type=str, nargs='*', help='Objects to llimit to')
 parsearg.add_argument('--dither', type=int, nargs='*', help='Dither ID to limits to')
 parsearg.add_argument('--filter', type=str, nargs='*', help='filters to llimit to')
+parsearg.add_argument('--summary', action='store_true', help='Just summarise objects and number of obs')
 parsearg.add_argument('--idonly', action='store_true', help='Just give ids no other data')
 
 resargs = vars(parsearg.parse_args())
@@ -70,6 +71,11 @@ if td is None:
 objlist = resargs['objects']
 dither = resargs['dither']
 filters = resargs['filter']
+summary = resargs['summary']
+
+if idonly and summary:
+    print "Cannot have both idonly and summary"
+    sys.exit(10)
 
 mydb = dbops.opendb('remfits')
 
@@ -95,12 +101,18 @@ if dither is not None:
     sel += "(" + string.join(qdith, " OR ") +")"
 
 if len(sel) != 0: sel = " WHERE " + sel
-sel += " ORDER BY object,dithID,date_obs"
-sel = "SELECT ind,date_obs,object,filter,dithID FROM obs" + sel
+if summary:
+    sel = "SELECT object,count(*) FROM obsinf" + sel + "GROUP BY object"
+else:
+    sel += " ORDER BY object,dithID,date_obs"
+    sel = "SELECT ind,date_obs,object,filter,dithID FROM obs" + sel
 dbcurs.execute(sel)
 if idonly:
     for row in dbcurs.fetchall():
         print row[0]
+elif summary:
+    for row in dbcurs.fetchall():
+        print "%-10s\t%d" % row 
 else:
     for row in dbcurs.fetchall():
         ind,dat,obj,filt,dith = row

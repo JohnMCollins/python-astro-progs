@@ -28,13 +28,17 @@ parsearg.add_argument('--divprec', type=int, default=3, help='Precision for axes
 parsearg.add_argument('--pstart', type=int, default=4, help='2**-n fraction to start display at')
 parsearg.add_argument('--divthresh', type=int, default=15, help='Pixels from edge for displaying divisions')
 parsearg.add_argument('--racolour', type=str, help='Colour of RA lines')
-parsearg.add_argument('--deccolour', type=str, default='#CCCCFF', help='Colour of DEC lines')
+parsearg.add_argument('--deccolour', type=str, help='Colour of DEC lines')
 parsearg.add_argument('--figout', type=str, help='File to putput figure to')
 parsearg.add_argument('--flatfile', type=str, help='Flat file to use')
 parsearg.add_argument('--biasfile', type=str, help='Bias file to use')
 parsearg.add_argument('--trimbottom', type=int, help='Pixels to trim off bottom of picture')
 parsearg.add_argument('--trimleft', type=int, help='Pixels to trim off left of picture')
 parsearg.add_argument('--trimright', type=int, help='Pixels to trim off right of picture')
+parsearg.add_argument('--mainobjs', type=str, help='File of main object coords')
+parsearg.add_argument('--mainap', type=int, default=6, help='main aperture radius')
+parsearg.add_argument('--molcolour', type=str, default='b', help='main Object colour')
+parsearg.add_argument('--hilalpha', type=float, default=0.75, help='Object alpha')
 
 resargs = vars(parsearg.parse_args())
 ffname = resargs['file'][0]
@@ -61,14 +65,15 @@ racol=resargs['racolour']
 deccol=resargs['deccolour']
 if invertim:
     if racol is None:
-        racol = "#FFCCCC"
+        racol = "#771111"
     if deccol is None:
-        deccol = "#CCCCFF"
+        deccol = "#1111AA"
 else:
     if racol is None:
         racol = "#FFCCCC"
     if deccol is None:
         deccol = "#CCCCFF"
+
 figout = resargs['figout']
 flatfile = resargs['flatfile']
 biasfile = resargs['biasfile']
@@ -76,6 +81,11 @@ biasfile = resargs['biasfile']
 trimbottom = resargs['trimbottom']
 trimleft = resargs['trimleft']
 trimright = resargs['trimright']
+
+mainobjs = resargs['mainobjs']
+mainap = resargs['mainap']
+maincolour = resargs['molcolour']
+hilalpha  = resargs['hilalpha']
 
 if flatfile is not None:
     ff = fits.open(flatfile)
@@ -223,6 +233,18 @@ for dfld in ('DATE-OBS', 'DATE', '_ATE'):
 
 tit = ffhdr['OBJECT'] + ' on ' + string.replace(odt, 'T', ' at ') + ' filter ' + ffhdr['FILTER']
 plt.title(tit)
+
+if mainobjs is not None:
+    ax = plt.gca()
+    maint = np.loadtxt(mainobjs)
+    sel = (maint[:,0] >= ramin) & (maint[:,0] <= ramax) & (maint[:,1] >= decmin) & (maint[:,1] <= decmax)
+    maint = maint[sel]
+    for m in maint:
+        ra = m[0]
+        dec = m[1]
+        bcol, brow = w.coords_to_pix(((ra, dec),))[0]
+        ptch = mp.Circle((bcol,brow), radius=mainap, alpha=hilalpha,color=maincolour, fill=False)
+        ax.add_patch(ptch)
 if figout is None:
     plt.show()
 else:
