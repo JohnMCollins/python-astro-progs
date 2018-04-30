@@ -5,6 +5,7 @@ import argparse
 import string
 import datetime
 import re
+import sys
 
 def parsedate(dat):
     """Parse an argument date and try to interpret common things"""
@@ -74,7 +75,7 @@ filters = resargs['filter']
 summary = resargs['summary']
 
 if idonly and summary:
-    print "Cannot have both idonly and summary"
+    print "Cannot have both idonly and summary" >>sys.stderr
     sys.exit(10)
 
 mydb = dbops.opendb('remfits')

@@ -2,10 +2,23 @@
 
 use dbops;
 use Getopt::Long;
+use Pod::Usage;
 
 my $prefix = "fits";
+my $help;
 
-GetOptions("prefix=s", \$prefix) or die "Usage: $0 [ -prefix=x ] inds";
+GetOptions("prefix=s", \$prefix, "help" => \$help) or pod2usage(2);
+pod2usage(-exitval => 0, -verbose => 2) if $help;
+
+#if ($help)  {
+#    print STDERR <<EOF;
+# $0 [--help] [--prefix=string] fitsids
+
+# Files are extracted with given prefix and 3 digit zero-filled numbers.
+# Fits ids are given by listobs.
+# EOF
+#     exit 0;
+#}
 
 my $n = 1;
 my $dbase = dbops::opendb('remfits') or die "Cannot open DB";
@@ -39,3 +52,37 @@ for my $id (@ARGV) {
     close OUTF;
 }
 
+__END__
+
+=head1 NAME
+
+fetchfits - - Copy FITS files out of database
+
+=head1 SYNOPSIS
+
+fetchfits [options] fitsid [fitsid ...]
+
+  
+=head1 OPTIONS
+ 
+=over 8
+ 
+=item B<-help>
+ 
+ Print a brief help message and exit.
+ 
+=item B<-prefix> string
+ 
+ Specify prefix for file names (default fits).
+ 
+=back
+
+=head1 DESCRIPTION
+
+This program takes a sequence of FITS ids stored in the database and copies them to a set of files
+in the current directory.
+
+The ids are displayed in the output of listobs.
+
+Output files are generated as fits001.fits.gz onward, change the initial "fits" prefix using the
+option.

@@ -16,6 +16,7 @@ import trimarrays
 import wcscoord
 import warnings
 import miscutils
+import findnearest
 
 parsearg = argparse.ArgumentParser(description='Plot FITS image', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 parsearg.add_argument('file', type=str, nargs=1, help='FITS file to plot can be compressed')
@@ -35,6 +36,7 @@ parsearg.add_argument('--biasfile', type=str, help='Bias file to use')
 parsearg.add_argument('--trimbottom', type=int, help='Pixels to trim off bottom of picture')
 parsearg.add_argument('--trimleft', type=int, help='Pixels to trim off left of picture')
 parsearg.add_argument('--trimright', type=int, help='Pixels to trim off right of picture')
+parsearg.add_argument('--searchrad', type=int, default=20, help='Search radius in pixels')
 parsearg.add_argument('--mainobjs', type=str, help='File of main object coords')
 parsearg.add_argument('--mainap', type=int, default=6, help='main aperture radius')
 parsearg.add_argument('--molcolour', type=str, default='b', help='main Object colour')
@@ -82,6 +84,7 @@ trimbottom = resargs['trimbottom']
 trimleft = resargs['trimleft']
 trimright = resargs['trimright']
 
+searchrad = resargs['searchrad']
 mainobjs = resargs['mainobjs']
 mainap = resargs['mainap']
 maincolour = resargs['molcolour']
@@ -242,8 +245,13 @@ if mainobjs is not None:
     for m in maint:
         ra = m[0]
         dec = m[1]
-        bcol, brow = w.coords_to_pix(((ra, dec),))[0]
-        ptch = mp.Circle((bcol,brow), radius=mainap, alpha=hilalpha,color=maincolour, fill=False)
+        bloc = w.coords_to_pix(((ra, dec),))[0]
+        rloc = findnearest.findnearest(imagedata, bloc, mainap, searchrad)
+        if rloc is not None:
+            newcoords = (rloc[0],rloc[1])
+            ptch = mp.Circle(newcoords, radius=mainap, alpha=hilalpha,color=maincolour, fill=False)
+            ax.add_patch(ptch)
+        ptch = mp.Circle(bloc, radius=mainap, alpha=hilalpha,color=maincolour, fill=True)
         ax.add_patch(ptch)
 if figout is None:
     plt.show()
