@@ -46,9 +46,10 @@ try:
 except objinfo.ObjInfoError:
     pass
 
-if delete:
-    errors = 0
-    edict = dict()
+errors = 0
+edict = dict()
+
+if delete: 
     for name in objnames:
         try:
             nobj = objinfo.getname(name)
@@ -64,7 +65,55 @@ if delete:
     objinf.savefile(libfile)
     sys.exit(0)
 
+# If updating check all the names given are there
+# Otherwise check that they aren't
 
+if update:
+    for name in objnames:
+        try:
+            nobj = objinf.getname(name)
+        except objinfo.ObjInfoError as e:
+            print a.args[0] >>sys.stderr
+            errors += 1
+            continue
+        nname = nobj.objname
+        if nname in edict:
+            if name != nname:
+                print "Already had", name, "aliased to", nname >>sys.stderr
+            else:
+                print "Already had", name >>sys.stderr
+            errors += 1
+            continue
+        edict[nname] = 1
+else:
+    for name in objnames:
+        if name in edict:
+            print "Already requested addding", name >>sys.stderr
+            errors += 1
+            continue
+        edict[name] = 1
+        try:
+            nobj = objinf.getname(name)
+            pname = nobj.objname
+            if pname != name:
+                print "Already had", name, "as alias of", pname
+            else:
+                print "Already had", name
+            errors += 1
+            continue
+        except objinfo.ObjInfoError:
+            pass
             
+if errors > 0:
+    print "Aborting due to errors" >>sys.stderr
+    sys.exit(10)
 
+sb - Simbad()
+sb.add_votable_fields('main_id','ids','otype','ra','dec','ra','distance','ra_prec','dec_prec','pmra','pmdec')
+for name in objnames:
+    qres = sb.query_object(name)
+    if qres is None:
+        print "Cannot find", name >>sys.stderr
+        continue
+    print qres[0]['MAIN_ID']
 
