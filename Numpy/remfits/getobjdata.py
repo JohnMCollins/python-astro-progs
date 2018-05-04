@@ -48,8 +48,11 @@ objinf = objinfo.ObjInfo()
 try:
     objinf.loadfile(libfile)
 except objinfo.ObjInfoError as e:
-    print "Error loading file", e.args[0]
-    pass
+    if e.warningonly:
+        print "(Warning) file does not exist:", libfile >>sys.stderr
+    else:
+        print "Error loading file", e.args[0] >> sys.stderr
+        sys.exit(30)
 
 errors = 0
 edict = dict()
