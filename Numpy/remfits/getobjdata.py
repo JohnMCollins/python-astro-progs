@@ -17,6 +17,10 @@ import xmlutil
 import objinfo
 import sys
 
+def is_masked(num):
+    """Return is number is masked"""
+    return type(num) is np.ma.core.MaskedConstant
+
 # Shut up warning messages
 
 warnings.simplefilter('ignore', AstropyWarning)
@@ -43,7 +47,8 @@ if update and delete:
 objinf = objinfo.ObjInfo()
 try:
     objinf.loadfile(libfile)
-except objinfo.ObjInfoError:
+except objinfo.ObjInfoError as e:
+    print "Error loading file", e.args[0]
     pass
 
 errors = 0
@@ -52,7 +57,7 @@ edict = dict()
 if delete: 
     for name in objnames:
         try:
-            nobj = objinfo.getname(name)
+            nobj = objinf.get_object(name)
             edict[nobj.objname] = 1
         except objinfo.ObjInfoError as e:
             print e.args[0] >>sys.stderr
@@ -61,7 +66,7 @@ if delete:
         print "Aborting due to errors" >>sys.stderr
         sys.exit(10)
     for n in edict:
-        objinfo.del_object(n)
+        objinf.del_object(n)
     objinf.savefile(libfile)
     sys.exit(0)
 
@@ -71,7 +76,7 @@ if delete:
 if update:
     for name in objnames:
         try:
-            nobj = objinf.getname(name)
+            nobj = objinf.get_object(name)
         except objinfo.ObjInfoError as e:
             print a.args[0] >>sys.stderr
             errors += 1
@@ -93,7 +98,7 @@ else:
             continue
         edict[name] = 1
         try:
-            nobj = objinf.getname(name)
+            nobj = objinf.get_object(name)
             pname = nobj.objname
             if pname != name:
                 print "Already had", name, "as alias of", pname
@@ -108,12 +113,64 @@ if errors > 0:
     print "Aborting due to errors" >>sys.stderr
     sys.exit(10)
 
-sb - Simbad()
-sb.add_votable_fields('main_id','ids','otype','ra','dec','ra','distance','ra_prec','dec_prec','pmra','pmdec')
+sb = Simbad()
+sb.add_votable_fields('main_id','otype','ra','dec','distance','pmra','pmdec', 'rv_value')
 for name in objnames:
     qres = sb.query_object(name)
     if qres is None:
-        print "Cannot find", name >>sys.stderr
+        print "Cannot find", name, "in Simbad" >>sys.stderr
         continue
-    print qres[0]['MAIN_ID']
+    q0 = qres[0]
+    qname = q0['MAIN_ID']
+    if objinf.is_defined(qname):
+        if not update:
+            print name, "is already defined as", qname >>sys.stderr
+            errors += 1
+            continue
+    elif update:
+        print name, "is not previously defined" >>sys.stderr
+        errors += 1
+        continue
+    
+    otype = q0['OTYPE']
+    ra = coordinates.Angle(q0['RA'], unit=u.hour).deg
+    dec = coordinates.Angle(q0['DEC'], unit=u.deg).deg
+    distance = q0['distance_distance']
+    distunit = q0['distance_unit']
+    pmra = q0['PMRA']
+    pmdec = q0['PMDEC']
+    try:
+        rvel = q0['RV_VALUE']
+    except KeyError:
+        rvel = None
+    if is_masked(distance):
+        distance = None
+    else:
+        distance = u.Quantity(distance, unit=distunit).to('pc').value
+    if is_masked(pmra):
+        pmra = None
+    if is_masked(pmdec):
+        pmdec = None
+    if update:
+        obj = objinf.get_object(name)
+        if qname != obj.sbname:
+            if obj.sbname is not None:
+                del objinf.sbnames[obj.sbname]
+            obj.sbname = qname
+            objinf.sbnames[qname] = obj
+        obj.set_ra(value=ra, pm = pmra)
+        obj.set_dec(vlaue=dec, pm= pmdec)
+        if distance is not None:
+            obj.dist = distance
+    else:
+        obj = objinfo.ObjData(objname = name, sbname = qname, objtype = otype, rv = rvel, dist = distance)
+        obj.set_ra(value = ra, pm = pmra)
+        obj.set_dec(value = dec, pm = pmdec)
+        objinf.add_object(obj)
 
+if errors > 0:
+    print "Aborting due to errors" >>sys.stderr
+    sys.exit(20)
+
+objinf.savefile(libfile)
+    
