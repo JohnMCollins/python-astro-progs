@@ -75,7 +75,7 @@ filters = resargs['filter']
 summary = resargs['summary']
 
 if idonly and summary:
-    print "Cannot have both idonly and summary" >>sys.stderr
+    print >>sys.stderr, "Cannot have both idonly and summary"
     sys.exit(10)
 
 mydb = dbops.opendb('remfits')

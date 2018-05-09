@@ -27,9 +27,9 @@ try:
     objinf.loadfile(libfile)
 except objinfo.ObjInfoError as e:
     if e.warningonly:
-        print "(Warning) file does not exist:", libfile >>sys.stderr
+        print  >>sys.stderr, "(Warning) file does not exist:", libfile
     else:
-        print "Error loading file", e.args[0] >> sys.stderr
+        print >>sys.stderr,  "Error loading file", e.args[0]
         sys.exit(30)
 
 errors = 0
@@ -38,7 +38,7 @@ if alldelete:
         try:
             alist = objinf.get_aliases(name)
         except objinfo.ObjInfoError as e:
-            print e.args[0] >>sys.stderr
+            print >>sys.stderr, e.args[0]
             errors += 1
             continue
         objinf.del_aliases(*alist)
@@ -51,17 +51,17 @@ elif delete:
 else:
     mainname = objnames.pop(0)
     if len(objnames) == 0:
-        print "Expecting aliase names for", mainname >>sys.stderr
+        print >>sys.stderr, "Expecting aliase names for", mainname
         errors += 1
     else:
         try:
             objinf.add_aliases(mainname, *objnames)
         except objinfo.ObjInfoError as e:
-            print e.args[0] >>sys.stderr
+            print >>sys.stderr, e.args[0]
             errors += 1        
 
 if errors > 0:
-    print "Aborting due to errors" >>sys.stderr
+    print >>sys.stderr, "Aborting due to errors"
     sys.exit(20)
 
 objinf.savefile(libfile)

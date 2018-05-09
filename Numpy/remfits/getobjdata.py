@@ -49,9 +49,9 @@ try:
     objinf.loadfile(libfile)
 except objinfo.ObjInfoError as e:
     if e.warningonly:
-        print "(Warning) file does not exist:", libfile >>sys.stderr
+        print >>sys.stderr, "(Warning) file does not exist:", libfile
     else:
-        print "Error loading file", e.args[0] >> sys.stderr
+        print >>sys.stderr, "Error loading file", e.args[0]
         sys.exit(30)
 
 errors = 0
@@ -61,15 +61,13 @@ if delete:
     for name in objnames:
         try:
             nobj = objinf.get_object(name)
-            edict[nobj.objname] = 1
+            objinf.del_object(nobj)
         except objinfo.ObjInfoError as e:
-            print e.args[0] >>sys.stderr
+            print  >>sys.stderr, e.args[0]
             errors += 1
     if errors > 0:
-        print "Aborting due to errors" >>sys.stderr
+        print  >>sys.stderr, "Aborting due to errors"
         sys.exit(10)
-    for n in edict:
-        objinf.del_object(n)
     objinf.savefile(libfile)
     sys.exit(0)
 
@@ -87,16 +85,16 @@ if update:
         nname = nobj.objname
         if nname in edict:
             if name != nname:
-                print "Already had", name, "aliased to", nname >>sys.stderr
+                print  >>sys.stderr, "Already had", name, "aliased to", nname
             else:
-                print "Already had", name >>sys.stderr
+                print  >>sys.stderr, "Already had", name
             errors += 1
             continue
         edict[nname] = 1
 else:
     for name in objnames:
         if name in edict:
-            print "Already requested addding", name >>sys.stderr
+            print  >>sys.stderr, "Already requested addding", name
             errors += 1
             continue
         edict[name] = 1
@@ -104,16 +102,16 @@ else:
             nobj = objinf.get_object(name)
             pname = nobj.objname
             if pname != name:
-                print "Already had", name, "as alias of", pname
+                print  >>sys.stderr, "Already had", name, "as alias of", pname
             else:
-                print "Already had", name
+                print  >>sys.stderr, "Already had", name
             errors += 1
             continue
         except objinfo.ObjInfoError:
             pass
             
 if errors > 0:
-    print "Aborting due to errors" >>sys.stderr
+    print  >>sys.stderr, "Aborting due to errors"
     sys.exit(10)
 
 sb = Simbad()
@@ -121,17 +119,17 @@ sb.add_votable_fields('main_id','otype','ra','dec','distance','pmra','pmdec', 'r
 for name in objnames:
     qres = sb.query_object(name)
     if qres is None:
-        print "Cannot find", name, "in Simbad" >>sys.stderr
+        print  >>sys.stderr, "Cannot find", name, "in Simbad"
         continue
     q0 = qres[0]
     qname = q0['MAIN_ID']
     if objinf.is_defined(qname):
         if not update:
-            print name, "is already defined as", qname >>sys.stderr
+            print >>sys.stderr, name, "is already defined as", qname
             errors += 1
             continue
     elif update:
-        print name, "is not previously defined" >>sys.stderr
+        print >>sys.stderr, name, "is not previously defined"
         errors += 1
         continue
     
@@ -172,7 +170,7 @@ for name in objnames:
         objinf.add_object(obj)
 
 if errors > 0:
-    print "Aborting due to errors" >>sys.stderr
+    print  >>sys.stderr, "Aborting due to errors"
     sys.exit(20)
 
 objinf.savefile(libfile)
