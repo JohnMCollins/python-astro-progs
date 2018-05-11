@@ -1,4 +1,4 @@
-#! /usr/bin/env python3
+#! /usr/bin/env python
 
 from astropy.io import fits
 from astropy.utils.exceptions import AstropyWarning, AstropyUserWarning
@@ -40,9 +40,9 @@ try:
     objinf.loadfile(libfile)
 except objinfo.ObjInfoError as e:
     if e.warningonly:
-        print("(Warning) file does not exist:", libfile, file=sys.stderr)
+        print  >>sys.stderr, "(Warning) file does not exist:", libfile
     else:
-        print("Error loading file", libfile, "error was",e.args[0], file=sys.stderr)
+        print >>sys.stderr,  "Error loading file", e.args[0]
         sys.exit(30)
 
 # Shut up warning messages
@@ -65,7 +65,7 @@ else:
     try:
         ffile = fits.open(firstfile)
     except IOError as e:
-        print("Cannot open fits file", firstfile, "error was", e.args[-1], file=sys.stderr)
+        print >>sys.stderr, "Cannot open fits file", firstfile, "error was", e.args[-1]
         sys.exit(10)
     ffhdr = ffile[0].header
     odt = datetime.datetime.now()
@@ -95,22 +95,8 @@ for oitem in objlist:
     rv = oitem.rv
     if rv is None:
         rv = 0
-    raval = rastr.value
-    decval = decstr.value
-    if distance is not None and rastr.pm is not None and decstr.pm is not None:
-        pmra = rastr.pm * u.mas / u.yr
-        pmdec = decstr.pm * u.mas / u.yr
-        
-        startcoord = coordinates.SkyCoord(ra=raval*u.deg,
-                                         dec=decval*u.deg,
-                                         pm_ra_cosdec=pmra,
-                                         pm_dec=pmdec,
-                                         obstime=Time(rastr.datebasis),
-                                         distance=distance * u.pc,
-                                         radial_velocity=rv * u.km/u.s)
-        endcoord = startcoord.apply_space_motion(new_obstime = Time(odt))
-        raval = endcoord.ra.deg
-        decval = endcoord.dec.deg
+    raval = rastr.getvalue(odt)
+    decval = decstr.getvalue(odt)
     mag = oitem.mag
     magerr = oitem.magerr
     if mag is None:
@@ -118,6 +104,6 @@ for oitem in objlist:
         magerr = 0
     if magerr is None:
         magerr = 0
-    print("%.16e %.16e %.16e, %.16e %s" % (raval, decval, mag, magerr, oitem.objname), file=outf)
+    print >>outf, "%.16e %.16e %.16e, %.16e %s" % (raval, decval, mag, magerr, oitem.objname)
 
     

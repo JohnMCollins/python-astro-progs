@@ -19,36 +19,6 @@ import miscutils
 import objinfo
 import findnearest
 
-class objdata(object):
-    """Representation of object information written out by nearestobjs"""
-    
-    def __init__(self, ra, dec, mag, magerr, name):
-        self.name = name
-        self.ra = ra
-        self.dec = dec
-        self.mag = None
-        self.magerr = None
-        if mag > 0.0:
-            self.mag = mag
-            self.magerr = magerr
-
-def parseobjfile(fname):
-    """Parse object file and return a list of objdata objects"""
-    
-    result = []
-    try:
-        f = open(name, 'r')
-    except IOError:
-        return result
-    
-    for line in f:
-        bits = string.split(line, ' ', 5)
-        objn = bits.pop()
-        ra, dec, mag, magerr = map(flaot, bits)
-        result.append(objdata(ra, dec, mag, magerr, objn))
-    f.close()
-    return  retult
-
 parsearg = argparse.ArgumentParser(description='Plot FITS image', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 parsearg.add_argument('file', type=str, nargs=1, help='FITS file to plot can be compressed')
 parsearg.add_argument('--libfile', type=str, default='~/lib/stellar_data', help='File to use for database')
@@ -69,7 +39,6 @@ parsearg.add_argument('--trimbottom', type=int, help='Pixels to trim off bottom 
 parsearg.add_argument('--trimleft', type=int, help='Pixels to trim off left of picture')
 parsearg.add_argument('--trimright', type=int, help='Pixels to trim off right of picture')
 parsearg.add_argument('--searchrad', type=int, default=20, help='Search radius in pixels')
-parsearg.add_argument('--objfile', type=str, help='File of main object coords')
 parsearg.add_argument('--target', type=str, help='Name of target')
 parsearg.add_argument('--mainap', type=int, default=6, help='main aperture radius')
 parsearg.add_argument('--targcolour', type=str, default='r', help='Target object colour')
@@ -295,22 +264,21 @@ for dfld in ('DATE-OBS', 'DATE', '_ATE'):
 tit = ffhdr['OBJECT'] + ' on ' + string.replace(odt, 'T', ' at ') + ' filter ' + ffhdr['FILTER']
 plt.title(tit)
 
-if objfile is not None:
-    ax = plt.gca()
-    maint = np.loadtxt(mainobjs)
-    sel = (maint[:,0] >= ramin) & (maint[:,0] <= ramax) & (maint[:,1] >= decmin) & (maint[:,1] <= decmax)
-    maint = maint[sel]
-    for m in maint:
-        ra = m[0]
-        dec = m[1]
-        bloc = w.coords_to_pix(((ra, dec),))[0]
-        rloc = findnearest.findnearest(imagedata, bloc, mainap, searchrad)
-        if rloc is not None:
-            newcoords = (rloc[0],rloc[1])
-            ptch = mp.Circle(newcoords, radius=mainap, alpha=hilalpha,color=maincolour, fill=False)
-            ax.add_patch(ptch)
-        ptch = mp.Circle(bloc, radius=mainap, alpha=hilalpha,color=maincolour, fill=True)
+ax = plt.gca()
+maint = np.loadtxt(mainobjs)
+sel = (maint[:,0] >= ramin) & (maint[:,0] <= ramax) & (maint[:,1] >= decmin) & (maint[:,1] <= decmax)
+maint = maint[sel]
+for m in maint:
+    ra = m[0]
+    dec = m[1]
+    bloc = w.coords_to_pix(((ra, dec),))[0]
+    rloc = findnearest.findnearest(imagedata, bloc, mainap, searchrad)
+    if rloc is not None:
+        newcoords = (rloc[0],rloc[1])
+        ptch = mp.Circle(newcoords, radius=mainap, alpha=hilalpha,color=maincolour, fill=False)
         ax.add_patch(ptch)
+    ptch = mp.Circle(bloc, radius=mainap, alpha=hilalpha,color=maincolour, fill=True)
+    ax.add_patch(ptch)
 if figout is None:
     plt.show()
 else:
