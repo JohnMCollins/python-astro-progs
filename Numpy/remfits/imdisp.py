@@ -10,6 +10,7 @@ from matplotlib import colors
 import numpy as np
 import argparse
 import sys
+import os.path
 import string
 import objcoord
 import trimarrays
@@ -41,7 +42,7 @@ parsearg.add_argument('--trimright', type=int, help='Pixels to trim off right of
 parsearg.add_argument('--searchrad', type=int, default=20, help='Search radius in pixels')
 parsearg.add_argument('--target', type=str, help='Name of target')
 parsearg.add_argument('--mainap', type=int, default=6, help='main aperture radius')
-parsearg.add_argument('--targcolour', type=str, default='r', help='Target object colour')
+parsearg.add_argument('--targcolour', type=str, default='#FFCCCC', help='Target object colour')
 parsearg.add_argument('--objcolour', type=str, default='yellow', help='Other Object colour')
 parsearg.add_argument('--hilalpha', type=float, default=0.75, help='Object alpha')
 
@@ -104,7 +105,6 @@ trimleft = resargs['trimleft']
 trimright = resargs['trimright']
 
 searchrad = resargs['searchrad']
-objfile = resargs['objfile']
 target = resargs['target']
 if target is not None:
     try:
@@ -264,20 +264,28 @@ for dfld in ('DATE-OBS', 'DATE', '_ATE'):
 tit = ffhdr['OBJECT'] + ' on ' + string.replace(odt, 'T', ' at ') + ' filter ' + ffhdr['FILTER']
 plt.title(tit)
 
+pruned_objlist = []
+for obj in objinf.list_objects(odt):
+    ra = obj.get_ra(odt)
+    if ra < ramin or ra > ramax: continue
+    dec = obj.get_dec(odt)
+    if dec < decmin or dec > decmax: continue
+    pruned_objlist.append(obj)
+
 ax = plt.gca()
-maint = np.loadtxt(mainobjs)
-sel = (maint[:,0] >= ramin) & (maint[:,0] <= ramax) & (maint[:,1] >= decmin) & (maint[:,1] <= decmax)
-maint = maint[sel]
-for m in maint:
-    ra = m[0]
-    dec = m[1]
+for m in pruned_objlist:
+    ra = m.get_ra(odt)
+    dec = m.get_dec(odt)
     bloc = w.coords_to_pix(((ra, dec),))[0]
     rloc = findnearest.findnearest(imagedata, bloc, mainap, searchrad)
+    dcol = objcolour
+    if m.objname == target:
+        dcol = targcolour
     if rloc is not None:
         newcoords = (rloc[0],rloc[1])
-        ptch = mp.Circle(newcoords, radius=mainap, alpha=hilalpha,color=maincolour, fill=False)
-        ax.add_patch(ptch)
-    ptch = mp.Circle(bloc, radius=mainap, alpha=hilalpha,color=maincolour, fill=True)
+        ptch = mp.Circle(newcoords, radius=mainap, alpha=hilalpha,color=dcol, fill=False)
+    else:
+        ptch = mp.Circle(bloc, radius=mainap, alpha=hilalpha,color=dcol, fill=True)
     ax.add_patch(ptch)
 if figout is None:
     plt.show()
