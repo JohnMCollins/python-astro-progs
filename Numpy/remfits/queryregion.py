@@ -74,6 +74,7 @@ if qres is None:
     sys.exit(50)
 
 results = []
+namesadded = []
 lengths = [0,0,0,0,0]
 for qr in qres:
     flux = qr['FLUX_' + filter]
@@ -86,12 +87,15 @@ for qr in qres:
     ra = qr['RA']
     dec = qr['DEC']
     sk = coordinates.SkyCoord(ra=ra, dec=dec, unit=(u.hour, u.deg))
-    ra = "%.3f" % sk.ra.deg
-    dec = "%.3f" % sk.dec.deg
+    ra = sk.ra.deg
+    dec = sk.dec.deg
+    rastr = "%.3f" % ra
+    decstr = "%.3f" % dec
     distance = qr['distance_distance']
     distunit = qr['distance_unit']
     pmra = qr['PMRA']
     pmdec = qr['PMDEC']
+    rvel = None
     if is_masked(distance):
         distancestr = "-"
         distance = None
@@ -99,25 +103,38 @@ for qr in qres:
         distancestr = "%#.4g" % u.Quantity(distance, unit=distunit).to('pc').value
         try:
             rvel = qr['RV_VALUE']
-            if not math.isnan(rvel):
+            if  math.isnan(rvel):
+                rvel = None
+            else:
                 distancestr += '*'
         except KeyError:
             distancestr += '*'
     if is_masked(pmra):
         pmra = None
     else:
-        ra += '*'
+        rastr += '*'
     if is_masked(pmdec):
         pmdec = None
     else:
-        dec += '*'
-    item = [name, otype, ra, dec, distancestr, flux]
+        decstr += '*'
+    item = [name, otype, rastr, decstr, distancestr, flux]
     
     l2 = []
     for ll, ii in zip(lengths, item):
         l2.append(max(ll, len(ii)))
     lengths = l2
     results.append(item)
+    if addobjs and not objinf.is_defined(name):
+        myname = name.translate(None, " ")
+        newobj = objinfo.ObjData(objname = myname, sbname = name, objtype = otype, dist = distance, rv = None)
+        newobj.set_ra(value = ra, pm = pmra)
+        newobj.set_dec(value = dec, pm = pmdec)
+        objinf.add_object(newobj)
+        namesadded.append(myname)
+
+namesadded.sort()
+for n in namesadded:
+    print "Added", n
 
 results.sort(key=lambda y: y[-1])
 for res in results:
@@ -125,3 +142,6 @@ for res in results:
         print r + " " * (l - len(r)),
     print "%#.4g" % res[-1]
 
+if len(namesadded) != 0:
+    objinf.savefile()
+    print "Saved new file"
