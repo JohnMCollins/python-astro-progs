@@ -3,6 +3,7 @@
 from astropy.io import fits
 from astropy import wcs
 from astropy.utils.exceptions import AstropyWarning, AstropyUserWarning
+from astropy.time import Time
 import astroquery.utils as autils
 import numpy as np
 import argparse
@@ -39,6 +40,7 @@ parsearg.add_argument('--mainap', type=int, default=6, help='main aperture radiu
 parsearg.add_argument('--nsigfind', default=3.0, type=float, help='Sigmas of ADUs to consider significant')
 parsearg.add_argument('--accadjust', action='store_true', help='Accumulate adjustments')
 parsearg.add_argument('--targbrightest', action='store_true', help='Take brightest object as target')
+parsearg.add_argument('--skylevel', type=float, help='Value to subtract for sky level otherwise use median')
 
 resargs = vars(parsearg.parse_args())
 ffnames = resargs['files']
@@ -89,6 +91,7 @@ if target is not None:
 mainap = resargs['mainap']
 targbrightest = resargs['targbrightest']
 accadjust = targbrightest or resargs['accadjust']
+skylevel = resargs['skylevel']
 
 if flatfile is not None:
     ff = fits.open(flatfile)
@@ -140,7 +143,10 @@ for ffname in ffnames:
     if trimright is not None:
         imagedata = imagedata[:,0:-trimright]
 
-    med = np.median(imagedata)
+    if skylevel is None:
+        med = np.median(imagedata)
+    else:
+        med = skylevel
     sigma = imagedata.std()
     imagedata = np.clip(imagedata-med, 0, None)
     mx = imagedata.max()
@@ -177,10 +183,12 @@ for ffname in ffnames:
 
     # Look for objects but eliminate duplicate finds
 
+	odt = Time(odt).datetime
     nodup_objlist = []
     radsq = mainap**2
     adjras = []
     adjdecs = []
+    Hadtarg = None
 
     if targbrightest:
         if targobj is None:
@@ -196,6 +204,7 @@ for ffname in ffnames:
         rlpix = ((int(round(ncol)), int(nrow)), )
         rarloc = w.pix_to_coords(rlpix)[0]
         nodup_objlist.append((ncol, nrow, nadu, objpixes, targra, targdec, rarloc, tobj))
+        Hadtarg = nodup_objlist[-1]
         adjras.append(rarloc[0]-targra)
         adjdecs.append(rarloc[1]-targdec)
     
@@ -218,12 +227,21 @@ for ffname in ffnames:
             rlpix = ((int(round(ncol)), int(nrow)), )
             rarloc = w.pix_to_coords(rlpix)[0]
             nodup_objlist.append((ncol, nrow, nadu, objpixes, objra, objdec, rarloc, m))
+            if m.objname == target: Hadtarg = nodup_objlist[-1]
             adjras.append(rarloc[0]-objra)
             adjdecs.append(rarloc[1]-objdec)
         except duplication:
             pass
      
-    print ffname + ':'
+	if Hadtarg is None:
+		continue
+    ept = odt.strftime("%Y-%m-%d %H-%M-%S:")
+    print ept, "sky level:", "%.4g" % med
+    targadu = Hadtarg[2]
     for mtch in nodup_objlist:
         ncol, nrow, nadu, objpixes, objra, objdec,rarloc, m = mtch
-        print "\t%s: %.6g" % (m.objname, nadu)
+        if m.objname != target:
+			print "%s %s %.6g %.6g" % (ept, m.objname, nadu, targadu / nadu)
+        else:
+			print "%s %s: %.6g" % (ept, m.objname, nadu)
+
