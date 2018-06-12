@@ -303,7 +303,7 @@ if targbrightest:
         sys.exit(60)
     tobj, targra, targdec = targobj
     objpixes = w.coords_to_pix(((targra, targdec),))[0]
-    brightest = findbrightest.findbrightest(imagedata, mainap)
+    brightest = findbrightest.findbrightest(imagedata, tobj.get_aperture(mainap))
     if brightest is None:
         print >>sys.stderr, "Could not find a brightest object"
         sys.exit(61)
@@ -353,7 +353,7 @@ for mtch in nodup_objlist:
     print "Pix offserts", ncol-objpixes[0], nrow-objpixes[1]
     print "RA orrsets", rarloc[0]-ra,rarloc[1]-dec
     newcoords = (ncol,nrow)
-    ptch = mp.Circle(newcoords, radius=mainap, alpha=hilalpha,color=dcol, fill=False)
+    ptch = mp.Circle(newcoords, radius=m.get_aperture(mainap), alpha=hilalpha,color=dcol, fill=False)
     ax.add_patch(ptch)
     nfound += 1
 

@@ -28,7 +28,7 @@ except objinfo.ObjInfoError as e:
         sys.exit(30)
 
 ol = objinf.list_objects()
-al = [string.join(objinf.get_aliases(x), ',') for x in ol]
+al = [string.join(x.list_alias_names(), ',') for x in ol]
 
 nlength = reduce(max, [len(x.objname) for x in ol])
 alength = reduce(max, [len(a) for a in al])

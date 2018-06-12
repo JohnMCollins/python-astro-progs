@@ -24,8 +24,10 @@ parsearg.add_argument('--dist', type=float, help='Distance in parsec')
 parsearg.add_argument('--pmra', type=float, help='RA propoer motion in mas/year')
 parsearg.add_argument('--pmdec', type=float, help='DEC propoer motion in mas/year')
 parsearg.add_argument('--rv', type=float, help='Radial velocity in km/s')
-parsearg.add_argument('--mag', type=float, help='Magnitude in rel units')
+parsearg.add_argument('--mag', type=float, help='Magnitude')
+parsearg.add_argument('--filter', type=str, help='Filter for magnitude')
 parsearg.add_argument('--sigmag', type=float, help='Magnitude sigma')
+parsearg.add_argument('--aperture', type=int, help='Aperture in pixels')
 
 resargs = vars(parsearg.parse_args())
 
@@ -40,6 +42,8 @@ pmdec = resargs['pmdec']
 rv = resargs['rv']
 mag = resargs['mag']
 sigmag = resargs['sigmag']
+filter = resargs['filter']
+aperture = resargs['aperture']
 
 objinf = objinfo.ObjInfo()
 try:
@@ -64,7 +68,10 @@ if dist is not None:
 if rv is not None:
     obj.rv = rv
 if mag is not None:
-    obj.mag = mag
-if sigmag is not None:
-    obj.magerr = sigmag
+    if filter is None:
+        print >>sys.stderr, "No filter given with magnitude"
+        sys.exit(51)
+    obj.set_mag(filter, mag, sigmag)
+if aperture is not None:
+    obj.set_apsize(aperture)
 objinf.savefile(libfile)

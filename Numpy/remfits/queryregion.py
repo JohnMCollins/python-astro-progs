@@ -20,7 +20,7 @@ import math
 
 def is_masked(num):
     """Return is number is masked"""
-    return type(num) is np.ma.core.MaskedConstant
+    return num is None or type(num) is np.ma.core.MaskedConstant
 
 # Shut up warning messages
 
@@ -62,7 +62,12 @@ except objinfo.ObjInfoError as e:
     print >>sys.stderr, "Error with object", objname, ":", e.args[0]
     sys.exit(31)
 
-lookupname = objd.sbname
+als = objd.list_aliases()
+lookupname = None
+for al in als:
+    if al.source == "Simbad":
+        LookupError = al.objname
+        break 
 if lookupname is None:
     lookupname = objd.objname
 
@@ -81,7 +86,7 @@ for qr in qres:
     if is_masked(flux) or flux > maxmag:
         continue
     name = qr['MAIN_ID']
-    if name == objd.sbname:
+    if name == lookupname:
         continue
     otype = qr['OTYPE']
     ra = qr['RA']
@@ -91,8 +96,14 @@ for qr in qres:
     dec = sk.dec.deg
     rastr = "%.3f" % ra
     decstr = "%.3f" % dec
-    distance = qr['distance_distance']
-    distunit = qr['distance_unit']
+    try:
+        distance = qr['distance_distance']
+    except KeyError:
+        distance = None
+    try:
+        distunit = qr['distance_unit']
+    except KeyError:
+        distunit = None
     pmra = qr['PMRA']
     pmdec = qr['PMDEC']
     rvel = None
@@ -126,7 +137,8 @@ for qr in qres:
     results.append(item)
     if addobjs and not objinf.is_defined(name):
         myname = name.translate(None, " ")
-        newobj = objinfo.ObjData(objname = myname, sbname = name, objtype = otype, dist = distance, rv = None)
+        newobj = objinfo.ObjData(objname = myname, objtype = otype, dist = distance, rv = None)
+        newobj.set_alias(name, 'Simbad')
         newobj.set_ra(value = ra, pm = pmra)
         newobj.set_dec(value = dec, pm = pmdec)
         objinf.add_object(newobj)

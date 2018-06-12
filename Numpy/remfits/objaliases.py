@@ -14,6 +14,7 @@ parsearg.add_argument('names', nargs='+', type=str, help='Main name followed by 
 parsearg.add_argument('--libfile', type=str, default='~/lib/stellar_data', help='File to use for database')
 parsearg.add_argument('--delete', action='store_true', help='Delete aliases main name not needed')
 parsearg.add_argument('--alldelete', action='store_true', help='Delete all aliases for main name')
+parsearg.add_argument('--source', type=str, default='By hand', help='Source of alias names')
 
 resargs = vars(parsearg.parse_args())
 
@@ -21,6 +22,7 @@ objnames = resargs['names']
 libfile = os.path.expanduser(resargs['libfile'])
 delete = resargs['delete']
 alldelete = resargs['alldelete']
+source = resargs['source']
 
 objinf = objinfo.ObjInfo()
 try:
@@ -55,7 +57,7 @@ else:
         errors += 1
     else:
         try:
-            objinf.add_aliases(mainname, *objnames)
+            objinf.add_aliases(mainname, source, *objnames)
         except objinfo.ObjInfoError as e:
             print >>sys.stderr, e.args[0]
             errors += 1        
@@ -65,4 +67,3 @@ if errors > 0:
     sys.exit(20)
 
 objinf.savefile(libfile)
-    

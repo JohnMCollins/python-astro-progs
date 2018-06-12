@@ -233,8 +233,8 @@ for ffname in ffnames:
         except duplication:
             pass
      
-	if Hadtarg is None:
-		continue
+    if Hadtarg is None:
+        continue
     ept = odt.strftime("%Y-%m-%d %H-%M-%S:")
     print ept, "sky level:", "%.4g" % med
     targadu = Hadtarg[2]

@@ -154,19 +154,16 @@ for name in objnames:
         pmdec = None
     if update:
         obj = objinf.get_object(name)
-        if qname != obj.sbname:
-            if obj.sbname is not None:
-                del objinf.sbnames[obj.sbname]
-            obj.sbname = qname
-            objinf.sbnames[qname] = obj
         obj.set_ra(value=ra, pm = pmra)
         obj.set_dec(vlaue=dec, pm= pmdec)
         if distance is not None:
             obj.dist = distance
     else:
-        obj = objinfo.ObjData(objname = name, sbname = qname, objtype = otype, rv = rvel, dist = distance)
+        obj = objinfo.ObjData(objname = name, objtype = otype, rv = rvel, dist = distance)
         obj.set_ra(value = ra, pm = pmra)
         obj.set_dec(value = dec, pm = pmdec)
+        if qname != name:
+            obj.set_alias(qname, 'Simbad')
         objinf.add_object(obj)
 
 if errors > 0:
