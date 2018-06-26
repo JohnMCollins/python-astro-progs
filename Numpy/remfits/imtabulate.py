@@ -169,17 +169,16 @@ for ffname in ffnames:
 
     targobj = None
     pruned_objlist = []
-    for obj in objinf.list_objects(odt):
-        ra = obj.get_ra(odt)
+    for objl in objinf.list_objects(odt):
+        obj, ra, dec = objl
         if ra < ramin or ra > ramax: continue
-        dec = obj.get_dec(odt)
         if dec < decmin or dec > decmax: continue
         if obj.objname == target:
-            targobj = (obj, ra, dec)
+            targobj = objl
             if not targbrightest:
                 pruned_objlist.append(targobj)
         else:
-            pruned_objlist.append((obj, ra, dec))
+            pruned_objlist.append(objl)
 
     # Look for objects but eliminate duplicate finds
 

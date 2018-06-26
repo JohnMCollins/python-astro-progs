@@ -10,31 +10,22 @@ from matplotlib import colors
 import numpy as np
 import argparse
 import sys
-import os.path
 import string
 import objcoord
 import trimarrays
 import wcscoord
 import warnings
 import miscutils
-import objinfo
-import findnearest
-import findbrightest
-
-class duplication(Exception):
-    """Throw to get out of duplication loop"""
-    pass
 
 parsearg = argparse.ArgumentParser(description='Plot FITS image', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 parsearg.add_argument('file', type=str, nargs=1, help='FITS file to plot can be compressed')
-parsearg.add_argument('--libfile', type=str, default='~/lib/stellar_data', help='File to use for database')
 parsearg.add_argument('--cutoff', type=float, help='Reduce maxima to this value', default=-1.0)
 parsearg.add_argument('--trim', action='store_true', help='Trim trailing empty pixels')
-parsearg.add_argument('--mapsize', type=int, default=4, help='Number of shades in grey scale')
-parsearg.add_argument('--invert', action='store_false', help='Invert image')
+parsearg.add_argument('--mapsize', type=int, default=8, help='Number of shades in grey scale')
+parsearg.add_argument('--invert', action='store_true', help='Invert image')
 parsearg.add_argument('--divisions', type=int, default=8, help='Divisions in RA/Dec lines')
 parsearg.add_argument('--divprec', type=int, default=3, help='Precision for axes')
-parsearg.add_argument('--pstart', type=int, default=1, help='2**-n fraction to start display at')
+parsearg.add_argument('--pstart', type=int, default=4, help='2**-n fraction to start display at')
 parsearg.add_argument('--divthresh', type=int, default=15, help='Pixels from edge for displaying divisions')
 parsearg.add_argument('--racolour', type=str, help='Colour of RA lines')
 parsearg.add_argument('--deccolour', type=str, help='Colour of DEC lines')
@@ -44,34 +35,13 @@ parsearg.add_argument('--biasfile', type=str, help='Bias file to use')
 parsearg.add_argument('--trimbottom', type=int, help='Pixels to trim off bottom of picture')
 parsearg.add_argument('--trimleft', type=int, help='Pixels to trim off left of picture')
 parsearg.add_argument('--trimright', type=int, help='Pixels to trim off right of picture')
-parsearg.add_argument('--searchrad', type=int, default=20, help='Search radius in pixels')
-parsearg.add_argument('--target', type=str, help='Name of target')
+parsearg.add_argument('--mainobjs', type=str, help='File of main object coords')
 parsearg.add_argument('--mainap', type=int, default=6, help='main aperture radius')
-parsearg.add_argument('--targcolour', type=str, default='#44FF44', help='Target object colour')
-parsearg.add_argument('--objcolour', type=str, default='cyan', help='Other Object colour')
-parsearg.add_argument('--hilalpha', type=float, default=1.0, help='Object alpha')
-parsearg.add_argument('--nsigfind', default=3.0, type=float, help='Sigmas of ADUs to consider significant')
-parsearg.add_argument('--accadjust', action='store_true', help='Accumulate adjustments')
-parsearg.add_argument('--targbrightest', action='store_true', help='Take brightest object as target')
+parsearg.add_argument('--molcolour', type=str, default='b', help='main Object colour')
+parsearg.add_argument('--hilalpha', type=float, default=0.75, help='Object alpha')
 
 resargs = vars(parsearg.parse_args())
 ffname = resargs['file'][0]
-
-libfile = os.path.expanduser(resargs['libfile'])
-
-objinf = objinfo.ObjInfo()
-try:
-    objinf.loadfile(libfile)
-except objinfo.ObjInfoError as e:
-    if e.warningonly:
-        print  >>sys.stderr, "(Warning) file does not exist:", libfile
-    else:
-        print >>sys.stderr,  "Error loading file", e.args[0]
-        sys.exit(30)
-
-# The reason why we don't get RA and DECL info out of this is because we have
-# to adjust for proper motion which requires Python 3 (as the versions of astropy that
-# support it only run with that)
 
 # Shut up warning messages
 
@@ -112,22 +82,10 @@ trimbottom = resargs['trimbottom']
 trimleft = resargs['trimleft']
 trimright = resargs['trimright']
 
-nsigfind = resargs['nsigfind']
-
-searchrad = resargs['searchrad']
-target = resargs['target']
-if target is not None:
-    try:
-        target = objinf.get_main(target)
-    except objinfo.ObjInfoError as e:
-        print >>sys.stderr, e.args[0]
-        sys.exit(30)
+mainobjs = resargs['mainobjs']
 mainap = resargs['mainap']
-targcolour = resargs['targcolour']
-objcolour = resargs['objcolour']
+maincolour = resargs['molcolour']
 hilalpha  = resargs['hilalpha']
-targbrightest = resargs['targbrightest']
-accadjust = targbrightest or resargs['accadjust']
 
 if flatfile is not None:
     ff = fits.open(flatfile)
@@ -174,7 +132,6 @@ plotfigure = plt.figure(figsize=(10,12))
 plotfigure.canvas.set_window_title('FITS Image')
 
 med = np.median(imagedata)
-sigma = imagedata.std()
 mx = imagedata.max()
 fi = imagedata.flatten()
 fi = fi[fi > med]
@@ -274,103 +231,20 @@ for dfld in ('DATE-OBS', 'DATE', '_ATE'):
         odt = ffhdr[dfld]
         break
 
-# Reduce pruned list to objusts that could be in image
-
-targobj = None
-pruned_objlist = []
-for objl in objinf.list_objects(odt):
-    obj, ra, dec = objl
-    if ra < ramin or ra > ramax: continue
-    if dec < decmin or dec > decmax: continue
-    if obj.objname == target:
-        targobj = objl
-        if not targbrightest:
-            pruned_objlist.append(targobj)
-    else:
-        pruned_objlist.append(objl)
-
-# Look for objects but eliminate duplicate finds
-
-nodup_objlist = []
-radsq = mainap**2
-adjras = []
-adjdecs = []
-
-if targbrightest:
-    if targobj is None:
-        print >>sys.stderr, "Did not find target", target, "within image coords"
-        sys.exit(60)
-    tobj, targra, targdec = targobj
-    objpixes = w.coords_to_pix(((targra, targdec),))[0]
-    brightest = findbrightest.findbrightest(imagedata, tobj.get_aperture(mainap))
-    if brightest is None:
-        print >>sys.stderr, "Could not find a brightest object"
-        sys.exit(61)
-    ncol, nrow, nadu = brightest
-    rlpix = ((int(round(ncol)), int(nrow)), )
-    rarloc = w.pix_to_coords(rlpix)[0]
-    nodup_objlist.append((ncol, nrow, nadu, objpixes, targra, targdec, rarloc, tobj))
-    adjras.append(rarloc[0]-targra)
-    adjdecs.append(rarloc[1]-targdec)
-    
-for mtch in pruned_objlist:
-    m, objra, objdec = mtch
-    adjra = objra
-    adjdec = objdec
-    if accadjust and len(adjras) != 0:
-        adjra += np.mean(adjras)
-        adjdec += np.mean(adjdecs)
-    objpixes = w.coords_to_pix(((adjra, adjdec),))[0]
-    nearestobj = findnearest.findnearest(imagedata, objpixes, mainap, searchrad, med + sigma * nsigfind)
-    if nearestobj is None:
-        continue
-    ncol, nrow, nadu = nearestobj
-    try:
-        for m2 in nodup_objlist:
-            if (m2[0] - ncol) ** 2 + (m2[1] - nrow) ** 2 < radsq:
-                raise duplication("dup")
-        rlpix = ((int(round(ncol)), int(nrow)), )
-        rarloc = w.pix_to_coords(rlpix)[0]
-        nodup_objlist.append((ncol, nrow, nadu, objpixes, objra, objdec, rarloc, m))
-        adjras.append(rarloc[0]-objra)
-        adjdecs.append(rarloc[1]-objdec)
-    except duplication:
-        pass
-     
-ax = plt.gca()
-nfound = 0
-hadtarg = False
-for mtch in nodup_objlist:
-    ncol, nrow, nadu, objpixes, objra, objedec, rarloc, m = mtch
-    dcol = objcolour
-    if m.objname == target:
-        dcol = targcolour
-        hadtarg = True
-    rlpix = ((int(round(ncol)), int(nrow)), )
-    rarloc = w.pix_to_coords(rlpix)[0]
-    print m.objname + ': ',
-    print "Pix offserts", ncol-objpixes[0], nrow-objpixes[1]
-    print "RA orrsets", rarloc[0]-ra,rarloc[1]-dec
-    newcoords = (ncol,nrow)
-    ptch = mp.Circle(newcoords, radius=m.get_aperture(mainap), alpha=hilalpha,color=dcol, fill=False)
-    ax.add_patch(ptch)
-    nfound += 1
-
 tit = ffhdr['OBJECT'] + ' on ' + string.replace(odt, 'T', ' at ') + ' filter ' + ffhdr['FILTER']
-if nfound == 0:
-    tit += " No objs found"
-elif nfound == 1:
-    if hadtarg:
-        tit += " only target found"
-    else:
-        tit += " 1 obj, no target found"
-else:
-    tit += " %d objects found" % nfound
-    if hadtarg:
-        tit += " including target"
-
 plt.title(tit)
 
+if mainobjs is not None:
+    ax = plt.gca()
+    maint = np.loadtxt(mainobjs)
+    sel = (maint[:,0] >= ramin) & (maint[:,0] <= ramax) & (maint[:,1] >= decmin) & (maint[:,1] <= decmax)
+    maint = maint[sel]
+    for m in maint:
+        ra = m[0]
+        dec = m[1]
+        bcol, brow = w.coords_to_pix(((ra, dec),))[0]
+        ptch = mp.Circle((bcol,brow), radius=mainap, alpha=hilalpha,color=maincolour, fill=False)
+        ax.add_patch(ptch)
 if figout is None:
     plt.show()
 else:

@@ -77,26 +77,21 @@ else:
 objlist = objinf.list_objects()
 
 if ramin is not None:
-    objlist = [oitem for oitem in objlist if oitem.get_ra() >= ramin]
+    objlist = [oitem for oitem in objlist if oitem[1] >= ramin]
 if ramax is not None:
-    objlist = [oitem for oitem in objlist if oitem.get_ra() <= ramax]
+    objlist = [oitem for oitem in objlist if oitem[1] <= ramax]
 if decmin is not None:
-    objlist = [oitem for oitem in objlist if oitem.get_dec() >= decmin]
+    objlist = [oitem for oitem in objlist if oitem[2] >= decmin]
 if decmax is not None:
-    objlist = [oitem for oitem in objlist if oitem.get_dec() <= decmax]
+    objlist = [oitem for oitem in objlist if oitem[2] <= decmax]
 
 outf = open(outfile, "w")
 
-for oitem in objlist:
-    rastr = oitem.rightasc
-    decstr = oitem.decl
-    # We don't have to worry about those being None because list_objects won't have returned them
+for oitem, raval, decval in objlist:
     distance = oitem.dist
     rv = oitem.rv
     if rv is None:
         rv = 0
-    raval = rastr.getvalue(odt)
-    decval = decstr.getvalue(odt)
     mag = oitem.mag
     magerr = oitem.magerr
     if mag is None:
@@ -105,5 +100,3 @@ for oitem in objlist:
     if magerr is None:
         magerr = 0
     print >>outf, "%.16e %.16e %.16e, %.16e %s" % (raval, decval, mag, magerr, oitem.objname)
-
-    
