@@ -19,6 +19,8 @@ import miscutils
 import objinfo
 import findnearest
 import findbrightest
+import calcadus
+import remgeom
 
 class duplication(Exception):
     """Throw to get out of duplication loop"""
@@ -31,21 +33,20 @@ parsearg.add_argument('--cutoff', type=float, help='Reduce maxima to this value'
 parsearg.add_argument('--trim', action='store_true', help='Trim trailing empty pixels')
 parsearg.add_argument('--flatfile', type=str, help='Flat file to use')
 parsearg.add_argument('--biasfile', type=str, help='Bias file to use')
-parsearg.add_argument('--trimbottom', type=int, help='Pixels to trim off bottom of picture')
-parsearg.add_argument('--trimleft', type=int, help='Pixels to trim off left of picture')
-parsearg.add_argument('--trimright', type=int, help='Pixels to trim off right of picture')
 parsearg.add_argument('--searchrad', type=int, default=20, help='Search radius in pixels')
 parsearg.add_argument('--target', type=str, help='Name of target')
 parsearg.add_argument('--mainap', type=int, default=6, help='main aperture radius')
 parsearg.add_argument('--nsigfind', default=3.0, type=float, help='Sigmas of ADUs to consider significant')
 parsearg.add_argument('--accadjust', action='store_true', help='Accumulate adjustments')
 parsearg.add_argument('--targbrightest', action='store_true', help='Take brightest object as target')
-parsearg.add_argument('--skylevel', type=float, help='Value to subtract for sky level otherwise use median')
+parsearg.add_argument('--skylevel', type=float, default=50.0, help='perecntile to subtract for sky level default median')
 
 resargs = vars(parsearg.parse_args())
 ffnames = resargs['files']
 
 libfile = os.path.expanduser(resargs['libfile'])
+
+rg = remgeom.load()
 
 objinf = objinfo.ObjInfo()
 try:
@@ -73,10 +74,6 @@ trimem = resargs['trim']
 
 flatfile = resargs['flatfile']
 biasfile = resargs['biasfile']
-
-trimbottom = resargs['trimbottom']
-trimleft = resargs['trimleft']
-trimright = resargs['trimright']
 
 nsigfind = resargs['nsigfind']
 
@@ -123,7 +120,7 @@ for ffname in ffnames:
         imagedata = trimarrays.trimzeros(imagedata)
         (bdatc, ) = trimarrays.trimto(imagedata, bdat)
 
-    imagedata -= bdatc
+    imagedata -= bdat
     if flatfile is not None:
         imagedata /= fdat
 
@@ -132,24 +129,19 @@ for ffname in ffnames:
     if cutoff > 0.0:
         imagedata = np.clip(imagedata, None, cutoff)
 
-    if trimbottom is not None:
-        imagedata = imagedata[trimbottom:]
-        w.set_offsets(yoffset=trimbottom)
+    if rg.trims.bottom is not None:
+        imagedata = imagedata[rg.trims.bottom:]
+        w.set_offsets(yoffset=rg.trims.bottom)
     
-    if trimleft is not None:
-        imagedata = imagedata[:,trimleft:]
-        w.set_offsets(xoffset=trimleft)
+    if rg.trims.left is not None:
+        imagedata = imagedata[:,rg.trims.left:]
+        w.set_offsets(xoffset=rg.trims.left)
 
-    if trimright is not None:
-        imagedata = imagedata[:,0:-trimright]
+    if rg.trims.right is not None:
+        imagedata = imagedata[:,0:-rg.trims.right]
 
-    if skylevel is None:
-        med = np.median(imagedata)
-    else:
-        med = skylevel
+    med = np.median(imagedata)
     sigma = imagedata.std()
-    imagedata = np.clip(imagedata-med, 0, None)
-    mx = imagedata.max()
 
     # OK get coords of edges of picture
 
@@ -191,7 +183,7 @@ for ffname in ffnames:
 
     if targbrightest:
         if targobj is None:
-            print >>sys.stderr, "Did not find target", target, "within image coords"
+            print >>sys.stderr, "Did not find target", target, "within image coords in file", ffname
             continue
         tobj, targra, targdec = targobj
         objpixes = w.coords_to_pix(((targra, targdec),))[0]
@@ -234,11 +226,25 @@ for ffname in ffnames:
      
     if Hadtarg is None:
         continue
-    ept = odt.strftime("%Y-%m-%d %H-%M-%S:")
-    print ept, "sky level:", "%.4g" % med
-    targadu = Hadtarg[2]
+    
+    perc = np.percentile(imagedata, skylevel)
+    imagedata = np.clip(imagedata-perc, 0, None)
+    mx = imagedata.max()
+    
+    # Recalculate ADUs having taken off sky level
+    
+    rcadulist = []
     for mtch in nodup_objlist:
         ncol, nrow, nadu, objpixes, objra, objdec,rarloc, m = mtch
+        (rcadus, rcount) = calcadus.calcadus(imagedata, mtch, m.get_aperture(mainap))
+        rcadulist.append((ncol, nrow, rcadus, rcount, objpixes, objra, objdec,rarloc, m))
+        if m.objname == target: Hadtarg = rcadulist[-1]
+        
+    ept = odt.strftime("%Y-%m-%d %H-%M-%S:")
+    print ept, "sky level:", "%.4g" % perc
+    targadu = Hadtarg[2]
+    for mtch in rcadulist:
+        ncol, nrow, nadu, ncount, objpixes, objra, objdec,rarloc, m = mtch
         if m.objname != target:
 			print "%s %s %.6g %.6g" % (ept, m.objname, nadu, targadu / nadu)
         else:

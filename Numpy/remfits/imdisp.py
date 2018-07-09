@@ -20,6 +20,7 @@ import miscutils
 import objinfo
 import findnearest
 import findbrightest
+import remgeom
 
 class duplication(Exception):
     """Throw to get out of duplication loop"""
@@ -41,9 +42,6 @@ parsearg.add_argument('--deccolour', type=str, help='Colour of DEC lines')
 parsearg.add_argument('--figout', type=str, help='File to putput figure to')
 parsearg.add_argument('--flatfile', type=str, help='Flat file to use')
 parsearg.add_argument('--biasfile', type=str, help='Bias file to use')
-parsearg.add_argument('--trimbottom', type=int, help='Pixels to trim off bottom of picture')
-parsearg.add_argument('--trimleft', type=int, help='Pixels to trim off left of picture')
-parsearg.add_argument('--trimright', type=int, help='Pixels to trim off right of picture')
 parsearg.add_argument('--searchrad', type=int, default=20, help='Search radius in pixels')
 parsearg.add_argument('--target', type=str, help='Name of target')
 parsearg.add_argument('--mainap', type=int, default=6, help='main aperture radius')
@@ -58,6 +56,8 @@ resargs = vars(parsearg.parse_args())
 ffname = resargs['file'][0]
 
 libfile = os.path.expanduser(resargs['libfile'])
+
+rg = remgeom.load()
 
 objinf = objinfo.ObjInfo()
 try:
@@ -108,10 +108,6 @@ figout = resargs['figout']
 flatfile = resargs['flatfile']
 biasfile = resargs['biasfile']
 
-trimbottom = resargs['trimbottom']
-trimleft = resargs['trimleft']
-trimright = resargs['trimright']
-
 nsigfind = resargs['nsigfind']
 
 searchrad = resargs['searchrad']
@@ -160,17 +156,17 @@ w = wcscoord.wcscoord(ffhdr)
 if cutoff > 0.0:
     imagedata = np.clip(imagedata, None, cutoff)
 
-if trimbottom is not None:
-    imagedata = imagedata[trimbottom:]
-    w.set_offsets(yoffset=trimbottom)
-if trimleft is not None:
-    imagedata = imagedata[:,trimleft:]
-    w.set_offsets(xoffset=trimleft)
+if rg.trims.bottom != 0:
+    imagedata = imagedata[rg.trims.bottom:]
+    w.set_offsets(yoffset=rg.trims.bottom)
+if rg.trims.left != 0:
+    imagedata = imagedata[:,rg.trims.left:]
+    w.set_offsets(xoffset=rg.trims.left)
 
-if trimright is not None:
-    imagedata = imagedata[:,0:-trimright]
+if rg.trims.right != 0:
+    imagedata = imagedata[:,0:-rg.trims.right]
 
-plotfigure = plt.figure(figsize=(10,12))
+plotfigure = plt.figure(figsize=(rg.width, rg.height))
 plotfigure.canvas.set_window_title('FITS Image')
 
 med = np.median(imagedata)
