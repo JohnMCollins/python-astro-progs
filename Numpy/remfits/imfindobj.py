@@ -97,8 +97,8 @@ try:
     rfinf.loadfile(resultsfile)
     if rfinf.basedir != cwd:
         rfinf.set_basedir(cwd)
-    if rfinf.target is not None and rfinf.target != target:
-        print >>Sys.stderr, "target fo", targetname, "does not match that in file of", rfinf.target
+    if rfinf.targname is not None and rfinf.targname != target:
+        print >>Sys.stderr, "target for", targetname, "does not match that in file of", rfinf.targname
         sys.exit(20)
 except remfitsobj.RemObjError as e:
     if e.warningonly:
@@ -263,7 +263,7 @@ for ffname in ffnames:
         else:
             newobjlist.addobj(objdets)
     
-    newobjlist.airmass = ffhd['AIRMASS']
+    newobjlist.airmass = ffhdr['AIRMASS']
     rfinf.addobs(newobjlist, updateok)
 
 if resargs['basedir'] is not None:

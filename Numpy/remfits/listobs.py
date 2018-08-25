@@ -56,6 +56,7 @@ parsearg = argparse.ArgumentParser(description='List available observations',
 
 parsearg.add_argument('--fromdate', type=str, help='Earlist date to list from')
 parsearg.add_argument('--todate', type=str, help='Latest date to list from (same as fromdate if that specified')
+parsearg.add_argument('--allmonth', type=str, help='All of given year-month as alternative to from/to date')
 parsearg.add_argument('--objects', type=str, nargs='*', help='Objects to llimit to')
 parsearg.add_argument('--dither', type=int, nargs='*', help='Dither ID to limits to')
 parsearg.add_argument('--filter', type=str, nargs='*', help='filters to llimit to')
@@ -69,6 +70,7 @@ fd = parsedate(resargs['fromdate'])
 td = parsedate(resargs['todate'])
 if td is None:
     td = fd
+allmonth = resargs['allmonth']
 objlist = resargs['objects']
 dither = resargs['dither']
 filters = resargs['filter']
@@ -83,7 +85,14 @@ mydb = dbops.opendb('remfits')
 dbcurs = mydb.cursor()
 
 sel = ""
-if fd is not None:
+if fd is None:
+    if allmonth is not None:
+        mtch = re.match('(\d\d\d\d)-(\d+)$', allmonth)
+        if mtch is None:
+            print >>sys.stderr, "Cannot understand allmonth arg " + allmonth;
+            sys.exit(31)
+        sel += "(date_obs>='"+allmonth+"-01' AND date_obs<=date_sub(date_add('"+allmonth+"-01',interval 1 month),interval 1 second))"
+else:
     sel += "(date_obs>='" + fd + " 00:00:00' AND date_obs<='" + td + " 23:59:59')"
 
 if objlist is not None:

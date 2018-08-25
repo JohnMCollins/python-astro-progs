@@ -81,8 +81,8 @@ autils.suppress_vo_warnings()
 resultsfile = resargs['results']
 results = remfitsobj.RemobjSet()
 try:
-    results.load(resultsfile)
-except objinfo.ObjInfoError as e:
+    results.loadfile(resultsfile)
+except remfitsobj.RemObjError as e:
     print >>sys.stderr,  "Error loading results file", resultsfile, e.args[0]
     sys.exit(30)
 
@@ -177,14 +177,14 @@ for ob in oblist:
     tobjinf = objinf.get_object(target)
     
     tobj.apradius = tobjinf.get_aperture(mainap)
-    (tadus, terr) = calcadus.calcadus(imagedate, errorarray, w.relpix((tobj.pixcol, tobj.pixrow)), tobj.apradius)
+    (tadus, terr) = calcadus.calcadus(imagedata, errorarray, w.relpix((tobj.pixcol, tobj.pixrow)), tobj.apradius)
     tobj.aducount = tadus
     tobj.aduerror = terr
     
     for tobj in ob.objlist:
         tobjinf = objinf.get_object(tobj.objname)
         tobj.apradius = tobjinf.get_aperture(mainap)
-        (tadus, terr) = calcadus.calcadus(imagedate, errorarray, w.relpix((tobj.pixcol, tobj.pixrow)), tobj.apradius)
+        (tadus, terr) = calcadus.calcadus(imagedata, errorarray, w.relpix((tobj.pixcol, tobj.pixrow)), tobj.apradius)
         tobj.aducount = tadus
         tobj.aduerror = terr
 

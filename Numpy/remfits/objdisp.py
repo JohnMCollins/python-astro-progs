@@ -64,6 +64,7 @@ parsearg.add_argument('--trim', action='store_true', help='Trim trailing empty p
 parsearg.add_argument('--flatfile', type=str, help='Flat file to use')
 parsearg.add_argument('--biasfile', type=str, help='Bias file to use')
 parsearg.add_argument('--mainap', type=int, default=6, help='main aperture radius')
+parsearg.add_argument('--maxfig', type=int, default=20, help='Max number of figures when displaying')
 
 resargs = vars(parsearg.parse_args())
 libfile = os.path.expanduser(resargs['libfile'])
@@ -94,8 +95,8 @@ autils.suppress_vo_warnings()
 resultsfile = resargs['results']
 results = remfitsobj.RemobjSet()
 try:
-    results.load(resultsfile)
-except objinfo.ObjInfoError as e:
+    results.loadfile(resultsfile)
+except remfitsobj.RemObjError as e:
     print >>sys.stderr,  "Error loading results file", resultsfile, e.args[0]
     sys.exit(30)
 
@@ -138,7 +139,7 @@ flatfile = resargs['flatfile']
 biasfile = resargs['biasfile']
 
 mainap = resargs['mainap']
-skylevel = resargs['skylevel']
+maxfig = resargs['maxfig']
 
 if flatfile is not None:
     ff = fits.open(flatfile)
@@ -167,6 +168,7 @@ for ob in oblist:
     ffname = ob.filename
     ffile = fits.open(ffname)
     ffhdr = ffile[0].header
+    hdrfilter = ffhdr['FILTER']
 
     imagedata = ffile[0].data.astype(np.float64)
     
@@ -312,7 +314,7 @@ for ob in oblist:
         ptch = mp.Circle(tcoords, radius=aprad, alpha=hilalpha, color=objcolour, fill=False)
         ax.add_patch(ptch)
     
-    tit = odt.strftime("%Y-%m-%d %H:%M:%S") + " filter " + filter + " objs found: " + str(len(ob.objlist))
+    tit = odt.strftime("%Y-%m-%d %H:%M:%S") + " filter " + hdrfilter + " objs found: " + str(len(ob.objlist))
     plt.title(tit)
     
     ndone += 1
@@ -321,6 +323,8 @@ for ob in oblist:
         figoutp = miscutils.removesuffix(figout, 'png')
         figoutp += ".%.3d" % ndone
         plotfigure.savefig(figoutp + '.png')
+    elif ndone >= maxfig:
+        break
 
 if figout is None:
     plt.show()
