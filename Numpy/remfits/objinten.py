@@ -1,5 +1,12 @@
 #! /usr/bin/env python
 
+# @Author: John M Collins <jmc>
+# @Date:   2018-08-13T17:29:08+01:00
+# @Email:  jmc@toad.me.uk
+# @Filename: objinten.py
+# @Last modified by:   jmc
+# @Last modified time: 2018-10-01T14:42:05+01:00
+
 from astropy.io import fits
 from astropy import wcs
 from astropy.utils.exceptions import AstropyWarning, AstropyUserWarning
@@ -122,17 +129,17 @@ oblist = results.getobslist(filter = filter, firstdate = firstdate, lastdate = l
 if len(oblist) == 0:
     print >>sys.stderr, "Sorry no observations found try finding some more"
     sys.exit(1)
-    
+
 sqrt12 = 1.0/math.sqrt(12.0)
 
 for ob in oblist:
-    
+
     ffname = ob.filename
     ffile = fits.open(ffname)
     ffhdr = ffile[0].header
 
     imagedata = ffile[0].data.astype(np.float64)
-    
+
     if biasfile is None:
         bdat = np.zeros_like(imagedata)
 
@@ -144,7 +151,7 @@ for ob in oblist:
 
     imagedata -= bdat
     errorarray = np.full(imagedata.shape, sqrt12)
-    
+
     if flatfile is not None:
         imagedata /= fdat
         errorarray /= fdat
@@ -155,7 +162,7 @@ for ob in oblist:
         imagedata = imagedata[rg.trims.bottom:]
         errorarray = errorarray[rg.trims.bottom:]
         w.set_offsets(yoffset=rg.trims.bottom)
-    
+
     if rg.trims.left is not None:
         imagedata = imagedata[:,rg.trims.left:]
         errorarray = errorarray[:,rg.trims.left:]
@@ -164,27 +171,35 @@ for ob in oblist:
     if rg.trims.right is not None:
         imagedata = imagedata[:,0:-rg.trims.right]
         errorarray = errorarray[:,0:-rg.trims.right]
-    
+
     # Adjust to sky level and store what we used
-    
+
     perc = np.percentile(imagedata, skylevel)
     imagedata -= perc
     mx = imagedata.max()
     ob.percentile = skylevel
     ob.skylevel = perc
-        
+
     tobj = ob.target
     tobjinf = objinf.get_object(target)
-    
+
     tobj.apradius = tobjinf.get_aperture(mainap)
-    (tadus, terr) = calcadus.calcadus(imagedata, errorarray, w.relpix((tobj.pixcol, tobj.pixrow)), tobj.apradius)
+    try:
+        (tadus, terr) = calcadus.calcadus(imagedata, errorarray, w.relpix((tobj.pixcol, tobj.pixrow)), tobj.apradius)
+    except calcadus.calcaduerror as e:
+        print >>sys.stderr, "Error in target file", ffname, e.args[0]
+        continue
     tobj.aducount = tadus
     tobj.aduerror = terr
-    
+
     for tobj in ob.objlist:
         tobjinf = objinf.get_object(tobj.objname)
         tobj.apradius = tobjinf.get_aperture(mainap)
-        (tadus, terr) = calcadus.calcadus(imagedata, errorarray, w.relpix((tobj.pixcol, tobj.pixrow)), tobj.apradius)
+        try:
+            (tadus, terr) = calcadus.calcadus(imagedata, errorarray, w.relpix((tobj.pixcol, tobj.pixrow)), tobj.apradius)
+        except calcadus.calcaduerror as e:
+            print >>sys.stderr, "Error in obj", obj.objname, "file", ffname, e.args[0]
+            continue
         tobj.aducount = tadus
         tobj.aduerror = terr
 

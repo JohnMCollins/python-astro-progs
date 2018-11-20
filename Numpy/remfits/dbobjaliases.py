@@ -1,0 +1,100 @@
+#!  /usr/bin/env python
+
+# @Author: John M Collins <jmc>
+# @Date:   2018-10-12T15:05:17+01:00
+# @Email:  jmc@toad.me.uk
+# @Filename: dbobjaliases.py
+# @Last modified by:   jmc
+# @Last modified time: 2018-11-18T15:25:38+00:00
+
+# Update aliases
+
+import argparse
+import sys
+import dbops
+
+parsearg = argparse.ArgumentParser(description='Create/delete alias names for objects', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+parsearg.add_argument('names', nargs='*', type=str, help='Main name followed by aliases')
+parsearg.add_argument('--delete', action='store_true', help='Delete aliases main name not needed')
+parsearg.add_argument('--alldelete', action='store_true', help='Delete all aliases for main name')
+parsearg.add_argument('--source', type=str, default='By hand', help='Source of alias names')
+parsearg.add_argument('--verbose', action='store_true', help='Give info about what is happening')
+parsearg.add_argument('--list', action='store_true', help='Just list existing aliases')
+
+resargs = vars(parsearg.parse_args())
+
+objnames = resargs['names']
+delete = resargs['delete']
+alldelete = resargs['alldelete']
+source = resargs['source']
+verbose = resargs['verbose']
+listem = resargs['list']
+
+mydb = dbops.opendb('remfits')
+dbcurs = mydb.cursor()
+
+if listem:
+    dbcurs.execute("SELECT objname,alias,source FROM objalias ORDER BY objname,alias,source")
+    stuff = dbcurs.fetchall()
+    tabs = []
+    nsize = 0
+    asize = 0
+    for row in stuff:
+        name,alias,source = row
+        nsize = max(nsize,len(name)+1)
+        asize = max(asize, len(alias)+1)
+        tabs.append(row)
+    lastname = ""
+    for row in tabs:
+        name,alias,source = row
+        if name == lastname:
+            print " " * nsize,
+        else:
+            print name + " " * (nsize-len(name)),
+            lastname = name
+        print alias + " " * (asize -len(alias)),
+        print source
+    sys.exit(0)
+
+if alldelete:
+    for name in objnames:
+        ndone = dbcurs.execute("DELETE FROM objalias WHERE objname=" + mydb.escape(name))
+        if verbose:
+            print >>sys.stderr, "Deleted", ndone, "alises from", name
+    mydb.commit()
+    sys.exit(0)
+
+if delete:
+    for name in objnames:
+        ndone = dbcurs.execute("DELETE FROM objalias WHERE alias=" + mydb.escape(name))
+        if verbose:
+            if ndone > 0:
+                print >>sys.stderr, "Deleted", name, "OK"
+            else:
+                print >>sys.stderr, "Did not delete", name
+    mydb.commit()
+    sys.exit(0)
+
+if len(objnames) < 2:
+    print >>sys.stderr, "Expecting alias names for", mainname
+    sys.exit(10)
+
+mainname = objnames.pop(0)
+qmainname = mydb.escape(mainname)
+dbcurs.execute("SELECT COUNT(*) FROM objdata where objname=" + qmainname)
+ndone = dbcurs.fetchall()
+if ndone[0][0] == 0:
+    print >>sys.stderr, "Unknown object name", mainname
+    sys.exit(1)
+
+qsource = mydb.escape(source)
+
+for name in objnames:
+    qname = mydb.escape(name)
+    ndone = dbcurs.execute("DELETE FROM objalias WHERE alias=" + qname)
+    if verbose and ndone > 0:
+        print >>sys.stderr, "Deleted old alias", name
+    ndone = dbcurs.execute("INSERT INTO objalias (objname,alias,source) VALUES (" + qmainname + "," + qname + "," + qsource + ")")
+    if  verbose and ndone > 0:
+        print >>sys.stderr, "Added new alias", name, "for", mainname
+mydb.commit()

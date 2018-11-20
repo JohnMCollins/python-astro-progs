@@ -1,5 +1,12 @@
 #! /usr/bin/env python
 
+# @Author: John M Collins <jmc>
+# @Date:   2018-08-25T10:48:07+01:00
+# @Email:  jmc@toad.me.uk
+# @Filename: imfindobj.py
+# @Last modified by:   jmc
+# @Last modified time: 2018-10-01T17:47:46+01:00
+
 from astropy.io import fits
 from astropy import wcs
 from astropy.utils.exceptions import AstropyWarning, AstropyUserWarning
@@ -36,6 +43,7 @@ parsearg.add_argument('--trim', action='store_true', help='Trim trailing empty p
 parsearg.add_argument('--flatfile', type=str, help='Flat file to use')
 parsearg.add_argument('--biasfile', type=str, help='Bias file to use')
 parsearg.add_argument('--searchrad', type=int, default=20, help='Search radius in pixels')
+parsearg.add_argument('--maxadj', type=float, default=3, help='Max adjustment to RA/DEC in arcmin')
 parsearg.add_argument('--target', type=str, help='Name of target')
 parsearg.add_argument('--mainap', type=int, default=6, help='main aperture radius')
 parsearg.add_argument('--nsigfind', default=3.0, type=float, help='Sigmas of ADUs to consider significant')
@@ -83,6 +91,7 @@ biasfile = resargs['biasfile']
 nsigfind = resargs['nsigfind']
 
 searchrad = resargs['searchrad']
+maxadj = (resargs['maxadj'] / 60.0) ** 2
 targetname = resargs['target']
 if targetname is not None:
     try:
@@ -90,7 +99,7 @@ if targetname is not None:
     except objinfo.ObjInfoError as e:
         print >>sys.stderr, e.args[0]
         sys.exit(30)
-        
+
 rfinf = remfitsobj.RemobjSet(target)
 cwd = rfinf.basedir
 try:
@@ -132,7 +141,7 @@ for ffname in ffnames:
     ffhdr = ffile[0].header
 
     imagedata = ffile[0].data.astype(np.float64)
-    
+
     if biasfile is None:
         bdat = np.zeros_like(imagedata)
 
@@ -154,7 +163,7 @@ for ffname in ffnames:
     if rg.trims.bottom is not None:
         imagedata = imagedata[rg.trims.bottom:]
         w.set_offsets(yoffset=rg.trims.bottom)
-    
+
     if rg.trims.left is not None:
         imagedata = imagedata[:,rg.trims.left:]
         w.set_offsets(xoffset=rg.trims.left)
@@ -182,7 +191,7 @@ for ffname in ffnames:
     if odt is None:
         print >>sys.stderr, "Did not find time in file", ffname
         continue
-        
+
     # Reduce pruned list to objusts that could be in image
 
     targobj = None
@@ -219,11 +228,16 @@ for ffname in ffnames:
         ncol, nrow, nadu = brightest
         rlpix = ((int(round(ncol)), int(nrow)), )
         rarloc = w.pix_to_coords(rlpix)[0]
+        adjra = rarloc[0]-targra
+        adjdec = rarloc[1]-targdec
+        if adjra**2 + adjdec**2 > maxadj:
+            print >>sys.stderr, "Offset of brighest object too big in file", ffname
+            continue
         nodup_objlist.append((ncol, nrow, nadu, objpixes, targra, targdec, rarloc, tobj))
         Hadtarg = nodup_objlist[-1]
-        adjras.append(rarloc[0]-targra)
-        adjdecs.append(rarloc[1]-targdec)
-    
+        adjras.append(adjra)
+        adjdecs.append(adjdec)
+
     for mtch in pruned_objlist:
         m, objra, objdec = mtch
         adjra = objra
@@ -248,11 +262,11 @@ for ffname in ffnames:
             adjdecs.append(rarloc[1]-objdec)
         except duplication:
             pass
-     
+
     if Hadtarg is None:
         print >>sys.stderr, "Algorithm did not find target", target, "within image coords in file", ffname
         continue
-    
+
     newobjlist = remfitsobj.Remobjlist(ffname, odt.mjd, ffhdr['FILTER'])
     for mtch in nodup_objlist:
         ncol, nrow, nadu, objpixes, objra, objdec, rarloc, m = mtch
@@ -262,7 +276,7 @@ for ffname in ffnames:
             newobjlist.addtarget(objdets)
         else:
             newobjlist.addobj(objdets)
-    
+
     newobjlist.airmass = ffhdr['AIRMASS']
     rfinf.addobs(newobjlist, updateok)
 

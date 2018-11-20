@@ -1,5 +1,12 @@
 #! /usr/bin/env python
 
+# @Author: John M Collins <jmc>
+# @Date:   2018-08-23T14:20:00+01:00
+# @Email:  jmc@toad.me.uk
+# @Filename: objdisp.py
+# @Last modified by:   jmc
+# @Last modified time: 2018-11-08T21:50:50+00:00
+
 from astropy.io import fits
 from astropy import wcs
 from astropy.utils.exceptions import AstropyWarning, AstropyUserWarning
@@ -164,14 +171,14 @@ if len(oblist) == 0:
 ndone = 0
 
 for ob in oblist:
-    
+
     ffname = ob.filename
     ffile = fits.open(ffname)
     ffhdr = ffile[0].header
     hdrfilter = ffhdr['FILTER']
 
     imagedata = ffile[0].data.astype(np.float64)
-    
+
     if biasfile is None:
         bdat = np.zeros_like(imagedata)
 
@@ -182,7 +189,7 @@ for ob in oblist:
         (bdatc, ) = trimarrays.trimto(imagedata, bdat)
 
     imagedata -= bdat
-    
+
     if flatfile is not None:
         imagedata /= fdat
 
@@ -191,14 +198,14 @@ for ob in oblist:
     if rg.trims.bottom is not None:
         imagedata = imagedata[rg.trims.bottom:]
         w.set_offsets(yoffset=rg.trims.bottom)
-    
+
     if rg.trims.left is not None:
         imagedata = imagedata[:,rg.trims.left:]
         w.set_offsets(xoffset=rg.trims.left)
 
     if rg.trims.right is not None:
         imagedata = imagedata[:,0:-rg.trims.right]
-        
+
     plotfigure = plt.figure(figsize=(rg.width, rg.height))
     plotfigure.canvas.set_window_title('FITS Image')
 
@@ -296,33 +303,34 @@ for ob in oblist:
         plt.ylabel('Dec (deg)')
 
     labax = plotax = plt.gca()
-    
+
     odt = Time(ob.obsdate,format='mjd').datetime
     ax = plt.gca()
-    
+
     tobj = ob.target
     tobjinf = objinf.get_object(target)
     aprad = tobjinf.get_aperture(mainap)
     tcoords = w.relpix((tobj.pixcol, tobj.pixrow))
     ptch = mp.Circle(tcoords, radius=aprad, alpha=hilalpha, color=targcolour, fill=False)
     ax.add_patch(ptch)
-    
+
     for tobj in ob.objlist:
         tobjinf = objinf.get_object(tobj.objname)
         aprad = tobjinf.get_aperture(mainap)
         tcoords = w.relpix((tobj.pixcol, tobj.pixrow))
         ptch = mp.Circle(tcoords, radius=aprad, alpha=hilalpha, color=objcolour, fill=False)
         ax.add_patch(ptch)
-    
-    tit = odt.strftime("%Y-%m-%d %H:%M:%S") + " filter " + hdrfilter + " objs found: " + str(len(ob.objlist))
+
+    tit = odt.strftime("%Y-%m-%d %H:%M:%S") + " filter " + hdrfilter + " objs found: " + str(len(ob.objlist)) + " (" + ffname + ")"
     plt.title(tit)
-    
+
     ndone += 1
 
     if figout is not None:
         figoutp = miscutils.removesuffix(figout, 'png')
         figoutp += ".%.3d" % ndone
         plotfigure.savefig(figoutp + '.png')
+        plt.close(plotfigure)
     elif ndone >= maxfig:
         break
 
