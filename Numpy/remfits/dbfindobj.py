@@ -5,7 +5,7 @@
 # @Email:  jmc@toad.me.uk
 # @Filename: imfindobj.py
 # @Last modified by:   jmc
-# @Last modified time: 2018-11-19T15:45:15+00:00
+# @Last modified time: 2018-11-20T23:38:48+00:00
 
 from astropy.io import fits
 from astropy import wcs
@@ -32,9 +32,22 @@ import dbobjinfo
 import dbremfitsobj
 import math
 
-class duplication(Exception):
-    """Throw to get out of duplication loop"""
-    pass
+class FoundData(object):
+    """Record a putative found object"""
+
+    def __init__(self, dist, name, col, row, ra, dec, raadj, decadj, apsize):
+        self.dist = dist
+        self.name = name
+        self.col = col
+        self.row = row
+        self.ra = ra
+        self.dec = dec
+        self.raadj = raadj
+        self.decadj = decadj
+        self.apsize = apsize
+
+    def __hash__(self):
+        return  self.col * 100000 + self.row
 
 parsearg = argparse.ArgumentParser(description='Locate objects in DB FITS files', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 parsearg.add_argument('--target', type=str, help='Name of target', required=True)
@@ -118,8 +131,6 @@ flattab, biastab = dbremfitsobj.get_nearest_forbinf(dbcurs, year, month)
 nresults = 0
 
 for filter in 'girz':
-
-    print >>sys.stderr, "starting filter", filter
 
     # First get flat and bias files for month
 
@@ -217,11 +228,6 @@ for filter in 'girz':
         # Fetch list of object which might exist from database
 
         possible_objects = dbobjinfo.get_objlist(dbcurs, racent, deccent, dbsrad, odt)
-        print >>sys.stderr, "Possible object search"
-        for po in possible_objects:
-            radeg, decdeg, objt = po
-            print >>sys.stderr, objt.objname, radeg, decdeg
-
         if len(possible_objects) < 2:
             p = len(possible_objects)
             if p == 0:
@@ -267,13 +273,9 @@ for filter in 'girz':
 
         # If we take target as brightest object, then find that first then others
 
-        foundlist = []
-        adjras = []
-        adjdecs = []
+        clookup = dict()
 
-        print >>sys.stderr, "At beginning of search, pruned_objlist length=", len(pruned_objlist)
         if targbrightest:
-            print >>sys.stderr, "BRIGHTEST case"
             targra, targdec, tobj = targobjpl
             objpixes = w.coords_to_pix(((targra, targdec),))[0]
             brightest = findbrightest.findbrightest(imagedata, tobj.get_aperture(mainap))
@@ -283,60 +285,62 @@ for filter in 'girz':
                     print >>sys.stderr, "Skipping", obsind, "target", targetname, "Could not find brightest image"
                 continue
             ncol, nrow, nadu = brightest
-            rlpix = ((int(round(ncol)), int(nrow)), )
+            ncol = int(round(ncol))
+            nrow = int(round(nrow))
+            rlpix = ((ncol, nrow), )
             rarloc = w.pix_to_coords(rlpix)[0]
             adjra = rarloc[0] - targra
             adjdec = rarloc[1] - targdec
-            if adjra**2 + adjdec**2 > maxadj:
-                offbr = math.sqrt(adjra**2 + adjdec**2) * 60.0
-                offbrs = "Offset of brightest of %.2f exceeds maximum of %.2f" % (offbr, maxadjr)
+            adj_rad = math.sqrt(adjra**2 + adjdec**2)
+            if adj_rad > maxadjr:
+                offbrs = "Offset of brightest of %.2f exceeds maximum of %.2f" % (adj_rad, maxadjr)
                 dbremfitsobj.add_notfound(dbcurs, obsind, targetname, filter, offbrs, notcurrf = notcurrentflat, apsize = tobj.get_aperture(mainap))
                 if verbose:
                     print >>sys.stderr, "Skipping", obsind, "target", targetname, maxbrs
                 continue
-            adjras.append(adjra)
-            adjdecs.append(adjdec)
-            foundlist.append((targetname, ncol, nrow, rarloc[0], rarloc[1], tobj.get_aperture(mainap)))
+            newf = FoundData(adj_rad, targetname, ncol, nrow, rarloc[0], rarloc[1], rarloc[0] - targra, rarloc[1] - targdec, tobj.get_aperture(mainap))
+            clookup[newf] = newf
 
             # Now look for other objects (which don't include target)
 
             for possible in pruned_objlist:
                 objra, objdec, m = possible
-                print >>sys.stderr, "Looking for", m.objname
                 adjra = objra
                 adjdec = objdec
                 # If we're tracking adjustments, adjust by average amount so far
                 if accadjust:
-                    adjra += np.mean(adjras)
-                    adjdec += np.mean(adjdecs)
+                    adjra += np.mean([x.raadj for x in clookup.values()])
+                    adjdec += np.mean([x.decadj for x in clookup.values()])
                 objpixes = w.coords_to_pix(((adjra, adjdec),))[0]
                 nearestobj = findnearest.findnearest(imagedata, objpixes, mainap, searchrad, med + sigma * nsigfind)
                 if nearestobj is None:
-                    print >>sys.stderr, "Not found"
                     continue
                 ncol, nrow, nadu = nearestobj
-                rlpix = ((int(round(ncol)), int(nrow)), )
+                ncol = int(round(ncol))
+                nrow = int(round(nrow))
+                rlpix = ((ncol, nrow), )
                 rarloc = w.pix_to_coords(rlpix)[0]
                 adjra = rarloc[0] - objra
                 adjdec = rarloc[1] - objdec
-                if adjra**2 + adjdec**2 > maxadj:
-                    print >>sys.stderr, "Too far away"
+                adj_rad = math.sqrt(adjra**2 + adjdec**2)
+                if adj_rad > maxadjr:
                     continue
-                adjras.append(rarloc[0] - objra)
-                adjdecs.append(rarloc[1] - objdec)
-                foundlist.append((m.objname, ncol, nrow, rarloc[0], rarloc[1], mainap))
-                print >>sys.stderr, "Found it"
+                newf = FoundData(adj_rad, m.objname, ncol, nrow, rarloc[0], rarloc[1], adjra, adjdec, mainap)
+                try:
+                    oldf = clookup[newf]
+                    if oldf.dist > newf.dist and oldf.objname != targetname:
+                        clookup[newf] = newf
+                except KeyError:
+                    clookup[newf] = newf
         else:
-            print >>sys.stderr, "Non brightest case"
             for possible in pruned_objlist:
                 objra, objdec, m = possible
-                print >>sys.stderr, "FN Looking for", m.objname
                 adjra = objra
                 adjdec = objdec
                 # If we're tracking adjustments, adjust by average amount so far
-                if accadjust and len(adjras) != 0:
-                    adjjra += np.mean(adjras)
-                    adjdec += np.mean(adjdecs)
+                if accadjust and len(clookup) != 0:
+                    adjra += np.mean([x.raadj for x in clookup.values()])
+                    adjdec += np.mean([x.decadj for x in clookup.values()])
                 objpixes = w.coords_to_pix(((adjra, adjdec),))[0]
                 nearestobj = findnearest.findnearest(imagedata, objpixes, mainap, searchrad, med + sigma * nsigfind)
                 if nearestobj is None:
@@ -344,33 +348,38 @@ for filter in 'girz':
                 if m.objname == targetname:
                     targobjpl = possible
                 ncol, nrow, nadu = nearestobj
-                rlpix = ((int(round(ncol)), int(nrow)), )
+                ncol = int(round(ncol))
+                nrow = int(round(nrow))
+                rlpix = ((ncol, nrow), )
                 rarloc = w.pix_to_coords(rlpix)[0]
                 adjra = rarloc[0] - objra
                 adjdec = rarloc[1] - objdec
-                if adjra**2 + adjdec**2 > maxadj:
+                adj_rad = math.sqrt(adjra**2 + adjdec**2)
+                if adj_rad > maxadjr:
                     continue
-                adjras.append(rarloc[0] - objra)
-                adjdecs.append(rarloc[1] - objdec)
-                foundlist.append((m.objname, ncol, nrow, rarloc[0], rarloc[1], mainap))
+                newf = FoundData(adj_rad, m.objname, ncol, nrow, rarloc[0], rarloc[1], adjra, adjdec, mainap)
+                try:
+                    oldf = clookup[newf]
+                    if oldf.dist > newf.dist and oldf.objname != targetname:
+                        clookup[newf] = newf
+                except KeyError:
+                    clookup[newf] = newf
 
-        print >>sys.stderr, "RA adjs", adjras, "DEC adjs", adjdecs
         if targobjpl is None:
             dbremfitsobj.add_notfound(dbcurs, obsind, targetname, filter, "Failed to find targer", notcurrf = notcurrentflat, apsize = mainap, searchrad = searchrad)
             if verbose:
                 print >>sys.stderr, "Skipping", obsind, "target", targetname, "not found in image"
             continue
 
-        if len(foundlist) < 2:
+        if len(clookup) < 2:
             dbremfitsobj.add_notfound(dbcurs, obsind, targetname, filter, "No reference objects found", notcurrf = notcurrentflat, apsize = mainap, searchrad = searchrad)
             if verbose:
                 print >>sys.stderr, "Skipping", obsind, "target", targetname, "No reference objects found"
             continue
 
-        for result in foundlist:
-            objname, ncol, nrow, radeg, decdeg, apsize = result
-            ncol, nrow = w.abspix((ncol, nrow))
-            dbremfitsobj.add_objident(dbcurs, obsind, targetname, objname, filter, ncol, nrow, radeg, decdeg, apsize, searchrad, notcurrf = notcurrentflat)
+        for result in clookup.values():
+            ncol, nrow = w.abspix((result.col, result.row))
+            dbremfitsobj.add_objident(dbcurs, obsind, targetname, result.name, filter, ncol, nrow, result.ra, result.dec, result.apsize, searchrad, notcurrf = notcurrentflat)
             nresults += 1
 
 if verbose:
