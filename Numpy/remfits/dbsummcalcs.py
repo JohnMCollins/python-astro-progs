@@ -5,7 +5,7 @@
 # @Email:  jmc@toad.me.uk
 # @Filename: dblcurvegen.py
 # @Last modified by:   jmc
-# @Last modified time: 2018-11-22T20:40:38+00:00
+# @Last modified time: 2018-12-02T10:15:44+00:00
 
 import numpy as np
 import argparse
@@ -32,7 +32,7 @@ qtarg = dbase.escape(targetname)
 dbcurs.execute("SELECT objname,COUNT(*) AS number FROM aducalc WHERE target=" + qtarg + " GROUP BY objname ORDER BY number DESC")
 flist = dbcurs.fetchall()
 
-nlen = max([len(p[0]) for p in flist])
+nlen = max([0] + [len(p[0]) for p in flist])
 
 for name, num in flist:
     print name, " " * (nlen - len(name)), "%5d" % num

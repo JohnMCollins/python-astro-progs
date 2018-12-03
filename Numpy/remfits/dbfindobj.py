@@ -5,7 +5,7 @@
 # @Email:  jmc@toad.me.uk
 # @Filename: imfindobj.py
 # @Last modified by:   jmc
-# @Last modified time: 2018-11-20T23:38:48+00:00
+# @Last modified time: 2018-11-29T21:33:55+00:00
 
 from astropy.io import fits
 from astropy import wcs
@@ -265,12 +265,6 @@ for filter in 'girz':
                 print >>sys.stderr, "Skipping", obsind, "target", targetname, "not available in image"
             continue
 
-        if nother == 0:
-            dbremfitsobj.add_notfound(dbcurs, obsind, targetname, filter, "No possible other objects in range for image", notcurrf = notcurrentflat)
-            if verbose:
-                print >>sys.stderr, "Skipping", obsind, "target", targetname, "only possible object in image"
-            continue
-
         # If we take target as brightest object, then find that first then others
 
         clookup = dict()
@@ -369,12 +363,6 @@ for filter in 'girz':
             dbremfitsobj.add_notfound(dbcurs, obsind, targetname, filter, "Failed to find targer", notcurrf = notcurrentflat, apsize = mainap, searchrad = searchrad)
             if verbose:
                 print >>sys.stderr, "Skipping", obsind, "target", targetname, "not found in image"
-            continue
-
-        if len(clookup) < 2:
-            dbremfitsobj.add_notfound(dbcurs, obsind, targetname, filter, "No reference objects found", notcurrf = notcurrentflat, apsize = mainap, searchrad = searchrad)
-            if verbose:
-                print >>sys.stderr, "Skipping", obsind, "target", targetname, "No reference objects found"
             continue
 
         for result in clookup.values():

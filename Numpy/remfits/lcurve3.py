@@ -5,7 +5,7 @@
 # @Email:  jmc@toad.me.uk
 # @Filename: lcurve3.py
 # @Last modified by:   jmc
-# @Last modified time: 2018-11-22T23:31:08+00:00
+# @Last modified time: 2018-12-02T22:53:08+00:00
 
 import matplotlib.pyplot as plt
 import matplotlib.patches as mp
@@ -16,10 +16,12 @@ import argparse
 import sys
 import string
 import datetime
+import dateutil
 import parsetime
 
 parsearg = argparse.ArgumentParser(description='Plot light curves', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-parsearg.add_argument('file', type=str, nargs='+', help='imtabulate results files')
+parsearg.add_argument('file', type=str, nargs='+', help='Results files from dblcuregen')
+parsearg.add_argument('--columns', type=str, help='Columns to select for reference objects')
 parsearg.add_argument('--fromdate', type=str, help='Earliest date/time to select')
 parsearg.add_argument('--todate', type=str, help='Latest date/time to select')
 parsearg.add_argument('--title', type=str, default='Light curve', help='Title for plot')
@@ -32,6 +34,10 @@ parsearg.add_argument('--line', action='store_true', help='Use line plots rather
 
 resargs = vars(parsearg.parse_args())
 fnames = resargs['file']
+columns = resargs['columns']
+if columns is not None:
+    columns = map(lambda x: int(x),string.split(columns, ','))
+title = resargs['title']
 fromdate = resargs['fromdate']
 todate = resargs['todate']
 tit = resargs['title']
@@ -75,19 +81,32 @@ maxdate = None
 for flin in fnames:
     f, leg, colour = string.split(flin, ':')
     parts = []
+    lcount = 0
     for lin in open(f):
-        bits = string.split(lin, ' ')
-        try:
-            fd = bits[0] + ' ' + bits[1]
-            fd = fd[0:-1]
-            dt = datetime.datetime.strptime(fd, "%Y-%m-%d %H-%M-%S")
-        except ValueError:
-            print "Had val error with date", fd
+        bits = string.split(lin)
+        lcount += 1
+        if lcount < 3:
             continue
+        dt = dateutil.parser.parse(bits.pop(0))
         if fromdate is not None and (fromdate > dt or todate < dt):
             continue
-        rat = float(bits[2])
-        parts.append((dt, rat))
+
+        targinten = float(bits[0])
+        if columns is not None:
+            denom = 0.0
+            try:
+                for c in columns:
+                    p = float(bits[c])
+                    if p < 0.0:
+                        raise ValueError
+                    denom += p
+            except ValueError:
+                continue
+            if denom <= 0.0:
+                continue
+            targinten /= denom
+
+        parts.append((dt, targinten))
 
     if len(parts) == 0: continue
 
