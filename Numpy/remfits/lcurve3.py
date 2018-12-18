@@ -5,7 +5,7 @@
 # @Email:  jmc@toad.me.uk
 # @Filename: lcurve3.py
 # @Last modified by:   jmc
-# @Last modified time: 2018-12-02T22:53:08+00:00
+# @Last modified time: 2018-12-09T19:30:05+00:00
 
 import matplotlib.pyplot as plt
 import matplotlib.patches as mp
@@ -14,23 +14,58 @@ from matplotlib import colors
 import numpy as np
 import argparse
 import sys
+import math
 import string
 import datetime
 import dateutil
 import parsetime
+import remgeom
+
+def make_bucket(lastdate, bacc):
+    """Make a bucket out of a section of the points"""
+
+    global  stdclip, clipped
+
+    if stdclip > 0.0:
+        intens = np.array([targinten/denom for targinten, denom, obsind, dt in bacc])
+        bmean = np.mean(intens)
+        bstd = np.std(intens) * stdclip
+        if bstd > 0.0:
+            intens -= bmean
+            newbacc = []
+            for inten, bb in zip(intens, bacc):
+                if abs(inten) > bstd:
+                    diff = (inten * stdclip) / bstd
+                    clipped.append((bb[2], bb[3], diff))
+                else:
+                    newbacc.append(bb)
+            bacc = newbacc
+
+    tis = [x[0] for x in bacc]
+    rfs = [x
+    [1] for x in bacc]
+    return  (lastdate, len(bacc), np.sum(tis), np.sum(rfs), np.std(tis), np.std(rfs))
 
 parsearg = argparse.ArgumentParser(description='Plot light curves', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 parsearg.add_argument('file', type=str, nargs='+', help='Results files from dblcuregen')
 parsearg.add_argument('--columns', type=str, help='Columns to select for reference objects')
 parsearg.add_argument('--fromdate', type=str, help='Earliest date/time to select')
 parsearg.add_argument('--todate', type=str, help='Latest date/time to select')
+parsearg.add_argument('--forcerange', action='store_true', help='Force x asis to fit from/to dates')
+parsearg.add_argument('--margin', type=int, default=0, help='Margin on x asix in minutes or days')
 parsearg.add_argument('--title', type=str, default='Light curve', help='Title for plot')
-parsearg.add_argument('--width', type=float, default=10.0, help='Width of plot')
-parsearg.add_argument('--height', type=float, default=12.0, help='height of plot')
+parsearg.add_argument('--legends', action='store_false', help='Turn on/off legend')
 parsearg.add_argument('--printdates', action='store_true', help='Print dates oN x axis')
 parsearg.add_argument('--dayint', type=int, help='Interval between dates')
 parsearg.add_argument('--outfig', type=str, help='Output file rather than display')
 parsearg.add_argument('--line', action='store_true', help='Use line plots rather than scatter')
+parsearg.add_argument('--bucket', action='store_true', help='Bucket days')
+parsearg.add_argument('--sepbuck', type=int, default=12, help='Bucket separation in hours')
+parsearg.add_argument('--buckls', type=str, default='none', help='Line style for error bars')
+parsearg.add_argument('--normalise', type=str, default='none', help='Normalisation none/range/all')
+parsearg.add_argument('--marker', type=str, default=',', help='Marker style for scatter plot')
+parsearg.add_argument('--stdclip', type=float, default=0.0, help='Number of std devs to clip results')
+parsearg.add_argument('--clipfile', type=str, help='File to objsinds of clipped results')
 
 resargs = vars(parsearg.parse_args())
 fnames = resargs['file']
@@ -40,12 +75,23 @@ if columns is not None:
 title = resargs['title']
 fromdate = resargs['fromdate']
 todate = resargs['todate']
+margin = resargs['margin']
 tit = resargs['title']
-width = resargs['width']
-height = resargs['height']
-printdates = resargs['printdates']
+plegend = resargs['legends']
+bucket = resargs['bucket']
+buckls = resargs['buckls']
+printdates = resargs['printdates'] or bucket
 dayint = resargs['dayint']
 lineplot = resargs['line']
+sepbuck = resargs['sepbuck']
+marker = resargs['marker']
+normalise = resargs['normalise']
+if len(normalise) == 0 or normalise[0] not in 'arn':
+    print >>sys.stderr, "Normalise argument unknown please use n/r/a"
+    sys.exit(10)
+normalise = normalise[0]
+stdclip = resargs['stdclip']
+clipfile = resargs['clipfile']
 
 if fromdate is not None:
     fromdate = parsetime.parsetime(fromdate)
@@ -58,7 +104,10 @@ if fromdate is not None:
         if todate.hour == 0 and todate.minute == 0:
             todate = datetime.datetime(todate.year, todate.month, todate.day, 23, 59, 59)
 
-plt.figure(figsize=(width,height))
+forcerange = resargs['forcerange']
+
+rg = remgeom.load()
+plt.figure(figsize=(rg.width, rg.height))
 
 hrloc = mdates.HourLocator()
 minloc = mdates.MinuteLocator()
@@ -77,6 +126,9 @@ ax.xaxis.set_major_formatter(df)
 legs = []
 mindate = None
 maxdate = None
+objectnames = None
+
+clipped = []
 
 for flin in fnames:
     f, leg, colour = string.split(flin, ':')
@@ -86,12 +138,25 @@ for flin in fnames:
         bits = string.split(lin)
         lcount += 1
         if lcount < 3:
-            continue
-        dt = dateutil.parser.parse(bits.pop(0))
-        if fromdate is not None and (fromdate > dt or todate < dt):
+            # Extract object names from first line
+            if lcount == 1:
+                bits.pop(0)
+                bits.pop(0)
+                if objectnames is None:
+                    objectnames = bits
+                else:
+                    for o,b in zip(objectnames, bits):
+                        if o != b:
+                            print >>sys.stderr, "Objectnames differ between files", string.join(objectnames, ','), "-v-", string.join(bits, ',')
+                            sys.exit(200)
             continue
 
+        dt = dateutil.parser.parse(bits.pop(0))
+        obsind = int(bits.pop(0))
+
         targinten = float(bits[0])
+        denom = 1.0
+
         if columns is not None:
             denom = 0.0
             try:
@@ -104,14 +169,106 @@ for flin in fnames:
                 continue
             if denom <= 0.0:
                 continue
-            targinten /= denom
+            #targinten /= denom
 
-        parts.append((dt, targinten))
+        parts.append((dt, obsind, targinten, denom))
 
-    if len(parts) == 0: continue
+    if len(parts) == 0:
+        continue
 
-    dates = [p[0] for p in parts]
-    rats = [rat[-1] for rat in parts]
+    if stdclip > 0.0 and not bucket:
+        clippedsome = 0
+        intlist = np.array([ targinten / denom for dt, obsind, targinten, denom in parts ])
+        mint = np.mean(intlist)
+        mstd = np.std(intlist)
+        denom = mint * mstd
+        intlist -= mint
+        newparts = []
+        for inten, p in zip(intlist, parts):
+            diff = inten / denom
+            if abs(diff) > stdclip:
+                clipped.append((p[1], p[0], diff))
+                clippedsome += 1
+            else:
+                newparts.append(p)
+
+            if clippedsome > 0:
+                parts = newparts
+                if len(parts) == 0:
+                    continue
+
+    if bucket:
+        diffsepbuck = datetime.timedelta(hours=sepbuck)
+        lastdate = datetime.datetime(2000, 1, 1, 0, 0, 0)
+        bparts = []
+        bacc = []
+        for dt, obsind, targinten, denom in parts:
+            if dt - lastdate > diffsepbuck:
+                if len(bacc) != 0:
+                    tis = [x[0] for x in bacc]
+                    rfs = [x[1] for x in bacc]
+                    bparts.append(make_bucket(lastdate, bacc))
+                    bacc = []
+                lastdate = dt
+            bacc.append((targinten, denom, obsind, dt))
+        if  len(bacc) != 0:
+            bparts.append(make_bucket(lastdate, bacc))
+
+        # Now assemble parts array as (date, value, error)
+        # Also apply normalisation
+
+        parts = []
+        for dt, num, targinten, refinten, targstd, refstd in bparts:
+            errmult = math.sqrt(float(num))
+            targerr = targstd * errmult
+            if columns is not None:
+                referr = refstd * errmult
+                targerr = math.sqrt((targerr/targinten)**2 + (referr/refinten)**2)
+                targinten /= refinten
+            else:
+                targinten /= float(num)
+            parts.append((dt, targinten, targerr))
+
+        if normalise == 'a':
+            meanval = np.mean([inten for dt,inten,err in parts])
+            parts = [(dt, inten/meanval, err/meanval) for dt, inten, err in parts]
+        if fromdate is not None:
+            parts = [(dt, inten, err) for dt, inten, err in parts if dt >= fromdate and dt <= todate]
+        if len(parts) == 0:
+            continue
+        if normalise == 'r':
+            meanval = np.mean([inten for dt,inten,err in parts])
+            parts = [(dt, inten/meanval, err/meanval) for dt, inten, err in parts]
+
+        dates = [p[0] for p in parts]
+        rats = [rat[1] for rat in parts]
+        errs = [err[2] for err in parts]
+
+        plt.errorbar(dates, rats, errs, color=colour, linestyle=buckls, fmt='o')
+
+    else:
+
+        if columns is not None:
+            parts = [(dt, obsind, inten/refinten, 1.0) for dt, obsind, inten, refinten in parts]
+
+        if normalise == 'a':
+            meanval = np.mean([inten for dt, obsind, inten, refinten in parts])
+            parts = [(dt, obsind, inten/meanval, 1.0) for dt, obsind, inten, refinten in parts]
+        if fromdate is not None:
+            parts = [(dt, obsind, inten, 1.0) for dt, obsind, inten, refinten in parts if dt >= fromdate and dt <= todate]
+        if len(parts) == 0:
+            continue
+        if normalise == 'r':
+            meanval = np.mean([inten for dt, obsind, inten, refinten in parts])
+            parts = [(dt, obsind, inten/meanval) for dt, obsind, inten,refinten in parts]
+
+        dates = [p[0] for p in parts]
+        rats = [rat[2] for rat in parts]
+
+        if lineplot:
+            plt.plot(dates, rats, color=colour)
+        else:
+            plt.scatter(dates, rats, color=colour, marker=marker)
 
     mind = min(dates)
     maxd = max(dates)
@@ -124,27 +281,42 @@ for flin in fnames:
     else:
         maxdate = max(maxdate, maxd)
 
-    dates = np.array(dates)
-    rats = np.array(rats)
-    sa = dates.argsort()
-
-    if lineplot:
-        plt.plot(dates[sa], rats[sa], color=colour)
-    else:
-        pdates = dates[sa]
-        offset = min(pdates[-1]-pdates[-2],pdates[1]-pdates[0])
-        plt.xlim(pdates.min() - offset, pdates.max() + offset)
-        plt.scatter(pdates, rats[sa], color=colour)
-
     legs.append(leg)
 
-plt.legend(legs)
+if len(clipped) != 0 and clipfile is not None:
+    print clipped
+    clipped.sort(key=lambda x: -abs(x[2]))
+    clipout = open(clipfile, "wt")
+    for obsind, dt, idiff in clipped:
+        print >>clipout, dt.isoformat(), "%8d %.6e" % (obsind, idiff)
+    clipout.close()
+
+if len(legs) == 0:
+    print >>sys.stderr, "Nothing to plot"
+    sys.exit(1)
+
+if plegend:
+    plt.legend(legs)
+
+if not lineplot:
+    fd = mindate
+    td = maxdate
+    if margin != 0:
+        if printdates:
+            offs = datetime.timedelta(days=margin)
+        else:
+            offs = datetime.timedelta(minutes=margin)
+        fd -= offs
+        td += offs
+    if forcerange and fromdate is not None:
+        fd = fromdate
+        td = todate
+    plt.xlim(fd, td)
 
 ylo, yhi = plt.ylim()
 if ylo < 0.0:
 	plt.gca().set_ylim(0, yhi)
 
-#plt.legend(legs, loc='best')
 if printdates:
     if dayint is None:
         dayint = 1
@@ -161,7 +333,25 @@ else:
         dlist = [mindate + datetime.timedelta(seconds=s) for s in np.linspace(0, tsecs, dayint)]
         plt.xticks(dlist, rotation=90)
     plt.xlabel("Time of observation HH:MM")
-plt.ylabel("Brightness relative to reference object")
+
+targname = objectnames[0]
+relto = ""
+if columns is not None:
+    relto = [objectnames[c] for c in columns]
+    if len(relto) == 1:
+        relto = relto[0]
+    else:
+        relto = "sum of" + string.join(relto, ', ')
+    relto = " relative to sum of " + relto
+
+ylab = "Brightness of " + targname + relto
+if normalise != 'n':
+    if normalise == "r" and fromdate is not None:
+        ylab += " norm to range"
+    else:
+        ylab += " norm to all obs"
+
+plt.ylabel(ylab)
 plt.title(tit)
 ofig = resargs['outfig']
 if ofig is None:

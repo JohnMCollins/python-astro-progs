@@ -5,7 +5,7 @@
 # @Email:  jmc@toad.me.uk
 # @Filename: dblcurvegen.py
 # @Last modified by:   jmc
-# @Last modified time: 2018-12-02T22:43:37+00:00
+# @Last modified time: 2018-12-05T21:42:47+00:00
 
 import numpy as np
 import argparse
@@ -16,10 +16,10 @@ import dbops
 import dbobjinfo
 import dbremfitsobj
 
-def make_resultsrow(dat, adudict):
+def make_resultsrow(dat, ind, adudict):
     """Make up results row"""
     global objnames
-    r = [dat]
+    r = [dat, ind]
     for obn in objnames:
         try:
             p = adudict[obn]
@@ -66,14 +66,14 @@ last_date = None
 for obsind, dateobs, objname, aducount in aduresults:
     if obsind != last_obsind:
         if last_date is not None:
-            results.append(make_resultsrow(last_date, aducounts))
+            results.append(make_resultsrow(last_date, last_obsind, aducounts))
         aducounts = dict()
         last_date = dateobs
         last_obsind = obsind
     aducounts[objname] = aducount
 
 if last_date is not None:
-    results.append(make_resultsrow(last_date, aducounts))
+    results.append(make_resultsrow(last_date, last_obsind, aducounts))
 
 if len(results) < 2:
     print >>sys.stderr, "Not enough results to display"
@@ -86,12 +86,12 @@ else:
 
 lengths = [max(14,len(x)) for x in objnames]
 
-print >>outf, "%-19s" % "-",
+print >>outf, "%-19s" % "-","%8s" % '-',
 for l, obn in zip(lengths, objnames):
     print >>outf, "%*s" % (l, obn),
 print >>outf
 
-print >>outf, "%-19s" % "-",
+print >>outf, "%-19s" % "-","%8s" % '-',
 for l, obn in zip(lengths, objnames):
     print >>outf, "%*d" % (l, objnums[obn]),
 
@@ -99,7 +99,8 @@ print >>outf
 
 for r in results:
     dat = r.pop(0)
-    print >>outf, dat.isoformat(),
+    obsind = r.pop(0)
+    print >>outf, dat.isoformat(), "%8d" % obsind,
     n = 0
     while len(r) != 0:
         v = r.pop(0)

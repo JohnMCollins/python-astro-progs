@@ -5,7 +5,7 @@
 # @Email:  jmc@toad.me.uk
 # @Filename: dbobjdisp.py
 # @Last modified by:   jmc
-# @Last modified time: 2018-11-21T21:57:52+00:00
+# @Last modified time: 2018-12-06T15:00:04+00:00
 
 from astropy.io import fits
 from astropy import wcs
@@ -115,7 +115,7 @@ for obsind in obsinds:
     rows = dbcurs.fetchall()
     target, when, filter, fitsind = rows[0]
 
-    if filter not in 'griz':
+    if filter not in 'grizHJK' and filter != 'GRI':
         print >>sys.stderr, "obsid", obsind, "on", when.strftime("%d/%M/%Y"), "for target", target,  "has unsupported filter", filter
         continue
 
@@ -125,32 +125,40 @@ for obsind in obsinds:
 
     # Get appropriate flat/bias files
 
-    flattab, biastab = dbremfitsobj.get_nearest_forbinf(dbcurs, when.year, when.month)
+    if filter in 'griz':
 
-    ftab = flattab[filter]
-    btab = biastab[filter]
+        flattab, biastab = dbremfitsobj.get_nearest_forbinf(dbcurs, when.year, when.month)
 
-    ff = dbremfitsobj.getfits(dbcurs, ftab.fitsind)
-    fdat = trimarrays.trimnan(ff[0].data)
-    ffrows, ffcols = fdat.shape
-    ff.close()
+        ftab = flattab[filter]
+        btab = biastab[filter]
 
-    bf = dbremfitsobj.getfits(dbcurs, btab.fitsind)
-    bdat = bf[0].data
-    bdat = bdat[0:ffrows,0:ffcols]
-    bdat = bdat.astype(np.float64)
+        ff = dbremfitsobj.getfits(dbcurs, ftab.fitsind)
+        fdat = trimarrays.trimnan(ff[0].data)
+        ffrows, ffcols = fdat.shape
+        ff.close()
 
-    # Get actual image data
+        bf = dbremfitsobj.getfits(dbcurs, btab.fitsind)
+        bdat = bf[0].data
+        bdat = bdat[0:ffrows,0:ffcols]
+        bdat = bdat.astype(np.float64)
 
-    ffile = dbremfitsobj.getfits(dbcurs, fitsind)
-    ffhdr = ffile[0].header
-    imagedata = ffile[0].data.astype(np.float64)
-    (imagedata, bdatc) = trimarrays.trimto(fdat, imagedata, bdat)
-    bf.close()
-    ffile.close()
+        # Get actual image data
 
-    imagedata -= bdatc
-    imagedata /= fdat
+        ffile = dbremfitsobj.getfits(dbcurs, fitsind)
+        ffhdr = ffile[0].header
+        imagedata = ffile[0].data.astype(np.float64)
+        (imagedata, bdatc) = trimarrays.trimto(fdat, imagedata, bdat)
+        bf.close()
+        ffile.close()
+
+        imagedata -= bdatc
+        imagedata /= fdat
+
+    else:
+        ffile = dbremfitsobj.getfits(dbcurs, fitsind)
+        ffhdr = ffile[0].header
+        imagedata = ffile[0].data.astype(np.float64)
+        ffile.close()
 
     w = wcscoord.wcscoord(ffhdr)
 
