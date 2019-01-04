@@ -1,7 +1,13 @@
-#!  /usr/bin/env python
+#!  /usr/bin/env python3
+
+# @Author: John M Collins <jmc>
+# @Date:   2019-01-04T14:01:35+00:00
+# @Email:  jmc@toad.me.uk
+# @Filename: copydb.py
+# @Last modified by:   jmc
+# @Last modified time: 2019-01-04T22:49:35+00:00
 
 import dbops
-import string
 import sys
 
 def insert_row(row):
@@ -20,7 +26,7 @@ def insert_row(row):
 	destvals.append("%.16e" % exptime)
 	destvals.append("'" + fname + "'")
 	destvals.append("'" + ffname + "'")
-	destvals = "(" + string.join(destvals, ',') + ")"
+	destvals = "(" + ','.join(destvals) + ")"
 	mycurs.execute(destfields + destvals)
 	rowsadded += 1
 
@@ -42,7 +48,7 @@ destfields.append('exptime')
 destfields.append('fname')
 destfields.append('ffname')
 
-destfields = "INSERT INTO obsinf (" + string.join(destfields, ',') + ") VALUES"
+destfields = "INSERT INTO obsinf (" + ','.join(destfields) + ") VALUES"
 obsfields = "SELECT radeg,decdeg,object,dithID,filter,date_obs,mjdobs,exptime,fname,ffname(date_obs,fname) AS ff FROM Obslog"
 
 # Get the latest date we have copies of
@@ -75,8 +81,7 @@ for row in remcurs.fetchall():
 	insert_row(row)
 
 mydb.commit()
-print rowsadded, "row(s) added"
+print(rowsadded, "row(s) added")
 if rowsadded == 0:
 	sys.exit(1)
 sys.exit(0)
-

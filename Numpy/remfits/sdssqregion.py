@@ -1,4 +1,11 @@
-#!  /usr/bin/env python
+#!  /usr/bin/env python3
+
+# @Author: John M Collins <jmc>
+# @Date:   2019-01-04T22:45:59+00:00
+# @Email:  jmc@toad.me.uk
+# @Filename: sdssqregion.py
+# @Last modified by:   jmc
+# @Last modified time: 2019-01-04T23:17:43+00:00
 
 # Get object data and maintain XML Database
 
@@ -22,7 +29,7 @@ import parsetime
 
 class savedobj(object):
     """Remember details of object for sorting and combining"""
-    
+
     def __init__(self, id, type, ra, dec, mags, magerrs, ninsts = 1):
         self.id = id
         self.type = type
@@ -44,7 +51,7 @@ def is_masked(num):
 
 def combine(obl):
     """Combine a list of objects into one"""
-    
+
     if len(obl) == 1:
         return obl[0]
     cra = [x.ra for x in obl]
@@ -59,7 +66,7 @@ def combine(obl):
         comberr = math.sqrt(np.mean(np.array(magerrl) ** 2))
         s = np.std(magl)
         if s > comberr:
-            print >>sys.stderr, "Object %d at (%.3f,%.3f) overlarge variation filter %s combined %.3f actual %.3f" % (obl[0].id, np.mean(cra), np.mean(cdec), f, comberr, s)
+            print("Object %d at (%.3f,%.3f) overlarge variation filter %s combined %.3f actual %.3f" % (obl[0].id, np.mean(cra), np.mean(cdec), f, comberr, s), file=sys.stderr)
             ov = True
             comberr = s
         cmagerrs[f] = comberr
@@ -96,7 +103,7 @@ else:
     try:
         basetime = parsetime.parsetime(basetime)
     except ValueError:
-        print >>sys.stderr, "Do not understand date", basetime
+        print("Do not understand date", basetime, file=sys.stderr)
         sys.exit(20)
 
 objinf = objinfo.ObjInfo()
@@ -104,17 +111,17 @@ try:
     objinf.loadfile(libfile)
 except objinfo.ObjInfoError as e:
     if e.warningonly:
-        print >>sys.stderr, "(Warning) file does not exist:", libfile
+        print("(Warning) file does not exist:", libfile, file=sys.stderr)
     else:
-        print >>sys.stderr, "Error loading file", e.args[0]
+        print("Error loading file", e.args[0], file=sys.stderr)
         sys.exit(30)
 
 try:
     objd = objinf.get_object(objname)
 except objinfo.ObjInfoError as e:
-    print >>sys.stderr, "Error with object", objname, ":", e.args[0]
+    print("Error with object", objname, ":", e.args[0], file=sys.stderr)
     sys.exit(31)
-    
+
 # Get position of object for 2000 time and and given time
 
 RA2000 = objd.get_ra()
@@ -132,9 +139,9 @@ for l in 'urigz':
 Sdobjs = SDSS.query_region(Objcoord, photoobj_fields=fields,radius=radius*u.deg)
 
 if Sdobjs is None:
-    print >>sys.stderr, "No objects found in region of", objname
+    print("No objects found in region of", objname, file=sys.stderr)
     sys.exit(1)
-    
+
 # Convert to temp type for fiddling with eliminating too faint objs and ones with no mags
 
 convsdobjs = []
@@ -157,13 +164,13 @@ for r in Sdobjs:
 # Sort into order by object type and ra/dec
 
 convsdobjs.sort(key=lambda x: (x.type, x.ra, x.dec))
-print "Number of objects prior to combination =", len(convsdobjs)
+print("Number of objects prior to combination =", len(convsdobjs))
 
 for r in convsdobjs:
-    print "%d %.4f %.4f %d %.3f %.3f %.3f %.3f %.3f %.3f %.3f %.3f" % \
+    print("%d %.4f %.4f %d %.3f %.3f %.3f %.3f %.3f %.3f %.3f %.3f" % \
         (r.id, r.ra, r.dec, r.type, r.mags['g'], r.mags['i'], r.mags['r'], r.mags['z'], \
-         r.magerrs['g'], r.magerrs['i'], r.magerrs['r'], r.magerrs['z'])
-        
+         r.magerrs['g'], r.magerrs['i'], r.magerrs['r'], r.magerrs['z']))
+
 # This is where we merge together 2 or more obs of the same thing
 
 diffrad2 = samerad ** 2
@@ -179,31 +186,31 @@ try:
                 break
             subs.append(next)
         combined.append(combine(subs))
-        curr = next  
+        curr = next
 except IndexError:
     if len(subs) != 0:
         combined.append(combine(subs))
-        
-print "Number of objects after combination = ", len(combined)
+
+print("Number of objects after combination = ", len(combined))
 
 for r in combined:
     s = ""
     obn = ""
     if r.variable: s = "(var)"
-    print "%d %.4f %.4f %d %.3f %.3f %.3f %.3f %.3f %.3f %.3f %.3f (%d) %s" % \
+    print("%d %.4f %.4f %d %.3f %.3f %.3f %.3f %.3f %.3f %.3f %.3f (%d) %s" % \
          (r.id, r.ra, r.dec, r.type, r.mags['g'], r.mags['i'], r.mags['r'], r.mags['z'], \
-          r.magerrs['g'], r.magerrs['i'], r.magerrs['r'], r.magerrs['z'], r.ninsts, s)
-         
+          r.magerrs['g'], r.magerrs['i'], r.magerrs['r'], r.magerrs['z'], r.ninsts, s))
+
 libobj_curr = objinf.list_objects(basetime)
 
 for p in combined:
     for obj, ra, dec in libobj_curr:
         if (ra - p.ra)**2 + (dec - p.dec)**2 <= diffrad2:
             if p.obj is not None:
-                print >>sys.stderr, "Same match radius too large clashing with", p.obj.objname, "and", obj.objname
+                print("Same match radius too large clashing with", p.obj.objname, "and", obj.objname, file=sys.stderr)
                 sys.exit(2)
             p.obj = obj
-            print "identified object type %d at (%.4f,%.4f)" % (p.type, p.ra, p.dec), "as", p.obj.objname
+            print("identified object type %d at (%.4f,%.4f)" % (p.type, p.ra, p.dec), "as", p.obj.objname)
             break
 
 if not addobjs:
@@ -214,12 +221,12 @@ for p in combined:
     if obj is None:
         objname = "SDSS" + str(p.id)
         objtype = "star"
-        if p.type == 3: objtype = "galaxy"  
+        if p.type == 3: objtype = "galaxy"
         obj = objinfo.ObjData(objname = objname, objtype = objtype, ra = p.ra, dec = p.dec)
         objinf.add_object(obj)
     objinf.add_aliases(obj, "SDSS", str(p.id))
     for f in 'urigz':
         obj.set_mag(filter = f, value = p.mags[f], err = p.magerrs[f], force = force)
-    
+
 objinf.savefile()
-print "Saved new file"
+print("Saved new file")

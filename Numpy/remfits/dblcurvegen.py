@@ -1,11 +1,11 @@
-#! /usr/bin/env python
+#! /usr/bin/env python3
 
 # @Author: John M Collins <jmc>
 # @Date:   2018-11-22T17:05:35+00:00
 # @Email:  jmc@toad.me.uk
 # @Filename: dblcurvegen.py
 # @Last modified by:   jmc
-# @Last modified time: 2018-12-05T21:42:47+00:00
+# @Last modified time: 2019-01-04T22:57:35+00:00
 
 import numpy as np
 import argparse
@@ -16,10 +16,10 @@ import dbops
 import dbobjinfo
 import dbremfitsobj
 
-def make_resultsrow(dat, ind, adudict):
+def make_resultsrow(dat, ind, exptime, adudict):
     """Make up results row"""
     global objnames
-    r = [dat, ind]
+    r = [dat, ind, exptime]
     for obn in objnames:
         try:
             p = adudict[obn]
@@ -55,28 +55,30 @@ for objname, num in flist:
     objnames.append(objname)
     objnums[objname] = num
 
-p = "SELECT obsind,date_obs,objname,aducount FROM aducalc WHERE filter=" + dbase.escape(filter) + " AND percentile=%.3f" % percentile + " AND target=" + qtarg + " ORDER BY date_obs"
+p = "SELECT obsind,date_obs,objname,aducount,exptime FROM aducalc WHERE filter=" + dbase.escape(filter) + " AND percentile=%.3f" % percentile + " AND target=" + qtarg + " ORDER BY date_obs"
 dbcurs.execute(p)
 aduresults = dbcurs.fetchall()
 
 results = []
 last_obsind = -1
+last_exptime = None
 last_date = None
 
-for obsind, dateobs, objname, aducount in aduresults:
+for obsind, dateobs, objname, aducount, exptime in aduresults:
     if obsind != last_obsind:
         if last_date is not None:
-            results.append(make_resultsrow(last_date, last_obsind, aducounts))
+            results.append(make_resultsrow(last_date, last_obsind, last_exptime, aducounts))
         aducounts = dict()
         last_date = dateobs
         last_obsind = obsind
+        last_exptime = exptime
     aducounts[objname] = aducount
 
 if last_date is not None:
-    results.append(make_resultsrow(last_date, last_obsind, aducounts))
+    results.append(make_resultsrow(last_date, last_obsind, last_exptime, aducounts))
 
 if len(results) < 2:
-    print >>sys.stderr, "Not enough results to display"
+    print("Not enough results to display", file=sys.stderr)
     sys.exit(10)
 
 if outfile is None:
@@ -86,24 +88,25 @@ else:
 
 lengths = [max(14,len(x)) for x in objnames]
 
-print >>outf, "%-19s" % "-","%8s" % '-',
+print("%-19s" % "-","%8s" % '-', "xxx", end=' ', file=outf)
 for l, obn in zip(lengths, objnames):
-    print >>outf, "%*s" % (l, obn),
-print >>outf
+    print("%*s" % (l, obn), end=' ', file=outf)
+print(file=outf)
 
-print >>outf, "%-19s" % "-","%8s" % '-',
+print("%-19s" % "-","%8s" % '-', "xxx", end=' ', file=outf)
 for l, obn in zip(lengths, objnames):
-    print >>outf, "%*d" % (l, objnums[obn]),
+    print("%*d" % (l, objnums[obn]), end=' ', file=outf)
 
-print >>outf
+print(file=outf)
 
 for r in results:
     dat = r.pop(0)
     obsind = r.pop(0)
-    print >>outf, dat.isoformat(), "%8d" % obsind,
+    exptime = r.pop(0)
+    print(dat.isoformat(), "%8d" % obsind, "%.1f" % exptime, end=' ', file=outf)
     n = 0
     while len(r) != 0:
         v = r.pop(0)
-        print >>outf,  "%*.7e" % (lengths[n], v),
+        print("%*.7e" % (lengths[n], v), end=' ', file=outf)
         n += 1
-    print >>outf
+    print(file=outf)

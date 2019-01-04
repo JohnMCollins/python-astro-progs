@@ -1,4 +1,11 @@
-#! /usr/bin/env python
+#! /usr/bin/env python3
+
+# @Author: John M Collins <jmc>
+# @Date:   2019-01-04T22:45:57+00:00
+# @Email:  jmc@toad.me.uk
+# @Filename: imdisp.py
+# @Last modified by:   jmc
+# @Last modified time: 2019-01-04T23:13:26+00:00
 
 from astropy.io import fits
 from astropy import wcs
@@ -6,7 +13,7 @@ from astropy.utils.exceptions import AstropyWarning, AstropyUserWarning
 import astroquery.utils as autils
 import matplotlib.pyplot as plt
 import matplotlib.patches as mp
-from matplotlib import colors 
+from matplotlib import colors
 import numpy as np
 import argparse
 import sys
@@ -64,9 +71,9 @@ try:
     objinf.loadfile(libfile)
 except objinfo.ObjInfoError as e:
     if e.warningonly:
-        print  >>sys.stderr, "(Warning) file does not exist:", libfile
+        print("(Warning) file does not exist:", libfile, file=sys.stderr)
     else:
-        print >>sys.stderr,  "Error loading file", e.args[0]
+        print("Error loading file", e.args[0], file=sys.stderr)
         sys.exit(30)
 
 # The reason why we don't get RA and DECL info out of this is because we have
@@ -116,7 +123,7 @@ if target is not None:
     try:
         target = objinf.get_main(target)
     except objinfo.ObjInfoError as e:
-        print >>sys.stderr, e.args[0]
+        print(e.args[0], file=sys.stderr)
         sys.exit(30)
 mainap = resargs['mainap']
 targcolour = resargs['targcolour']
@@ -294,13 +301,13 @@ adjdecs = []
 
 if targbrightest:
     if targobj is None:
-        print >>sys.stderr, "Did not find target", target, "within image coords"
+        print("Did not find target", target, "within image coords", file=sys.stderr)
         sys.exit(60)
     tobj, targra, targdec = targobj
     objpixes = w.coords_to_pix(((targra, targdec),))[0]
     brightest = findbrightest.findbrightest(imagedata, tobj.get_aperture(mainap))
     if brightest is None:
-        print >>sys.stderr, "Could not find a brightest object"
+        print("Could not find a brightest object", file=sys.stderr)
         sys.exit(61)
     ncol, nrow, nadu = brightest
     rlpix = ((int(round(ncol)), int(nrow)), )
@@ -308,7 +315,7 @@ if targbrightest:
     nodup_objlist.append((ncol, nrow, nadu, objpixes, targra, targdec, rarloc, tobj))
     adjras.append(rarloc[0]-targra)
     adjdecs.append(rarloc[1]-targdec)
-    
+
 for mtch in pruned_objlist:
     m, objra, objdec = mtch
     adjra = objra
@@ -332,7 +339,7 @@ for mtch in pruned_objlist:
         adjdecs.append(rarloc[1]-objdec)
     except duplication:
         pass
-     
+
 ax = plt.gca()
 nfound = 0
 hadtarg = False
@@ -344,9 +351,9 @@ for mtch in nodup_objlist:
         hadtarg = True
     rlpix = ((int(round(ncol)), int(nrow)), )
     rarloc = w.pix_to_coords(rlpix)[0]
-    print m.objname + ': ',
-    print "Pix offserts", ncol-objpixes[0], nrow-objpixes[1]
-    print "RA orrsets", rarloc[0]-ra,rarloc[1]-dec
+    print(m.objname + ': ', end=' ')
+    print("Pix offserts", ncol-objpixes[0], nrow-objpixes[1])
+    print("RA orrsets", rarloc[0]-ra,rarloc[1]-dec)
     newcoords = (ncol,nrow)
     ptch = mp.Circle(newcoords, radius=m.get_aperture(mainap), alpha=hilalpha,color=dcol, fill=False)
     ax.add_patch(ptch)

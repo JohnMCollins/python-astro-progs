@@ -1,11 +1,11 @@
-#! /usr/bin/env python
+#! /usr/bin/env python3
 
 # @Author: John M Collins <jmc>
 # @Date:   2018-11-22T17:05:35+00:00
 # @Email:  jmc@toad.me.uk
 # @Filename: dblcurvegen.py
 # @Last modified by:   jmc
-# @Last modified time: 2018-12-02T10:15:44+00:00
+# @Last modified time: 2019-01-04T22:54:39+00:00
 
 import numpy as np
 import argparse
@@ -35,4 +35,4 @@ flist = dbcurs.fetchall()
 nlen = max([0] + [len(p[0]) for p in flist])
 
 for name, num in flist:
-    print name, " " * (nlen - len(name)), "%5d" % num
+    print(name, " " * (nlen - len(name)), "%5d" % num)

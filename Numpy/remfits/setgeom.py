@@ -1,4 +1,11 @@
-#! /usr/bin/env python
+#! /usr/bin/env python3
+
+# @Author: John M Collins <jmc>
+# @Date:   2019-01-04T22:45:59+00:00
+# @Email:  jmc@toad.me.uk
+# @Filename: setgeom.py
+# @Last modified by:   jmc
+# @Last modified time: 2019-01-04T23:24:29+00:00
 
 import argparse
 import sys
@@ -49,12 +56,12 @@ if trimtop is not None:
     rg.trims.top = trimtop
     changes += 1
 
-print "Width: %.2f" % rg.width
-print "height: %.2f" % rg.height
-print "Trimtop: %d" % rg.trims.top
-print "Trimbottom: %d" % rg.trims.bottom
-print "Trimleft: %d" % rg.trims.left
-print "Trimright: %d" % rg.trims.right
+print("Width: %.2f" % rg.width)
+print("height: %.2f" % rg.height)
+print("Trimtop: %d" % rg.trims.top)
+print("Trimbottom: %d" % rg.trims.bottom)
+print("Trimleft: %d" % rg.trims.left)
+print("Trimright: %d" % rg.trims.right)
 
 if changes > 0:
     remgeom.save(rg)

@@ -1,4 +1,11 @@
-#!  /usr/bin/env python
+#!  /usr/bin/env python3
+
+# @Author: John M Collins <jmc>
+# @Date:   2019-01-04T22:45:58+00:00
+# @Email:  jmc@toad.me.uk
+# @Filename: objaliases.py
+# @Last modified by:   jmc
+# @Last modified time: 2019-01-04T23:27:10+00:00
 
 # Update aliases
 
@@ -29,9 +36,9 @@ try:
     objinf.loadfile(libfile)
 except objinfo.ObjInfoError as e:
     if e.warningonly:
-        print  >>sys.stderr, "(Warning) file does not exist:", libfile
+        print("(Warning) file does not exist:", libfile, file=sys.stderr)
     else:
-        print >>sys.stderr,  "Error loading file", e.args[0]
+        print("Error loading file", e.args[0], file=sys.stderr)
         sys.exit(30)
 
 errors = 0
@@ -40,7 +47,7 @@ if alldelete:
         try:
             alist = objinf.get_aliases(name)
         except objinfo.ObjInfoError as e:
-            print >>sys.stderr, e.args[0]
+            print(e.args[0], file=sys.stderr)
             errors += 1
             continue
         objinf.del_aliases(*alist)
@@ -48,22 +55,22 @@ elif delete:
     try:
         objinf.del_aliases(*objnames)
     except objinfo.ObjInfoError as e:
-        print e.args[0] >>sys.stderr
+        print(e.args[0] >>sys.stderr)
         errors += 1
 else:
     mainname = objnames.pop(0)
     if len(objnames) == 0:
-        print >>sys.stderr, "Expecting aliase names for", mainname
+        print("Expecting aliase names for", mainname, file=sys.stderr)
         errors += 1
     else:
         try:
             objinf.add_aliases(mainname, source, *objnames)
         except objinfo.ObjInfoError as e:
-            print >>sys.stderr, e.args[0]
-            errors += 1        
+            print(e.args[0], file=sys.stderr)
+            errors += 1
 
 if errors > 0:
-    print >>sys.stderr, "Aborting due to errors"
+    print("Aborting due to errors", file=sys.stderr)
     sys.exit(20)
 
 objinf.savefile(libfile)

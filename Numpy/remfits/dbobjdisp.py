@@ -1,11 +1,11 @@
-#! /usr/bin/env python
+#! /usr/bin/env python3
 
 # @Author: John M Collins <jmc>
 # @Date:   2018-08-23T14:20:00+01:00
 # @Email:  jmc@toad.me.uk
 # @Filename: dbobjdisp.py
 # @Last modified by:   jmc
-# @Last modified time: 2018-12-06T15:00:04+00:00
+# @Last modified time: 2019-01-04T23:02:43+00:00
 
 from astropy.io import fits
 from astropy import wcs
@@ -21,7 +21,6 @@ import argparse
 import sys
 import datetime
 import os.path
-import string
 import objcoord
 import trimarrays
 import wcscoord
@@ -109,14 +108,14 @@ for obsind in obsinds:
     nfnd = dbcurs.execute("SELECT object,date_obs,filter,ind FROM obsinf WHERE obsind=" + str(obsind))
 
     if nfnd == 0:
-        print >>sys.stderr, "Unknown obs ind", obsind
+        print("Unknown obs ind", obsind, file=sys.stderr)
         continue
 
     rows = dbcurs.fetchall()
     target, when, filter, fitsind = rows[0]
 
     if filter not in 'grizHJK' and filter != 'GRI':
-        print >>sys.stderr, "obsid", obsind, "on", when.strftime("%d/%M/%Y"), "for target", target,  "has unsupported filter", filter
+        print("obsid", obsind, "on", when.strftime("%d/%M/%Y"), "for target", target,  "has unsupported filter", filter, file=sys.stderr)
         continue
 
     # Get definitive name

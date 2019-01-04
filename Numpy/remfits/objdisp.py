@@ -1,11 +1,11 @@
-#! /usr/bin/env python
+#! /usr/bin/env python3
 
 # @Author: John M Collins <jmc>
 # @Date:   2018-08-23T14:20:00+01:00
 # @Email:  jmc@toad.me.uk
 # @Filename: objdisp.py
 # @Last modified by:   jmc
-# @Last modified time: 2018-11-08T21:50:50+00:00
+# @Last modified time: 2019-01-04T22:55:37+00:00
 
 from astropy.io import fits
 from astropy import wcs
@@ -21,7 +21,6 @@ import argparse
 import sys
 import datetime
 import os.path
-import string
 import objcoord
 import trimarrays
 import wcscoord
@@ -41,7 +40,7 @@ def pmjdate(arg):
     try:
         t = Time(parsetime.parsetime(arg))
     except ValueError:
-        print >>sys.stderr, "Could not understand time arg", arg
+        print("Could not understand time arg", arg, file=sys.stderr)
         sys.exit(50)
     return  t.mjd
 
@@ -83,9 +82,9 @@ try:
     objinf.loadfile(libfile)
 except objinfo.ObjInfoError as e:
     if e.warningonly:
-        print  >>sys.stderr, "(Warning) file does not exist:", libfile
+        print("(Warning) file does not exist:", libfile, file=sys.stderr)
     else:
-        print >>sys.stderr,  "Error loading file", e.args[0]
+        print("Error loading file", e.args[0], file=sys.stderr)
         sys.exit(30)
 
 # The reason why we don't get RA and DECL info out of this is because we have
@@ -104,12 +103,12 @@ results = remfitsobj.RemobjSet()
 try:
     results.loadfile(resultsfile)
 except remfitsobj.RemObjError as e:
-    print >>sys.stderr,  "Error loading results file", resultsfile, e.args[0]
+    print("Error loading results file", resultsfile, e.args[0], file=sys.stderr)
     sys.exit(30)
 
 target = results.targname
 if target is None:
-    print >>sys.stderr, "Results file", resultsfile, "does not have target"
+    print("Results file", resultsfile, "does not have target", file=sys.stderr)
     sys.exit(31)
 
 firstdate = pmjdate(resargs['firstdate'])
@@ -165,7 +164,7 @@ if biasfile is not None:
 oblist = results.getobslist(filter = filter, firstdate = firstdate, lastdate = lastdate)
 
 if len(oblist) == 0:
-    print >>sys.stderr, "Sorry no observations found try finding some more"
+    print("Sorry no observations found try finding some more", file=sys.stderr)
     sys.exit(1)
 
 ndone = 0

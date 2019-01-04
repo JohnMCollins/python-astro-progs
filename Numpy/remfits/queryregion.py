@@ -1,4 +1,11 @@
-#!  /usr/bin/env python
+#!  /usr/bin/env python3
+
+# @Author: John M Collins <jmc>
+# @Date:   2019-01-04T22:45:59+00:00
+# @Email:  jmc@toad.me.uk
+# @Filename: queryregion.py
+# @Last modified by:   jmc
+# @Last modified time: 2019-01-04T23:16:06+00:00
 
 # Get object data and maintain XML Database
 
@@ -51,15 +58,15 @@ try:
     objinf.loadfile(libfile)
 except objinfo.ObjInfoError as e:
     if e.warningonly:
-        print >>sys.stderr, "(Warning) file does not exist:", libfile
+        print("(Warning) file does not exist:", libfile, file=sys.stderr)
     else:
-        print >>sys.stderr, "Error loading file", e.args[0]
+        print("Error loading file", e.args[0], file=sys.stderr)
         sys.exit(30)
 
 try:
     objd = objinf.get_object(objname)
 except objinfo.ObjInfoError as e:
-    print >>sys.stderr, "Error with object", objname, ":", e.args[0]
+    print("Error with object", objname, ":", e.args[0], file=sys.stderr)
     sys.exit(31)
 
 als = objd.list_aliases()
@@ -67,7 +74,7 @@ lookupname = None
 for al in als:
     if al.source == "Simbad":
         LookupError = al.objname
-        break 
+        break
 if lookupname is None:
     lookupname = objd.objname
 
@@ -75,7 +82,7 @@ sb = Simbad()
 sb.add_votable_fields('main_id','otype','ra','dec','distance','pmra','pmdec', 'rv_value', 'fluxdata(' + filter + ')')
 qres = sb.query_region(lookupname, radius=radius * u.arcmin)
 if qres is None:
-    print  >>sys.stderr, "Cannot find", name, "in Simbad"
+    print("Cannot find", name, "in Simbad", file=sys.stderr)
     sys.exit(50)
 
 results = []
@@ -129,7 +136,7 @@ for qr in qres:
     else:
         decstr += '*'
     item = [name, otype, rastr, decstr, distancestr, flux]
-    
+
     l2 = []
     for ll, ii in zip(lengths, item):
         l2.append(max(ll, len(ii)))
@@ -146,14 +153,14 @@ for qr in qres:
 
 namesadded.sort()
 for n in namesadded:
-    print "Added", n
+    print("Added", n)
 
 results.sort(key=lambda y: y[-1])
 for res in results:
     for r, l in zip(res, lengths):
-        print r + " " * (l - len(r)),
-    print "%#.4g" % res[-1]
+        print(r + " " * (l - len(r)), end=' ')
+    print("%#.4g" % res[-1])
 
 if len(namesadded) != 0:
     objinf.savefile()
-    print "Saved new file"
+    print("Saved new file")

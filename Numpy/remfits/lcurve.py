@@ -1,9 +1,16 @@
-#! /usr/bin/env python
+#! /usr/bin/env python3
+
+# @Author: John M Collins <jmc>
+# @Date:   2018-02-28T13:49:01+00:00
+# @Email:  jmc@toad.me.uk
+# @Filename: lcurve.py
+# @Last modified by:   jmc
+# @Last modified time: 2019-01-04T23:14:56+00:00
 
 import matplotlib.pyplot as plt
 import matplotlib.patches as mp
 import matplotlib.dates as mdates
-from matplotlib import colors 
+from matplotlib import colors
 import numpy as np
 import argparse
 import sys
@@ -19,7 +26,7 @@ parsearg.add_argument('--printdates', action='store_true', help='Print dates oN 
 parsearg.add_argument('--dayint', type=int, help='Interval between dates')
 parsearg.add_argument('--outfig', type=str, help='Output file rather than display')
 parsearg.add_argument('--line', action='store_true', help='Use line plots rather than scatter')
-           
+
 resargs = vars(parsearg.parse_args())
 fnames = resargs['file']
 tit = resargs['title']
@@ -66,12 +73,12 @@ for f in fnames:
         ro = float(bits[2])
         rat = float(bits[3])
         parts.append((dt, mo, ro, rat))
-    
+
     if len(parts) == 0: continue
-    
+
     dates = [p[0] for p in parts]
     rats = [rat[3] for rat in parts]
-    
+
     mind = min(dates)
     maxd = max(dates)
     if mindate is None:
@@ -82,11 +89,11 @@ for f in fnames:
         maxdate = maxd
     else:
         maxdate = max(maxdate, maxd)
-    
+
     dates = np.array(dates)
     rats = np.array(rats)
     sa = dates.argsort()
-    
+
     if lineplot:
         plt.plot(dates[sa], rats[sa])
     else:
@@ -128,4 +135,3 @@ if ofig is None:
     plt.show()
 else:
     plt.gcf().savefig(ofig)
-

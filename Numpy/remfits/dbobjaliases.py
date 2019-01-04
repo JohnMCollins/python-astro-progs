@@ -1,11 +1,11 @@
-#!  /usr/bin/env python
+#!  /usr/bin/env python3
 
 # @Author: John M Collins <jmc>
 # @Date:   2018-10-12T15:05:17+01:00
 # @Email:  jmc@toad.me.uk
 # @Filename: dbobjaliases.py
 # @Last modified by:   jmc
-# @Last modified time: 2018-11-18T15:25:38+00:00
+# @Last modified time: 2019-01-04T23:03:06+00:00
 
 # Update aliases
 
@@ -48,19 +48,19 @@ if listem:
     for row in tabs:
         name,alias,source = row
         if name == lastname:
-            print " " * nsize,
+            print(" " * nsize, end=' ')
         else:
-            print name + " " * (nsize-len(name)),
+            print(name + " " * (nsize-len(name)), end=' ')
             lastname = name
-        print alias + " " * (asize -len(alias)),
-        print source
+        print(alias + " " * (asize -len(alias)), end=' ')
+        print(source)
     sys.exit(0)
 
 if alldelete:
     for name in objnames:
         ndone = dbcurs.execute("DELETE FROM objalias WHERE objname=" + mydb.escape(name))
         if verbose:
-            print >>sys.stderr, "Deleted", ndone, "alises from", name
+            print("Deleted", ndone, "alises from", name, file=sys.stderr)
     mydb.commit()
     sys.exit(0)
 
@@ -69,14 +69,14 @@ if delete:
         ndone = dbcurs.execute("DELETE FROM objalias WHERE alias=" + mydb.escape(name))
         if verbose:
             if ndone > 0:
-                print >>sys.stderr, "Deleted", name, "OK"
+                print("Deleted", name, "OK", file=sys.stderr)
             else:
-                print >>sys.stderr, "Did not delete", name
+                print("Did not delete", name, file=sys.stderr)
     mydb.commit()
     sys.exit(0)
 
 if len(objnames) < 2:
-    print >>sys.stderr, "Expecting alias names for", mainname
+    print("Expecting alias names for", mainname, file=sys.stderr)
     sys.exit(10)
 
 mainname = objnames.pop(0)
@@ -84,7 +84,7 @@ qmainname = mydb.escape(mainname)
 dbcurs.execute("SELECT COUNT(*) FROM objdata where objname=" + qmainname)
 ndone = dbcurs.fetchall()
 if ndone[0][0] == 0:
-    print >>sys.stderr, "Unknown object name", mainname
+    print("Unknown object name", mainname, file=sys.stderr)
     sys.exit(1)
 
 qsource = mydb.escape(source)
@@ -93,8 +93,8 @@ for name in objnames:
     qname = mydb.escape(name)
     ndone = dbcurs.execute("DELETE FROM objalias WHERE alias=" + qname)
     if verbose and ndone > 0:
-        print >>sys.stderr, "Deleted old alias", name
+        print("Deleted old alias", name, file=sys.stderr)
     ndone = dbcurs.execute("INSERT INTO objalias (objname,alias,source) VALUES (" + qmainname + "," + qname + "," + qsource + ")")
     if  verbose and ndone > 0:
-        print >>sys.stderr, "Added new alias", name, "for", mainname
+        print("Added new alias", name, "for", mainname, file=sys.stderr)
 mydb.commit()

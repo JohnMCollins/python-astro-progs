@@ -1,4 +1,11 @@
-#! /usr/bin/env python
+#! /usr/bin/env python3
+
+# @Author: John M Collins <jmc>
+# @Date:   2019-01-04T22:45:58+00:00
+# @Email:  jmc@toad.me.uk
+# @Filename: mergeobjlists.py
+# @Last modified by:   jmc
+# @Last modified time: 2019-01-04T23:11:24+00:00
 
 from astropy.io import fits
 from astropy import wcs
@@ -35,12 +42,12 @@ srcobjs = remfitsobj.RemobjSet()
 try:
     srcobjs.loadfile(srcfile)
 except remfitsobj.RemObjError as e:
-    print >>sys.stderr,  "Error loading source file", srcfile, e.args[0]
+    print("Error loading source file", srcfile, e.args[0], file=sys.stderr)
     sys.exit(30)
 
 target = srcobjs.targname
 if target is None:
-    print >>sys.stderr, "Source file", srcfile, "does not have target"
+    print("Source file", srcfile, "does not have target", file=sys.stderr)
     sys.exit(31)
 
 destobjs = remfitsobj.RemobjSet()
@@ -48,20 +55,20 @@ try:
     destobjs.loadfile(destfile)
     if destobjs.targname != srcobjs.targname:
         if destobjs.targname is None:
-            print >>sys.stderr, "No target in", destfile
+            print("No target in", destfile, file=sys.stderr)
         else:
-            print >>sys.stderr, "source target is", srcobjs.targname, "dest target is", destobjs.targname
-        sys.exit(32) 
+            print("source target is", srcobjs.targname, "dest target is", destobjs.targname, file=sys.stderr)
+        sys.exit(32)
 except remfitsobj.RemObjError as e:
     if e.warningonly:
         if createdest:
-            print >>sys.stderr, "(Warning) creating", destfile
+            print("(Warning) creating", destfile, file=sys.stderr)
             destobjs.targname = srcobjs.targname
         else:
-            print >>sys.stderr, "destination file", destfile, "does not exist"
+            print("destination file", destfile, "does not exist", file=sys.stderr)
             sys.exit(33)
     else:
-        print >>sys.stderr,  "Error loading file", e.args[0]
+        print("Error loading file", e.args[0], file=sys.stderr)
         sys.exit(30)
 
 # Get current objects in destobjs - don't need to change directory
@@ -78,6 +85,6 @@ for ob in slist:
         dups += 1
 
 if dups != 0:
-    print >>sys/stderr. dups, "duplicates found"
+    print("duplicates found", file=sys/stderr. dups)
 
 destobjs.savefile(destfile)

@@ -5,7 +5,7 @@
 # @Email:  jmc@toad.me.uk
 # @Filename: imfindobj.py
 # @Last modified by:   jmc
-# @Last modified time: 2019-01-04T22:51:33+00:00
+# @Last modified time: 2019-01-04T22:57:49+00:00
 
 from astropy.io import fits
 from astropy import wcs
@@ -130,28 +130,7 @@ except dbobjinfo.ObjDataError as e:
 flattab, biastab = dbremfitsobj.get_nearest_forbinf(dbcurs, year, month)
 nresults = 0
 
-for filter in 'girz':
-
-    # First get flat and bias files for month
-
-    ftab = flattab[filter]
-    btab = biastab[filter]
-
-    ff = dbremfitsobj.getfits(dbcurs, ftab.fitsind)
-    fdat = trimarrays.trimnan(ff[0].data)
-    ffrows, ffcols = fdat.shape
-    ff.close()
-
-    bf = dbremfitsobj.getfits(dbcurs, btab.fitsind)
-    bdat = bf[0].data
-    bdat = bdat[0:ffrows,0:ffcols]
-    bdat = bdat.astype(np.float64)
-    (bdatc, ) = trimarrays.trimto(fdat, bdat)
-    bf.close()
-
-    # Note not current flat or bias
-
-    notcurrentflat = ftab.diff != 0 or btab.diff != 0
+for filter in 'HJK':
 
     # get list of observations for this month
 
@@ -176,11 +155,7 @@ for filter in 'girz':
         ffile = dbremfitsobj.getfits(dbcurs, fitsind)
         ffhdr = ffile[0].header
         imagedata = ffile[0].data.astype(np.float64)
-        (imagedata, ) = trimarrays.trimto(fdat, imagedata)
         ffile.close()
-
-        imagedata -= bdatc
-        imagedata /= fdat
 
         w = wcscoord.wcscoord(ffhdr)
 
@@ -274,7 +249,7 @@ for filter in 'girz':
             objpixes = w.coords_to_pix(((targra, targdec),))[0]
             brightest = findbrightest.findbrightest(imagedata, tobj.get_aperture(mainap))
             if  brightest is None:
-                dbremfitsobj.add_notfound(dbcurs, obsind, targetname, filter, exptime, "Could not find a brightest image", notcurrf = notcurrentflat, apsize = tobj.get_aperture(mainap))
+                dbremfitsobj.add_notfound(dbcurs, obsind, targetname, filter, "Could not find a brightest image", notcurrf = notcurrentflat, apsize = tobj.get_aperture(mainap))
                 if verbose:
                     print("Skipping", obsind, "target", targetname, "Could not find brightest image", file=sys.stderr)
                 continue
@@ -339,7 +314,7 @@ for filter in 'girz':
                 nearestobj = findnearest.findnearest(imagedata, objpixes, mainap, searchrad, med + sigma * nsigfind)
                 if nearestobj is None:
                     continue
-                if m.objname == targetnam#!  /usr/bin/env python3e:
+                if m.objname == targetname:
                     targobjpl = possible
                 ncol, nrow, nadu = nearestobj
                 ncol = int(round(ncol))
@@ -360,14 +335,14 @@ for filter in 'girz':
                     clookup[newf] = newf
 
         if targobjpl is None:
-            dbremfitsobj.add_notfound(dbcurs, obsind, targetname, filter, exptime, "Failed to find targer", notcurrf = notcurrentflat, apsize = mainap, searchrad = searchrad)
+            dbremfitsobj.add_notfound(dbcurs, obsind, targetname, filter, exptime, "Failed to find targer", notcurrf = False, apsize = mainap, searchrad = searchrad)
             if verbose:
                 print("Skipping", obsind, "target", targetname, "not found in image", file=sys.stderr)
             continue
 
         for result in list(clookup.values()):
             ncol, nrow = w.abspix((result.col, result.row))
-            dbremfitsobj.add_objident(dbcurs, obsind, targetname, result.name, filter, exptime, ncol, nrow, result.ra, result.dec, result.apsize, searchrad, notcurrf = notcurrentflat)
+            dbremfitsobj.add_objident(dbcurs, obsind, targetname, result.name, filter, exptime, ncol, nrow, result.ra, result.dec, result.apsize, searchrad, notcurrf = False)
             nresults += 1
 
 if verbose:

@@ -1,4 +1,11 @@
-#!  /usr/bin/env python
+#!  /usr/bin/env python3
+
+# @Author: John M Collins <jmc>
+# @Date:   2019-01-04T22:45:56+00:00
+# @Email:  jmc@toad.me.uk
+# @Filename: dispobj.py
+# @Last modified by:   jmc
+# @Last modified time: 2019-01-04T23:04:36+00:00
 
 from astropy.io import fits
 import argparse
@@ -26,28 +33,28 @@ if listf:
         except IOError as e:
             sys.stdout = sys.stderr
             if len(e.args) == 1:
-                print "Incorrect format fits file", file
+                print("Incorrect format fits file", file)
             else:
-                print "Cannot open:", file, "Error was:", e.args[1]
+                print("Cannot open:", file, "Error was:", e.args[1])
             sys.stdout = sys.__stdout__
             errors += 1
             continue
         h = ff[0].header
-        ks = h.keys()
+        ks = list(h.keys())
         ks.sort()
-        print file + ':'
+        print(file + ':')
         for k in ks:
-            print "\t" + k + "\t=\t" + str(h[k])
-else:        
+            print("\t" + k + "\t=\t" + str(h[k]))
+else:
     for file in resargs['files']:
         try:
             ff = fits.open(file)
         except IOError as e:
             sys.stdout = sys.stderr
             if len(e.args) == 1:
-                print "Incorrect format fits file", file
+                print("Incorrect format fits file", file)
             else:
-                print "Cannot open:", file, "Error was:", e.args[1]
+                print("Cannot open:", file, "Error was:", e.args[1])
             sys.stdout = sys.__stdout__
             errors += 1
             continue
@@ -55,11 +62,11 @@ else:
         try:
             t = h[whichobj]
             if plusfn:
-                print file + ':',
-            print t
+                print(file + ':', end=' ')
+            print(t)
         except KeyError:
             sys.stdout = sys.stderr
-            print "Could not find", whichobj, "in fits file", file
+            print("Could not find", whichobj, "in fits file", file)
             sys.stdout = sys.__stdout__
             errors += 1
         ff.close()

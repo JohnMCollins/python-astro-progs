@@ -1,4 +1,11 @@
-#!  /usr/bin/env python
+#!  /usr/bin/env python3
+
+# @Author: John M Collins <jmc>
+# @Date:   2019-01-04T22:45:56+00:00
+# @Email:  jmc@toad.me.uk
+# @Filename: getobjdata.py
+# @Last modified by:   jmc
+# @Last modified time: 2019-01-04T23:06:27+00:00
 
 # Get object data and maintain XML Database
 
@@ -42,31 +49,31 @@ update = resargs['update']
 delete = resargs['delete']
 
 if update and delete:
-    print "Cannot have update and delete options at once" >>sys.stderr
+    print("Cannot have update and delete options at once" >>sys.stderr)
 
 objinf = objinfo.ObjInfo()
 try:
     objinf.loadfile(libfile)
 except objinfo.ObjInfoError as e:
     if e.warningonly:
-        print >>sys.stderr, "(Warning) file does not exist:", libfile
+        print("(Warning) file does not exist:", libfile, file=sys.stderr)
     else:
-        print >>sys.stderr, "Error loading file", e.args[0]
+        print("Error loading file", e.args[0], file=sys.stderr)
         sys.exit(30)
 
 errors = 0
 edict = dict()
 
-if delete: 
+if delete:
     for name in objnames:
         try:
             nobj = objinf.get_object(name)
             objinf.del_object(nobj)
         except objinfo.ObjInfoError as e:
-            print  >>sys.stderr, e.args[0]
+            print(e.args[0], file=sys.stderr)
             errors += 1
     if errors > 0:
-        print  >>sys.stderr, "Aborting due to errors"
+        print("Aborting due to errors", file=sys.stderr)
         sys.exit(10)
     objinf.savefile(libfile)
     sys.exit(0)
@@ -79,22 +86,22 @@ if update:
         try:
             nobj = objinf.get_object(name)
         except objinfo.ObjInfoError as e:
-            print a.args[0] >>sys.stderr
+            print(a.args[0] >>sys.stderr)
             errors += 1
             continue
         nname = nobj.objname
         if nname in edict:
             if name != nname:
-                print  >>sys.stderr, "Already had", name, "aliased to", nname
+                print("Already had", name, "aliased to", nname, file=sys.stderr)
             else:
-                print  >>sys.stderr, "Already had", name
+                print("Already had", name, file=sys.stderr)
             errors += 1
             continue
         edict[nname] = 1
 else:
     for name in objnames:
         if name in edict:
-            print  >>sys.stderr, "Already requested addding", name
+            print("Already requested addding", name, file=sys.stderr)
             errors += 1
             continue
         edict[name] = 1
@@ -102,16 +109,16 @@ else:
             nobj = objinf.get_object(name)
             pname = nobj.objname
             if pname != name:
-                print  >>sys.stderr, "Already had", name, "as alias of", pname
+                print("Already had", name, "as alias of", pname, file=sys.stderr)
             else:
-                print  >>sys.stderr, "Already had", name
+                print("Already had", name, file=sys.stderr)
             errors += 1
             continue
         except objinfo.ObjInfoError:
             pass
-            
+
 if errors > 0:
-    print  >>sys.stderr, "Aborting due to errors"
+    print("Aborting due to errors", file=sys.stderr)
     sys.exit(10)
 
 sb = Simbad()
@@ -119,20 +126,20 @@ sb.add_votable_fields('main_id','otype','ra','dec','distance','pmra','pmdec', 'r
 for name in objnames:
     qres = sb.query_object(name)
     if qres is None:
-        print  >>sys.stderr, "Cannot find", name, "in Simbad"
+        print("Cannot find", name, "in Simbad", file=sys.stderr)
         continue
     q0 = qres[0]
     qname = q0['MAIN_ID']
     if objinf.is_defined(qname):
         if not update:
-            print >>sys.stderr, name, "is already defined as", qname
+            print(name, "is already defined as", qname, file=sys.stderr)
             errors += 1
             continue
     elif update:
-        print >>sys.stderr, name, "is not previously defined"
+        print(name, "is not previously defined", file=sys.stderr)
         errors += 1
         continue
-    
+
     otype = q0['OTYPE']
     ra = coordinates.Angle(q0['RA'], unit=u.hour).deg
     dec = coordinates.Angle(q0['DEC'], unit=u.deg).deg
@@ -167,8 +174,7 @@ for name in objnames:
         objinf.add_object(obj)
 
 if errors > 0:
-    print  >>sys.stderr, "Aborting due to errors"
+    print("Aborting due to errors", file=sys.stderr)
     sys.exit(20)
 
 objinf.savefile(libfile)
-    

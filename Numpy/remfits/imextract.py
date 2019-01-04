@@ -1,11 +1,17 @@
-#! /usr/bin/env python
+#! /usr/bin/env python3
+
+# @Author: John M Collins <jmc>
+# @Date:   2019-01-04T14:01:35+00:00
+# @Email:  jmc@toad.me.uk
+# @Filename: imextract.py
+# @Last modified by:   jmc
+# @Last modified time: 2019-01-04T23:07:48+00:00
 
 from astropy.io import fits
 from astropy import wcs
 import numpy as np
 import argparse
 import sys
-import string
 
 parsearg = argparse.ArgumentParser(description='Plot FITS image', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 parsearg.add_argument('file', type=str, nargs='+', help='FITS files to process')
@@ -45,11 +51,11 @@ for ffname in ffnames:
     mx = imagedata.max()
 
     pixrows, pixcols = imagedata.shape
-    
+
     imagedata = np.clip(imagedata - med, 0.0, None)
-    
+
     adus = [ med ]
-    
+
     for nb in range(0,numobj):
         brows, bcols = np.where(imagedata==imagedata.max())
         brow = brows[0]
@@ -61,7 +67,5 @@ for ffname in ffnames:
         rads[outrad] = 0.0
         adus.append(np.sum(imagedate*rads))
         imagedata[max(0,brow-blanksize):min(pixrows-1,brow+blanksize),max(0,bcol-blanksize):min(pixcols-1,bcol+blanksize)] = 0.0
-    #print ffname, adus
-    fmt = ffname + "\t%.1f\t" + string.join(["%d"] * numobj, "\t")
-    print fmt % tuple(adus)
-     
+    fmt = ffname + "\t%.1f\t" + "\t".join(["%d"] * numobj)
+    print(fmt % tuple(adus))

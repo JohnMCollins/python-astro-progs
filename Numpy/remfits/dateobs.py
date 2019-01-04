@@ -1,4 +1,11 @@
-#!  /usr/bin/env python
+#!  /usr/bin/env python3
+
+# @Author: John M Collins <jmc>
+# @Date:   2019-01-04T22:45:55+00:00
+# @Email:  jmc@toad.me.uk
+# @Filename: dateobs.py
+# @Last modified by:   jmc
+# @Last modified time: 2019-01-04T22:50:21+00:00
 
 import dbops
 import argparse
@@ -20,4 +27,4 @@ dbcurs = mydb.cursor()
 dbcurs.execute("SELECT date(date_obs),count(*) FROM obsinf WHERE object='" + obj + "' GROUP BY date(date_obs)")
 for row in dbcurs.fetchall():
     dat,cnt = row
-    print "%s\t%d" % (dat.strftime("%Y-%m-%d"), cnt)
+    print("%s\t%d" % (dat.strftime("%Y-%m-%d"), cnt))

@@ -1,4 +1,11 @@
-#!  /usr/bin/env python
+#!  /usr/bin/env python3
+
+# @Author: John M Collins <jmc>
+# @Date:   2019-01-04T22:45:59+00:00
+# @Email:  jmc@toad.me.uk
+# @Filename: updobjfield.py
+# @Last modified by:   jmc
+# @Last modified time: 2019-01-04T23:12:05+00:00
 
 # Update object fields
 
@@ -50,15 +57,15 @@ try:
     objinf.loadfile(libfile)
 except objinfo.ObjInfoError as e:
     if e.warningonly:
-        print >>sys.stderr, "(Warning) file does not exist:", libfile
+        print("(Warning) file does not exist:", libfile, file=sys.stderr)
     else:
-        print >>sys.stderr, "Error loading file", e.args[0]
+        print("Error loading file", e.args[0], file=sys.stderr)
         sys.exit(30)
 
 try:
     obj = objinf.get_object(objname)
 except objinfo.ObjInfoError as e:
-    print >>sys.stderr, "Error finding", objname, e.args[0]
+    print("Error finding", objname, e.args[0], file=sys.stderr)
     sys.exit(11)
 
 obj.update_ra(value = ra, pm = pmra)
@@ -69,7 +76,7 @@ if rv is not None:
     obj.rv = rv
 if mag is not None:
     if filter is None:
-        print >>sys.stderr, "No filter given with magnitude"
+        print("No filter given with magnitude", file=sys.stderr)
         sys.exit(51)
     obj.set_mag(filter, mag, sigmag)
 if aperture is not None:

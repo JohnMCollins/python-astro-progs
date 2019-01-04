@@ -1,11 +1,11 @@
-#! /usr/bin/env python
+#! /usr/bin/env python3
 
 # @Author: John M Collins <jmc>
 # @Date:   2018-11-29T16:49:45+00:00
 # @Email:  jmc@toad.me.uk
 # @Filename: updairmass.py
 # @Last modified by:   jmc
-# @Last modified time: 2018-11-29T17:05:44+00:00
+# @Last modified time: 2019-01-04T22:57:17+00:00
 
 from astropy.io import fits
 from astropy.utils.exceptions import AstropyWarning, AstropyUserWarning
@@ -38,11 +38,11 @@ for obsind, fitsind, exptime in rows:
     fairmass = ffhdr['AIRMASS']
 
     if fexptime != exptime:
-        print >>sys.stderr, "Obsind", obsind, "DB hdr exptime", exptime, "FITS exptime", fexptime
+        print("Obsind", obsind, "DB hdr exptime", exptime, "FITS exptime", fexptime, file=sys.stderr)
 
     dbcurs.execute("UPDATE obsinf SET airmass=%.6g WHERE obsind=%d" % (fairmass, obsind))
     ffile.close()
     nfiles += 1
 
 dbase.commit()
-print >>sys.stderr, nfiles, "results added"
+print(nfiles, "results added", file=sys.stderr)

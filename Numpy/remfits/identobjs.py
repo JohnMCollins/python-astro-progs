@@ -1,4 +1,12 @@
-#! /usr/bin/env python
+#! /usr/bin/env python3
+
+# @Author: John M Collins <jmc>
+# @Date:   2019-01-04T22:45:56+00:00
+# @Email:  jmc@toad.me.uk
+# @Filename: identobjs.py
+# @Last modified by:   jmc
+# @Last modified time: 2019-01-04T23:07:16+00:00
+
 
 from astropy.io import fits
 from astropy import wcs
@@ -12,16 +20,16 @@ import warnings
 
 def dispres(r, d, rr, alld):
     if r is None:
-        print " " * 20,
+        print(" " * 20, end=' ')
     else:
-        print "%9.4f %9.4f:" % (r, d),
+        print("%9.4f %9.4f:" % (r, d), end=' ')
     mo, alts, ot = rr
     if not alld:
-        print mo
+        print(mo)
         return
-    print mo, ot
+    print(mo, ot)
     for al in alts:
-        print " " * 20, al
+        print(" " * 20, al)
 
 
 warnings.simplefilter('ignore', AstropyWarning)
@@ -46,7 +54,7 @@ for lin in coords:
     r, d = lin
     res = objcoord.coord2objs(r, d, radius, True)
     if len(res) == 0:
-        print "%9.4f %9.4f: None Found" % (r, d)
+        print("%9.4f %9.4f: None Found" % (r, d))
         continue
     if allo:
         rc = r

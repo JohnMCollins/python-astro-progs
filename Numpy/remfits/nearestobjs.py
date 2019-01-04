@@ -1,4 +1,11 @@
-#! /usr/bin/env python
+#! /usr/bin/env python3
+
+# @Author: John M Collins <jmc>
+# @Date:   2019-01-04T22:45:58+00:00
+# @Email:  jmc@toad.me.uk
+# @Filename: nearestobjs.py
+# @Last modified by:   jmc
+# @Last modified time: 2019-01-04T23:26:12+00:00
 
 from astropy.io import fits
 from astropy.utils.exceptions import AstropyWarning, AstropyUserWarning
@@ -40,9 +47,9 @@ try:
     objinf.loadfile(libfile)
 except objinfo.ObjInfoError as e:
     if e.warningonly:
-        print  >>sys.stderr, "(Warning) file does not exist:", libfile
+        print("(Warning) file does not exist:", libfile, file=sys.stderr)
     else:
-        print >>sys.stderr,  "Error loading file", e.args[0]
+        print("Error loading file", e.args[0], file=sys.stderr)
         sys.exit(30)
 
 # Shut up warning messages
@@ -55,7 +62,7 @@ autils.suppress_vo_warnings()
 firstfile = ffnames[0]
 mtch = re.match('(\d+)[-/](\d+)[-/](\d+)$', firstfile)
 if mtch:
-    d1, d2, d3 = map(lambda x: int(x), mtch.groups())
+    d1, d2, d3 = [int(x) for x in mtch.groups()]
     if d1 > 1000:
         t = d1
         d1 = d3
@@ -65,7 +72,7 @@ else:
     try:
         ffile = fits.open(firstfile)
     except IOError as e:
-        print >>sys.stderr, "Cannot open fits file", firstfile, "error was", e.args[-1]
+        print("Cannot open fits file", firstfile, "error was", e.args[-1], file=sys.stderr)
         sys.exit(10)
     ffhdr = ffile[0].header
     odt = datetime.datetime.now()
@@ -99,4 +106,4 @@ for oitem, raval, decval in objlist:
         magerr = 0
     if magerr is None:
         magerr = 0
-    print >>outf, "%.16e %.16e %.16e, %.16e %s" % (raval, decval, mag, magerr, oitem.objname)
+    print("%.16e %.16e %.16e, %.16e %s" % (raval, decval, mag, magerr, oitem.objname), file=outf)

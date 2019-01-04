@@ -1,11 +1,11 @@
-#! /usr/bin/env python
+#! /usr/bin/env python3
 
 # @Author: John M Collins <jmc>
 # @Date:   2018-11-22T18:57:27+00:00
 # @Email:  jmc@toad.me.uk
 # @Filename: lcurve3.py
 # @Last modified by:   jmc
-# @Last modified time: 2018-12-09T19:30:05+00:00
+# @Last modified time: 2019-01-04T23:10:14+00:00
 
 import matplotlib.pyplot as plt
 import matplotlib.patches as mp
@@ -71,7 +71,7 @@ resargs = vars(parsearg.parse_args())
 fnames = resargs['file']
 columns = resargs['columns']
 if columns is not None:
-    columns = map(lambda x: int(x),string.split(columns, ','))
+    columns = [int(x) for x in string.split(columns, ',')]
 title = resargs['title']
 fromdate = resargs['fromdate']
 todate = resargs['todate']
@@ -87,7 +87,7 @@ sepbuck = resargs['sepbuck']
 marker = resargs['marker']
 normalise = resargs['normalise']
 if len(normalise) == 0 or normalise[0] not in 'arn':
-    print >>sys.stderr, "Normalise argument unknown please use n/r/a"
+    print("Normalise argument unknown please use n/r/a", file=sys.stderr)
     sys.exit(10)
 normalise = normalise[0]
 stdclip = resargs['stdclip']
@@ -142,17 +142,19 @@ for flin in fnames:
             if lcount == 1:
                 bits.pop(0)
                 bits.pop(0)
+                bits.pop(0)
                 if objectnames is None:
                     objectnames = bits
                 else:
                     for o,b in zip(objectnames, bits):
                         if o != b:
-                            print >>sys.stderr, "Objectnames differ between files", string.join(objectnames, ','), "-v-", string.join(bits, ',')
+                            print("Objectnames differ between files", ','.join(objectnames), "-v-", ','.join(bits), file=sys.stderr)
                             sys.exit(200)
             continue
 
         dt = dateutil.parser.parse(bits.pop(0))
         obsind = int(bits.pop(0))
+        exptime = float(bits.pop(0))
 
         targinten = float(bits[0])
         denom = 1.0
@@ -284,15 +286,15 @@ for flin in fnames:
     legs.append(leg)
 
 if len(clipped) != 0 and clipfile is not None:
-    print clipped
+    print(clipped)
     clipped.sort(key=lambda x: -abs(x[2]))
     clipout = open(clipfile, "wt")
     for obsind, dt, idiff in clipped:
-        print >>clipout, dt.isoformat(), "%8d %.6e" % (obsind, idiff)
+        print(dt.isoformat(), "%8d %.6e" % (obsind, idiff), file=clipout)
     clipout.close()
 
 if len(legs) == 0:
-    print >>sys.stderr, "Nothing to plot"
+    print("Nothing to plot", file=sys.stderr)
     sys.exit(1)
 
 if plegend:
@@ -341,7 +343,7 @@ if columns is not None:
     if len(relto) == 1:
         relto = relto[0]
     else:
-        relto = "sum of" + string.join(relto, ', ')
+        relto = "sum of" + ', '.join(relto)
     relto = " relative to sum of " + relto
 
 ylab = "Brightness of " + targname + relto

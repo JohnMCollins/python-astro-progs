@@ -1,4 +1,11 @@
-#!  /usr/bin/env python
+#!  /usr/bin/env python3
+
+# @Author: John M Collins <jmc>
+# @Date:   2019-01-04T22:45:58+00:00
+# @Email:  jmc@toad.me.uk
+# @Filename: listobjects.py
+# @Last modified by:   jmc
+# @Last modified time: 2019-01-04T23:10:43+00:00
 
 import dbops
 import string
@@ -53,5 +60,4 @@ if order is not None and len(order) != 0:
 		results.sort(key=attrgetter('todate'),reverse=True)
 
 for k in results:
-	print "%-14s\t%d\t" % (k.objname, k.count) + k.fromdate.strftime("%d-%m-%y\t") + k.todate.strftime("%d-%m-%y")
-
+	print("%-14s\t%d\t" % (k.objname, k.count) + k.fromdate.strftime("%d-%m-%y\t") + k.todate.strftime("%d-%m-%y"))

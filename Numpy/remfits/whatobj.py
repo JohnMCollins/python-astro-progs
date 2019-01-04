@@ -1,4 +1,11 @@
-#! /usr/bin/env python
+#! /usr/bin/env python3
+
+# @Author: John M Collins <jmc>
+# @Date:   2019-01-04T14:01:35+00:00
+# @Email:  jmc@toad.me.uk
+# @Filename: whatobj.py
+# @Last modified by:   jmc
+# @Last modified time: 2019-01-04T22:56:16+00:00
 
 from astropy.io import fits
 from astropy import wcs
@@ -8,7 +15,6 @@ import astroquery.utils as autils
 import math
 import numpy as np
 import argparse
-import string
 import remfitsobj
 
 def pmjdate(arg):
@@ -18,7 +24,7 @@ def pmjdate(arg):
     try:
         t = Time(parsetime.parsetime(arg))
     except ValueError:
-        print >>sys.stderr, "Could not understand time arg", arg
+        print("Could not understand time arg", arg, file=sys.stderr)
         sys.exit(50)
     return  t.mjd
 
@@ -36,19 +42,19 @@ resultsfiles = resargs['results']
 namedict = dict()
 
 for rf in resultsfiles:
-    
+
     results = remfitsobj.RemobjSet()
     try:
         results.loadfile(rf)
     except remfitsobj.RemObjError as e:
-        print >>sys.stderr,  "Error loading results file", rf, e.args[0]
+        print("Error loading results file", rf, e.args[0], file=sys.stderr)
         continue
 
     target = results.targname
     if target is None:
-        print >>sys.stderr, "Results file", resultsfile, "does not have target"
+        print("Results file", resultsfile, "does not have target", file=sys.stderr)
         continue
-    
+
     for ol in results.getobslist():
         for oitem in ol.objlist:
             nam = oitem.objname
@@ -57,4 +63,4 @@ for rf in resultsfiles:
             except KeyError:
                 namedict[nam] = 1
 
-print string.join(sorted(namedict.keys()), ' ')
+print(' '.join(sorted(namedict.keys())))

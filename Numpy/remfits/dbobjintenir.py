@@ -1,11 +1,11 @@
-#! /usr/bin/env python
+#! /usr/bin/env python3
 
 # @Author: John M Collins <jmc>
 # @Date:   2018-08-13T17:29:08+01:00
 # @Email:  jmc@toad.me.uk
 # @Filename: dbobjinten.py
 # @Last modified by:   jmc
-# @Last modified time: 2018-12-12T18:32:33+00:00
+# @Last modified time: 2019-01-04T22:57:00+00:00
 
 from astropy.io import fits
 from astropy import wcs
@@ -65,10 +65,10 @@ objlookup = dict()
 
 for filter in 'HJK':
 
-    dbcurs.execute("SELECT obsind,ind,date_obs FROM obsinf WHERE filter='" + filter + "' ORDER BY date_obs")
+    dbcurs.execute("SELECT obsind,ind,date_obs.exptime FROM obsinf WHERE filter='" + filter + "' ORDER BY date_obs")
     obslist = dbcurs.fetchall()
 
-    for obsind, fitsind, when in obslist:
+    for obsind, fitsind, when, exptime in obslist:
 
         # See if we've got any found objects for that obs and skip if not`
 
@@ -131,13 +131,13 @@ for filter in 'HJK':
             try:
                 (tadus, terr) = calcadus.calcadus(imagedata, errorarray, tcoords, trad)
             except calcadus.calcaduerror as e:
-                print >>sys.stderr, "Error in adu calc obsind", obsind, e.args[0]
+                print("Error in adu calc obsind", obsind, e.args[0], file=sys.stderr)
                 continue
 
-            dbcurs.execute("INSERT INTO aducalc (identind,obsind,date_obs,target,objname,filter,percentile,skylevel,aducount,aduerr) VALUES (%d,%d,%s,%s,%s,%s,%.3f,%.6g,%.6g,%.6g)" %
+            dbcurs.execute("INSERT INTO aducalc (identind,obsind,date_obs,target,objname,filter,exptime,percentile,skylevel,aducount,aduerr) VALUES (%d,%d,%s,%s,%s,%s,%.1f,%.3f,%.6g,%.6g,%.6g)" %
                     (identind, obsind, dbase.escape(when.isoformat()), dbase.escape(target), dbase.escape(objname), dbase.escape(filter), percentile, skylevel, tadus, terr))
             ndone += 1
 
         dbase.commit()
 
-print >>sys.stderr, ndone, "results added"
+print(ndone, "results added", file=sys.stderr)

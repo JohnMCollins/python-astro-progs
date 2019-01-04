@@ -1,11 +1,11 @@
-#! /usr/bin/env python
+#! /usr/bin/env python3
 
 # @Author: John M Collins <jmc>
 # @Date:   2018-11-22T18:57:27+00:00
 # @Email:  jmc@toad.me.uk
 # @Filename: lcurve3.py
 # @Last modified by:   jmc
-# @Last modified time: 2018-12-13T22:01:11+00:00
+# @Last modified time: 2019-01-04T22:59:43+00:00
 
 import numpy as np
 import argparse
@@ -57,14 +57,14 @@ resargs = vars(parsearg.parse_args())
 fnames = resargs['file'][0]
 columns = resargs['columns']
 if columns is not None:
-    columns = map(lambda x: int(x),string.split(columns, ','))
+    columns = [int(x) for x in string.split(columns, ',')]
 fromdate = resargs['fromdate']
 todate = resargs['todate']
 bucket = resargs['bucket']
 sepbuck = resargs['sepbuck']
 normalise = resargs['normalise']
 if len(normalise) == 0 or normalise[0] not in 'arn':
-    print >>sys.stderr, "Normalise argument unknown please use n/r/a"
+    print("Normalise argument unknown please use n/r/a", file=sys.stderr)
     sys.exit(10)
 normalise = normalise[0]
 stdclip = resargs['stdclip']
@@ -101,11 +101,13 @@ for lin in open(f):
         if lcount == 1:
             bits.pop(0)
             bits.pop(0)
+            bits.pop(0)
             objectnames = bits
         continue
 
     dt = dateutil.parser.parse(bits.pop(0))
     obsind = int(bits.pop(0))
+    exptime = float(bits.pop(0))
 
     targinten = float(bits[0])
     denom = 1.0
@@ -119,16 +121,14 @@ for lin in open(f):
                     raise ValueError
                 denom += p
         except ValueError:
-            print >>sys.stderr, "No inensity in columns"
-            sys.exit(15)
+            continue
         if denom <= 0.0:
-            print >>sys.stderr, "No inensity in columns"
-            sys.exit(16)
+            continue
 
     parts.append((dt, obsind, targinten, denom))
 
 if len(parts) == 0:
-    print >>sys.stderr, "No results found"
+    print("No results found", file=sys.stderr)
     sys.exit(17)
 
 if stdclip > 0.0 and not bucket:
@@ -190,7 +190,7 @@ if bucket:
     if fromdate is not None:
         parts = [(dt, inten, err) for dt, inten, err in parts if dt >= fromdate and dt <= todate]
     if len(parts) == 0:
-        print >>sys.stderr, "No results found for dates"
+        print("No results found for dates", file=sys.stderr)
         sys.exit(18)
     if normalise == 'r':
         meanval = np.mean([inten for dt,inten,err in parts])
@@ -210,7 +210,7 @@ else:
     if fromdate is not None:
         parts = [(dt, obsind, inten, 1.0) for dt, obsind, inten, refinten in parts if dt >= fromdate and dt <= todate]
     if len(parts) == 0:
-        print >>sys.stderr, "No results found"
+        print("No results found", file=sys.stderr)
         sys.exit(17)
 
     if normalise == 'r':
@@ -222,7 +222,7 @@ else:
 
 firstdate = parts[0][0]
 secsperday = 3600.0 * 24.0
-ddiff = [(d - firstdate).seconds for d in dates]
+ddiff = [(d - firstdate).total_seconds() for d in dates]
 results = np.array([ddiff, rats, rats]).transpose()
 results[:,0] /= secsperday
 

@@ -1,4 +1,11 @@
-#! /usr/bin/env python
+#! /usr/bin/env python3
+
+# @Author: John M Collins <jmc>
+# @Date:   2018-08-28T22:11:30+01:00
+# @Email:  jmc@toad.me.uk
+# @Filename: objtabulate.py
+# @Last modified by:   jmc
+# @Last modified time: 2019-01-04T23:29:57+00:00
 
 from astropy.io import fits
 from astropy import wcs
@@ -11,7 +18,6 @@ import argparse
 import sys
 import datetime
 import os.path
-import string
 import objcoord
 import trimarrays
 import wcscoord
@@ -31,7 +37,7 @@ def pmjdate(arg):
     try:
         t = Time(parsetime.parsetime(arg))
     except ValueError:
-        print >>sys.stderr, "Could not understand time arg", arg
+        print("Could not understand time arg", arg, file=sys.stderr)
         sys.exit(50)
     return  t.mjd
 
@@ -65,12 +71,12 @@ results = remfitsobj.RemobjSet()
 try:
     results.loadfile(resultsfile)
 except remfitsobj.RemObjError as e:
-    print >>sys.stderr,  "Error loading results file", resultsfile, e.args[0]
+    print("Error loading results file", resultsfile, e.args[0], file=sys.stderr)
     sys.exit(30)
 
 target = results.targname
 if target is None:
-    print >>sys.stderr, "Results file", resultsfile, "does not have target"
+    print("Results file", resultsfile, "does not have target", file=sys.stderr)
     sys.exit(31)
 
 firstdate = pmjdate(resargs['firstdate'])
@@ -92,22 +98,22 @@ for r in refobjs:
 oblist = results.getobslist(filter = filter, firstdate = firstdate, lastdate = lastdate, resultsonly = True)
 
 if len(oblist) == 0:
-    print >>sys.stderr, "Sorry no observations with results found try finding/calculating some more"
+    print("Sorry no observations with results found try finding/calculating some more", file=sys.stderr)
     sys.exit(1)
-    
-outtab = np.array([]).reshape(0, ncols) 
+
+outtab = np.array([]).reshape(0, ncols)
 
 for ob in oblist:
-    
+
     nfound = 0
-    
+
     nextrow = np.full((ncols,), -1.0)
     nextrow[0] = ob.obsdate
     nextrow[1] = ob.airmass
     nextrow[2] = ob.skylevel
     nextrow[3] = ob.target.aducount
     nextrow[4] = ob.target.aduerror
-    
+
     for oitem in ob.objlist:
         try:
             wcol = colnums[oitem.objname]
@@ -116,15 +122,15 @@ for ob in oblist:
         nfound += 1
         nextrow[wcol] = oitem.aducount
         nextrow[wcol+1] = oitem.aduerror
-    
+
     if nfound == 0:
         continue
-    
+
     nextrow = nextrow.reshape(1, ncols)
     outtab = np.concatenate((outtab, nextrow))
 
 if outtab.shape[0] == 0:
-    print >>sys.stderr, "Sorry didn not find anything"
+    print("Sorry didn not find anything", file=sys.stderr)
     sys.exit(1)
 
 np.savetxt(outfile, outtab)

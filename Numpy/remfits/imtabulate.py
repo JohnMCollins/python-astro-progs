@@ -1,4 +1,11 @@
-#! /usr/bin/env python
+#! /usr/bin/env python3
+
+# @Author: John M Collins <jmc>
+# @Date:   2019-01-04T22:45:57+00:00
+# @Email:  jmc@toad.me.uk
+# @Filename: imtabulate.py
+# @Last modified by:   jmc
+# @Last modified time: 2019-01-04T23:09:02+00:00
 
 from astropy.io import fits
 from astropy import wcs
@@ -53,9 +60,9 @@ try:
     objinf.loadfile(libfile)
 except objinfo.ObjInfoError as e:
     if e.warningonly:
-        print  >>sys.stderr, "(Warning) file does not exist:", libfile
+        print("(Warning) file does not exist:", libfile, file=sys.stderr)
     else:
-        print >>sys.stderr,  "Error loading file", e.args[0]
+        print("Error loading file", e.args[0], file=sys.stderr)
         sys.exit(30)
 
 # The reason why we don't get RA and DECL info out of this is because we have
@@ -83,7 +90,7 @@ if target is not None:
     try:
         target = objinf.get_main(target)
     except objinfo.ObjInfoError as e:
-        print >>sys.stderr, e.args[0]
+        print(e.args[0], file=sys.stderr)
         sys.exit(30)
 mainap = resargs['mainap']
 targbrightest = resargs['targbrightest']
@@ -110,7 +117,7 @@ for ffname in ffnames:
     ffhdr = ffile[0].header
 
     imagedata = ffile[0].data.astype(np.float64)
-    
+
     if biasfile is None:
         bdat = np.zeros_like(imagedata)
 
@@ -132,7 +139,7 @@ for ffname in ffnames:
     if rg.trims.bottom is not None:
         imagedata = imagedata[rg.trims.bottom:]
         w.set_offsets(yoffset=rg.trims.bottom)
-    
+
     if rg.trims.left is not None:
         imagedata = imagedata[:,rg.trims.left:]
         w.set_offsets(xoffset=rg.trims.left)
@@ -183,13 +190,13 @@ for ffname in ffnames:
 
     if targbrightest:
         if targobj is None:
-            print >>sys.stderr, "Did not find target", target, "within image coords in file", ffname
+            print("Did not find target", target, "within image coords in file", ffname, file=sys.stderr)
             continue
         tobj, targra, targdec = targobj
         objpixes = w.coords_to_pix(((targra, targdec),))[0]
         brightest = findbrightest.findbrightest(imagedata, mainap)
         if brightest is None:
-            print >>sys.stderr, "Could not find a brightest object"
+            print("Could not find a brightest object", file=sys.stderr)
             continue
         ncol, nrow, nadu = brightest
         rlpix = ((int(round(ncol)), int(nrow)), )
@@ -198,7 +205,7 @@ for ffname in ffnames:
         Hadtarg = nodup_objlist[-1]
         adjras.append(rarloc[0]-targra)
         adjdecs.append(rarloc[1]-targdec)
-    
+
     for mtch in pruned_objlist:
         m, objra, objdec = mtch
         adjra = objra
@@ -223,30 +230,29 @@ for ffname in ffnames:
             adjdecs.append(rarloc[1]-objdec)
         except duplication:
             pass
-     
+
     if Hadtarg is None:
         continue
-    
+
     perc = np.percentile(imagedata, skylevel)
     imagedata = np.clip(imagedata-perc, 0, None)
     mx = imagedata.max()
-    
+
     # Recalculate ADUs having taken off sky level
-    
+
     rcadulist = []
     for mtch in nodup_objlist:
         ncol, nrow, nadu, objpixes, objra, objdec,rarloc, m = mtch
         (rcadus, rcount) = calcadus.calcadus(imagedata, mtch, m.get_aperture(mainap))
         rcadulist.append((ncol, nrow, rcadus, rcount, objpixes, objra, objdec,rarloc, m))
         if m.objname == target: Hadtarg = rcadulist[-1]
-        
+
     ept = odt.strftime("%Y-%m-%d %H-%M-%S:")
-    print ept, "sky level:", "%.4g" % perc
+    print(ept, "sky level:", "%.4g" % perc)
     targadu = Hadtarg[2]
     for mtch in rcadulist:
         ncol, nrow, nadu, ncount, objpixes, objra, objdec,rarloc, m = mtch
         if m.objname != target:
-			print "%s %s %.6g %.6g" % (ept, m.objname, nadu, targadu / nadu)
+			print("%s %s %.6g %.6g" % (ept, m.objname, nadu, targadu / nadu))
         else:
-			print "%s %s: %.6g" % (ept, m.objname, nadu)
-
+			print("%s %s: %.6g" % (ept, m.objname, nadu))

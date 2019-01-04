@@ -1,11 +1,11 @@
-#! /usr/bin/env python
+#! /usr/bin/env python3
 
 # @Author: John M Collins <jmc>
 # @Date:   2018-08-25T10:48:07+01:00
 # @Email:  jmc@toad.me.uk
 # @Filename: imfindobj.py
 # @Last modified by:   jmc
-# @Last modified time: 2018-10-01T17:47:46+01:00
+# @Last modified time: 2019-01-04T23:07:58+00:00
 
 from astropy.io import fits
 from astropy import wcs
@@ -64,9 +64,9 @@ try:
     objinf.loadfile(libfile)
 except objinfo.ObjInfoError as e:
     if e.warningonly:
-        print  >>sys.stderr, "(Warning) file does not exist:", libfile
+        print("(Warning) file does not exist:", libfile, file=sys.stderr)
     else:
-        print >>sys.stderr,  "Error loading file", e.args[0]
+        print("Error loading file", e.args[0], file=sys.stderr)
         sys.exit(30)
 
 # The reason why we don't get RA and DECL info out of this is because we have
@@ -97,7 +97,7 @@ if targetname is not None:
     try:
         target = objinf.get_main(targetname)
     except objinfo.ObjInfoError as e:
-        print >>sys.stderr, e.args[0]
+        print(e.args[0], file=sys.stderr)
         sys.exit(30)
 
 rfinf = remfitsobj.RemobjSet(target)
@@ -107,13 +107,13 @@ try:
     if rfinf.basedir != cwd:
         rfinf.set_basedir(cwd)
     if rfinf.targname is not None and rfinf.targname != target:
-        print >>Sys.stderr, "target for", targetname, "does not match that in file of", rfinf.targname
+        print("target for", targetname, "does not match that in file of", rfinf.targname, file=Sys.stderr)
         sys.exit(20)
 except remfitsobj.RemObjError as e:
     if e.warningonly:
-        print  >>sys.stderr, "(Warning) creating new:", resultsfile
+        print("(Warning) creating new:", resultsfile, file=sys.stderr)
     else:
-        print >>sys.stderr,  "Error loading file", e.args[0]
+        print("Error loading file", e.args[0], file=sys.stderr)
         sys.exit(21)
 
 mainap = resargs['mainap']
@@ -189,7 +189,7 @@ for ffname in ffnames:
             break
 
     if odt is None:
-        print >>sys.stderr, "Did not find time in file", ffname
+        print("Did not find time in file", ffname, file=sys.stderr)
         continue
 
     # Reduce pruned list to objusts that could be in image
@@ -217,13 +217,13 @@ for ffname in ffnames:
 
     if targbrightest:
         if targobj is None:
-            print >>sys.stderr, "Did not find target", target, "within image coords in file", ffname
+            print("Did not find target", target, "within image coords in file", ffname, file=sys.stderr)
             continue
         tobj, targra, targdec = targobj
         objpixes = w.coords_to_pix(((targra, targdec),))[0]
         brightest = findbrightest.findbrightest(imagedata, mainap)
         if brightest is None:
-            print >>sys.stderr, "Could not find a brightest object"
+            print("Could not find a brightest object", file=sys.stderr)
             continue
         ncol, nrow, nadu = brightest
         rlpix = ((int(round(ncol)), int(nrow)), )
@@ -231,7 +231,7 @@ for ffname in ffnames:
         adjra = rarloc[0]-targra
         adjdec = rarloc[1]-targdec
         if adjra**2 + adjdec**2 > maxadj:
-            print >>sys.stderr, "Offset of brighest object too big in file", ffname
+            print("Offset of brighest object too big in file", ffname, file=sys.stderr)
             continue
         nodup_objlist.append((ncol, nrow, nadu, objpixes, targra, targdec, rarloc, tobj))
         Hadtarg = nodup_objlist[-1]
@@ -264,7 +264,7 @@ for ffname in ffnames:
             pass
 
     if Hadtarg is None:
-        print >>sys.stderr, "Algorithm did not find target", target, "within image coords in file", ffname
+        print("Algorithm did not find target", target, "within image coords in file", ffname, file=sys.stderr)
         continue
 
     newobjlist = remfitsobj.Remobjlist(ffname, odt.mjd, ffhdr['FILTER'])

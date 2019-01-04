@@ -1,11 +1,11 @@
-#! /usr/bin/env python
+#! /usr/bin/env python3
 
 # @Author: John M Collins <jmc>
 # @Date:   2018-08-13T17:29:08+01:00
 # @Email:  jmc@toad.me.uk
 # @Filename: objinten.py
 # @Last modified by:   jmc
-# @Last modified time: 2018-10-01T14:42:05+01:00
+# @Last modified time: 2019-01-04T22:54:22+00:00
 
 from astropy.io import fits
 from astropy import wcs
@@ -39,7 +39,7 @@ def pmjdate(arg):
     try:
         t = Time(parsetime.parsetime(arg))
     except ValueError:
-        print >>sys.stderr, "Could not understand time arg", arg
+        print("Could not understand time arg", arg, file=sys.stderr)
         sys.exit(50)
     return  t.mjd
 
@@ -69,9 +69,9 @@ try:
     objinf.loadfile(libfile)
 except objinfo.ObjInfoError as e:
     if e.warningonly:
-        print  >>sys.stderr, "(Warning) file does not exist:", libfile
+        print("(Warning) file does not exist:", libfile, file=sys.stderr)
     else:
-        print >>sys.stderr,  "Error loading file", e.args[0]
+        print("Error loading file", e.args[0], file=sys.stderr)
         sys.exit(30)
 
 # The reason why we don't get RA and DECL info out of this is because we have
@@ -90,12 +90,12 @@ results = remfitsobj.RemobjSet()
 try:
     results.loadfile(resultsfile)
 except remfitsobj.RemObjError as e:
-    print >>sys.stderr,  "Error loading results file", resultsfile, e.args[0]
+    print("Error loading results file", resultsfile, e.args[0], file=sys.stderr)
     sys.exit(30)
 
 target = results.targname
 if target is None:
-    print >>sys.stderr, "Results file", resultsfile, "does not have target"
+    print("Results file", resultsfile, "does not have target", file=sys.stderr)
     sys.exit(31)
 
 firstdate = pmjdate(resargs['firstdate'])
@@ -127,7 +127,7 @@ if biasfile is not None:
 oblist = results.getobslist(filter = filter, firstdate = firstdate, lastdate = lastdate)
 
 if len(oblist) == 0:
-    print >>sys.stderr, "Sorry no observations found try finding some more"
+    print("Sorry no observations found try finding some more", file=sys.stderr)
     sys.exit(1)
 
 sqrt12 = 1.0/math.sqrt(12.0)
@@ -187,7 +187,7 @@ for ob in oblist:
     try:
         (tadus, terr) = calcadus.calcadus(imagedata, errorarray, w.relpix((tobj.pixcol, tobj.pixrow)), tobj.apradius)
     except calcadus.calcaduerror as e:
-        print >>sys.stderr, "Error in target file", ffname, e.args[0]
+        print("Error in target file", ffname, e.args[0], file=sys.stderr)
         continue
     tobj.aducount = tadus
     tobj.aduerror = terr
@@ -198,7 +198,7 @@ for ob in oblist:
         try:
             (tadus, terr) = calcadus.calcadus(imagedata, errorarray, w.relpix((tobj.pixcol, tobj.pixrow)), tobj.apradius)
         except calcadus.calcaduerror as e:
-            print >>sys.stderr, "Error in obj", obj.objname, "file", ffname, e.args[0]
+            print("Error in obj", obj.objname, "file", ffname, e.args[0], file=sys.stderr)
             continue
         tobj.aducount = tadus
         tobj.aduerror = terr
