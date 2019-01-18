@@ -1,8 +1,20 @@
 #! /usr/bin/perl
 
-use dbops;
+# @Author: John M Collins <jmc>
+# @Date:   2018-03-24T14:39:41+00:00
+# @Email:  jmc@toad.me.uk
+# @Filename: getfits.pl
+# @Last modified by:   jmc
+# @Last modified time: 2019-01-18T20:38:19+00:00
 
-my $dbase = dbops::opendb('remfits') or die "Cannot open DB";
+use dbops;
+use Getopt::Long;
+
+my $base = "remfits";
+
+GetOptions("database=s" => \$base) or die "Invalid options expecting --database dbase";
+
+my $dbase = dbops::opendb($base) or die "Cannot open DB $base";
 
 $sfh = $dbase->prepare("SELECT ffname,dithID,obsind FROM obsinf WHERE ind=0 ORDER by date_obs");
 $sfh->execute;

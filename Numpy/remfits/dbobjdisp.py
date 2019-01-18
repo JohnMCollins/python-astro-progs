@@ -185,6 +185,7 @@ for obsind in obsinds:
     cl=np.log10(np.logspace(1, 256, mapsize)).round()-1
     if invertim:
         cl = 255 - cl
+    cl = [int(i) for i in cl]
     collist = ["#%.2x%.2x%.2x" % (i,i,i) for i in cl]
     cmap = colors.ListedColormap(collist)
     norm = colors.BoundaryNorm(crange, cmap.N)
