@@ -1,11 +1,9 @@
 #!  /usr/bin/env python3
 
-# @Author: John M Collins <jmc>
-# @Date:   2019-01-04T14:01:35+00:00
-# @Email:  jmc@toad.me.uk
-# @Filename: copydb.py
-# @Last modified by:   jmc
-# @Last modified time: 2019-01-04T22:49:35+00:00
+# This program is intended to be run non-interactively.
+# It copies new observation data but not the FITS files to the named
+# #database, by default "remfits" but an alternative can be given as the
+# first argument
 
 import dbops
 import sys
@@ -31,7 +29,14 @@ def insert_row(row):
 	rowsadded += 1
 
 remdb = dbops.opendb('rdots')
-mydb = dbops.opendb('remfits')
+
+mydbname = 'remfits'
+try:
+	mydbname = sys.argv[1]
+except IndexError:
+	pass
+
+mydb = dbops.opendb(mydbname)
 
 remcurs = remdb.cursor()
 mycurs = mydb.cursor()
