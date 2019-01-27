@@ -21,11 +21,11 @@ import argparse
 import warnings
 warnings.filterwarnings('ignore')
 from astroquery.sdss import SDSS
-import xmlutil
-import objinfo
+import dbobjinfo
 import sys
 import math
 import parsetime
+import dbops
 
 class savedobj(object):
     """Remember details of object for sorting and combining"""
@@ -76,7 +76,7 @@ def combine(obl):
 
 parsearg = argparse.ArgumentParser(description='List objects close to given object from SDSS', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 parsearg.add_argument('object', nargs=1, type=str, help='Object name to specify region for')
-parsearg.add_argument('--libfile', type=str, default='~/lib/stellar_data', help='File to use for database')
+parsearg.add_argument('--database', type=str, default='remfits', help='Database to use')
 parsearg.add_argument('--radius', type=float, default=10, help='Radius in arcminutes')
 parsearg.add_argument('--samerad', type=float, default=1, help='Treat objects as same if in this number of arcminutes')
 parsearg.add_argument('--maxmag', type=float, default=15.0, help='Maximum magnitude to accept')
@@ -88,7 +88,7 @@ parsearg.add_argument('--basetime', type=str, help='Time/date for proper motions
 resargs = vars(parsearg.parse_args())
 
 objname = resargs['object'][0]
-libfile = os.path.expanduser(resargs['libfile'])
+dbname = resargs['database']
 radius = resargs['radius'] / 60.0
 samerad = resargs['samerad'] / 60.0
 maxmag = resargs['maxmag']
@@ -106,19 +106,17 @@ else:
         print("Do not understand date", basetime, file=sys.stderr)
         sys.exit(20)
 
-objinf = objinfo.ObjInfo()
 try:
-    objinf.loadfile(libfile)
-except objinfo.ObjInfoError as e:
-    if e.warningonly:
-        print("(Warning) file does not exist:", libfile, file=sys.stderr)
-    else:
-        print("Error loading file", e.args[0], file=sys.stderr)
-        sys.exit(30)
+    dbase = dbops.opendb(dbname)
+except dbops.dbopsError as e:
+    print("Could not open database", dbname, "Error was", e.args[0], file=sys.stderr)
+    sys.exit(10)
+
+mycursor = dbase.cursor()
 
 try:
-    objd = objinf.get_object(objname)
-except objinfo.ObjInfoError as e:
+    objd = dbobjinfo.get_object(mycursor, objname)
+except dbobjinfo.ObjDataError as e:
     print("Error with object", objname, ":", e.args[0], file=sys.stderr)
     sys.exit(31)
 
@@ -201,10 +199,10 @@ for r in combined:
          (r.id, r.ra, r.dec, r.type, r.mags['g'], r.mags['i'], r.mags['r'], r.mags['z'], \
           r.magerrs['g'], r.magerrs['i'], r.magerrs['r'], r.magerrs['z'], r.ninsts, s))
 
-libobj_curr = objinf.list_objects(basetime)
+libobj_curr = dbobjinfo.get_objlist(mycursor, RACurr, DECCurr, samerad, basetime)
 
 for p in combined:
-    for obj, ra, dec in libobj_curr:
+    for ra, dec, obj in libobj_curr:
         if (ra - p.ra)**2 + (dec - p.dec)**2 <= diffrad2:
             if p.obj is not None:
                 print("Same match radius too large clashing with", p.obj.objname, "and", obj.objname, file=sys.stderr)
@@ -222,11 +220,13 @@ for p in combined:
         objname = "SDSS" + str(p.id)
         objtype = "star"
         if p.type == 3: objtype = "galaxy"
-        obj = objinfo.ObjData(objname = objname, objtype = objtype, ra = p.ra, dec = p.dec)
-        objinf.add_object(obj)
-    objinf.add_aliases(obj, "SDSS", str(p.id))
+        obj = dbobjinfo.ObjData(objname = objname, objtype = objtype, ra = p.ra, dec = p.dec)
+    dbobjinfo.add_alias(mycursor, objname, str(p.id), "SDSS")
     for f in 'urigz':
         obj.set_mag(filter = f, value = p.mags[f], err = p.magerrs[f], force = force)
+    if p.obj is None:
+        obj.add_object(mycursor)
+    else:
+        obj.update_filters(mycursor)
 
-objinf.savefile()
-print("Saved new file")
+dbase.commit()

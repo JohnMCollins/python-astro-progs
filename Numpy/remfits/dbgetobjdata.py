@@ -32,23 +32,18 @@ autils.suppress_vo_warnings()
 parsearg = argparse.ArgumentParser(description='Get object info into database', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 parsearg.add_argument('objects', nargs='+', type=str, help='Object names to process')
 parsearg.add_argument('--database', type=str, default='remfits', help='Database to use')
-parsearg.add_argument('--update', action='store_true', help='Update existing names')
 parsearg.add_argument('--delete', action='store_true', help='Delete names')
 
 resargs = vars(parsearg.parse_args())
 
 objnames = resargs['objects']
 dbname = os.path.expanduser(resargs['database'])
-update = resargs['update']
 delete = resargs['delete']
-
-if update and delete:
-    print("Cannot have update and delete options at once" >>sys.stderr)
 
 try:
     dbase = dbops.opendb(dbname)
 except dbops.dbopsError as e:
-    print("Could not open database", dbname, "Error was", e.args[0])
+    print("Could not open database", dbname, "Error was", e.args[0], file=sys.stderr)
     sys.exit(10)
 
 mycursor = dbase.cursor()
@@ -72,41 +67,23 @@ if delete:
 # If updating check all the names given are there
 # Otherwise check that they aren't
 
-if update:
-    for name in objnames:
-        try:
-            nobj = dbobjinfo.get_object(mycursor, name)
-        except dbobjinfo.ObjDataError as e:
-            print(a.args[0], file=sys.stderr)
+for name in objnames:
+    if name in edict:
+        print("Already requested addding", name, file=sys.stderr)
+        errors += 1
+        continue
+    edict[name] = 1
+    try:
+        nobj = dbobjinfo.get_object(mycursor, name)
+        pname = nobj.objname
+        if pname != name:
+            print("Already had", name, "as alias of", pname, file=sys.stderr)
+        else:
+            print("Already had", name, file=sys.stderr)
             errors += 1
-            continue
-        nname = nobj.objname
-        if nname in edict:
-            if name != nname:
-                print("Already had", name, "aliased to", nname, file=sys.stderr)
-            else:
-                print("Already had", name, file=sys.stderr)
-            errors += 1
-            continue
-        edict[nname] = 1
-else:
-    for name in objnames:
-        if name in edict:
-            print("Already requested addding", name, file=sys.stderr)
-            errors += 1
-            continue
-        edict[name] = 1
-        try:
-            nobj = dbobjinfo.get_object(mycursor, name)
-            pname = nobj.objname
-            if pname != name:
-                print("Already had", name, "as alias of", pname, file=sys.stderr)
-            else:
-                print("Already had", name, file=sys.stderr)
-            errors += 1
-            continue
-        except dbobjinfo.ObjInfoError:
-            pass
+        continue
+    except dbobjinfo.ObjDataError:
+        pass
 
 if errors > 0:
     print("Aborting due to errors", file=sys.stderr)
@@ -114,6 +91,7 @@ if errors > 0:
 
 sb = Simbad()
 sb.add_votable_fields('main_id','otype','ra','dec','distance','pmra','pmdec', 'rv_value')
+
 for name in objnames:
     qres = sb.query_object(name)
     if qres is None:
@@ -121,21 +99,16 @@ for name in objnames:
         continue
     q0 = qres[0]
     qname = q0['MAIN_ID']
-    if objinf.is_defined(qname):
-        if not update:
-            print(name, "is already defined as", qname, file=sys.stderr)
-            errors += 1
-            continue
-    elif update:
-        print(name, "is not previously defined", file=sys.stderr)
+    if dbobjinfo.is_defined(mycursor, str(qname)):
+        print(name, "is already defined as", qname, file=sys.stderr)
         errors += 1
         continue
 
     otype = q0['OTYPE']
     ra = coordinates.Angle(q0['RA'], unit=u.hour).deg
     dec = coordinates.Angle(q0['DEC'], unit=u.deg).deg
-    distance = q0['distance_distance']
-    distunit = q0['distance_unit']
+    distance = q0['Distance_distance']
+    distunit = q0['Distance_unit']
     pmra = q0['PMRA']
     pmdec = q0['PMDEC']
     try:
@@ -150,20 +123,20 @@ for name in objnames:
         pmra = None
     if is_masked(pmdec):
         pmdec = None
-    if update:
-        obj = dbobjinfo.get_object(mycursor, name)
-        obj.set_ra(value=ra, pm = pmra)
-        obj.set_dec(vlaue=dec, pm= pmdec)
-        if distance is not None:
-            obj.dist = distance
-    else:
-        obj = dbobjinfo.ObjData(objname = name, objtype = otype, rv = rvel, dist = distance)
-        obj.set_ra(value = ra, pm = pmra)
-        obj.set_dec(value = dec, pm = pmdec)
+    obj = dbobjinfo.ObjData(objname = name, objtype = otype, rv = rvel, dist = distance)
+    obj.set_ra(value = ra, pm = pmra)
+    obj.set_dec(value = dec, pm = pmdec)
+    try:
         if qname != name:
-            obj.set_alias(qname, 'Simbad')
-        objinf.add_object(obj)
+            dbobjinfo.add_alias(mycursor, name, qname, 'Simbad')
+        obj.add_object(mycursor)
+    except dbobjinfo.ObjDataError as e:
+        print("Problems adding", name, "error was", e.args[0])
+        errors += 1
 
 if errors > 0:
-    print("Aborting due to errors", file=sys.stderr)
+    print("Erors on", errors, "file(s)", file=sys.stderr)
+    dbase.commit()
     sys.exit(20)
+
+dbase.commit()

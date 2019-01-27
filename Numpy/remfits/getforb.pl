@@ -43,9 +43,10 @@ if ($month < 0)  {
 }
 $month++;
 
-GetOptions("year=i" => \$year, "month=i" => \$month, "force", \$force);
+my $dbasename = 'remfits';
+GetOptions("database=s" => \$dbasename, "year=i" => \$year, "month=i" => \$month, "force", \$force);
 
-my $dbase = dbops::opendb('remfits') or die "Cannot open DB";
+my $dbase = dbops::opendb($dbasename) or die "Cannot open Database $dbasename";
 my $sfh;
 my $row;
 
