@@ -51,7 +51,7 @@ my $sfh;
 my $row;
 
 unless  ($force)  {
-    $sfh = $dbase->prepare("SELECT COUNT(*) FROM forb WHERE year=$year AND month=$month");
+    $sfh = $dbase->prepare("SELECT COUNT(*) FROM forbinf WHERE year=$year AND month=$month");
     $sfh->execute;
     $row = $sfh->fetchrow_arrayref;
     if ($row->[0] >= 8)  {
