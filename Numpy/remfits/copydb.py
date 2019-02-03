@@ -58,7 +58,7 @@ obsfields = "SELECT radeg,decdeg,object,dithID,filter,date_obs,mjdobs,exptime,fn
 
 # Get the latest date we have copies of
 
-have_max = mycurs.execute("SELECT MAX(date_obs) FROM obs")
+have_max = mycurs.execute("SELECT MAX(date_obs) FROM obsinf")
 rowlist = mycurs.fetchall()
 latest_got = rowlist[0][0]
 
