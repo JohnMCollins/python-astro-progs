@@ -59,7 +59,7 @@ def combine(obl):
     cmags = dict()
     cmagerrs = dict()
     ov = False
-    for f in "urigz":
+    for f in "urigzHJK":
         magl = [x.mags[f] for x in obl]
         magerrl = [x.magerrs[f] for x in obl]
         cmags[f] = np.mean(magl)
@@ -115,6 +115,7 @@ except dbops.dbopsError as e:
 mycursor = dbase.cursor()
 
 try:
+    objname = dbobjinfo.get_targetname(mycursor, objname)
     objd = dbobjinfo.get_object(mycursor, objname)
 except dbobjinfo.ObjDataError as e:
     print("Error with object", objname, ":", e.args[0], file=sys.stderr)
@@ -130,7 +131,7 @@ DECCurr = objd.get_dec(basetime)
 Objcoord = coordinates.SkyCoord(ra = RACurr, dec = DECCurr, unit=u.deg)
 
 fields = ['objID','type', 'ra','dec']
-for l in 'urigz':
+for l in 'urigzHJK':
     fields.append(l)
     fields.append('Err_' + l)
 
@@ -164,10 +165,10 @@ for r in Sdobjs:
 convsdobjs.sort(key=lambda x: (x.type, x.ra, x.dec))
 print("Number of objects prior to combination =", len(convsdobjs))
 
-for r in convsdobjs:
-    print("%d %.4f %.4f %d %.3f %.3f %.3f %.3f %.3f %.3f %.3f %.3f" % \
-        (r.id, r.ra, r.dec, r.type, r.mags['g'], r.mags['i'], r.mags['r'], r.mags['z'], \
-         r.magerrs['g'], r.magerrs['i'], r.magerrs['r'], r.magerrs['z']))
+#for r in convsdobjs:
+#    print("%d %.4f %.4f %d %.3f %.3f %.3f %.3f %.3f %.3f %.3f %.3f" % \
+#        (r.id, r.ra, r.dec, r.type, r.mags['g'], r.mags['i'], r.mags['r'], r.mags['z'], \
+#         r.magerrs['g'], r.magerrs['i'], r.magerrs['r'], r.magerrs['z']))
 
 # This is where we merge together 2 or more obs of the same thing
 
@@ -195,9 +196,9 @@ for r in combined:
     s = ""
     obn = ""
     if r.variable: s = "(var)"
-    print("%d %.4f %.4f %d %.3f %.3f %.3f %.3f %.3f %.3f %.3f %.3f (%d) %s" % \
-         (r.id, r.ra, r.dec, r.type, r.mags['g'], r.mags['i'], r.mags['r'], r.mags['z'], \
-          r.magerrs['g'], r.magerrs['i'], r.magerrs['r'], r.magerrs['z'], r.ninsts, s))
+    #print("%d %.4f %.4f %d %.3f %.3f %.3f %.3f %.3f %.3f %.3f %.3f (%d) %s" % \
+     #    (r.id, r.ra, r.dec, r.type, r.mags['g'], r.mags['i'], r.mags['r'], r.mags['z'], \
+     #    r.magerrs['g'], r.magerrs['i'], r.magerrs['r'], r.magerrs['z'], r.ninsts, s))
 
 libobj_curr = dbobjinfo.get_objlist(mycursor, RACurr, DECCurr, samerad, basetime)
 
@@ -222,7 +223,7 @@ for p in combined:
         if p.type == 3: objtype = "galaxy"
         obj = dbobjinfo.ObjData(objname = objname, objtype = objtype, ra = p.ra, dec = p.dec)
     dbobjinfo.add_alias(mycursor, objname, str(p.id), "SDSS")
-    for f in 'urigz':
+    for f in 'urigzHJK':
         obj.set_mag(filter = f, value = p.mags[f], err = p.magerrs[f], force = force)
     if p.obj is None:
         obj.add_object(mycursor)

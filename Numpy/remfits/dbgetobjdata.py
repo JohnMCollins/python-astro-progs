@@ -96,6 +96,7 @@ for name in objnames:
     qres = sb.query_object(name)
     if qres is None:
         print("Cannot find", name, "in Simbad", file=sys.stderr)
+        errors += 1
         continue
     q0 = qres[0]
     qname = q0['MAIN_ID']

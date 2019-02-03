@@ -339,7 +339,7 @@ for filter in 'girz':
                 nearestobj = findnearest.findnearest(imagedata, objpixes, mainap, searchrad, med + sigma * nsigfind)
                 if nearestobj is None:
                     continue
-                if m.objname == targetnam#!  /usr/bin/env python3e:
+                if m.objname == targetname:
                     targobjpl = possible
                 ncol, nrow, nadu = nearestobj
                 ncol = int(round(ncol))

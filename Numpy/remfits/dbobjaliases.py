@@ -76,7 +76,7 @@ if delete:
     sys.exit(0)
 
 if len(objnames) < 2:
-    print("Expecting alias names for", mainname, file=sys.stderr)
+    print("Expecting main name followed by alias names", file=sys.stderr)
     sys.exit(10)
 
 mainname = objnames.pop(0)

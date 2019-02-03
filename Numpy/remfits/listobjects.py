@@ -8,10 +8,10 @@
 # @Last modified time: 2019-01-04T23:10:43+00:00
 
 import dbops
-import string
 import datetime
 import argparse
 from operator import attrgetter
+import dbobjinfo
 
 class obstot(object):
 	"""Details of result"""
@@ -21,6 +21,7 @@ class obstot(object):
 		self.count = int(n)
 		self.earliest = None
 		self.latest = None
+		self.isundef = None
 
 parsearg = argparse.ArgumentParser(description='List all objects with first and last date',
                                    formatter_class=argparse.ArgumentDefaultsHelpFormatter)
@@ -49,9 +50,14 @@ for k in results:
 	dbcurs.execute("SELECT date_obs FROM obs WHERE object='" + obj + "' ORDER BY date_obs DESC LIMIT 1")
 	row = dbcurs.fetchall()
 	k.todate = row[0][0]
+	try:
+		dbobjinfo.get_targetname(dbcurs, k.objname)
+		k.isundef = False
+	except dbobjinfo.ObjDataError:
+		k.isundef = True
 
 if order is not None and len(order) != 0:
-	f = string.lower(order)[0]
+	f = order[0].lower()
 	if f == 'n':
 		results.sort(key=attrgetter('count'),reverse=True)
 	elif f == 'e':
@@ -60,4 +66,8 @@ if order is not None and len(order) != 0:
 		results.sort(key=attrgetter('todate'),reverse=True)
 
 for k in results:
+	if k.isundef:
+		print('*', end='')
+	else:
+		print(' ', end='')
 	print("%-14s\t%d\t" % (k.objname, k.count) + k.fromdate.strftime("%d-%m-%y\t") + k.todate.strftime("%d-%m-%y"))
