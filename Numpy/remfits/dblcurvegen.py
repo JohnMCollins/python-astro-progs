@@ -30,17 +30,19 @@ def make_resultsrow(dat, ind, exptime, adudict):
 
 parsearg = argparse.ArgumentParser(description='Plot light curves from ADU calcs', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 parsearg.add_argument('refobjs', type=str, nargs=1, help='Target name')
+parsearg.add_argument('--database', type=str, default='remfits', help='Database to use')
 parsearg.add_argument('--filter', type=str, required=True, help='Filter to use')
 parsearg.add_argument('--percentile', type=float, default=50.0, help='perecntile to subtract for sky level default median')
 parsearg.add_argument('--outfile', type=str, help='Output file for results')
 
 resargs = vars(parsearg.parse_args())
 targetname = resargs['refobjs'][0]
+dbname = resargs['database']
 filter = resargs['filter']
 percentile = resargs['percentile']
 outfile = resargs['outfile']
 
-dbase = dbops.opendb('remfits')
+dbase = dbops.opendb(dbname)
 dbcurs = dbase.cursor()
 
 targetname = dbobjinfo.get_targetname(dbcurs, targetname)

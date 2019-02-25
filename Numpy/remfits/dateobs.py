@@ -18,11 +18,13 @@ parsearg = argparse.ArgumentParser(description='List dates on which given object
                                    formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
 parsearg.add_argument('object', type=str, nargs=1, help='Object we are talking about')
+parsearg.add_argument('--database', type=str, default='remfits', help='Database to use')
 resargs = vars(parsearg.parse_args())
 
 obj = resargs['object'][0]
+dbname = resargs['database']
 
-mydb = dbops.opendb('remfits')
+mydb = dbops.opendb(dbname)
 dbcurs = mydb.cursor()
 dbcurs.execute("SELECT date(date_obs),count(*) FROM obsinf WHERE object='" + obj + "' GROUP BY date(date_obs)")
 for row in dbcurs.fetchall():

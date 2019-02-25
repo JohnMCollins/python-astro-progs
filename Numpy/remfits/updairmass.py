@@ -20,7 +20,13 @@ import dbobjinfo
 import dbremfitsobj
 import dbops
 
-dbase = dbops.opendb('remfits')
+mydbname = 'remfits'
+try:
+        mydbname = sys.argv[1]
+except IndexError:
+        pass
+
+dbase = dbops.opendb(mydbname)
 dbcurs = dbase.cursor()
 
 dbcurs.execute("SELECT obsind,ind,exptime FROM obsinf WHERE airmass IS NULL")

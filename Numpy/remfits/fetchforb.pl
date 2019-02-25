@@ -12,8 +12,10 @@ my $outfile;
 my $help;
 my $forward = 0;
 my $backward = 0;
+my $dbname = 'remfits';
 
-GetOptions("year=i" => \$year,
+GetOptions("database=s" => \$dbname, 
+           "year=i" => \$year,
            "month=i" => \$month,
            "filter=s", \$filter,
            "type=s" => \$type,
@@ -67,7 +69,7 @@ else {
     $type = 'bias';
 }
 
-my $dbase = dbops::opendb('remfits') or die "Cannot open DB";
+my $dbase = dbops::opendb($dbname) or die "Cannot open DB $dbname";
 
 my $sfh = $dbase->prepare("SELECT fitsgz FROM forb WHERE year=$year AND month=$month AND typ='$type' AND filter='$filter'");
 $sfh->execute;

@@ -59,19 +59,20 @@ def parsedate(dat):
 
 parsearg = argparse.ArgumentParser(description='List available observations',
                                    formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-
+parsearg.add_argument('--database', type=str, default='remfits', help='Database to use')
 parsearg.add_argument('--fromdate', type=str, help='Earlist date to list from')
-parsearg.add_argument('--todate', type=str, help='Latest date to list from (same as fromdate if that specified')
+parsearg.add_argument('--todate', type=str, help='Latest date to list from (same as fromdate if that specified)')
 parsearg.add_argument('--allmonth', type=str, help='All of given year-month as alternative to from/to date')
-parsearg.add_argument('--objects', type=str, nargs='*', help='Objects to llimit to')
-parsearg.add_argument('--dither', type=int, nargs='*', help='Dither ID to limits to')
-parsearg.add_argument('--filter', type=str, nargs='*', help='filters to llimit to')
+parsearg.add_argument('--objects', type=str, nargs='*', help='Objects to limit to')
+parsearg.add_argument('--dither', type=int, nargs='*', help='Dither ID to limit to')
+parsearg.add_argument('--filter', type=str, nargs='*', help='filters to limit to')
 parsearg.add_argument('--summary', action='store_true', help='Just summarise objects and number of obs')
 parsearg.add_argument('--idonly', action='store_true', help='Just give ids no other data')
 parsearg.add_argument('--fitsind', action='store_true', help='Show fits ind not obs ind')
 
 resargs = vars(parsearg.parse_args())
 
+dbname = resargs['database']
 idonly = resargs['idonly']
 fd = parsedate(resargs['fromdate'])
 td = parsedate(resargs['todate'])
@@ -88,7 +89,7 @@ if idonly and summary:
     print("Cannot have both idonly and summary", file=sys.stderr)
     sys.exit(10)
 
-mydb = dbops.opendb('remfits')
+mydb = dbops.opendb(dbname)
 
 dbcurs = mydb.cursor()
 

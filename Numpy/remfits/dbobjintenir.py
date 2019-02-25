@@ -32,6 +32,7 @@ import dbremfitsobj
 import dbops
 
 parsearg = argparse.ArgumentParser(description='Tabulate ADUs from FITS IR files', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+parsearg.add_argument('--database', type=str, default='remfits', help='Database to use')
 parsearg.add_argument('--mainap', type=int, default=6, help='main aperture radius')
 parsearg.add_argument('--percentile', type=float, default=50.0, help='perecntile to subtract for sky level default median')
 
@@ -44,12 +45,13 @@ autils.suppress_vo_warnings()
 
 resargs = vars(parsearg.parse_args())
 
+dbname = resargs['database']
 mainap = resargs['mainap']
 percentile = resargs['percentile']
 
 rg = remgeom.load()
 
-dbase = dbops.opendb('remfits')
+dbase = dbops.opendb(dbname)
 dbcurs = dbase.cursor()
 
 sqrt12 = 1.0/math.sqrt(12.0)

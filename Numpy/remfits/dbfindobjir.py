@@ -50,6 +50,7 @@ class FoundData(object):
         return  self.col * 100000 + self.row
 
 parsearg = argparse.ArgumentParser(description='Locate objects in DB FITS files', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+parsearg.add_argument('--database', type=str, default='remfits', help='Database to use')
 parsearg.add_argument('--target', type=str, help='Name of target', required=True)
 parsearg.add_argument('--cutoff', type=float, help='Reduce maxima to this value', default=-1.0)
 parsearg.add_argument('--trim', action='store_true', help='Trim trailing empty pixels')
@@ -79,6 +80,7 @@ warnings.simplefilter('ignore', AstropyUserWarning)
 warnings.simplefilter('ignore', UserWarning)
 autils.suppress_vo_warnings()
 
+dbname = resargs['database']
 targetname = resargs['target']
 cutoff = resargs['cutoff']
 trimem = resargs['trim']
@@ -116,7 +118,7 @@ if  tempdir is not None:
         print("Could not select", tempdir, "error was". e.args[1], file=sys.stderr)
         sys.exit(12)
 
-mydb = dbops.opendb('remfits')
+mydb = dbops.opendb(dbname)
 dbcurs = mydb.cursor()
 
 # See if targetname is the object name, otherwise look up as alias

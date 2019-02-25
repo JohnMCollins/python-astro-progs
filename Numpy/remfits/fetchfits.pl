@@ -16,8 +16,9 @@ my $prefix = "fits";
 my $help;
 my $verbose;
 my $n = 1;
+my $dbname = 'remfits';
 
-GetOptions("prefix=s" => \$prefix, "verbose" => \$verbose, "start=i" => \$n, "help" => \$help) or pod2usage(2);
+GetOptions("database=s" => \$dbname, "prefix=s" => \$prefix, "verbose" => \$verbose, "start=i" => \$n, "help" => \$help) or pod2usage(2);
 pod2usage(-exitval => 0, -verbose => 2) if $help;
 
 #if ($help)  {
@@ -46,7 +47,7 @@ for my $ef (glob('*.fits.gz *.fits')) {
         $nefiles++;
     }
 }
-my $dbase = dbops::opendb('remfits') or die "Cannot open DB";
+my $dbase = dbops::opendb($dbname) or die "Cannot open DB $dbname";
 
 for my $id (@ARGV) {
     my $nid = $id + 0;

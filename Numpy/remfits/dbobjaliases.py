@@ -15,6 +15,7 @@ import dbops
 
 parsearg = argparse.ArgumentParser(description='Create/delete alias names for objects', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 parsearg.add_argument('names', nargs='*', type=str, help='Main name followed by aliases')
+parsearg.add_argument('--database', type=str, default='remfits', help='Database to use')
 parsearg.add_argument('--delete', action='store_true', help='Delete aliases main name not needed')
 parsearg.add_argument('--alldelete', action='store_true', help='Delete all aliases for main name')
 parsearg.add_argument('--source', type=str, default='By hand', help='Source of alias names')
@@ -24,13 +25,14 @@ parsearg.add_argument('--list', action='store_true', help='Just list existing al
 resargs = vars(parsearg.parse_args())
 
 objnames = resargs['names']
+dbname = resargs['database']
 delete = resargs['delete']
 alldelete = resargs['alldelete']
 source = resargs['source']
 verbose = resargs['verbose']
 listem = resargs['list']
 
-mydb = dbops.opendb('remfits')
+mydb = dbops.opendb(dbname)
 dbcurs = mydb.cursor()
 
 if listem:

@@ -33,6 +33,7 @@ import dbops
 
 parsearg = argparse.ArgumentParser(description='Display images from database', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 parsearg.add_argument('obsinds', type=int, nargs='+', help='Observation ids to display')
+parsearg.add_argument('--database', type=str, default='remfits', help='Database to use')
 parsearg.add_argument('--figout', type=str, help='File to output figure(s) to')
 parsearg.add_argument('--mapsize', type=int, default=4, help='Number of shades in grey scale')
 parsearg.add_argument('--invert', action='store_false', help='Invert image')
@@ -63,6 +64,7 @@ warnings.simplefilter('ignore', AstropyUserWarning)
 warnings.simplefilter('ignore', UserWarning)
 autils.suppress_vo_warnings()
 
+dbname = resargs['database']
 obsinds = resargs['obsinds']
 figout = resargs['figout']
 mapsize = resargs['mapsize']
@@ -90,7 +92,7 @@ hilalpha  = resargs['hilalpha']
 trimem = resargs['trim']
 mainap = resargs['mainap']
 
-dbase = dbops.opendb('remfits')
+dbase = dbops.opendb(dbname)
 dbcurs = dbase.cursor()
 
 nfigs = len(obsinds)
