@@ -46,7 +46,7 @@ mydb = dbops.opendb(dbname)
 
 dbcurs = mydb.cursor()
 
-dbcurs.execute("SELECT object,COUNT(*) AS number FROM obs GROUP BY object")
+dbcurs.execute("SELECT object,COUNT(*) AS number FROM obsinf GROUP BY object")
 
 results = []
 
@@ -56,10 +56,10 @@ for row in dbcurs.fetchall():
 
 for k in results:
 	obj = k.objname
-	dbcurs.execute("SELECT date_obs FROM obs WHERE object='" + obj + "' ORDER BY date_obs LIMIT 1")
+	dbcurs.execute("SELECT date_obs FROM obsinf WHERE object='" + obj + "' ORDER BY date_obs LIMIT 1")
 	row = dbcurs.fetchall()
 	k.fromdate = row[0][0]
-	dbcurs.execute("SELECT date_obs FROM obs WHERE object='" + obj + "' ORDER BY date_obs DESC LIMIT 1")
+	dbcurs.execute("SELECT date_obs FROM obsinf WHERE object='" + obj + "' ORDER BY date_obs DESC LIMIT 1")
 	row = dbcurs.fetchall()
 	k.todate = row[0][0]
 	try:
