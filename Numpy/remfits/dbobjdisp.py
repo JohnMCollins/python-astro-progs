@@ -35,7 +35,8 @@ parsearg = argparse.ArgumentParser(description='Display images from database', f
 parsearg.add_argument('obsinds', type=int, nargs='+', help='Observation ids to display')
 parsearg.add_argument('--database', type=str, default='remfits', help='Database to use')
 parsearg.add_argument('--figout', type=str, help='File to output figure(s) to')
-parsearg.add_argument('--mapsize', type=int, default=4, help='Number of shades in grey scale')
+parsearg.add_argument('--percentiles', action='store_true', help='Use percentiles not std devs')
+parsearg.add_argument('--levels', type=str, default='2', help='Set std devs or pecentiles for map display')
 parsearg.add_argument('--invert', action='store_false', help='Invert image')
 parsearg.add_argument('--divisions', type=int, default=8, help='Divisions in RA/Dec lines')
 parsearg.add_argument('--divprec', type=int, default=3, help='Precision for axes')
@@ -67,7 +68,9 @@ autils.suppress_vo_warnings()
 dbname = resargs['database']
 obsinds = resargs['obsinds']
 figout = resargs['figout']
-mapsize = resargs['mapsize']
+percentiles = resargs['percentiles']
+levels = [float(x) for x in resargs['levels'].split(':')]
+levels.sort()
 invertim = resargs['invert']
 divisions = resargs['divisions']
 divprec = resargs['divprec']
@@ -180,14 +183,22 @@ for obsind in obsinds:
     med = np.median(imagedata)
     sigma = imagedata.std()
     mx = imagedata.max()
+    mn = imagedata.min()
     fi = imagedata.flatten()
-    fi = fi[fi > med]
-    pcs = 100.0*(1.0-2.0**-np.arange(pstart,mapsize+pstart-1))
-    crange = np.concatenate(((0.0,), np.percentile(fi, pcs), (mx,)))
-    cl=np.log10(np.logspace(1, 256, mapsize)).round()-1
+    if percentiles:
+        crange = np.concatenate(((mn,), np.percentile(fi, levels), (mx, )))
+    else:
+        crange = np.array(levels) * sigma
+        crange = crange[crange > mn]
+        crange = crange[crange < mx]
+        if crange.shape[0] == 0:
+            crange = np.array([med])
+        crange = np.concatenate(((mn,), crange, (mx, )))
+    
+    mapsize = crange.shape[0]-1
+    cl = np.linspace(0, 255, mapsize, dtype=int)
     if invertim:
         cl = 255 - cl
-    cl = [int(i) for i in cl]
     collist = ["#%.2x%.2x%.2x" % (i,i,i) for i in cl]
     cmap = colors.ListedColormap(collist)
     norm = colors.BoundaryNorm(crange, cmap.N)
