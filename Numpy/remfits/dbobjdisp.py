@@ -154,8 +154,13 @@ for obsind in obsinds:
         (imagedata, bdatc) = trimarrays.trimto(fdat, imagedata, bdat)
         bf.close()
         ffile.close()
-
+        
+        # Extra stuff
+        
+        fdat -= bdatc
+        
         imagedata -= bdatc
+        imagedata *= fdat.mean()
         imagedata /= fdat
 
     else:
