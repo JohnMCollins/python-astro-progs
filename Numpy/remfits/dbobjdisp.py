@@ -157,7 +157,8 @@ for obsind in obsinds:
         
         # Extra stuff
         
-        fdat -= bdatc
+        #fdat -= bdatc
+        #print("Minimum flat =", fdat.min())
         
         imagedata -= bdatc
         imagedata *= fdat.mean()
