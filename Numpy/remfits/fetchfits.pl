@@ -51,7 +51,7 @@ my $dbase = dbops::opendb($dbname) or die "Cannot open DB $dbname";
 
 for my $id (@ARGV) {
     my $nid = $id + 0;
-    my $sfh = $dbase->prepare("SELECT fitsgz FROM obs WHERE ind=$nid");
+    my $sfh = $dbase->prepare("SELECT fitsgz FROM fitsfile WHERE ind=$nid");
     $sfh->execute;
     my $row = $sfh->fetchrow_arrayref;
     unless ($row) {

@@ -76,10 +76,10 @@ if latest_got is None:
 		insert_row('flat', row)
 else:
 	datemax = latest_got.strftime("'%Y-%m-%d %H:%M:%S'")
-	remcurs.execute(obsfields + "Dark WHERE exptime=0 AND date_obs>datemax")
+	remcurs.execute(obsfields + "Dark WHERE exptime=0 AND date_obs>" + datemax)
 	for row in remcurs.fetchall():
 		insert_row('bias', row)
-	remcurs.execute(obsfields + "Flat WHERE date_obs>datemax")
+	remcurs.execute(obsfields + "Flat WHERE date_obs>" + datemax)
 	for row in remcurs.fetchall():
 		insert_row('flat', row)
 
