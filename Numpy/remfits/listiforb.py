@@ -57,18 +57,15 @@ def parsedate(dat):
 
     return ret.strftime("%Y-%m-%d")
 
-parsearg = argparse.ArgumentParser(description='List available observations',
+parsearg = argparse.ArgumentParser(description='List flat or bias',
                                    formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 parsearg.add_argument('--database', type=str, default='remfits', help='Database to use')
 parsearg.add_argument('--fromdate', type=str, help='Earlist date to list from')
 parsearg.add_argument('--todate', type=str, help='Latest date to list from (same as fromdate if that specified)')
 parsearg.add_argument('--allmonth', type=str, help='All of given year-month as alternative to from/to date')
-parsearg.add_argument('--objects', type=str, nargs='*', help='Objects to limit to')
-parsearg.add_argument('--dither', type=int, nargs='*', help='Dither ID to limit to')
 parsearg.add_argument('--filter', type=str, nargs='*', help='filters to limit to')
-parsearg.add_argument('--summary', action='store_true', help='Just summarise objects and number of obs')
+parsearg.add_argument('--type', type=str, default='any', help='Tyhpe wanted flat, bias, any')
 parsearg.add_argument('--idonly', action='store_true', help='Just give ids no other data')
-parsearg.add_argument('--fitsind', action='store_true', help='Show fits ind not obs ind')
 
 resargs = vars(parsearg.parse_args())
 
@@ -79,15 +76,8 @@ td = parsedate(resargs['todate'])
 if td is None:
     td = fd
 allmonth = resargs['allmonth']
-objlist = resargs['objects']
-dither = resargs['dither']
 filters = resargs['filter']
-summary = resargs['summary']
-fitsind = resargs['fitsind']
-
-if idonly and summary:
-    print("Cannot have both idonly and summary", file=sys.stderr)
-    sys.exit(10)
+typereq = resargs['type']
 
 mydb = dbops.opendb(dbname)
 
@@ -104,36 +94,24 @@ if fd is None:
 else:
     sel += "(date_obs>='" + fd + " 00:00:00' AND date_obs<='" + td + " 23:59:59')"
 
-if objlist is not None:
-    qobj = [ "object='" + o + "'" for o in objlist]
-    if len(sel) != 0: sel += " AND "
-    sel += "(" + " OR ".join(qobj) +")"
-
 if filters is not None:
     qfilt = [ "filter='" + o + "'" for o in filters]
     if len(sel) != 0: sel += " AND "
     sel += "(" + " OR ".join(qfilt) +")"
 
-if dither is not None:
-    qdith = [ "dithID=" + str(d) for d in dither]
-    if len(sel) != 0: sel += " AND "
-    sel += "(" + " OR ".join(qdith) +")"
+if typereq[0] == 'f':
+    sel += " AND typ='flat'"
+elif typereq[0] == 'b':
+    sel += " AND typ='bias'"
 
 if len(sel) != 0: sel = " WHERE " + sel
-if summary:
-    sel = "SELECT object,count(*) FROM obsinf" + sel + "GROUP BY object"
-else:
-    sel += " ORDER BY object,dithID,date_obs"
-    sel = "SELECT obsind,ind,date_obs,object,filter,dithID FROM obsinf" + sel
+sel += " ORDER BY date_obs"
+sel = "SELECT ind,date_obs,filter,typ FROM iforbinf" + sel
 dbcurs.execute(sel)
 if idonly:
     for row in dbcurs.fetchall():
         print(row[0])
-elif summary:
-    for row in dbcurs.fetchall():
-        print("%-10s\t%d" % row)
 else:
     for row in dbcurs.fetchall():
-        obsind,ind,dat,obj,filt,dith = row
-        if fitsind: obsind = ind
-        print("%d\t%s\t%s\t%s\t%d" % (obsind, dat.strftime("%Y-%m-%d %H:%M:%S"), obj, filt, dith))
+        ind, dat, filt, typ = row
+        print("%d\t\t%s\t%s\t%s" % (ind, dat.strftime("%Y-%m-%d %H:%M:%S"), filt, typ))
