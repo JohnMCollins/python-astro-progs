@@ -60,7 +60,7 @@ unless  ($force)  {
     }
 }
 
-$sfh = $dbase->prepare("DELETE FROM forbinf  WHERE year=$year AND month=$month");
+$sfh = $dbase->prepare("DELETE FROM forbinf WHERE year=$year AND month=$month");
 $sfh->execute;
 
 my $padate = sprintf "%.4d%.2d", $year, $month;

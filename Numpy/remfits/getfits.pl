@@ -16,7 +16,7 @@ GetOptions("database=s" => \$base) or die "Invalid options expecting --database 
 
 my $dbase = dbops::opendb($base) or die "Cannot open DB $base";
 
-$sfh = $dbase->prepare("SELECT ffname,dithID,obsind FROM obsinf WHERE ind=0 ORDER by date_obs");
+$sfh = $dbase->prepare("SELECT ffname,dithID,obsind FROM obsinf WHERE ind=0 AND rejreason IS NULL ORDER by date_obs");
 $sfh->execute;
 
 $root_url = 'http://ross.iasfbo.inaf.it';
@@ -37,6 +37,8 @@ while (my $row = $sfh->fetchrow_arrayref())  {
     }
     close WG;
     if (length($fitsfile) < 10000 || (substr $fitsfile, 0, 6) eq '<html>')  {
+    	my $sfh = $dbase->prepare("UPDATE obsinf SET rejreason='FITS file not found' WHERE obsind=$obsind");
+    	$sfh->execute;
         print "Could not fetch $ffname\n";
         next;
     }

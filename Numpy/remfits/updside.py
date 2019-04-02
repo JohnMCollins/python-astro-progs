@@ -33,12 +33,14 @@ dbcurs.execute("SELECT ind FROM fitsfile WHERE side IS NULL")
 rows = dbcurs.fetchall()
 
 nfiles = 0
+errorfiles = []
 
 for (ind,) in rows:
 
     try:
         ffile = dbremfitsobj.getfits(dbcurs, ind)
     except OSError:
+        errorfiles.append(ind)
         print("Could not get FITS file for ind", ind, file=sys.stderr)
         continue
 
@@ -55,5 +57,8 @@ for (ind,) in rows:
     if nfiles % 20 == 0:
         dbase.commit()
 
+for find in errorfiles:
+    dbremfitsobj.badfitsfile(dbcurs, find)
+
 dbase.commit()
-print(nfiles, "sides added", file=sys.stderr)
+print(nfiles, "sides added", len(errorfiles), "errors", file=sys.stderr)
