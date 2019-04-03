@@ -11,12 +11,20 @@ use dbops;
 use Getopt::Long;
 
 my $base = "remfits";
+my $plusremir = 0;
 
-GetOptions("database=s" => \$base) or die "Invalid options expecting --database dbase";
+GetOptions("database=s" => \$base, "remir" => \$plusremir) or die "Invalid options expecting --database dbase [--remidr]";
 
 my $dbase = dbops::opendb($base) or die "Cannot open DB $base";
 
-$sfh = $dbase->prepare("SELECT ffname,dithID,obsind FROM obsinf WHERE ind=0 AND rejreason IS NULL ORDER by date_obs");
+if ($plusremir)  {
+	$plusremir = "";
+}
+else {
+	$plusremir = " dithID=0 AND";  
+}
+
+$sfh = $dbase->prepare("SELECT ffname,dithID,obsind FROM obsinf WHERE$plusremir ind=0 AND rejreason IS NULL ORDER by date_obs");
 $sfh->execute;
 
 $root_url = 'http://ross.iasfbo.inaf.it';
