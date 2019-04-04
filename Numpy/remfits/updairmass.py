@@ -29,24 +29,23 @@ except IndexError:
 dbase = dbops.opendb(mydbname)
 dbcurs = dbase.cursor()
 
-dbcurs.execute("SELECT obsind,ind,exptime FROM obsinf WHERE airmass IS NULL")
+dbcurs.execute("SELECT obsind,ind,exptime FROM obsinf WHERE ind!=0 AND rejreason IS NULL AND (airmass IS NULL OR gain IS NULL)")
 rows = dbcurs.fetchall()
 
 nfiles = 0
 
 for obsind, fitsind, exptime in rows:
 
-    if fitsind <= 0:
-        continue
     ffile = dbremfitsobj.getfits(dbcurs, fitsind)
     ffhdr = ffile[0].header
     fexptime = ffhdr['EXPTIME']
     fairmass = ffhdr['AIRMASS']
+    fgain = ffhdr['GAIN']
 
     if fexptime != exptime:
         print("Obsind", obsind, "DB hdr exptime", exptime, "FITS exptime", fexptime, file=sys.stderr)
 
-    dbcurs.execute("UPDATE obsinf SET airmass=%.6g WHERE obsind=%d" % (fairmass, obsind))
+    dbcurs.execute("UPDATE obsinf SET airmass=%.6g,gain=%.6g WHERE obsind=%d" % (fairmass, fgain, obsind))
     ffile.close()
     nfiles += 1
 

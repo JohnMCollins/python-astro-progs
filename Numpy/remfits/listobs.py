@@ -64,7 +64,7 @@ parsearg.add_argument('--fromdate', type=str, help='Earlist date to list from')
 parsearg.add_argument('--todate', type=str, help='Latest date to list from (same as fromdate if that specified)')
 parsearg.add_argument('--allmonth', type=str, help='All of given year-month as alternative to from/to date')
 parsearg.add_argument('--objects', type=str, nargs='*', help='Objects to limit to')
-parsearg.add_argument('--dither', type=int, nargs='*', help='Dither ID to limit to')
+parsearg.add_argument('--dither', type=int, nargs='*', default = ["0"], help='Dither ID to limit to')
 parsearg.add_argument('--filter', type=str, nargs='*', help='filters to limit to')
 parsearg.add_argument('--summary', action='store_true', help='Just summarise objects and number of obs')
 parsearg.add_argument('--idonly', action='store_true', help='Just give ids no other data')
@@ -114,7 +114,7 @@ if filters is not None:
     if len(sel) != 0: sel += " AND "
     sel += "(" + " OR ".join(qfilt) +")"
 
-if dither is not None:
+if len(dither) != 0:
     qdith = [ "dithID=" + str(d) for d in dither]
     if len(sel) != 0: sel += " AND "
     sel += "(" + " OR ".join(qdith) +")"
