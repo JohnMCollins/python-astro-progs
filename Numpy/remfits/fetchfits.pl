@@ -8,6 +8,7 @@
 # @Last modified time: 2018-10-04T14:10:26+01:00
 
 use dbops;
+use remdefaults;
 use Getopt::Long;
 use Pod::Usage;
 use Astro::FITS::CFITSIO;
@@ -16,7 +17,7 @@ my $prefix = "fits";
 my $help;
 my $verbose;
 my $n = 1;
-my $dbname = 'remfits';
+my $dbname = remdefaults::default_database;
 
 GetOptions("database=s" => \$dbname, "prefix=s" => \$prefix, "verbose" => \$verbose, "start=i" => \$n, "help" => \$help) or pod2usage(2);
 pod2usage(-exitval => 0, -verbose => 2) if $help;

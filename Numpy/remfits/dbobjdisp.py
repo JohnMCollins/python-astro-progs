@@ -30,10 +30,11 @@ import dbobjinfo
 import remgeom
 import dbremfitsobj
 import dbops
+import remdefaults
 
 parsearg = argparse.ArgumentParser(description='Display images from database', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 parsearg.add_argument('obsinds', type=int, nargs='+', help='Observation ids to display')
-parsearg.add_argument('--database', type=str, default='remfits', help='Database to use')
+parsearg.add_argument('--database', type=str, default=remdefaults.default_database(), help='Database to use')
 parsearg.add_argument('--figout', type=str, help='File to output figure(s) to')
 parsearg.add_argument('--percentiles', action='store_true', help='Use percentiles not std devs')
 parsearg.add_argument('--levels', type=str, default='2', help='Set std devs or pecentiles for map display')

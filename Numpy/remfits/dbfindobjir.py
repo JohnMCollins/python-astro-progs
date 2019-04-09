@@ -28,6 +28,7 @@ import findbrightest
 import calcadus
 import remgeom
 import dbops
+import remdefaults
 import dbobjinfo
 import dbremfitsobj
 import math
@@ -50,7 +51,7 @@ class FoundData(object):
         return  self.col * 100000 + self.row
 
 parsearg = argparse.ArgumentParser(description='Locate objects in DB FITS files', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-parsearg.add_argument('--database', type=str, default='remfits', help='Database to use')
+parsearg.add_argument('--database', type=str, default=remdefaults.default_database(), help='Database to use')
 parsearg.add_argument('--target', type=str, help='Name of target', required=True)
 parsearg.add_argument('--cutoff', type=float, help='Reduce maxima to this value', default=-1.0)
 parsearg.add_argument('--trim', action='store_true', help='Trim trailing empty pixels')

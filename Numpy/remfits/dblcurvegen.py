@@ -15,6 +15,7 @@ import datetime
 import dbops
 import dbobjinfo
 import dbremfitsobj
+import remdefaults
 
 def make_resultsrow(dat, ind, exptime, adudict):
     """Make up results row"""
@@ -30,7 +31,7 @@ def make_resultsrow(dat, ind, exptime, adudict):
 
 parsearg = argparse.ArgumentParser(description='Plot light curves from ADU calcs', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 parsearg.add_argument('refobjs', type=str, nargs=1, help='Target name')
-parsearg.add_argument('--database', type=str, default='remfits', help='Database to use')
+parsearg.add_argument('--database', type=str, default=remdefaults.default_database(), help='Database to use')
 parsearg.add_argument('--filter', type=str, required=True, help='Filter to use')
 parsearg.add_argument('--percentile', type=float, default=50.0, help='perecntile to subtract for sky level default median')
 parsearg.add_argument('--outfile', type=str, help='Output file for results')

@@ -26,6 +26,7 @@ import sys
 import math
 import parsetime
 import dbops
+import remdefaults
 
 class savedobj(object):
     """Remember details of object for sorting and combining"""
@@ -76,7 +77,7 @@ def combine(obl):
 
 parsearg = argparse.ArgumentParser(description='List objects close to given object from SDSS', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 parsearg.add_argument('object', nargs=1, type=str, help='Object name to specify region for')
-parsearg.add_argument('--database', type=str, default='remfits', help='Database to use')
+parsearg.add_argument('--database', type=str, default=remdefaults.default_database(), help='Database to use')
 parsearg.add_argument('--radius', type=float, default=10, help='Radius in arcminutes')
 parsearg.add_argument('--samerad', type=float, default=1, help='Treat objects as same if in this number of arcminutes')
 parsearg.add_argument('--maxmag', type=float, default=15.0, help='Maximum magnitude to accept')

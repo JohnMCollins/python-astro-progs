@@ -8,6 +8,7 @@
 # @Last modified time: 2019-01-04T22:50:21+00:00
 
 import dbops
+import remdefaults
 import argparse
 import string
 import datetime
@@ -18,7 +19,7 @@ parsearg = argparse.ArgumentParser(description='List dates on which given object
                                    formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
 parsearg.add_argument('object', type=str, nargs=1, help='Object we are talking about')
-parsearg.add_argument('--database', type=str, default='remfits', help='Database to use')
+parsearg.add_argument('--database', type=str, default=remdefaults.default_database(), help='Database to use')
 resargs = vars(parsearg.parse_args())
 
 obj = resargs['object'][0]

@@ -14,6 +14,7 @@ import os.path
 import argparse
 import warnings
 import dbops
+import remdefaults
 import dbobjinfo
 import sys
 from dbops import dbopsError
@@ -31,7 +32,7 @@ autils.suppress_vo_warnings()
 
 parsearg = argparse.ArgumentParser(description='Get object info into database', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 parsearg.add_argument('objects', nargs='+', type=str, help='Object names to process')
-parsearg.add_argument('--database', type=str, default='remfits', help='Database to use')
+parsearg.add_argument('--database', type=str, default=remdefaults.default_database(), help='Database to use')
 parsearg.add_argument('--delete', action='store_true', help='Delete names')
 
 resargs = vars(parsearg.parse_args())

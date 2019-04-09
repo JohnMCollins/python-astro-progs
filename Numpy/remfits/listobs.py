@@ -8,6 +8,7 @@
 # @Last modified time: 2019-01-04T23:00:35+00:00
 
 import dbops
+import remdefaults
 import argparse
 import datetime
 import re
@@ -59,7 +60,7 @@ def parsedate(dat):
 
 parsearg = argparse.ArgumentParser(description='List available observations',
                                    formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-parsearg.add_argument('--database', type=str, default='remfits', help='Database to use')
+parsearg.add_argument('--database', type=str, default=remdefaults.default_database(), help='Database to use')
 parsearg.add_argument('--fromdate', type=str, help='Earlist date to list from')
 parsearg.add_argument('--todate', type=str, help='Latest date to list from (same as fromdate if that specified)')
 parsearg.add_argument('--allmonth', type=str, help='All of given year-month as alternative to from/to date')

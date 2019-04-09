@@ -7,6 +7,8 @@
 
 import dbops
 import sys
+import remdefaults
+import argparse
 
 def insert_row(typ, row):
 	"""Insert row into my copy of database"""
@@ -34,11 +36,20 @@ def insert_row(typ, row):
 
 remdb = dbops.opendb('rdotsquery')
 
-mydbname = 'remfits'
+# Open appropriate local database according to what machine we are on or options supplied
+
+mydbname = remdefaults.default_database()
 try:
-	mydbname = sys.argv[1]
+    firstarg = sys.argv[1]
+    if firstarg[0] == '-':
+        parsearg = argparse.ArgumentParser(description='Copy new entries from rdots dark/flat files', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+        parsearg.add_argument('--database', type=str, default=mydbname, help='Local database to use')
+        resargs = vars(parsearg.parse_args())
+        mydbname = resargs['database']
+    else:
+        mydbname = firstarg 
 except IndexError:
-	pass
+        pass
 
 mydb = dbops.opendb(mydbname)
 

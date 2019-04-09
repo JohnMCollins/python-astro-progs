@@ -14,6 +14,7 @@ from operator import attrgetter
 import dbobjinfo
 import numpy as np
 import locale
+import remdefaults
 
 def thou(n):
     """Print n with thousands separator"""
@@ -31,7 +32,7 @@ class obstot(object):
 
 parsearg = argparse.ArgumentParser(description='List all objects with first and last date',
                                    formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-parsearg.add_argument('--database', type=str, default='remfits', help='Database to use')
+parsearg.add_argument('--database', type=str, default=remdefaults.default_database(), help='Database to use')
 parsearg.add_argument('--order', type=str, help='Order - (n)umber obs (e)arlist (l)atest')
 parsearg.add_argument('--cutoff', type=float, help='Summarise for %arg less than this')
 parsearg.add_argument('--latex', action='store_true', help='Latex output')

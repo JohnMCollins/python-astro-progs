@@ -14,6 +14,7 @@ import os.path
 import argparse
 import warnings
 import dbops
+import remdefaults
 import dbobjinfo
 import sys
 import math
@@ -34,7 +35,7 @@ autils.suppress_vo_warnings()
 
 parsearg = argparse.ArgumentParser(description='List objects close to given object from Simbad', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 parsearg.add_argument('object', nargs=1, type=str, help='Object name to specify region for')
-parsearg.add_argument('--database', type=str, default='remfits', help='File to use for database')
+parsearg.add_argument('--database', type=str, default=remdefaults.default_database(), help='File to use for database')
 parsearg.add_argument('--radius', type=int, default=2, help='Radius in arc,om')
 parsearg.add_argument('--maxmag', type=float, default=25.0, help='Maximum magnitude to accept')
 

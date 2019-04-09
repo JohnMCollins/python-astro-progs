@@ -14,6 +14,7 @@ import os.path
 import argparse
 import warnings
 import dbops
+import remdefaults
 import dbobjinfo
 import sys
 from dbops import dbopsError
@@ -31,7 +32,7 @@ warnings.simplefilter('ignore', UserWarning)
 autils.suppress_vo_warnings()
 
 parsearg = argparse.ArgumentParser(description='Get fluxes of objects in Simbad', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-parsearg.add_argument('--database', type=str, default='remfits', help='Database to use')
+parsearg.add_argument('--database', type=str, default=remdefaults.default_database(), help='Database to use')
 parsearg.add_argument('--force', action='store_true', help='Force override of existing')
 parsearg.add_argument('--verbose', action='store_true', help='Give messages of what  happens')
 

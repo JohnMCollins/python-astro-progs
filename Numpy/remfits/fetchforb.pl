@@ -1,6 +1,7 @@
 #! /usr/bin/perl
 
 use dbops;
+use remdefaults;
 use Getopt::Long;
 use Pod::Usage;
 
@@ -12,7 +13,7 @@ my $outfile;
 my $help;
 my $forward = 0;
 my $backward = 0;
-my $dbname = 'remfits';
+my $dbname = remdefaults::default_database;
 
 GetOptions("database=s" => \$dbname, 
            "year=i" => \$year,

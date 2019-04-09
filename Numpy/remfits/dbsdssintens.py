@@ -25,9 +25,10 @@ import dbobjinfo
 import sys
 import math
 import dbops
+import remdefaults
 
 parsearg = argparse.ArgumentParser(description='Reset intensities of SDSS objects', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-parsearg.add_argument('--database', type=str, default='remfits', help='Database to use')
+parsearg.add_argument('--database', type=str, default=remdefaults.default_database(), help='Database to use')
 parsearg.add_argument('--radius', type=float, default=2, help='Radius in arcminutes')
 parsearg.add_argument('--samerad', type=float, default=1, help='Treat objects as same if in this number of arcminutes')
 

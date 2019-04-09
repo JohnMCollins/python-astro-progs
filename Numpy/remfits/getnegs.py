@@ -28,6 +28,7 @@ import findbrightest
 import calcadus
 import remgeom
 import dbops
+import remdefaults
 import dbobjinfo
 import dbremfitsobj
 import math
@@ -50,7 +51,7 @@ class FoundData(object):
         return  self.col * 100000 + self.row
 
 parsearg = argparse.ArgumentParser(description='Find pixels which are negtive after bias files applied', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-parsearg.add_argument('--database', type=str, default='remfits', help='Database to use')
+parsearg.add_argument('--database', type=str, default=remdefaults.default_database(), help='Database to use')
 parsearg.add_argument('--year', type=int, help='Year to scan (default current year)')
 parsearg.add_argument('--month', type=int, help='Month to scan (default current month)')
 parsearg.add_argument('--tempdir', type=str, help='Temp directory to unload files default CWD')

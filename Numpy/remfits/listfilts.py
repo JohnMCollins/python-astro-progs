@@ -8,6 +8,7 @@
 # @Last modified time: 2019-01-04T23:10:43+00:00
 
 import dbops
+import remdefaults
 import datetime
 import argparse
 from operator import attrgetter
@@ -31,7 +32,7 @@ class obstot(object):
 
 parsearg = argparse.ArgumentParser(description='List number by filter',
                                    formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-parsearg.add_argument('--database', type=str, default='remfits', help='Database to use')
+parsearg.add_argument('--database', type=str, default=remdefaults.default_database(), help='Database to use')
 parsearg.add_argument('--latex', action='store_true', help='Latex output')
 
 resargs = vars(parsearg.parse_args())

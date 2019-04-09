@@ -9,8 +9,9 @@
 
 use dbops;
 use Getopt::Long;
+import remdefaults;
 
-my $base = "remfits";
+my $base = remdefaults::default_database;
 my $plusremir = 0;
 
 GetOptions("database=s" => \$base, "remir" => \$plusremir) or die "Invalid options expecting --database dbase [--remidr]";

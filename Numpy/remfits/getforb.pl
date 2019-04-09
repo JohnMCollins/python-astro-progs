@@ -1,6 +1,7 @@
 #! /usr/bin/perl
 
 use dbops;
+use remdefaults;
 use Getopt::Long;
 
 sub wgetfile ($) {
@@ -43,7 +44,7 @@ if ($month < 0)  {
 }
 $month++;
 
-my $dbasename = 'remfits';
+my $dbasename = remdefaults::default_database;
 GetOptions("database=s" => \$dbasename, "year=i" => \$year, "month=i" => \$month, "force", \$force);
 
 my $dbase = dbops::opendb($dbasename) or die "Cannot open Database $dbasename";

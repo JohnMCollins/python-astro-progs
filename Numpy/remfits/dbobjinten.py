@@ -30,9 +30,10 @@ import remgeom
 import parsetime
 import dbremfitsobj
 import dbops
+import remdefaults
 
 parsearg = argparse.ArgumentParser(description='Tabulate ADUs from FITS files', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-parsearg.add_argument('--database', type=str, default='remfits', help='Database to use')
+parsearg.add_argument('--database', type=str, default=remdefaults.default_database(), help='Database to use')
 parsearg.add_argument('--mainap', type=int, default=6, help='main aperture radius')
 parsearg.add_argument('--percentile', type=float, default=50.0, help='perecntile to subtract for sky level default median')
 
