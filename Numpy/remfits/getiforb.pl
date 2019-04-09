@@ -11,7 +11,7 @@ use dbops;
 use Getopt::Long;
 use remdefaults;
 
-my $base = remdefaults.default_database();
+my $base = remdefaults::default_database;
 
 GetOptions("database=s" => \$base) or die "Invalid options expecting --database dbase";
 
