@@ -9,7 +9,7 @@
 
 use dbops;
 use Getopt::Long;
-import remdefaults;
+use remdefaults;
 
 my $base = remdefaults::default_database;
 my $plusremir = 0;
