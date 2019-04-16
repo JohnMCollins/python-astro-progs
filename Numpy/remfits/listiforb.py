@@ -65,7 +65,7 @@ parsearg.add_argument('--fromdate', type=str, help='Earlist date to list from')
 parsearg.add_argument('--todate', type=str, help='Latest date to list from (same as fromdate if that specified)')
 parsearg.add_argument('--allmonth', type=str, help='All of given year-month as alternative to from/to date')
 parsearg.add_argument('--filter', type=str, nargs='*', help='filters to limit to')
-parsearg.add_argument('--type', type=str, default='any', help='Tyhpe wanted flat, bias, any')
+parsearg.add_argument('--type', type=str, default='any', help='Type wanted flat, bias, any')
 parsearg.add_argument('--idonly', action='store_true', help='Just give ids no other data')
 
 resargs = vars(parsearg.parse_args())
@@ -107,12 +107,16 @@ elif typereq[0] == 'b':
 
 if len(sel) != 0: sel = " WHERE " + sel
 sel += " ORDER BY date_obs"
-sel = "SELECT ind,date_obs,filter,typ FROM iforbinf" + sel
+sel = "SELECT ind,date_obs,filter,typ,gain FROM iforbinf" + sel
 dbcurs.execute(sel)
 if idonly:
     for row in dbcurs.fetchall():
         print(row[0])
 else:
     for row in dbcurs.fetchall():
-        ind, dat, filt, typ = row
-        print("%d\t\t%s\t%s\t%s" % (ind, dat.strftime("%Y-%m-%d %H:%M:%S"), filt, typ))
+        ind, dat, filt, typ,gain = row
+        if gain is None:
+            gain = "-"
+        else:
+            gain = "%.3g" % gain
+        print("%d\t\t%s\t%s\t%s\t%s" % (ind, dat.strftime("%Y-%m-%d %H:%M:%S"), filt, typ, gain))
