@@ -66,6 +66,7 @@ parsearg.add_argument('--todate', type=str, help='Latest date to list from (same
 parsearg.add_argument('--allmonth', type=str, help='All of given year-month as alternative to from/to date')
 parsearg.add_argument('--filter', type=str, nargs='*', help='filters to limit to')
 parsearg.add_argument('--type', type=str, default='any', help='Type wanted flat, bias, any')
+parsearg.add_argument('--gain', type=float, help='Restrict to given gain value')
 parsearg.add_argument('--idonly', action='store_true', help='Just give ids no other data')
 
 resargs = vars(parsearg.parse_args())
@@ -79,6 +80,7 @@ if td is None:
 allmonth = resargs['allmonth']
 filters = resargs['filter']
 typereq = resargs['type']
+gain = resargs["gain"]
 
 mydb = dbops.opendb(dbname)
 
@@ -101,9 +103,15 @@ if filters is not None:
     sel += "(" + " OR ".join(qfilt) +")"
 
 if typereq[0] == 'f':
-    sel += " AND typ='flat'"
+    if len(sel) != 0: sel += " AND "
+    sel += "typ='flat'"
 elif typereq[0] == 'b':
-    sel += " AND typ='bias'"
+    if len(sel) != 0: sel += " AND "
+    sel += "typ='bias'"
+
+if gain is not None:
+    if len(sel) != 0: sel += " AND "
+    sel += "ABS(gain-%.3g) < %.3g" % (gain, gain * 1e-3)
 
 if len(sel) != 0: sel = " WHERE " + sel
 sel += " ORDER BY date_obs"

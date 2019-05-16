@@ -67,6 +67,7 @@ parsearg.add_argument('--allmonth', type=str, help='All of given year-month as a
 parsearg.add_argument('--objects', type=str, nargs='*', help='Objects to limit to')
 parsearg.add_argument('--dither', type=int, nargs='*', default = ["0"], help='Dither ID to limit to')
 parsearg.add_argument('--filter', type=str, nargs='*', help='filters to limit to')
+parsearg.add_argument('--gain', type=float, help='Restrict to given gain value')
 parsearg.add_argument('--summary', action='store_true', help='Just summarise objects and number of obs')
 parsearg.add_argument('--idonly', action='store_true', help='Just give ids no other data')
 parsearg.add_argument('--fitsind', action='store_true', help='Show fits ind not obs ind')
@@ -85,6 +86,7 @@ dither = resargs['dither']
 filters = resargs['filter']
 summary = resargs['summary']
 fitsind = resargs['fitsind']
+gain = resargs["gain"]
 
 if idonly and summary:
     print("Cannot have both idonly and summary", file=sys.stderr)
@@ -120,6 +122,10 @@ if len(dither) != 0:
     if len(sel) != 0: sel += " AND "
     sel += "(" + " OR ".join(qdith) +")"
 
+if gain is not None:
+    if len(sel) != 0: sel += " AND "
+    sel += "ABS(gain-%.3g) < %.3g" % (gain, gain * 1e-3)
+
 if len(sel) != 0: sel = " WHERE " + sel
 if summary:
     sel = "SELECT object,count(*) FROM obsinf" + sel + "GROUP BY object"
@@ -128,8 +134,10 @@ else:
     sel = "SELECT obsind,ind,date_obs,object,filter,dithID FROM obsinf" + sel
 dbcurs.execute(sel)
 if idonly:
+    n = 0
+    if fitsind: n = 1
     for row in dbcurs.fetchall():
-        print(row[0])
+        print(row[n])
 elif summary:
     for row in dbcurs.fetchall():
         print("%-10s\t%d" % row)

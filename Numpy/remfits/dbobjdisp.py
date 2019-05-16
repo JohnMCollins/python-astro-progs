@@ -123,6 +123,10 @@ for obsind in obsinds:
     if filter not in 'grizHJK' and filter != 'GRI':
         print("obsid", obsind, "on", when.strftime("%d/%M/%Y"), "for target", target,  "has unsupported filter", filter, file=sys.stderr)
         continue
+    
+    if fitsind == 0:
+        print("obsid", obsind, "on", when.strftime("%d/%M/%Y"), "for target", target, "filter", filter, "has no fits file", file=sys.stderr)
+        continue
 
     # Get definitive name
 
