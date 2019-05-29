@@ -32,11 +32,23 @@ import dbremfitsobj
 import dbops
 import remdefaults
 
+def strreplace(image, rs):
+    """Replace things i> rs sttd evs from median with median"""
+    med = np.median(image)
+    s = rs * np.std(image)
+    xc, yc = np.where(image - med > s)
+    for x, y in zip(xc, yc):
+        image[x,y] = med
+    return image
+
 parsearg = argparse.ArgumentParser(description='Display images from database', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 parsearg.add_argument('obsinds', type=int, nargs='+', help='Observation ids to display')
 parsearg.add_argument('--database', type=str, default=remdefaults.default_database(), help='Database to use')
 parsearg.add_argument('--figout', type=str, help='File to output figure(s) to')
 parsearg.add_argument('--percentiles', action='store_true', help='Use percentiles not std devs')
+parsearg.add_argument('--biasvalue', type=float, help='Use this value instead of bias"')
+parsearg.add_argument('--biasid', type=int, help='ID of image to use for bias')
+parsearg.add_argument('--replstd', type=float, default=5.0, help='Replace exceptional values > this with median')
 parsearg.add_argument('--levels', type=str, default='2', help='Set std devs or pecentiles for map display')
 parsearg.add_argument('--invert', action='store_false', help='Invert image')
 parsearg.add_argument('--divisions', type=int, default=8, help='Divisions in RA/Dec lines')
@@ -95,6 +107,9 @@ objcolour = resargs['objcolour']
 hilalpha  = resargs['hilalpha']
 trimem = resargs['trim']
 mainap = resargs['mainap']
+biasvalue= resargs['biasvalue']
+biasid = resargs['biasid']
+replstd = resargs['replstd']
 
 dbase = dbops.opendb(dbname)
 dbcurs = dbase.cursor()
@@ -104,6 +119,12 @@ fignum = 1
 
 if figout is not None:
     figout = miscutils.removesuffix(figout, '.png')
+
+setbtab = None
+if biasid is not None:
+    bf = dbremfitsobj.getfits(dbcurs, biasid)
+    setbtab = bf[0].data.astype(np.float64)
+    bf.close()
 
 # Get details of object once only if doing multiple pictures
 
@@ -142,23 +163,30 @@ for obsind in obsinds:
         btab = biastab[filter]
 
         ff = dbremfitsobj.getfits(dbcurs, ftab.fitsind)
-        fdat = trimarrays.trimnan(ff[0].data)
+        fdat = trimarrays.trimzeros(trimarrays.trimnan(ff[0].data))
         ffrows, ffcols = fdat.shape
         ff.close()
-
-        bf = dbremfitsobj.getfits(dbcurs, btab.fitsind)
-        bdat = bf[0].data
-        bdat = bdat[0:ffrows,0:ffcols]
-        bdat = bdat.astype(np.float64)
-
-        # Get actual image data
-
+        
         ffile = dbremfitsobj.getfits(dbcurs, fitsind)
         ffhdr = ffile[0].header
         imagedata = ffile[0].data.astype(np.float64)
-        (imagedata, bdatc) = trimarrays.trimto(fdat, imagedata, bdat)
-        bf.close()
         ffile.close()
+
+        if biasvalue is not None:
+            bdat = np.full_like(imagedata, biasvalue)
+        elif setbtab is not None:
+            bdat = setbtab.copy()
+        else:
+            bf = dbremfitsobj.getfits(dbcurs, btab.fitsind)
+            bdat = bf[0].data.astype(np.float64)
+            bf.close()
+        
+        # Get actual image data
+        
+        (imagedata, bdatc) = trimarrays.trimto(fdat, imagedata, bdat)
+        
+        if replstd > 0.0:
+           bdatc = strreplace(bdatc, replstd)
         
         # Extra stuff
         
@@ -166,7 +194,7 @@ for obsind in obsinds:
         #print("Minimum flat =", fdat.min())
         
         imagedata -= bdatc
-        imagedata *= fdat.mean()
+        #imagedata *= fdat.mean()
         imagedata /= fdat
 
     else:

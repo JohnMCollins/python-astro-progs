@@ -38,7 +38,7 @@ rg = remgeom.load()
 
 parsearg = argparse.ArgumentParser(description='Compare bias files and plot hist of differences', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 parsearg.add_argument('files', type=str, nargs=2, help='Pair of bias files')
-parsearg.add_argument('--bias', type=str, required=True, help='Prefix for bias files')
+parsearg.add_argument('--trim', type=str, help='rows:cols to trim to alternative to --ffre')
 parsearg.add_argument('--ffref', type=str, help='Flat file for reference')
 parsearg.add_argument('--replstd', type=float, default=5.0, help='Replace exceptional values > this with median')
 parsearg.add_argument('--abs', action='store_true', help='Take absolute value of differfences')
