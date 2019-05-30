@@ -45,11 +45,10 @@ parsearg = argparse.ArgumentParser(description='Display images from database', f
 parsearg.add_argument('obsinds', type=int, nargs='+', help='Observation ids to display')
 parsearg.add_argument('--database', type=str, default=remdefaults.default_database(), help='Database to use')
 parsearg.add_argument('--figout', type=str, help='File to output figure(s) to')
-parsearg.add_argument('--percentiles', action='store_true', help='Use percentiles not std devs')
+parsearg.add_argument('--percentiles', type=int, default=4, help="Number of percentiles to divide greyscale into")
 parsearg.add_argument('--biasvalue', type=float, help='Use this value instead of bias"')
 parsearg.add_argument('--biasid', type=int, help='ID of image to use for bias')
 parsearg.add_argument('--replstd', type=float, default=5.0, help='Replace exceptional values > this with median')
-parsearg.add_argument('--levels', type=str, default='2', help='Set std devs or pecentiles for map display')
 parsearg.add_argument('--invert', action='store_false', help='Invert image')
 parsearg.add_argument('--divisions', type=int, default=8, help='Divisions in RA/Dec lines')
 parsearg.add_argument('--divprec', type=int, default=3, help='Precision for axes')
@@ -82,8 +81,7 @@ dbname = resargs['database']
 obsinds = resargs['obsinds']
 figout = resargs['figout']
 percentiles = resargs['percentiles']
-levels = [float(x) for x in resargs['levels'].split(':')]
-levels.sort()
+
 invertim = resargs['invert']
 divisions = resargs['divisions']
 divprec = resargs['divprec']
@@ -224,16 +222,8 @@ for obsind in obsinds:
     mx = imagedata.max()
     mn = imagedata.min()
     fi = imagedata.flatten()
-    if percentiles:
-        crange = np.concatenate(((mn,), np.percentile(fi, levels), (mx, )))
-    else:
-        crange = np.array(levels) * sigma
-        crange = crange[crange > mn]
-        crange = crange[crange < mx]
-        if crange.shape[0] == 0:
-            crange = np.array([med])
-        crange = np.concatenate(((mn,), crange, (mx, )))
-    
+    pcs = np.linspace(0, 100, percentiles+1)
+    crange = np.percentile(imagedata, pcs)
     mapsize = crange.shape[0]-1
     cl = np.linspace(0, 255, mapsize, dtype=int)
     if invertim:

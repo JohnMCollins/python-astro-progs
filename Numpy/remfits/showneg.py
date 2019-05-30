@@ -58,6 +58,9 @@ height = resargs['height']
 outfig = resargs['outfig']
 divff = resargs['divff']
 extreme = resargs['extreme']
+if extreme >= 1.0 or extreme < 0.0:
+    print("extreme should be 0 to 1 not", extreme, file=sys.stderr)
+    sys.exit(12)
 
 if ffref is not None:
     ffreff = fits.open(ffref)
@@ -93,15 +96,14 @@ if divff:
 	diffs /= ffrefim
 sdiffs = diffs.copy()
 extval = sdiffs.min() * extreme
-sdiffs[diffs<0] = -1
-sdiffs[diffs>extval] = 0
-sdiffs[diffs>0] = 1
 print("Extreme", np.count_nonzero(sdiffs<0), "neg", np.count_nonzero(sdiffs==0), "pos", np.count_nonzero(sdiffs>0))
 plotfigure = plt.figure(figsize=(width, height))
 plotfigure.canvas.set_window_title("Negatives after bias sub")
+crange = [sdiffs.min(), extval, 0.0, sdiffs.max()]
 cmap = colors.ListedColormap(['#ff0000', '#0000ff', '#ffffff'])
-norm = colors.BoundaryNorm([-2.0, -1.0, 0.1, 1.1], 3, clip=True)
-plt.imshow(sdiffs,cmap=cmap,norm=norm,origin='lower')
+norm = colors.BoundaryNorm(crange, 3, clip=True)
+img = plt.imshow(sdiffs,cmap=cmap,norm=norm,origin='lower')
+plt.colorbar(img, norm=norm, cmap=cmap, boundaries=crange, ticks=crange)
 if outfig is None:
     plt.show()
 else:
