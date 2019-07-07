@@ -12,15 +12,7 @@ import warnings
 import sys
 import glob
 import trimarrays
-
-def strreplace(image, rs):
-    """Replace things i> rs sttd evs from median with median"""
-    med = np.median(image)
-    s = rs * np.std(image)
-    xc, yc = np.where(image - med > s)
-    for x, y in zip(xc, yc):
-        image[x,y] = med
-    return image
+import strreplace
 
 # Shut up warning messages
 
@@ -102,7 +94,7 @@ biasims = trimarrays.trimrc(rows, cols, *biasims)
 if replstd > 0.0:
     newbi = []
     for b in biasims:
-        newbi.append(strreplace(b, replstd))
+        newbi.append(strreplace.strreplace(b, replstd))
     biasims = newbi
 
 if len(biasims) > 1:

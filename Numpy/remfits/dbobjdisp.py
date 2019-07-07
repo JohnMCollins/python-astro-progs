@@ -31,15 +31,7 @@ import remgeom
 import dbremfitsobj
 import dbops
 import remdefaults
-
-def strreplace(image, rs):
-    """Replace things i> rs sttd evs from median with median"""
-    med = np.median(image)
-    s = rs * np.std(image)
-    xc, yc = np.where(image - med > s)
-    for x, y in zip(xc, yc):
-        image[x,y] = med
-    return image
+import strreplace
 
 parsearg = argparse.ArgumentParser(description='Display images from database', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 parsearg.add_argument('obsinds', type=int, nargs='+', help='Observation ids to display')
@@ -184,7 +176,7 @@ for obsind in obsinds:
         (imagedata, bdatc) = trimarrays.trimto(fdat, imagedata, bdat)
         
         if replstd > 0.0:
-           bdatc = strreplace(bdatc, replstd)
+           bdatc = strreplace.strreplace(bdatc, replstd)
         
         # Extra stuff
         

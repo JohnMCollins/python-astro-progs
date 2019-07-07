@@ -13,13 +13,13 @@ import warnings
 import sys
 import trimarrays
 import matplotlib.pyplot as plt
+from matplotlib import colors
 from astropy.modeling.tests.test_projections import pars
 from bokeh.themes import default
 from _pylief import parse
 import remgeom
 import miscutils
 import strreplace
-
 
 # Shut up warning messages
 
@@ -29,34 +29,34 @@ warnings.simplefilter('ignore', UserWarning)
 
 rg = remgeom.load()
 
-parsearg = argparse.ArgumentParser(description='Compare bias files and plot hist of differences', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-parsearg.add_argument('files', type=str, nargs=2, help='Pair of bias files')
-parsearg.add_argument('--trim', type=str, help='rows:cols to trim to alternative to --ffre')
+parsearg = argparse.ArgumentParser(description='Show histogram of negative values after bias subtraction', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+parsearg.add_argument('files', type=str, nargs=2, help='image file and bias file')
+parsearg.add_argument('--trim', type=str, help='rows:cols trim to')
 parsearg.add_argument('--ffref', type=str, help='Flat file for reference')
 parsearg.add_argument('--replstd', type=float, default=5.0, help='Replace exceptional values > this with median')
-parsearg.add_argument('--abs', action='store_true', help='Take absolute value of differfences')
-parsearg.add_argument('--bins', type=int, default=10, help='Number of histogram bins')
+parsearg.add_argument('--delhigh', type=float, default=10.0, help='Delete values hight than this numbe of std devs from result')
+parsearg.add_argument('--bins', type=int, default=30, help='Number of histogram bins')
 parsearg.add_argument('--norm', type=str, help='Plot normal curse in specified colour')
 parsearg.add_argument('--histalpha', type=float, default=0.75, help='Alpha value for historgram only if plotting norm curve')
-parsearg.add_argument('--clip', type=int, default=5, help='Level at which we count exceiptionals')
 parsearg.add_argument('--width', type=float, default=rg.width, help="Width of figure")
 parsearg.add_argument('--height', type=float, default=rg.height, help="height of figure")
 parsearg.add_argument('--outfig', type=str, help='Output figure if required')
+parsearg.add_argument('--divff', action='store_true', help='Divide by flat field')
 
 resargs = vars(parsearg.parse_args())
-file1, file2 = resargs['files']
-bins = resargs['bins']
-absval = resargs['abs']
+ffile, bfile = resargs['files']
 ffref = resargs['ffref']
 rc = resargs['trim']
-clip = resargs['clip']
 replstd = resargs['replstd']
-histalpha = resargs['histalpha']
-normplot = resargs['norm']
-if normplot is None: histalpha = 1.0
+delhigh = resargs['delhigh']
 width = resargs['width']
 height = resargs['height']
 outfig = resargs['outfig']
+divff = resargs['divff']
+bins = resargs['bins']
+histalpha = resargs['histalpha']
+normplot = resargs['norm']
+if normplot is None: histalpha = 1.0
 
 if ffref is not None:
     ffreff = fits.open(ffref)
@@ -69,53 +69,44 @@ elif rc is not None:
     except ValueError:
         print("Unexpected --trim arg", rc, "expected rows:cols", file=sys.stderr)
         sys.exit(10)
+    if divff:
+        print("Sorry cannot specify --divff if just rows:cols given", file=sys.stderr)
+        sys.exit(15)
 else:
-    print("No reference flat file or trim arg given", file=sys.stederr)
+    print("No reference flat file or trim arg given", file=sys.stderr)
     sys.exit(11) 
 
-bf1 = fits.open(file1)
-bim1 = bf1[0].data.astype(np.float32)
-bdate1 = Time(bf1[0].header['DATE']).datetime
-bf1.close()
-
-bf2 = fits.open(file2)
-bim2 = bf2[0].data.astype(np.float32)
-bdate2 = Time(bf2[0].header['DATE']).datetime
-bf2.close()
-
-bim1, bim2 = trimarrays.trimrc(rows, cols, bim1, bim2)
+ff = fits.open(ffile)
+bf = fits.open(bfile)
+fim = ff[0].data.astype(np.float32)
+bim = bf[0].data.astype(np.float32)
+ff.close()
+bf.close()
+fim, bim = trimarrays.trimrc(rows, cols, fim, bim)
 
 if replstd > 0.0:
-    bim1 = strreplace.strreplace(bim1, replstd)
-    bim2 = strreplace.strreplace(bim2, replstd)
-    
-bdiffs = (bim1 - bim2).flatten()
-absdiffs = np.abs(bdiffs)
-mv = np.round(absdiffs.mean())
-mstd = absdiffs.std()
-if absval:
-    bdiffs = absdiffs
-    bdiffs[bdiffs > clip * mstd] = mv
-else:
-    bdiffs[bdiffs < -clip * mstd] = - mv
-    bdiffs[bdiffs > clip * mstd] = mv
+    bim = strreplace.strreplace(bim, replstd)
 
+diffs = fim - bim
+if divff:
+	diffs /= ffrefim
+diffs = diffs.flatten()
+diffs = diffs[diffs <= np.median(diffs) + delhigh * diffs.std()]
+medv = np.median(diffs)
+stdv = diffs.std()
 plotfigure = plt.figure(figsize=(width, height))
-plotfigure.canvas.set_window_title("BIAS file differences")
-
-plt.hist(bdiffs.flatten(), bins=bins, alpha=histalpha)
-medv = np.median(bdiffs)
-stdv = bdiffs.std()
+plotfigure.canvas.set_window_title("Distibution of sky level values")
+plt.hist(diffs, bins=bins, alpha=histalpha)
 if normplot is not None:
     rv = norm(loc=medv, scale=stdv)
-    xd = np.linspace(bdiffs.min(), bdiffs.max(), 200)
-    yd = rv.pdf(xd) * float(len(bdiffs.flatten()))
+    xd = np.linspace(diffs.min(), diffs.max(), 200)
+    yd = rv.pdf(xd) * float(len(diffs))
     plt.plot(xd, yd, color=normplot)
-plt.xlabel("Differences in px values (med=%.3g std=%.3g" % (medv, stdv))
-plt.title("Compare bias" + bdate1.strftime(" %Y-%m-%d %H:%M:%S -v- ") + bdate2.strftime("%Y-%m-%d %H:%M:%S"))
+    plt.axvline(medv, color=normplot)
 if outfig is None:
     plt.show()
 else:
     outfig = miscutils.replacesuffix(outfig, 'png')
     plotfigure.savefig(outfig)
     plt.close(outfig)
+

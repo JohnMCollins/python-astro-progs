@@ -19,15 +19,7 @@ from bokeh.themes import default
 from _pylief import parse
 import remgeom
 import miscutils
-
-def strreplace(image, rs):
-    """Replace things i> rs sttd evs from median with median"""
-    med = np.median(image)
-    s = rs * np.std(image)
-    xc, yc = np.where(image - med > s)
-    for x, y in zip(xc, yc):
-        image[x,y] = med
-    return image
+import strreplace
 
 # Shut up warning messages
 
@@ -89,7 +81,7 @@ bf.close()
 fim, bim = trimarrays.trimrc(rows, cols, fim, bim)
 
 if replstd > 0.0:
-    bim = strreplace(bim, replstd)
+    bim = strreplace.strreplace(bim, replstd)
 
 diffs = fim - bim
 if divff:
@@ -109,5 +101,5 @@ if outfig is None:
 else:
     outfig = miscutils.replacesuffix(outfig, 'png')
     plotfigure.savefig(outfig)
-    plt.close(outfigure)
+    plt.close(outfig)
 
