@@ -42,6 +42,9 @@ parsearg.add_argument('--clip', type=int, default=5, help='Level at which we cou
 parsearg.add_argument('--width', type=float, default=rg.width, help="Width of figure")
 parsearg.add_argument('--height', type=float, default=rg.height, help="height of figure")
 parsearg.add_argument('--outfig', type=str, help='Output figure if required')
+parsearg.add_argument('--labsize', type=int, default=10, help='Label and title font size')
+parsearg.add_argument('--ticksize', type=int, default=10, help='Tick font size')
+
 
 resargs = vars(parsearg.parse_args())
 file1, file2 = resargs['files']
@@ -57,6 +60,11 @@ if normplot is None: histalpha = 1.0
 width = resargs['width']
 height = resargs['height']
 outfig = resargs['outfig']
+labsize = resargs['labsize']
+ticksize = resargs['ticksize']
+
+plt.rc('xtick',labelsize=ticksize)
+plt.rc('ytick',labelsize=ticksize)
 
 if ffref is not None:
     ffreff = fits.open(ffref)
@@ -70,17 +78,23 @@ elif rc is not None:
         print("Unexpected --trim arg", rc, "expected rows:cols", file=sys.stderr)
         sys.exit(10)
 else:
-    print("No reference flat file or trim arg given", file=sys.stederr)
+    print("No reference flat file or trim arg given", file=sys.stderr)
     sys.exit(11) 
 
 bf1 = fits.open(file1)
 bim1 = bf1[0].data.astype(np.float32)
-bdate1 = Time(bf1[0].header['DATE']).datetime
+try:
+    bdate1 = Time(bf1[0].header['DATE-OBS']).datetime
+except KeyError:
+    bdate1 = datetime.datetime.now()
 bf1.close()
 
 bf2 = fits.open(file2)
 bim2 = bf2[0].data.astype(np.float32)
-bdate2 = Time(bf2[0].header['DATE']).datetime
+try:
+    bdate2 = Time(bf2[0].header['DATE-OBS']).datetime
+except KeyError:
+    bdate2 = datetime.datetime.now()
 bf2.close()
 
 bim1, bim2 = trimarrays.trimrc(rows, cols, bim1, bim2)
@@ -109,10 +123,10 @@ stdv = bdiffs.std()
 if normplot is not None:
     rv = norm(loc=medv, scale=stdv)
     xd = np.linspace(bdiffs.min(), bdiffs.max(), 200)
-    yd = rv.pdf(xd) * float(len(bdiffs.flatten()))
+    yd = rv.pdf(xd) * float(bdiffs.size)
     plt.plot(xd, yd, color=normplot)
-plt.xlabel("Differences in px values (med=%.3g std=%.3g" % (medv, stdv))
-plt.title("Compare bias" + bdate1.strftime(" %Y-%m-%d %H:%M:%S -v- ") + bdate2.strftime("%Y-%m-%d %H:%M:%S"))
+plt.xlabel("Differences in px values (med=%.3g std=%.3g)" % (medv, stdv), fontsize=labsize)
+plt.title("Compare bias" + bdate1.strftime(" %Y-%m-%d %H:%M:%S -v- ") + bdate2.strftime("%Y-%m-%d %H:%M:%S"), fontsize=labsize)
 if outfig is None:
     plt.show()
 else:

@@ -72,7 +72,7 @@ else {
 
 my $dbase = dbops::opendb($dbname) or die "Cannot open DB $dbname";
 
-my $sfh = $dbase->prepare("SELECT fitsgz FROM forb WHERE year=$year AND month=$month AND typ='$type' AND filter='$filter'");
+my $sfh = $dbase->prepare("SELECT fitsind FROM forbinf WHERE year=$year AND month=$month AND typ='$type' AND filter='$filter'");
 $sfh->execute;
 my $row = $sfh->fetchrow_arrayref;
 
@@ -88,7 +88,7 @@ unless ($row)  {
             my $rd = $combdate + $fstep;
             my $y = int($rd / 12);
             my $m = $rd % 12 + 1;
-            $sfh = $dbase->prepare("SELECT fitsgz FROM forb WHERE year=$y AND month=$m AND typ='$type' AND filter='$filter'");
+            $sfh = $dbase->prepare("SELECT fitsind FROM forbinf WHERE year=$y AND month=$m AND typ='$type' AND filter='$filter'");
             $sfh->execute;
             $row = $sfh->fetchrow_arrayref;
             if ($row)  {
@@ -102,7 +102,7 @@ unless ($row)  {
             my $rd = $combdate - $bstep;
             my $y = int($rd / 12);
             my $m = $rd % 12 + 1;
-            $sfh = $dbase->prepare("SELECT fitsgz FROM forb WHERE year=$y AND month=$m AND typ='$type' AND filter='$filter'");
+            $sfh = $dbase->prepare("SELECT fitsind FROM forbinf WHERE year=$y AND month=$m AND typ='$type' AND filter='$filter'");
             $sfh->execute;
             $row = $sfh->fetchrow_arrayref;
             if ($row)  {
@@ -118,6 +118,14 @@ unless ($row)  {
     }
 }
 
+my $fitsind = $row->[0];
+unless ($fitsind != 0) {
+	print STDERR "No FITS file held for specified $type filen";
+	exit 23;
+}
+$sfh = $dbase->prepare("SELECT fitsgz FROM fitsfile WHERE ind=$fitsind");
+$sfh->execute;
+$row = $sfh->fetchrow_arrayref;
 my $fits = $row->[0];
 
 open(OUTF, ">$outfile") or die "Cannot create output file $outfile";

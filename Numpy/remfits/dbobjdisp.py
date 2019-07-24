@@ -203,7 +203,7 @@ for obsind in obsinds:
         imagedata = imagedata[:,rg.trims.left:]
         w.set_offsets(xoffset=rg.trims.left)
 
-    if rg.trims.right is not None:
+    if rg.trims.right is not None and rg.trims.right != 0:
         imagedata = imagedata[:,0:-rg.trims.right]
 
     plotfigure = plt.figure(figsize=(rg.width, rg.height))

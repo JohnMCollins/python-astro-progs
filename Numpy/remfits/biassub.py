@@ -103,7 +103,7 @@ if len(biasims) > 1:
 else:
     comb = np.array(biasims.copy())
 
-lenc = 100.0 / float(len(comb.flatten()))
+lenc = 100.0 / float(comb.size)
 if divff:
     comb /= ffrefim
 
@@ -113,44 +113,105 @@ if latex:
         print(bdat.strftime(" %H:%M:%S"), end="&")
     print("Combined\\\\")
 
+    nzc = np.zeros(shape=len(biasims)+1)
+    minc = np.zeros(shape=len(biasims)+1) + 1000000
     for obs, obsdate in zip(obsims, obsdates):
     
         if divff:
             obs = obs.copy() / ffrefim
         print(obsdate.strftime("%H:%M:%S:"), end="&")
+        nb = 0
         for bia in biasims:
             if divff:
                 bia = bia.copy() / ffrefim
-            print("%.0f" % (obs-bia).min(), end='&')
-        print("%.0f\\\\" % (obs-comb).min())
-
+            mn = (obs-bia).min()
+            print("%.0f" % mn, end='&')
+            minc[nb] = min(minc[nb], mn)
+            nb += 1
+        mn = (obs-comb).min()
+        print("%.0f\\\\" % mn)
+        minc[nb] = min(minc[nb], mn)
         print("", end="&")
+        nb = 0
         for bia in biasims:
             if divff:
                 bia = bia.copy() / ffrefim
-            print("%.2f" % (np.count_nonzero(obs-bia < 0) * lenc), end='&')
-        print("%.2f\\\\" % (np.count_nonzero(obs-comb < 0) * lenc))
-    
+            nneg = np.count_nonzero(obs-bia < 0)
+            print("%.2f" % (nneg * lenc), end='&')
+            nzc[nb] += nneg
+            nb += 1
+        nneg = np.count_nonzero(obs-comb < 0)
+        print("%.2f\\\\" % (nneg * lenc))
+        nzc[nb] += nneg
+    nb = 0
+    nobs = len(obsdates)
+    print("Total", end='&')
+    for bia in biasims:
+        mn = minc[nb]
+        print("%.0f" % mn, end='&')
+        nb += 1
+    mn = minc[nb]
+    print("%.0f\\\\" % mn)
+    print("", end="&")
+    nb = 0
+    for bia in biasims:
+        nneg = nzc[nb]
+        print("%.2f" % (nneg * lenc / nobs), end='&')
+        nb += 1
+    nneg = nzc[nb]
+    print("%.2f\\\\" % (nneg * lenc / nobs))
 else:
     print("Bias ->  ", end='')
     for bdat in biasdates:
         print(bdat.strftime(" %H:%M:%S"), end=" ")
     print(" Combined")
 
+    nzc = np.zeros(shape=len(biasims)+1)
+    minc = np.zeros(shape=len(biasims)+1) + 1000000
     for obs, obsdate in zip(obsims, obsdates):
     
         if divff:
             obs = obs.copy() / ffrefim
         print(obsdate.strftime("%H:%M:%S:"), end="")
-        for bia in biasims:
-            if divff:
-                bia = bia.copy() / ffrefim
-            print("%9.0f" % (obs-bia).min(), end=' ')
-        print("%9.0f" % (obs-comb).min())
 
-        print(9 * " ", end="")
+        nb = 0
         for bia in biasims:
             if divff:
                 bia = bia.copy() / ffrefim
-            print("%9.2f" % (np.count_nonzero(obs-bia < 0) * lenc), end=' ')
-        print("%9.2f" % (np.count_nonzero(obs-comb < 0) * lenc))
+            mn = (obs-bia).min()
+            print("%9.0f" % mn, end=' ')
+            minc[nb] = min(minc[nb],mn)
+            nb += 1
+        mn = (obs-comb).min()
+        print("%9.0f" % mn)
+        minc[nb] = min(minc[nb], mn)
+        nb += 1
+        print(9 * " ", end="")
+        nb = 0
+        for bia in biasims:
+            if divff:
+                bia = bia.copy() / ffrefim
+            nneg = np.count_nonzero(obs-bia < 0)
+            print("%9.2f" % (nneg * lenc), end=' ')
+            nzc[nb] += nneg
+            nb += 1
+        nneg = np.count_nonzero(obs-comb < 0)
+        print("%9.2f" % (nneg * lenc))
+        nzc[nb] += nneg
+    nb = 0
+    nobs = len(obsdates)
+    print("Total:  ", end=' ')
+    for bia in biasims:
+        mn = minc[nb]
+        print("%9.0f" % mn, end=' ')
+        nb+= 1
+    mn = minc[nb]
+    print("%9.0f" % mn)
+    print("        ", end=" ")
+    nb = 0
+    for bia in biasims:
+        nneg = nzc[nb]
+        print("%9.2f" % (nneg * lenc / nobs), end=' ')
+        nb += 1
+    nneg = nzc[nb]
+    print("%9.2f" % (nneg * lenc / nobs))

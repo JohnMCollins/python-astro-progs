@@ -33,17 +33,24 @@ class obstot(object):
 parsearg = argparse.ArgumentParser(description='List number by filter',
                                    formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 parsearg.add_argument('--database', type=str, default=remdefaults.default_database(), help='Database to use')
+parsearg.add_argument('--objects', type=str, nargs='*', help='Objects to limit to')
 parsearg.add_argument('--latex', action='store_true', help='Latex output')
 
 resargs = vars(parsearg.parse_args())
 dbname = resargs['database']
+objlist = resargs['objects']
 latex = resargs['latex']
 
 mydb = dbops.opendb(dbname)
 
 dbcurs = mydb.cursor()
 
-dbcurs.execute("SELECT filter,COUNT(*) FROM obsinf GROUP BY filter")
+sel = ''
+if objlist is not None:
+    qobj = [ "object='" + o + "'" for o in objlist]
+    sel = " WHERE (" + " OR ".join(qobj) +")"
+
+dbcurs.execute("SELECT filter,COUNT(*) FROM obsinf" + sel + " GROUP BY filter")
 
 results = dict()
 
@@ -55,9 +62,15 @@ if latex:
     locale.setlocale(locale.LC_ALL, "")
     for filter in 'girzHJK':
         print(filter, thou(results[filter]), sep=' & ', end=' \\\\\n')
-    print('GRISM', thou(results['GRI']), sep=' & ', end=' \\\\\n')
+    try:
+        print('GRISM', thou(results['GRI']), sep=' & ', end=' \\\\\n')
+    except KeyError:
+        pass
 
 else:
     for filter in 'girzHJK':
         print("%s\t%7d" % (filter, results[filter]))
-    print("%s\t%7d" % ('GRISM', results['GRI']))
+    try:
+        print("%s\t%7d" % ('GRISM', results['GRI']))
+    except KeyError:
+        pass

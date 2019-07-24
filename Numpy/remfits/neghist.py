@@ -78,6 +78,10 @@ else:
 
 ff = fits.open(ffile)
 bf = fits.open(bfile)
+fh = ff[0].header
+bh = bf[0].header
+fdat = Time(fh['DATE-OBS']).datetime
+bdat = Time(bh['DATE-OBS']).datetime
 fim = ff[0].data.astype(np.float32)
 bim = bf[0].data.astype(np.float32)
 ff.close()
@@ -103,6 +107,10 @@ if normplot is not None:
     yd = rv.pdf(xd) * float(len(diffs))
     plt.plot(xd, yd, color=normplot)
     plt.axvline(medv, color=normplot)
+tit = fdat.strftime("Comparison of sky from image dated %Y-%m-%d %H:%M:%S") + bdat.strftime(" and bias dated %Y-%m-%d %H:%M:%S")
+plt.title(tit)
+plt.xlabel("Sky pixels minus bias pixels (median %.2f std dev %.2f)" % (medv, stdv))
+plt.ylabel("Number of occurrences")
 if outfig is None:
     plt.show()
 else:
