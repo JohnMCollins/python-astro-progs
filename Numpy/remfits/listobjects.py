@@ -10,6 +10,7 @@
 import dbops
 import datetime
 import argparse
+import sys
 from operator import attrgetter
 import dbobjinfo
 import numpy as np
@@ -35,19 +36,42 @@ parsearg = argparse.ArgumentParser(description='List all objects with first and 
 parsearg.add_argument('--database', type=str, default=remdefaults.default_database(), help='Database to use')
 parsearg.add_argument('--order', type=str, help='Order - (n)umber obs (e)arlist (l)atest')
 parsearg.add_argument('--cutoff', type=float, help='Summarise for %arg less than this')
+parsearg.add_argument('--dither', type=int, nargs='*', default = [0], help='Dither ID to limit to')
+parsearg.add_argument('--filter', type=str, nargs='*', help='filters to limit to')
+parsearg.add_argument('--gain', type=float, help='Restrict to given gain value')
 parsearg.add_argument('--latex', action='store_true', help='Latex output')
+parsearg.add_argument('--noundef', action='store_true', help='Do not summarise undefined')
 
 resargs = vars(parsearg.parse_args())
 dbname = resargs['database']
 order = resargs['order']
 cutoff = resargs['cutoff']
 latex = resargs['latex']
+gain = resargs["gain"]
+dither = resargs['dither']
+filters = resargs['filter']
+noundef = resargs['noundef']
 
 mydb = dbops.opendb(dbname)
 
 dbcurs = mydb.cursor()
 
-dbcurs.execute("SELECT object,COUNT(*) AS number FROM obsinf GROUP BY object")
+sel = ''
+if gain is not None:
+    sel = "ABS(gain-%.3g) < %.3g " % (gain, gain * 1e-3)
+
+if filters is not None:
+    qfilt = [ "filter='" + o + "'" for o in filters]
+    if len(sel) != 0: sel += " AND "
+    sel += "(" + " OR ".join(qfilt) +")"
+
+if len(dither) != 1 or dither[0] != -1:
+    qdith = [ "dithID=" + str(d) for d in dither]
+    if len(sel) != 0: sel += " AND "
+    sel += "(" + " OR ".join(qdith) +")"
+
+if len(sel) != 0: sel = "WHERE " + sel
+dbcurs.execute("SELECT object,COUNT(*) AS number FROM obsinf " + sel + "GROUP BY object")
 
 results = []
 
@@ -84,15 +108,19 @@ total = np.sum([r.count for r in results])
 summ = None
 
 if cutoff is not None:
-	cutperc = cutoff * total / 100.0
-	keeping = [r for r in results if r.count >= cutperc]
-	summing = [r for r in results if r.count < cutperc]
-	if len(summing) != 0:
-		summ = obstot('Others', np.sum([r.count for r in summing]))
-		summ.fromdate = min([r.fromdate for r in summing])
-		summ.todate = max([r.todate for r in summing])
-		summ.isundef = False
-		results = keeping
+    cutperc = cutoff * total / 100.0
+    if noundef:
+       keeping = [r for r in results if r.count >= cutperc and not r.isundef]
+       summing = [r for r in results if r.count < cutperc or r.isundef]
+    else:
+        keeping = [r for r in results if r.count >= cutperc]
+        summing = [r for r in results if r.count < cutperc]
+    if len(summing) != 0:
+        summ = obstot('Others', np.sum([r.count for r in summing]))
+        summ.fromdate = min([r.fromdate for r in summing])
+        summ.todate = max([r.todate for r in summing])
+        summ.isundef = False
+        results = keeping
 
 if order is not None and len(order) != 0:
 	f = order[0].lower()
@@ -107,16 +135,18 @@ if summ is not None:
 	results.append(summ)
 
 if latex:
-	locale.setlocale(locale.LC_ALL, "")
-	for k in results:
-		n = k.objname
-		if n == "Proxima":
-			n = "\\prox"
-		elif n == "BarnardStar":
-			n = "\\bstar"
-		print(n, thou(k.count), "%.2f" % (100.0 * k.count / total), sep=' & ', end=' \\\\\n')
-	print("\\hline")
-	print("Total", thou(total), sep=' & ', end=' \\\\\n')
+    locale.setlocale(locale.LC_ALL, "")
+    for k in results:
+        n = k.objname
+        if n == "Proxima":
+            n = "\\prox"
+        elif n == "BarnardStar":
+            n = "\\bstar"
+        elif n == 'Ross154':
+            n = "Ross 154"
+        print(n, thou(k.count), "%.2f" % (100.0 * k.count / total), sep=' & ', end=' \\\\\n')
+    print("\\hline")
+    print("Total", thou(total), sep=' & ', end=' \\\\\n')
 else:
 	mind = min([r.fromdate for r in results])
 	maxd = max([r.todate for r in results])

@@ -14,7 +14,7 @@ use remdefaults;
 my $base = remdefaults::default_database;
 my $plusremir = 0;
 
-GetOptions("database=s" => \$base, "remir" => \$plusremir) or die "Invalid options expecting --database dbase [--remidr]";
+GetOptions("database=s" => \$base, "remir" => \$plusremir) or die "Invalid options expecting --database dbase [--remir]";
 
 my $dbase = dbops::opendb($base) or die "Cannot open DB $base";
 

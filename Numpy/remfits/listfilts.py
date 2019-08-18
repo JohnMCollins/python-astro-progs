@@ -34,12 +34,14 @@ parsearg = argparse.ArgumentParser(description='List number by filter',
                                    formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 parsearg.add_argument('--database', type=str, default=remdefaults.default_database(), help='Database to use')
 parsearg.add_argument('--objects', type=str, nargs='*', help='Objects to limit to')
+parsearg.add_argument('--gain', type=float, help='Restrict to given gain value')
 parsearg.add_argument('--latex', action='store_true', help='Latex output')
 
 resargs = vars(parsearg.parse_args())
 dbname = resargs['database']
 objlist = resargs['objects']
 latex = resargs['latex']
+gain = resargs['gain']
 
 mydb = dbops.opendb(dbname)
 
@@ -48,7 +50,12 @@ dbcurs = mydb.cursor()
 sel = ''
 if objlist is not None:
     qobj = [ "object='" + o + "'" for o in objlist]
-    sel = " WHERE (" + " OR ".join(qobj) +")"
+    sel = "(" + " OR ".join(qobj) +")"
+if gain is not None:
+    if len(sel) != 0: sel += " AND "
+    sel += "ABS(gain-%.3g) < %.3g" % (gain, gain * 1e-3)
+if len(sel) != 0:
+    sel = " WHERE " + sel
 
 dbcurs.execute("SELECT filter,COUNT(*) FROM obsinf" + sel + " GROUP BY filter")
 
@@ -69,7 +76,10 @@ if latex:
 
 else:
     for filter in 'girzHJK':
-        print("%s\t%7d" % (filter, results[filter]))
+        try:
+            print("%s\t%7d" % (filter, results[filter]))
+        except KeyError:
+            pass
     try:
         print("%s\t%7d" % ('GRISM', results['GRI']))
     except KeyError:
