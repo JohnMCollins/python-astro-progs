@@ -22,12 +22,14 @@ parsearg = argparse.ArgumentParser(description='List individual flat bias or dim
 parsearg.add_argument('--database', type=str, default=remdefaults.default_database(), help='Database to use')
 parsearg.add_argument('--filter', type=str, nargs='*', help='filters to limit to')
 parsearg.add_argument('--gain', type=float, help='Restrict to given gain value')
+parsearg.add_argument('--exptime', type=float, help='Exposure time to select')
 
 resargs = vars(parsearg.parse_args())
 
 dbname = resargs['database']
 filters = resargs['filter']
 gain = resargs["gain"]
+exptime = resargs['exptime']
 
 mydb = dbops.opendb(dbname)
 
@@ -44,6 +46,10 @@ sel += "typ='flat'"
 if gain is not None:
     if len(sel) != 0: sel += " AND "
     sel += "ABS(gain-%.3g) < %.3g" % (gain, gain * 1e-3)
+
+if exptime is not None:
+    if len(sel) != 0: sel += " AND "
+    sel += "ABS(exptime-%.3g) < %.3g" % (exptime, exptime * 1e-3)
 
 if len(sel) != 0: sel = " WHERE " + sel
 sel += " ORDER BY date_obs"
