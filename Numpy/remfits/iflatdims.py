@@ -23,6 +23,7 @@ parsearg.add_argument('--database', type=str, default=remdefaults.default_databa
 parsearg.add_argument('--filter', type=str, nargs='*', help='filters to limit to')
 parsearg.add_argument('--gain', type=float, help='Restrict to given gain value')
 parsearg.add_argument('--exptime', type=float, help='Exposure time to select')
+parsearg.add_argument('--criterion', type=int, default=60000, help='Critierion for saturation')
 
 resargs = vars(parsearg.parse_args())
 
@@ -30,6 +31,7 @@ dbname = resargs['database']
 filters = resargs['filter']
 gain = resargs["gain"]
 exptime = resargs['exptime']
+crit = resargs['criterion']
 
 mydb = dbops.opendb(dbname)
 
@@ -69,7 +71,7 @@ try:
         rows, cols = fdat.shape
         fmax = fdat.max()
         fwarn = ''
-        nplus = np.count_nonzero(fdat > 60000)
+        nplus = np.count_nonzero(fdat >= crit)
         if nplus > 0:
             perc = nplus * 100.0 / fdat.size
             fwarn = "\t%.3g%%" % perc
