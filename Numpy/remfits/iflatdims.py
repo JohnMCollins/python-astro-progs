@@ -55,12 +55,12 @@ if exptime is not None:
 
 if len(sel) != 0: sel = " WHERE " + sel
 sel += " ORDER BY date_obs"
-sel = "SELECT ind,date_obs,filter,gain,exptime FROM iforbinf" + sel
+sel = "SELECT ind,date_obs,filter,gain,exptime,fname FROM iforbinf" + sel
 dbcurs.execute(sel)
 try:
     nwarn = ncount = nlots = 0
     for row in dbcurs.fetchall():
-        ind, dat, filt, gain, exptime = row
+        ind, dat, filt, gain, exptime, fname = row
         if gain is None:
             gain = "-"
         else:
@@ -79,7 +79,7 @@ try:
             if perc >= 50.0:
                 nlots += 1
         ncount += 1
-        print("%s %s %s %.3g %d %d %5d %5d %10.2f %10.2f %s" % (dat.strftime("%Y-%m-%d %H:%M:%S"), filt, gain, exptime, rows, cols, fdat.min(), fmax, fdat.mean(), fdat.std(), fwarn))
+        print("%s %s %s %s %.3g %d %d %5d %5d %10.2f %10.2f %s" % (fname, dat.strftime("%Y-%m-%d %H:%M:%S"), filt, gain, exptime, rows, cols, fdat.min(), fmax, fdat.mean(), fdat.std(), fwarn))
 except KeyboardInterrupt:
     pass
 finally:
