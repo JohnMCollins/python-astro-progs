@@ -28,7 +28,7 @@ else {
 }
 
 if ($verbose)  {
-	$sfh = $dbase->prepare("SELECT COUNT(*) FROM obsinf WHERE$plusremir ind=0 AND rejreason IS NULL ORDER by date_obs");
+	$sfh = $dbase->prepare("SELECT COUNT(*) FROM obsinf WHERE$plusremir ind=0 AND rejreason IS NULL");
     $sfh->execute;
     my $row = $sfh->fetchrow_arrayref();
     my ($limit) = @$row;
