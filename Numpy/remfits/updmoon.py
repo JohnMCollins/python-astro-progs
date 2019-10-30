@@ -28,7 +28,7 @@ mydbname = remdefaults.default_database()
 try:
     firstarg = sys.argv[1]
     if firstarg[0] == '-':
-        parsearg = argparse.ArgumentParser(description='Update database fields from newly-loaded FITS files', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+        parsearg = argparse.ArgumentParser(description='Copy moon phase and distance from FITS onto databases', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
         parsearg.add_argument('--database', type=str, default=mydbname, help='Database to use')
         parsearg.add_argument('--tempdir', type=str, default=tmpdir, help='Temp directory to unload files')
         resargs = vars(parsearg.parse_args())
@@ -85,69 +85,27 @@ dbase.commit()
 
 # Fix gain and airmass, check exp time in observations
 
-dbcurs.execute("SELECT obsind,ind,exptime FROM obsinf WHERE ind!=0 AND rejreason IS NULL AND (airmass IS NULL OR gain IS NULL)")
+dbcurs.execute("SELECT obsind,ind FROM obsinf WHERE ind!=0 AND rejreason IS NULL AND (moonphase IS NULL OR moondist IS NULL)")
 rows = dbcurs.fetchall()
 
 nfiles = 0
 
-for obsind, fitsind, exptime in rows:
+try:
+    for obsind, fitsind in rows:
 
-    ffile = dbremfitsobj.getfits(dbcurs, fitsind)
-    ffhdr = ffile[0].header
-    fexptime = ffhdr['EXPTIME']
-    fairmass = ffhdr['AIRMASS']
-    moonphase = ffhdr['MOONPHAS']
-    moondist = ffhdr['MOONDIST']
-    fgain = ffhdr['GAIN']
-
-    if fexptime != exptime:
-        print("Obsind", obsind, "DB hdr exptime", exptime, "FITS exptime", fexptime, file=sys.stderr)
-
-    dbcurs.execute("UPDATE obsinf SET airmass=%.6g,gain=%.6g,moonphase=%.6g,moondist=%.6g WHERE obsind=%d" % (fairmass, fgain, moonphase, moondist, obsind))
-    ffile.close()
-    nfiles += 1
-
-dbase.commit()
-
-# Repeat for master flats and biases
-
-dbcurs.execute("SELECT year,month,filter,typ,fitsind FROM forbinf WHERE gain IS NULL AND rejreason IS NULL AND fitsind!=0")
-rows = dbcurs.fetchall()
-
-nmfb = 0
-
-for year, month, filter, typ, fitsind in rows:
-       
-    ffile = dbremfitsobj.getfits(dbcurs, fitsind)
-    ffhdr = ffile[0].header
-    fgain = ffhdr['GAIN']
-    dbcurs.execute("UPDATE forbinf SET gain=%.6g WHERE filter='%s' AND typ='%s' AND year=%d AND month=%d" % (fgain, filter, typ, year, month))
-    ffile.close()
-    nmfb += 1
-
-dbase.commit()
-
-# Finally indiviaul flag and bias
-
-dbcurs.execute("SELECT ind,iforbind FROM iforbinf WHERE gain IS NULL AND rejreason IS NULL AND ind!=0")
-rows = dbcurs.fetchall()
-
-nifb = 0
-
-for fitsind, ind in rows:
-           
-    ffile = dbremfitsobj.getfits(dbcurs, fitsind)
-    ffhdr = ffile[0].header
-    fgain = ffhdr['GAIN']
-    dbcurs.execute("UPDATE iforbinf SET gain=%.6g WHERE iforbind=%d" % (fgain, ind))
-    ffile.close()
-    nifb += 1
+        ffile = dbremfitsobj.getfits(dbcurs, fitsind)
+        ffhdr = ffile[0].header
+        moonphase = ffhdr['MOONPHAS']
+        moondist = ffhdr['MOONDIST']
+        dbcurs.execute("UPDATE obsinf SET moonphase=%.8e,moondist=%.8e WHERE obsind=%d" % (moonphase, moondist, obsind))
+        ffile.close()
+        nfiles += 1
+        if nfiles % 30 == 0: dbase.commit()
+except KeyboardInterrupt:
+    pass
 
 dbase.commit()
 
 # Finally indiv flat or bias
 
-print(nsides, "sides added", len(errorfiles), "errors", file=sys.stderr)
-print(nfiles, "airmess/gains added", file=sys.stderr)
-print(nmfb, "naster flat/bias/gains added", file=sys.stderr)
-print(nifb, "individual flat/bias/gains added", file=sys.stderr)
+print(nfiles, "moon phases/dists added", file=sys.stderr)
