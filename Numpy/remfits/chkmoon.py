@@ -9,12 +9,12 @@
 
 from astropy.utils.exceptions import AstropyWarning, AstropyUserWarning
 import warnings
-#warnings.simplefilter('ignore', AstropyWarning)
-#warnings.simplefilter('ignore', AstropyUserWarning)
-#warnings.simplefilter('ignore', UserWarning)
+warnings.simplefilter('ignore', AstropyWarning)
+warnings.simplefilter('ignore', AstropyUserWarning)
+warnings.simplefilter('ignore', UserWarning)
 from astropy.io import fits
 from astropy.time import Time
-from astropy.coordinates import EarthLocation, SkyCoord, AltAz, get_moon, solar_system_ephemeris
+from astropy.coordinates import EarthLocation, SkyCoord, AltAz
 import astroquery.utils as autils
 import astropy.units as u
 import numpy as np
@@ -27,10 +27,7 @@ import dbremfitsobj
 import dbops
 import remdefaults
 import argparse
-import jplephem
 import ephem
-
-solar_system_ephemeris.set('jpl')
 
 tmpdir = remdefaults.get_tmpdir()
 mydbname = remdefaults.default_database()
@@ -53,9 +50,12 @@ dbase = dbops.opendb(mydbname)
 dbcurs = dbase.cursor()
 
 lasilla = EarthLocation.of_site('lasilla')
+obsls = ephem.Observer()
+obsls.lat = lasilla.lat.to(u.radian).value
+obsls.lon = lasilla.lon.to(u.radian).value
+obsls.elevation = lasilla.height.value
 
 for oid in idlist:
-    print("Doing", oid, file=sys.stderr)
     dbcurs.execute("SELECT object,ind,date_obs,moonphase,moondist FROM obsinf WHERE obsind=%d" % oid)
     rows = dbcurs.fetchall()
     if len(rows) == 0:
@@ -76,8 +76,13 @@ for oid in idlist:
     rightasc = objdata.get_ra(date)
     decl = objdata.get_dec(date)
     objpos = SkyCoord(ra=rightasc*u.deg, dec=decl*u.deg)
-    print("Getting moon pos for", oid, file=sys.stderr)
-    moonpos = get_moon(Time(date), lasilla, 'jpl')
+    myaa = AltAz(location=lasilla, obstime=date)
+    objaa = objpos.transform_to(myaa)
+    obsls.date = date
+    m = ephem.Moon(obsls)
+    if m.alt < 0:
+        print("I think the moon is below horizon")
+    sep = ephem.separation((m.az, m.alt), (objaa.az.to(u.rad).value, objaa.alt.to(u.rad).value)).real/np.pi*180.0
     nowt = ephem.date(date)
     prevnm = ephem.previous_new_moon(date)
     nextnm = ephem.next_new_moon(date)
@@ -86,6 +91,4 @@ for oid in idlist:
         moonphase = (nextnm - nowt) / (nextnm - midp)
     else:
         moonphase = (nowt - prevnm) / (midp - prevnm)
-    print("Got moon phase for", oid, file=sys.stderr)
-    sep = objpos.separation(moonpos).to(u.deg).value
-    print("Calc phase", moonphase, "sep", sep, "given phase", rmp, "given sep", rmd)
+    print("Oid", oid, "Calc phase", moonphase, "sep", sep, "given phase", rmp, "given sep", rmd)
