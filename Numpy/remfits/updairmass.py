@@ -22,6 +22,7 @@ import dbremfitsobj
 import dbops
 import remdefaults
 import argparse
+import trimarrays
 
 tmpdir = remdefaults.get_tmpdir()
 mydbname = remdefaults.default_database()
@@ -129,17 +130,21 @@ dbase.commit()
 
 # Finally indiviaul flag and bias
 
-dbcurs.execute("SELECT ind,iforbind FROM iforbinf WHERE gain IS NULL AND rejreason IS NULL AND ind!=0")
+dbcurs.execute("SELECT ind,iforbind,typ FROM iforbinf WHERE gain IS NULL AND rejreason IS NULL AND ind!=0")
 rows = dbcurs.fetchall()
 
 nifb = 0
 
-for fitsind, ind in rows:
+for fitsind, ind, typ in rows:
            
     ffile = dbremfitsobj.getfits(dbcurs, fitsind)
     ffhdr = ffile[0].header
     fgain = ffhdr['GAIN']
-    dbcurs.execute("UPDATE iforbinf SET gain=%.6g WHERE iforbind=%d" % (fgain, ind))
+    if typ == 'flat':
+        fdat = trimarrays.trimzeros(ffile[0].data)
+        dbcurs.execute("UPDATE iforbinf SET gain=%.6g,mean=%.8e,std=%.8e WHERE iforbind=%d" % (fgain, fdat.mean(), fdat.std(), ind))
+    else:
+        dbcurs.execute("UPDATE iforbinf SET gain=%.6g WHERE iforbind=%d" % (fgain, ind))
     ffile.close()
     nifb += 1
 
