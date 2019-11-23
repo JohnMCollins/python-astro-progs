@@ -10,6 +10,14 @@
 import matplotlib.pyplot as plt
 import matplotlib.patches as mp
 import matplotlib.dates as mdates
+import warnings
+import astroquery.utils as autils
+from astropy.utils.exceptions import AstropyWarning, AstropyUserWarning
+warnings.simplefilter('ignore', AstropyWarning)
+warnings.simplefilter('ignore', AstropyUserWarning)
+warnings.simplefilter('ignore', UserWarning)
+autils.suppress_vo_warnings()
+from scipy import stats
 from matplotlib import colors
 import numpy as np
 import argparse
@@ -23,7 +31,8 @@ import dbremfitsobj
 import os
 import os.path
 import trimarrays
-from _pylief import parse
+
+# Shut up warning messages
 
 rg = remgeom.load()
 mydbname = remdefaults.default_database()
@@ -33,12 +42,17 @@ parsearg = argparse.ArgumentParser(description='Plot std deviation versus mean o
 parsearg.add_argument('--database', type=str, default=mydbname, help='Database to use')
 parsearg.add_argument('--tempdir', type=str, default=tmpdir, help='Temp directory to unload files')
 parsearg.add_argument('--divmean', action='store_true', help="Divide std dev by mean")
+parsearg.add_argument('--limits', type=str, help='Lower:upper limit of means')
+parsearg.add_argument('--cutlimit', action='store_true', help='Cut plot a limits')
+parsearg.add_argument('--clipstd', type=float, help='Clip std devs this multiple different from std dev of std devs')
 parsearg.add_argument('--filter', type=str, help='Restrict to given filter')
 parsearg.add_argument('--title', type=str, default='Mean count of daily flats v Std devl', help='Title for plot')
 parsearg.add_argument('--xlabel', type=str, default='Mean value', help='X axis label')
-parsearg.add_argument('--ylabel', type=str, default='Std deviationl', help='Y axis label')
+parsearg.add_argument('--ylabel', type=str, default='Std deviation', help='Y axis label')
 parsearg.add_argument('--outfig', type=str, help='Output file rather than display')
 parsearg.add_argument('--colour', type=str, default='b', help='Plot points colour')
+parsearg.add_argument('--limscolour', type=str, default='k', help='Limit lines colour')
+parsearg.add_argument('--regcolour', type=str, default='k', help='Regression colour')
 parsearg.add_argument('--width', type=float, default=rg.width, help="Width of figure")
 parsearg.add_argument('--height', type=float, default=rg.height, help="height of figure")
 parsearg.add_argument('--labsize', type=int, default=10, help='Label and title font size')
@@ -51,12 +65,25 @@ xlab = resargs['xlabel']
 ylab = resargs['ylabel']
 ofig = resargs['outfig']
 colour = resargs['colour']
+limscolour = resargs['limscolour']
+regcolour = resargs['regcolour']
 width = resargs['width']
 height = resargs['height']
 labsize = resargs['labsize']
 ticksize = resargs['ticksize']
 filter = resargs['filter']
 divmean = resargs['divmean']
+clipstd = resargs['clipstd']
+limits = resargs['limits']
+cutlimit = resargs['cutlimit']
+lowerlim = upperlim = None
+if limits is not None:
+    try:
+        lowerlim, upperlim = [float(x) for x in limits.split(":")]
+        if lowerlim >= upperlim:
+            raise ValueError("Limits lower limit should be less than upper")
+    except ValueError:
+        limits = None
 
 if ofig is not None:
     ofig = os.path.abspath(ofig)
@@ -85,8 +112,18 @@ if len(rows) < 20:
 
 means = np.array(rows[:,0])
 stdds = np.array(rows[:,1])
+if limits is not None and cutlimit:
+    mvs = (means >= lowerlim) & (means <= upperlim)
+    means = means[mvs]
+    stdds = stdds[mvs]
 if divmean:
     stdds /= means
+    stdds *= 100.0
+
+if clipstd is not None:
+    sc = np.abs(stdds - stdds.mean()) < clipstd * stdds.std()
+    means = means[sc]
+    stdds = stdds[sc]
 ass = np.argsort(stdds)
 means = means[ass]
 stdds = stdds[ass]
@@ -94,12 +131,19 @@ ass = np.argsort(means)
 means = means[ass]
 stdds = stdds[ass]
 
-
 plt.figure(figsize=(width, height))
 plt.plot(means, stdds, color=colour)
 plt.title(title, fontsize=labsize)
 plt.xlabel(xlab, fontsize=labsize)
 plt.ylabel(ylab, fontsize=labsize)
+if limits is not None and not cutlimit:
+    plt.axvline(lowerlim, color=limscolour)
+    plt.axvline(upperlim, color=limscolour)
+lrslope, lrintercept, lrr, lrp, lrstd = stats.linregress(means, stdds)
+lrx = np.array([means.min(), means.max()])
+lry = lrx * lrslope + lrintercept
+plt.plot(lrx, lry, color=regcolour)
+print("Reg: slope", lrslope, "intercept", lrintercept, "corr", lrr, "p", lrp, "std", lrstd)
 if ofig is None:
     plt.show()
 else:

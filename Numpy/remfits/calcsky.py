@@ -43,7 +43,7 @@ parsearg.add_argument('ids', type=int, nargs='+', help='Obs ID numbers')
 parsearg.add_argument('--database', type=str, default=mydbname, help='Database to use')
 parsearg.add_argument('--flatfile', type=str, help='Flat file to use', required=True)
 parsearg.add_argument('--biasfile', type=str, help='Bias file to use', required=True)
-parsearg.add_argument('--delfb', action='store_true'. help='Delete flat and bias files at end')
+parsearg.add_argument('--delfb', action='store_true', help='Delete flat and bias files at end')
 parsearg.add_argument('--clipcrit', type=float, default=2.0, help='Number of std devs to flup treating as image data')
 parsearg.add_argument('--replace', action='store_true', help='Replace existing calculations')
 parsearg.add_argument('--tempdir', type=str, default=tmpdir, help='Temp directory to unload files')
@@ -148,16 +148,9 @@ for oid in idlist:
     obsls.date = date
     m = ephem.Moon(obsls)
     visible = m.alt >= 0;
-    sep = ephem.separation((m.az, m.alt), (objaa.az.to(u.rad).value, objaa.alt.to(u.rad).value)).real/np.pi*180.0
-    nowt = ephem.date(date)
-    prevnm = ephem.previous_new_moon(date)
-    nextnm = ephem.next_new_moon(date)
-    midp = (prevnm + nextnm) / 2.0
-    if nowt >= midp:
-        moonphase = (nextnm - nowt) / (nextnm - midp)
-    else:
-        moonphase = (nowt - prevnm) / (midp - prevnm)
-    
+    moonpos = SkyCoord(ra = m.g_ra * u.rad, dec = m.g_dec * u.rad)
+    sep = moonpos.separation(objpos).to(u.deg).value
+    moonphase = m.moon_phase
     ff = dbremfitsobj.getfits(dbcurs, fitsind)
     imagedata = ff[0].data
     (imagedata, ) = trimarrays.trimto(fdat, imagedata)
