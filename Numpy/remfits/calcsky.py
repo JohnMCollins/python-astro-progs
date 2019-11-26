@@ -86,15 +86,15 @@ except FileNotFoundError:
     sys.exit(100)
 
 fdattr = fdat.copy()
-if rg.trims.bottom is not None and rg.trims.bottom != 0:
+if rg.trims.bottom != 0:
     fdattr = fdattr[rg.trims.bottom:]
     bdat = bdat[rg.trims.bottom:]
 
-if rg.trims.left is not None and rg.trims.left != 0:
+if rg.trims.left != 0:
     fdattr = fdattr[:,rg.trims.left:]
     bdat = bdat[:,rg.trims.left:]
 
-if rg.trims.right is not None and rg.trims.right != 0:
+if rg.trims.right != 0:
     fdattr = fdattr[:,0:-rg.trims.right]
     bdat = bdat[:,0:-rg.trims.right]
 
@@ -156,11 +156,11 @@ for oid in idlist:
     (imagedata, ) = trimarrays.trimto(fdat, imagedata)
     imagedata = imagedata.astype(np.float64)
     ff.close()
-    if rg.trims.bottom is not None and rg.trims.bottom != 0:
+    if rg.trims.bottom != 0:
         imagedata = imagedata[rg.trims.bottom:]
-    if rg.trims.left is not None and rg.trims.left != 0:
+    if rg.trims.left != 0:
         imagedata = imagedata[:,rg.trims.left:]
-    if rg.trims.right is not None and rg.trims.right != 0:
+    if rg.trims.right != 0:
         imagedata = imagedata[:,0:-rg.trims.right]
     imagedata -= bdat
     imagedata *= fmean
