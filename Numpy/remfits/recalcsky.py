@@ -14,7 +14,6 @@ warnings.simplefilter('ignore', AstropyUserWarning)
 warnings.simplefilter('ignore', UserWarning)
 from astropy.io import fits
 from astropy.time import Time
-from astropy.coordinates import EarthLocation, SkyCoord, AltAz
 import astroquery.utils as autils
 import astropy.units as u
 import numpy as np
@@ -36,25 +35,27 @@ import time
 
 tmpdir = remdefaults.get_tmpdir()
 mydbname = remdefaults.default_database()
-parsearg = argparse.ArgumentParser(description='Check moon phase and distance and compare with FITS file', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-parsearg.add_argument('ids', type=int, nargs='+', help='Obs ID numbers')
+parsearg = argparse.ArgumentParser(description='Recalculate sky level where we have already done moon phase etce', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 parsearg.add_argument('--database', type=str, default=mydbname, help='Database to use')
+parsearg.add_argument('--year', type=int, help='Year to process default is current')
+parsearg.add_argument('--month', type=int, help='Month to procees detault is current')
+parsearg.add_argument('--filter', type=str, required=True, help='Filter to use')
 parsearg.add_argument('--flatfile', type=str, help='Flat file to use', required=True)
 parsearg.add_argument('--biasfile', type=str, help='Bias file to use', required=True)
 parsearg.add_argument('--delfb', action='store_true', help='Delete flat and bias files at end')
 parsearg.add_argument('--clipcrit', type=float, default=2.0, help='Number of std devs to flup treating as image data')
-parsearg.add_argument('--replace', action='store_true', help='Replace existing calculations')
 parsearg.add_argument('--tempdir', type=str, default=tmpdir, help='Temp directory to unload files')
 parsearg.add_argument('--count', default=0, type=int, help='Display count every so many')
 parsearg.add_argument('--description', type=str, help='Description for count')
 resargs = vars(parsearg.parse_args())
-idlist = resargs['ids']
 mydbname = resargs['database']
+year = resargs['year']
+month = resargs['month']
 tmpdir = resargs['tempdir']
 flatfile = resargs['flatfile']
 biasfile = resargs['biasfile']
+filter = resargs['filter']
 clipcrit = resargs['clipcrit']
-replace = resargs['replace']
 count = resargs['count']
 descr = resargs['description']
 delfb = resargs['delfb']
@@ -63,6 +64,13 @@ if descr is not None:
     descr += ': '
 else:
     descr = ''
+
+if year is None or month is None:
+    now = datetime.datetime.now()
+    if year is None: year = now.year
+    if month is None: month = now.month
+    if year == now.year and month > now.month:
+        year -= 1
 
 rg = remgeom.load()
 
@@ -99,54 +107,22 @@ fmean = fdattr.mean()
 dbase = dbops.opendb(mydbname)
 dbcurs = dbase.cursor()
 
-lasilla = EarthLocation.of_site('lasilla')
-obsls = ephem.Observer()
-obsls.lat = lasilla.lat.to(u.radian).value
-obsls.lon = lasilla.lon.to(u.radian).value
-obsls.elevation = lasilla.height.value
-
+daterange = "date_obs >= '%d-%d-01' AND date_obs <= date_sub(date_add('%d-%d-01', interval 1 month),interval 1 second)" % (year,month,year,month)
+dbcurs.execute("SELECT obsinf.obsind,obsinf.ind,obscalc.skylevel,obscalc.skystd FROM obsinf INNER JOIN obscalc WHERE obsinf.obsind=obscalc.obsind and filter='" + filter + "' AND " + daterange)
+rows = dbcurs.fetchall()
 ndone = 0
 nreached = 0
-todo = len(idlist)
+nupd = 0
+todo = len(rows)
 perc = 100.0 / todo
 
-for oid in idlist:
+for obsind, fitsind, esky, estd in rows:
     nreached += 1
     if count != 0 and nreached % count == 0:
         print("%sReached %d of %d %.2f%%" % (descr, nreached, todo, nreached * perc), file=sys.stderr)
-    if not replace:
-        dbcurs.execute("SELECT COUNT(*) FROM obscalc WHERE obsind=%d" % oid)
-        rows = dbcurs.fetchall()
-        if rows[0][0] > 0:
-            continue
-    dbcurs.execute("SELECT object,ind,date_obs,moonphase,moondist FROM obsinf WHERE obsind=%d" % oid)
-    rows = dbcurs.fetchall()
-    if len(rows) == 0:
-        print("No obs with id", oid, "found", file=sys.stderr)
-        continue
-    obj, fitsind, date, rmp, rmd = rows[0]
     if fitsind == 0:
-        print("No FITS file for", oid, file=sys.stderr)
+        print("No FITS file for", obsind, file=sys.stderr)
         continue
-    if rmp is None or rmd is None:
-        print("No existing moon params for", oid, file=sys.stderr)
-    try:
-        targname = dbobjinfo.get_targetname(dbcurs, obj)
-    except dbobjinfo.ObjDataError as e:
-        print("cannot find targ", obj, "error was", e.args[0], file=sys.stderr)
-        continue
-    objdata = dbobjinfo.get_object(dbcurs, targname)
-    rightasc = objdata.get_ra(date)
-    decl = objdata.get_dec(date)
-    objpos = SkyCoord(ra=rightasc*u.deg, dec=decl*u.deg)
-    myaa = AltAz(location=lasilla, obstime=date)
-    objaa = objpos.transform_to(myaa)
-    obsls.date = date
-    m = ephem.Moon(obsls)
-    visible = m.alt >= 0;
-    moonpos = SkyCoord(ra = m.g_ra * u.rad, dec = m.g_dec * u.rad)
-    sep = moonpos.separation(objpos).to(u.deg).value
-    moonphase = m.moon_phase
     ff = dbremfitsobj.getfits(dbcurs, fitsind)
     imagedata = ff[0].data
     (imagedata, ) = trimarrays.trimto(fdat, imagedata)
@@ -165,11 +141,11 @@ for oid in idlist:
         continue
     skylevel = imagedata.mean()
     stdd = imagedata.std()
+    if skylevel == esky and stdd == estd:
+        continue
     for tries in range(1,11):
         try:
-            if replace:
-                dbcurs.execute("DELETE FROM obscalc WHERE obsind=%d" % oid)
-            dbcurs.execute("INSERT INTO obscalc (obsind,moonvis,moonphase,moondist,skylevel,skystd) VALUES (%d,%d,%.6g,%.6g,%.6g,%.6g)" %(oid,visible,moonphase,sep,skylevel,stdd))
+            dbcurs.execute("UPDATE obscalc SET skylevel=%.6g,skystd=%.6g WHERE obsind=%d" % (skylevel,stdd,obsind))
             ndone += 1
             break
         except pymysql.err.OperationalError:
@@ -177,7 +153,7 @@ for oid in idlist:
             continue
     dbase.commit()
 
-print(ndone, "observations processed", file=sys.stderr)
+print(ndone, "observations altered", file=sys.stderr)
 if delfb:
     try:
         os.unlink(flatfile)

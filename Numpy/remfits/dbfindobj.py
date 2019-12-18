@@ -190,16 +190,7 @@ for filter in 'girz':
         if cutoff > 0.0:
             imagedata = np.clip(imagedata, None, cutoff)
 
-        if rg.trims.bottom is not None:
-            imagedata = imagedata[rg.trims.bottom:]
-            w.set_offsets(yoffset=rg.trims.bottom)
-
-        if rg.trims.left is not None:
-            imagedata = imagedata[:,rg.trims.left:]
-            w.set_offsets(xoffset=rg.trims.left)
-
-        if rg.trims.right is not None:
-            imagedata = imagedata[:,0:-rg.trims.right]
+        (imagedata, ) = rg.apply_trims(w, imagedata)
 
         med = np.median(imagedata)
         sigma = imagedata.std()

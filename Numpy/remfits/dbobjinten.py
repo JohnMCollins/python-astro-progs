@@ -121,20 +121,7 @@ for filter in 'griz':
         errorarray = np.full(imagedata.shape, sqrt12) / fdat
 
         w = wcscoord.wcscoord(ffhdr)
-
-        if rg.trims.bottom is not None:
-            imagedata = imagedata[rg.trims.bottom:]
-            errorarray = errorarray[rg.trims.bottom:]
-            w.set_offsets(yoffset=rg.trims.bottom)
-
-        if rg.trims.left is not None:
-            imagedata = imagedata[:,rg.trims.left:]
-            errorarray = errorarray[:,rg.trims.left:]
-            w.set_offsets(xoffset=rg.trims.left)
-
-        if rg.trims.right is not None:
-            imagedata = imagedata[:,0:-rg.trims.right]
-            errorarray = errorarray[:,0:-rg.trims.right]
+        imagedate, errorarray = rg.apply_trims(w, imagedata, errorarray)
 
         # Adjust to sky level
 

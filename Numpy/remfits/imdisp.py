@@ -28,24 +28,24 @@ import warnings
 import miscutils
 import remgeom
 import strreplace
-from _curses import nocbreak
+import cosmic1
+import findfast
+import radecgridplt
+from astropy._erfa.core import apcs
 
 parsearg = argparse.ArgumentParser(description='Display image files', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 parsearg.add_argument('files', type=str, nargs='+', help='File names to display')
 parsearg.add_argument('--figout', type=str, help='File to output figure(s) to')
 parsearg.add_argument('--percentiles', type=int, default=4, help="Number of percentiles to divide greyscale into")
+parsearg.add_argument('--specpercentiles', type=str, help="Percentiles to split at as n1:n2 (with 0 and 100 assumed)")
 parsearg.add_argument('--biasfile', type=str, help='Bias file to apply')
 parsearg.add_argument('--flatfile', type=str, help='Flat file to apply')
 parsearg.add_argument('--replstd', type=float, default=5.0, help='Replace exceptional values > this with median')
-parsearg.add_argument('--invert', action='store_false', help='Invert image')
-parsearg.add_argument('--divisions', type=int, default=8, help='Divisions in RA/Dec lines')
-parsearg.add_argument('--divprec', type=int, default=3, help='Precision for axes')
-parsearg.add_argument('--pstart', type=int, default=1, help='2**-n fraction to start display at')
-parsearg.add_argument('--divthresh', type=int, default=15, help='Pixels from edge for displaying divisions')
-parsearg.add_argument('--racolour', type=str, help='Colour of RA lines')
-parsearg.add_argument('--deccolour', type=str, help='Colour of DEC lines')
-parsearg.add_argument('--trim', action='store_true', help='Trim trailing empty pixels')
-parsearg.add_argument('--nocoords', action='store_true', help='Suppress coord display')
+parsearg.add_argument('--mainap', type=int, default=6, help='main aperture radius')
+parsearg.add_argument('--searchstd', type=float, default=10, help='Nnumber of std deviations to search from')
+parsearg.add_argument('--maxobjs', type=int, default=10, help='Maximum number of objects to display"')
+parsearg.add_argument('--cosmicrit', type=float, default=2.0, help='Number of std deviations to discard possible cosmics from"')
+parsearg.add_argument('--cosmicthresh', type=float, default=10.0, help='Number of std deviations to search possible cosmics from"')
 
 resargs = vars(parsearg.parse_args())
 
@@ -64,31 +64,29 @@ autils.suppress_vo_warnings()
 
 files = resargs['files']
 figout = resargs['figout']
-percentiles = resargs['percentiles']
+percentiles = np.linspace(0, 100, resargs['percentiles']+1)
+specpercentiles = resargs["specpercentiles"]
+if specpercentiles is not None:
+    try:
+        pcs = [float(p) for p in specpercentiles.split(':')]
+        if max(pcs) >= 100.0 or min(pcs) <= 0.0:
+            raise ValueError("Percentile outside range")
+        pcs.append(0.0)
+        pcs.append(100.0)
+        pcs.sort()
+        percentiles = pcs
+    except ValueError:
+        pass
+
 biasfile = resargs['biasfile']
 flatfile = resargs['flatfile']
 
-invertim = resargs['invert']
-divisions = resargs['divisions']
-divprec = resargs['divprec']
-pstart = resargs['pstart']
-divthresh = resargs['divthresh']
-racol=resargs['racolour']
-deccol=resargs['deccolour']
-if invertim:
-    if racol is None:
-        racol = "#771111"
-    if deccol is None:
-        deccol = "#1111AA"
-else:
-    if racol is None:
-        racol = "#FFCCCC"
-    if deccol is None:
-        deccol = "#CCCCFF"
-
-trimem = resargs['trim']
 replstd = resargs['replstd']
-nocoords = resargs['nocoords']
+mainap = resargs['mainap']
+searchstd = resargs['searchstd']
+maxobjs = resargs['maxobjs']
+cosmicrit = resargs['cosmicrit']
+cosmicthreash = resargs['cosmicthresh']
 
 nfigs = len(files)
 fignum = 1
@@ -146,31 +144,22 @@ for file in files:
         date = None
     
     w = wcscoord.wcscoord(hdr)
-
-    if rg.trims.bottom is not None:
-        dat = dat[rg.trims.bottom:]
-        w.set_offsets(yoffset=rg.trims.bottom)
-
-    if rg.trims.left is not None:
-        dat = dat[:,rg.trims.left:]
-        w.set_offsets(xoffset=rg.trims.left)
-
-    if rg.trims.right is not None and rg.trims.right != 0:
-        dat = dat[:,0:-rg.trims.right]
+    (dat, ) = rg.apply_trims(w, dat)
 
     plotfigure = plt.figure(figsize=(rg.width, rg.height))
     plotfigure.canvas.set_window_title('FITS Image from file ' + file)
 
+    dat, coscount = cosmic1.cosmic1(dat, sign=cosmicrit, hival=cosmicthreash)
+    print(file, ":", coscount, "cosmics deleted")
     med = np.median(dat)
     sigma = dat.std()
     mx = dat.max()
     mn = dat.min()
     fi = dat.flatten()
-    pcs = np.linspace(0, 100, percentiles+1)
-    crange = np.percentile(dat, pcs)
+    crange = np.percentile(dat, percentiles)
     mapsize = crange.shape[0]-1
     cl = np.linspace(0, 255, mapsize, dtype=int)
-    if invertim:
+    if rg.divspec.invertim:
         cl = 255 - cl
     collist = ["#%.2x%.2x%.2x" % (i,i,i) for i in cl]
     cmap = colors.ListedColormap(collist)
@@ -178,89 +167,38 @@ for file in files:
     img = plt.imshow(dat, cmap=cmap, norm=norm, origin='lower')
     plt.colorbar(img, norm=norm, cmap=cmap, boundaries=crange, ticks=crange)
 
-    if not nocoords:
-        
-        # OK get coords of edges of picture
-
-        pixrows, pixcols = dat.shape
-        cornerpix = ((0,0), (pixcols-1, 0), (9, pixrows-1), (pixcols-1, pixrows-1))
-        cornerradec = w.pix_to_coords(cornerpix)
-        isrotated = abs(cornerradec[0,0] - cornerradec[1,0]) < abs(cornerradec[0,0] - cornerradec[2,0])
-
-        # Get matrix of ra/dec each pixel
-
-        pixarray = np.array([[(x, y) for x in range(0, pixcols)] for y in range(0, pixrows)])
-        pixcoords = w.pix_to_coords(pixarray.reshape(pixrows*pixcols,2)).reshape(pixrows,pixcols,2)
-        ratable = pixcoords[:,:,0]
-        dectable = pixcoords[:,:,1]
-        ramax, decmax = cornerradec.max(axis=0)
-        ramin, decmin = cornerradec.min(axis=0)
-
-        radivs = np.linspace(ramin, ramax, divisions).round(divprec)
-        decdivs = np.linspace(decmin, decmax, divisions).round(divprec)
-
-        ra_x4miny = []
-        ra_y4minx = []
-        ra_xvals = []
-        ra_yvals = []
-        dec_x4miny = []
-        dec_y4minx = []
-        dec_xvals = []
-        dec_yvals = []
-
-        for r in radivs:
-            ra_y = np.arange(0, pixrows)
-            diffs = np.abs(ratable-r)
-            ra_x = diffs.argmin(axis=1)
-            sel = (ra_x > 0) & (ra_x < pixcols-1)
-            ra_x = ra_x[sel]
-            ra_y = ra_y[sel]
-            if len(ra_x) == 0: continue
-            if ra_y[0] < divthresh:
-                ra_x4miny.append(ra_x[0])
-                ra_xvals.append(r)
-            if ra_x.min() < divthresh:
-                ra_y4minx.append(ra_y[ra_x.argmin()])
-                ra_yvals.append(r)
-            plt.plot(ra_x, ra_y, color=racol, alpha=0.5)
-
-        for d in decdivs:
-            dec_x = np.arange(0, pixcols)
-            diffs = np.abs(dectable-d)
-            dec_y = diffs.argmin(axis=0)
-            sel = (dec_y > 0) & (dec_y < pixrows-1)
-            dec_x = dec_x[sel]
-            dec_y = dec_y[sel]
-            if len(dec_x) == 0: continue
-            if dec_x[0] < divthresh:
-                dec_y4minx.append(dec_y[0])
-                dec_yvals.append(d)
-            if dec_y.min() < divthresh:
-                dec_x4miny.append(dec_x[dec_y.argmin()])
-                dec_xvals.append(d)
-            plt.plot(dec_x, dec_y, color=deccol, alpha=0.5)
-
-        fmt = '%.' + str(divprec) + 'f'
-
-        if isrotated:
-            rafmt = [fmt % r for r in ra_yvals]
-            decfmt = [fmt % d for d in dec_xvals]
-            plt.yticks(ra_y4minx, rafmt)
-            plt.xticks(dec_x4miny, decfmt)
-            plt.ylabel('RA (deg)')
-            plt.xlabel('Dec (deg)')
-        else:
-            rafmt = [fmt % r for r in ra_xvals]
-            decfmt = [fmt % d for d in dec_yvals]
-            plt.xticks(ra_x4miny, rafmt)
-            plt.yticks(dec_y4minx, decfmt)
-            plt.xlabel('RA (deg)')
-            plt.ylabel('Dec (deg)')
+    radecgridplt.radecgridplt(w, dat, rg)
+         
+    objlist = None
+    if searchstd > 0:
+        objlist = findfast.findfast(dat, searchstd, mainap)
+        n = 0
+        labchr = 65
+        for r, c, adus in objlist:
+            tcoords = w.relpix((c, r))
+            objc = rg.objdisp.objcolour[n % len(rg.objdisp.objcolour)]
+            ptch = mp.Circle(tcoords, radius=mainap, alpha=rg.objdisp.objalpha, color=objc, fill=rg.objdisp.objfill)
+            plt.gca().add_patch(ptch)
+            displ = tcoords[0] + rg.objdisp.objtextdisp
+            if displ >= dat.shape[0]:
+                displ = tcoords[0] - rg.objdisp.objtextdisp
+            plt.text(displ, tcoords[1], chr(labchr), fontsize=rg.objdisp.objtextfs, color=objc)
+            n += 1
+            if n >= maxobjs:
+                break
+            labchr += 1
+            if labchr > 122:
+                labchr = 65
+            elif labchr == 91:
+                labchr = 97
 
     if date is None:
         tit = "Target: " + target + " (no date)"
     else:
-        tit = "Target: " + target + when.strftime(" %Y-%m-%d %H:%M:%S") 
+        tit = "Target: " + target + when.strftime(" %Y-%m-%d %H:%M:%S")
+    
+    if objlist is not None:
+         tit += " " + str(len(objlist)) + " objects found"
 
     plt.title(tit)
 
