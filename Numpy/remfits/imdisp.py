@@ -64,7 +64,7 @@ autils.suppress_vo_warnings()
 
 files = resargs['files']
 figout = resargs['figout']
-percentiles = np.linspace(0, 100, resargs['percentiles']+1)
+percentiles = np.linspace(0, 100, resargs['percentiles'] + 1)
 specpercentiles = resargs["specpercentiles"]
 if specpercentiles is not None:
     try:
@@ -114,7 +114,7 @@ if biasfile is not None:
     bdat = bfile[0].data.astype(np.float64)
     bfile.close()
     if fdat is not None:
-        (bdat, ) = trimarrays.trimto(fdat, bdat)   
+        (bdat,) = trimarrays.trimto(fdat, bdat)   
     if replstd > 0.0:
         bdat = strreplace.strreplace(bdat, replstd)
 
@@ -126,7 +126,7 @@ for file in files:
     hdr = ff[0].header
     dat = ff[0].data.astype(np.float64)
     if fdat is not None:
-        (dat, )  = trimarrays.trimto(fdat, dat)
+        (dat,) = trimarrays.trimto(fdat, dat)
     if bdat is not None:
         dat -= bdat
     if fdat is not None:
@@ -144,7 +144,7 @@ for file in files:
         date = None
     
     w = wcscoord.wcscoord(hdr)
-    (dat, ) = rg.apply_trims(w, dat)
+    (dat,) = rg.apply_trims(w, dat)
 
     plotfigure = plt.figure(figsize=(rg.width, rg.height))
     plotfigure.canvas.set_window_title('FITS Image from file ' + file)
@@ -157,11 +157,11 @@ for file in files:
     mn = dat.min()
     fi = dat.flatten()
     crange = np.percentile(dat, percentiles)
-    mapsize = crange.shape[0]-1
+    mapsize = crange.shape[0] - 1
     cl = np.linspace(0, 255, mapsize, dtype=int)
     if rg.divspec.invertim:
         cl = 255 - cl
-    collist = ["#%.2x%.2x%.2x" % (i,i,i) for i in cl]
+    collist = ["#%.2x%.2x%.2x" % (i, i, i) for i in cl]
     cmap = colors.ListedColormap(collist)
     norm = colors.BoundaryNorm(crange, cmap.N)
     img = plt.imshow(dat, cmap=cmap, norm=norm, origin='lower')
@@ -175,7 +175,7 @@ for file in files:
         n = 0
         labchr = 65
         for r, c, adus in objlist:
-            tcoords = w.relpix((c, r))
+            tcoords = (c, r)
             objc = rg.objdisp.objcolour[n % len(rg.objdisp.objcolour)]
             ptch = mp.Circle(tcoords, radius=mainap, alpha=rg.objdisp.objalpha, color=objc, fill=rg.objdisp.objfill)
             plt.gca().add_patch(ptch)

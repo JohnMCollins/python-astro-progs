@@ -97,8 +97,8 @@ except FileNotFoundError:
 dbase = dbops.opendb(mydbname)
 dbcurs = dbase.cursor()
 
-plt.rc('xtick',labelsize=ticksize)
-plt.rc('ytick',labelsize=ticksize)
+plt.rc('xtick', labelsize=ticksize)
+plt.rc('ytick', labelsize=ticksize)
 
 if filter is None:
     dbcurs.execute("SELECT mean,std FROM iforbinf WHERE mean IS NOT NULL AND typ='flat' AND ind!=0 AND gain=1")
@@ -110,8 +110,8 @@ if len(rows) < 20:
     print("Not enough data points found to plot", file=sys.stderr)
     sys.exit(2)
 
-means = np.array(rows[:,0])
-stdds = np.array(rows[:,1])
+means = np.array(rows[:, 0])
+stdds = np.array(rows[:, 1])
 if limits is not None and cutlimit:
     mvs = (means >= lowerlim) & (means <= upperlim)
     means = means[mvs]
@@ -132,8 +132,7 @@ means = means[ass]
 stdds = stdds[ass]
 
 plt.figure(figsize=(width, height))
-plt.plot(means, stdds, color=colour)
-plt.title(title, fontsize=labsize)
+plt.scatter(means, stdds, color=colour)
 plt.xlabel(xlab, fontsize=labsize)
 plt.ylabel(ylab, fontsize=labsize)
 if limits is not None and not cutlimit:
@@ -143,7 +142,7 @@ lrslope, lrintercept, lrr, lrp, lrstd = stats.linregress(means, stdds)
 lrx = np.array([means.min(), means.max()])
 lry = lrx * lrslope + lrintercept
 plt.plot(lrx, lry, color=regcolour)
-print("Reg: slope", lrslope, "intercept", lrintercept, "corr", lrr, "p", lrp, "std", lrstd)
+plt.title(title + "\n" + "Slope %.6g Intercept %.6g Correlation %.6g" % (lrslope, lrintercept, lrr), fontsize=labsize)
 if ofig is None:
     plt.show()
 else:

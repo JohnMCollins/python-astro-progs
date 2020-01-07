@@ -44,7 +44,7 @@ if ffref is not None:
     ffreff = fits.open(ffref)
     ffrefim = trimarrays.trimzeros(trimarrays.trimnan(ffreff[0].data))
     ffreff.close()
-    rows, cols  = ffrefim.shape
+    rows, cols = ffrefim.shape
 elif rc is not None:
     try:
         rows, cols = map(lambda x: int(x), rc.split(':'))
@@ -76,7 +76,7 @@ for biasf in filelist:
         bf.close()
         continue
     biasdates.append(Time(bhdr['DATE-OBS']).mjd)
-    bdat = bf[0].data.astype(np.float64)
+    bdat = bf[0].data.astype(np.float32)
     biasims.append(bdat)
     bf.close()
 
@@ -109,10 +109,11 @@ else:
 fhdr = fits.Header()
 fhdr.set('SIMPLE', True, 'File does conform to FITS standard')
 fhdr.set('NAXIS', 2, 'Number of data axes')
-fhdr.set('NAXIS1', resimage.shape[0], 'Length of data axis 1')
-fhdr.set('NAXIS1', resimage.shape[1], 'Length of data axis 2')
+fhdr.set('NAXIS1', resimage.shape[1], 'Length of data axis 1')
+fhdr.set('NAXIS2', resimage.shape[0], 'Length of data axis 2')
+fhdr.set("BITPIX", -32, 'IEEE single precision floating point')
 fhdr.set('EXPTIME', 0, 'Total integration Time')
-fhdr.set('GAIN', 1.0, '[e/ADU] CCD gain')           # CHDEATING HERE
+fhdr.set('GAIN', 1.0, '[e/ADU] CCD gain')  # CHDEATING HERE
 fhdr.set('DATE-OBS', Time(np.mean(biasdates), format='mjd').iso, 'Mean value of supplied dates')
 
 hdu = fits.PrimaryHDU(resimage, fhdr)

@@ -48,8 +48,8 @@ invertim = resargs['invert']
 divisions = resargs['divisions']
 divprec = resargs['divprec']
 divthresh = resargs['divthresh']
-racol=resargs['racolour']
-deccol=resargs['deccolour']
+racol = resargs['racolour']
+deccol = resargs['deccolour']
 divalpha = resargs['divalpha']
 
 objfill = resargs['objfill']
@@ -144,7 +144,7 @@ print("Dec colour: %s" % rg.divspec.deccol)
 print("Div alpha: %.3g" % rg.divspec.divalpha)
 if objfill:
     print("Fill object highlight")
-print("Object colour(s): ", ": ".join(rg.objdisp.objcolour))
+print("Object colour(s): ", ", ".join(rg.objdisp.objcolour))
 print("Object alpha: %.3g" % rg.objdisp.objalpha)
 print("Object text font size: %d" % rg.objdisp.objtextfs)
 print("Object text displacement: %d" % rg.objdisp.objtextdisp)

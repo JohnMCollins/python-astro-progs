@@ -34,6 +34,8 @@ parsearg.add_argument('--righttrim', type=int, default=0, help='Trim columns of 
 parsearg.add_argument('--width', type=float, default=rg.width, help="Width of figure")
 parsearg.add_argument('--height', type=float, default=rg.height, help="height of figure")
 parsearg.add_argument('--outfig', type=str, help='Output figure if required')
+parsearg.add_argument('--labsize', type=int, default=10, help='Label and title font size')
+parsearg.add_argument('--ticksize', type=int, default=10, help='Tick font size')
 
 resargs = vars(parsearg.parse_args())
 ffile = resargs['file'][0]
@@ -44,6 +46,8 @@ righttrim = resargs['righttrim']
 width = resargs['width']
 height = resargs['height']
 outfig = resargs['outfig']
+labsize = resargs['labsize']
+ticksize = resargs['ticksize']
 
 ff = fits.open(ffile)
 fhdr = ff[0].header
@@ -64,6 +68,8 @@ fd = trimarrays.trimzeros(trimarrays.trimnan(ff[0].data))
 ff.close()
 
 plotfigure = plt.figure(figsize=(width, height))
+plt.rc('xtick', labelsize=ticksize)
+plt.rc('ytick', labelsize=ticksize)
 
 if columns:
     plotfigure.canvas.set_window_title("Flat file display by columns")
@@ -75,39 +81,39 @@ if columns:
         fd = fd[:-righttrim]
         xdisp = xdisp[:-righttrim]
     tbits = []
-    tbits.append("%s flat file for %s filter displayed by coloumns" % (mtype, filter))
+    tbits.append("%s flat file for %s filter displayed by columns" % (mtype, filter))
     tbits.append("Dated %s" % datef.strftime("%d/%m/%Y @ %H:%M:%S"))
     tbits.append("Mean value %.2f Std devv %.2f" % (fd.mean(), fd.std()))
     plt.title("\n".join(tbits))
     legs = []
     for c in nplot:
         legs.append("Column %d" % c)
-        plt.plot(xdisp, fd[:,c])
+        plt.plot(xdisp, fd[:, c])
     plt.legend(legs)
-    plt.xlabel("Row number")
-    plt.ylabel("Column value")
+    plt.xlabel("Row number", fontsize=labsize)
+    plt.ylabel("Column value", fontsize=labsize)
 else:
     plotfigure.canvas.set_window_title("Flat file display by rows")
     plt.title("Flat file display by rows filter " + filter + datef.strftime(" %d/%m/%Y @ %H:%M:%S"))
     xdisp = np.arange(0, fd.shape[1])
     if lefttrim > 0:
-        fd = fd[:,lefttrim:]
+        fd = fd[:, lefttrim:]
         xdisp = xdisp[lefttrim:]
     if righttrim > 0:
-        fd = fd[:,:-righttrim]
+        fd = fd[:, :-righttrim]
         xdisp = xdisp[:-righttrim]
     tbits = []
     tbits.append("%s flat file for %s filter displayed by rows" % (mtype, filter))
     tbits.append("Dated %s" % datef.strftime("%d/%m/%Y @ %H:%M:%S"))
     tbits.append("Mean value %.2f Std dev %.2f" % (fd.mean(), fd.std()))
-    plt.title("\n".join(tbits))
+    plt.title("\n".join(tbits), fontsize=labsize)
     legs = []
     for r in nplot:
         legs.append("Row %d" % r)
         plt.plot(xdisp, fd[r])
     plt.legend(legs)
-    plt.xlabel("Column number")
-    plt.ylabel("Row value")
+    plt.xlabel("Column number", fontsize=labsize)
+    plt.ylabel("Row value", fontsize=labsize)
 
 if outfig is None:
     plt.show()
