@@ -11,6 +11,7 @@ from astropy.io import fits
 from astropy.utils.exceptions import AstropyWarning, AstropyUserWarning
 from astropy.time import Time
 import astroquery.utils as autils
+import scipy.stats as ss
 import numpy as np
 import os
 import sys
@@ -140,11 +141,10 @@ for fitsind, ind, typ in rows:
     ffile = dbremfitsobj.getfits(dbcurs, fitsind)
     ffhdr = ffile[0].header
     fgain = ffhdr['GAIN']
+    fdat = ffile[0].data
     if typ == 'flat':
-        fdat = trimarrays.trimzeros(ffile[0].data)
-        dbcurs.execute("UPDATE iforbinf SET gain=%.6g,mean=%.8e,std=%.8e WHERE iforbind=%d" % (fgain, fdat.mean(), fdat.std(), ind))
-    else:
-        dbcurs.execute("UPDATE iforbinf SET gain=%.6g WHERE iforbind=%d" % (fgain, ind))
+        fdat = trimarrays.trimzeros(fdat)
+    dbcurs.execute("UPDATE iforbinf SET gain=%.6g,rows=%d,cols=%d,minv=%d,maxv=%d,mean=%.8e,std=%.8e,skew=%.8e,kurt=%.8e WHERE iforbind=%d" % (fgain, fdat.shape[0], fdat.shape[1], fdat.min(), fdat.max(), fdat.mean(), fdat.std(), ss.skew(fdat, axis=None), ss.kurtosis(fdat, axis=None), ind))
     ffile.close()
     nifb += 1
 
