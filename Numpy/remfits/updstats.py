@@ -27,19 +27,14 @@ import trimarrays
 
 tmpdir = remdefaults.get_tmpdir()
 mydbname = remdefaults.default_database()
-try:
-    firstarg = sys.argv[1]
-    if firstarg[0] == '-':
-        parsearg = argparse.ArgumentParser(description='Quickly fix skew and kurt on dialy flats and minv maxv on bias', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-        parsearg.add_argument('--database', type=str, default=mydbname, help='Database to use')
-        parsearg.add_argument('--tempdir', type=str, default=tmpdir, help='Temp directory to unload files')
-        resargs = vars(parsearg.parse_args())
-        mydbname = resargs['database']
-        tmpdir = resargs['tempdir']
-    else:
-        mydbname = firstarg 
-except IndexError:
-        pass
+parsearg = argparse.ArgumentParser(description='Quickly fix skew and kurt on dialy flats and minv maxv on bias', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+parsearg.add_argument('--database', type=str, default=mydbname, help='Database to use')
+parsearg.add_argument('--tempdir', type=str, default=tmpdir, help='Temp directory to unload files')
+parsearg.add_argument('--trimsides', type=int, default=100, help='Amount to trip off edges')
+resargs = vars(parsearg.parse_args())
+mydbname = resargs['database']
+tmpdir = resargs['tempdir']
+trimsides = resargs['trimsides']
 
 try:
     os.chdir(tmpdir)
@@ -54,19 +49,23 @@ dbcurs.execute("SELECT ind,iforbind,typ FROM iforbinf WHERE minv IS NULL AND rej
 rows = dbcurs.fetchall()
 
 nifb = 0
+nrows = len(rows)
 
 for fitsind, ind, typ in rows:
            
     ffile = dbremfitsobj.getfits(dbcurs, fitsind)
     fdat = ffile[0].data
     if typ == 'flat':
-        fdat = trimarrays.trimzeros(fdat)
-    dbcurs.execute("UPDATE iforbinf SET rows=%d,cols=%d,minv=%d,maxv=%d,mean=%.8e,std=%.8e,skew=%.8e,kurt=%.8e WHERE iforbind=%d" % (fdat.shape[0], fdat.shape[1], fdat.min(), fdat.max(), fdat.mean(), fdat.std(), ss.skew(fdat, axis=None), ss.kurtosis(fdat, axis=None), ind))
+        tfdat = fdat = trimarrays.trimzeros(fdat)
+    if trimsides > 0:
+        tfdat = fdat[trimsides:-trimsides, trimsides:-trimsides]
+    dbcurs.execute("UPDATE iforbinf SET rows=%d,cols=%d,minv=%d,maxv=%d,mean=%.8e,std=%.8e,skew=%.8e,kurt=%.8e WHERE iforbind=%d" % (fdat.shape[0], fdat.shape[1], tfdat.min(), tfdat.max(), tfdat.mean(), tfdat.std(), ss.skew(tfdat, axis=None), ss.kurtosis(tfdat, axis=None), ind))
     ffile.close()
     nifb += 1
+    if nifb % 100 == 0:
+        print("Got to image number", nifb, "of", nrows, file=sys.stderr)
+        dbase.commit()
 
 dbase.commit()
-
-# Finally indiv flat or bias
 
 print(nifb, "individual flat/bias updated", file=sys.stderr)
