@@ -126,7 +126,7 @@ dbase.commit()
 
 # Finally indiviaul flag and bias
 
-dbcurs.execute("SELECT ind,iforbind,typ FROM iforbinf WHERE gain IS NULL AND rejreason IS NULL AND ind!=0")
+dbcurs.execute("SELECT ind,iforbind,typ FROM iforbinf WHERE (sidet!=%d OR gain IS NULL) AND rejreason IS NULL AND ind!=0" % trimsides)
 rows = dbcurs.fetchall()
 
 nifb = 0
@@ -143,8 +143,8 @@ for fitsind, ind, typ in rows:
     tsfdat = nzfdat
     if trimsides > 0:
         tsfdat = nzfdat[trimsides:-trimsides, trimsides:-trimsides]
-    dbcurs.execute("UPDATE iforbinf SET gain=%.6g,rows=%d,cols=%d,minv=%d,maxv=%d,median=%.8e,mean=%.8e,std=%.8e,skew=%.8e,kurt=%.8e WHERE iforbind=%d" % 
-                   (fgain, nzfdat.shape[0], nzfdat.shape[1], sqq.min(), sqq.max(), np.median(tsfdat), tsfdat.mean(), tsfdat.std(), ss.skew(tsfdat, axis=None), ss.kurtosis(tsfdat, axis=None), ind))
+    dbcurs.execute("UPDATE iforbinf SET gain=%.6g,rows=%d,cols=%d,minv=%d,maxv=%d,sidet=%d,median=%.8e,mean=%.8e,std=%.8e,skew=%.8e,kurt=%.8e WHERE iforbind=%d" % 
+                   (fgain, nzfdat.shape[0], nzfdat.shape[1], sqq.min(), sqq.max(), trimsides, np.median(tsfdat), tsfdat.mean(), tsfdat.std(), ss.skew(tsfdat, axis=None), ss.kurtosis(tsfdat, axis=None), ind))
     ffile.close()
     nifb += 1
 

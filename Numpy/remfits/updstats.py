@@ -45,7 +45,7 @@ except FileNotFoundError:
 dbase = dbops.opendb(mydbname)
 dbcurs = dbase.cursor()
 
-dbcurs.execute("SELECT ind,iforbind,typ FROM iforbinf WHERE minv IS NULL AND rejreason IS NULL AND ind!=0")
+dbcurs.execute("SELECT ind,iforbind,typ FROM iforbinf WHERE (sidet!=%d OR minv IS NULL) AND rejreason IS NULL AND ind!=0" % trimsides)
 rows = dbcurs.fetchall()
 
 nifb = 0
@@ -61,8 +61,8 @@ for fitsind, ind, typ in rows:
     tsfdat = nzfdat
     if trimsides > 0:
         tsfdat = nzfdat[trimsides:-trimsides, trimsides:-trimsides]
-    dbcurs.execute("UPDATE iforbinf SET rows=%d,cols=%d,minv=%d,maxv=%d,median=%.8e,mean=%.8e,std=%.8e,skew=%.8e,kurt=%.8e WHERE iforbind=%d" % 
-                   (nzfdat.shape[0], nzfdat.shape[1], sqq.min(), sqq.max(), np.median(tsfdat), tsfdat.mean(), tsfdat.std(), ss.skew(tsfdat, axis=None), ss.kurtosis(tsfdat, axis=None), ind))
+    dbcurs.execute("UPDATE iforbinf SET rows=%d,cols=%d,minv=%d,maxv=%d,sidet=%d,median=%.8e,mean=%.8e,std=%.8e,skew=%.8e,kurt=%.8e WHERE iforbind=%d" % 
+                   (nzfdat.shape[0], nzfdat.shape[1], sqq.min(), sqq.max(), trimsides, np.median(tsfdat), tsfdat.mean(), tsfdat.std(), ss.skew(tsfdat, axis=None), ss.kurtosis(tsfdat, axis=None), ind))
     ffile.close()
     nifb += 1
     if nifb % 100 == 0:
