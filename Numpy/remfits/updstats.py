@@ -55,11 +55,14 @@ for fitsind, ind, typ in rows:
            
     ffile = dbremfitsobj.getfits(dbcurs, fitsind)
     fdat = ffile[0].data
-    if typ == 'flat':
-        tfdat = fdat = trimarrays.trimzeros(fdat)
+    sqq = fdat.flatten()
+    sqq = sqq[sqq != 0]
+    nzfdat = trimarrays.trimzeros(fdat)
+    tsfdat = nzfdat
     if trimsides > 0:
-        tfdat = fdat[trimsides:-trimsides, trimsides:-trimsides]
-    dbcurs.execute("UPDATE iforbinf SET rows=%d,cols=%d,minv=%d,maxv=%d,mean=%.8e,std=%.8e,skew=%.8e,kurt=%.8e WHERE iforbind=%d" % (fdat.shape[0], fdat.shape[1], tfdat.min(), tfdat.max(), tfdat.mean(), tfdat.std(), ss.skew(tfdat, axis=None), ss.kurtosis(tfdat, axis=None), ind))
+        tsfdat = nzfdat[trimsides:-trimsides, trimsides:-trimsides]
+    dbcurs.execute("UPDATE iforbinf SET rows=%d,cols=%d,minv=%d,maxv=%d,median=%.8e,mean=%.8e,std=%.8e,skew=%.8e,kurt=%.8e WHERE iforbind=%d" % 
+                   (nzfdat.shape[0], nzfdat.shape[1], sqq.min(), sqq.max(), np.median(tsfdat), tsfdat.mean(), tsfdat.std(), ss.skew(tsfdat, axis=None), ss.kurtosis(tsfdat, axis=None), ind))
     ffile.close()
     nifb += 1
     if nifb % 100 == 0:

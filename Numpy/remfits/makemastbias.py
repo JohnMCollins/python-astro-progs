@@ -167,36 +167,29 @@ mjd = np.array(mjd)
 sd_e = np.median(sd)
 med_e = np.median(med)
 
-# May want to parameterise the 3 below, just copying for now
-
-prune = np.abs(ave - med_e) < 3 * sd_e
-
-temp = temp[prune]
-mjd = mjd[prune]
-hdrs = [h for h, p in zip(hdrs, prune) if p]
-ims = [i for i, p in zip(ims, prune) if p]
-
-if len(ims) == 0:
-    print("After pruning to 3 * stddev - aborting as no images to process", file=sys.stderr)
-    sys.exit(3)
-
 max_date = mjd.max()
 min_date = mjd.min()
 temp_e = np.median(temp)
 
 final_image = np.median(ims, axis=0)
 
+first_header = hdrs[0]
+
 if asfloat:
     final_image = final.image.astype(np.float32)
+    for todel in ('BZERO', 'BSCALE', 'BUNIT', 'BLANK'):
+        try:
+            del first_header[todel]
+        except KeyError:
+            pass
 else:
     final_image += 0.5  # Because it trunacates
     final_image = final_image.astype(np.uint16)
 
-trimmed_image = trimarrays.trimzeros(final_image)
-data_min = trimmed_image.min()
-data_max = trimmed_image.max()
-
-first_header = hdrs[0]
+fimage = final_image.flatten()
+fimage = fimage[fimage > 9]
+data_min = fimage.min()
+data_max = fimage.max()
 
 first_header.set('DATE_MIN', str(Time(min_date, format='mjd', precision=0).isot), ' (UTC) start date of used bias frames')
 first_header.set('DATE_MAX', str(Time(max_date, format='mjd', precision=0).isot), ' (UTC) end date of used bias frames')
