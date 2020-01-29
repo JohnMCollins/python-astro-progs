@@ -16,6 +16,8 @@ parsearg = argparse.ArgumentParser(description='Set Rem geom parameters', format
 parsearg.add_argument('--reset', action='store_true', help='Initialise to standard')
 parsearg.add_argument('--width', type=float, help='Width of plots')
 parsearg.add_argument('--height', type=float, help='height of plots')
+parsearg.add_argument('--labsize', type=int, help='Font size for x and y labels and title')
+parsearg.add_argument('--ticksize', type=int, help='Font size for ticks')
 parsearg.add_argument('--trimbottom', type=int, help='Pixels to trim off bottom of picture')
 parsearg.add_argument('--trimleft', type=int, help='Pixels to trim off left of picture')
 parsearg.add_argument('--trimright', type=int, help='Pixels to trim off right of picture')
@@ -38,6 +40,8 @@ resargs = vars(parsearg.parse_args())
 doreset = resargs['reset']
 width = resargs['width']
 height = resargs['height']
+labsize = resargs['labsize']
+ticksize = resargs['ticksize']
 trimbottom = resargs['trimbottom']
 trimleft = resargs['trimleft']
 trimright = resargs['trimright']
@@ -71,6 +75,12 @@ if width is not None:
     changes += 1
 if height is not None:
     rg.height = height
+    changes += 1
+if labsize is not None:
+    rg.labfmt.labsize = labsize
+    changes += 1
+if ticksize is not None:
+    rg.labfmt.ticksize = ticksize
     changes += 1
 if trimbottom is not None:
     rg.trims.bottom = trimbottom
@@ -128,6 +138,8 @@ if textdisp is not None:
 
 print("Width: %.2f" % rg.width)
 print("height: %.2f" % rg.height)
+print("Label size: %d" % rg.labfmt.labsize)
+print("Tick size: %d" % rg.labfmt.ticksize)
 print("Trimtop: %d" % rg.trims.top)
 print("Trimbottom: %d" % rg.trims.bottom)
 print("Trimleft: %d" % rg.trims.left)
