@@ -33,11 +33,12 @@ import findfast
 import radecgridplt
 from astropy._erfa.core import apcs
 
+rg = remgeom.load()
+
 parsearg = argparse.ArgumentParser(description='Display image files', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 parsearg.add_argument('files', type=str, nargs='+', help='File names to display')
 parsearg.add_argument('--figout', type=str, help='File to output figure(s) to')
-parsearg.add_argument('--percentiles', type=int, default=4, help="Number of percentiles to divide greyscale into")
-parsearg.add_argument('--specpercentiles', type=str, help="Percentiles to split at as n1:n2 (with 0 and 100 assumed)")
+parsearg.add_argument('--percentiles', type=float, nargs='+', required=True, help="Percentiles to split at")
 parsearg.add_argument('--biasfile', type=str, help='Bias file to apply')
 parsearg.add_argument('--flatfile', type=str, help='Flat file to apply')
 parsearg.add_argument('--replstd', type=float, default=5.0, help='Replace exceptional values > this with median')
@@ -46,10 +47,9 @@ parsearg.add_argument('--searchstd', type=float, default=10, help='Nnumber of st
 parsearg.add_argument('--maxobjs', type=int, default=10, help='Maximum number of objects to display"')
 parsearg.add_argument('--cosmicrit', type=float, default=2.0, help='Number of std deviations to discard possible cosmics from"')
 parsearg.add_argument('--cosmicthresh', type=float, default=10.0, help='Number of std deviations to search possible cosmics from"')
+rg.disp_argparse(parsearg)
 
 resargs = vars(parsearg.parse_args())
-
-rg = remgeom.load()
 
 # The reason why we don't get RA and DECL info out of this is because we have
 # to adjust for proper motion which requires Python 3 (as the versions of astropy that
@@ -64,29 +64,32 @@ autils.suppress_vo_warnings()
 
 files = resargs['files']
 figout = resargs['figout']
-percentiles = np.linspace(0, 100, resargs['percentiles'] + 1)
-specpercentiles = resargs["specpercentiles"]
-if specpercentiles is not None:
-    try:
-        pcs = [float(p) for p in specpercentiles.split(':')]
-        if max(pcs) >= 100.0 or min(pcs) <= 0.0:
-            raise ValueError("Percentile outside range")
-        pcs.append(0.0)
-        pcs.append(100.0)
-        pcs.sort()
-        percentiles = pcs
-    except ValueError:
-        pass
+
+rg.disp_getargs(resargs)
 
 biasfile = resargs['biasfile']
 flatfile = resargs['flatfile']
-
+percentiles = resargs['percentiles']
 replstd = resargs['replstd']
 mainap = resargs['mainap']
 searchstd = resargs['searchstd']
 maxobjs = resargs['maxobjs']
 cosmicrit = resargs['cosmicrit']
 cosmicthreash = resargs['cosmicthresh']
+
+if min(percentiles) <= 0.0:
+    print("Minimum percentiles must be >0", file=sys.stderr)
+    sys.exit(2)
+if max(percentiles) >= 100.0:
+    print("Maximum percentiles must be <100", file=sys.stderr)
+    sys.exit(3)
+
+percentiles += [0, 100]
+colours = 255 - np.round(2.0 ** np.linspace(0, 8, len(percentiles) - 1) - 1.0).astype(np.int32)
+collist = ["#%.2x%.2x%.2x" % (i, i, i) for i in colours]
+if rg.divspec.invertim:
+    collist = [p for p in reversed(collist)]
+percentiles.sort()
 
 nfigs = len(files)
 fignum = 1
@@ -146,7 +149,7 @@ for file in files:
     w = wcscoord.wcscoord(hdr)
     (dat,) = rg.apply_trims(w, dat)
 
-    plotfigure = plt.figure(figsize=(rg.width, rg.height))
+    plotfigure = rg.plt_figure()
     plotfigure.canvas.set_window_title('FITS Image from file ' + file)
 
     dat, coscount = cosmic1.cosmic1(dat, sign=cosmicrit, hival=cosmicthreash)
@@ -157,16 +160,11 @@ for file in files:
     mn = dat.min()
     fi = dat.flatten()
     crange = np.percentile(dat, percentiles)
-    mapsize = crange.shape[0] - 1
-    cl = np.linspace(0, 255, mapsize, dtype=int)
-    if rg.divspec.invertim:
-        cl = 255 - cl
-    collist = ["#%.2x%.2x%.2x" % (i, i, i) for i in cl]
     cmap = colors.ListedColormap(collist)
     norm = colors.BoundaryNorm(crange, cmap.N)
     img = plt.imshow(dat, cmap=cmap, norm=norm, origin='lower')
     plt.colorbar(img, norm=norm, cmap=cmap, boundaries=crange, ticks=crange)
-
+    
     radecgridplt.radecgridplt(w, dat, rg)
          
     objlist = None

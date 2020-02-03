@@ -14,6 +14,7 @@ import remgeom
 
 parsearg = argparse.ArgumentParser(description='Set Rem geom parameters', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 parsearg.add_argument('--reset', action='store_true', help='Initialise to standard')
+parsearg.add_argument('--altfmt', type=str, help='Specifiy alternnate section')
 parsearg.add_argument('--width', type=float, help='Width of plots')
 parsearg.add_argument('--height', type=float, help='height of plots')
 parsearg.add_argument('--labsize', type=int, help='Font size for x and y labels and title')
@@ -38,6 +39,7 @@ parsearg.add_argument('--objfill', action='store_true', help='Fill object marker
 
 resargs = vars(parsearg.parse_args())
 doreset = resargs['reset']
+altfmt = resargs['altfmt']
 width = resargs['width']
 height = resargs['height']
 labsize = resargs['labsize']
@@ -70,17 +72,25 @@ if doreset:
 else:
     rg = remgeom.load()
 
+whichfmt = rg.defwinfmt
+if altfmt is not None:
+    if altfmt in rg.altfmts:
+        whichfmt = rg.altfmts[altfmt]
+    else:
+        changes += 1
+        whichfmt = remgeom.Winfmt()
+        rg.altfmts[altfmt] = whichfmt
 if width is not None:
-    rg.width = width
+    whichfmt.width = width
     changes += 1
 if height is not None:
-    rg.height = height
+    whichfmt.height = height
     changes += 1
 if labsize is not None:
-    rg.labfmt.labsize = labsize
+    whichfmt.labsize = labsize
     changes += 1
 if ticksize is not None:
-    rg.labfmt.ticksize = ticksize
+    whichfmt.ticksize = ticksize
     changes += 1
 if trimbottom is not None:
     rg.trims.bottom = trimbottom
@@ -136,10 +146,17 @@ if textdisp is not None:
     rg.objdisp.objtextdisp = textdisp
     changes += 1
 
-print("Width: %.2f" % rg.width)
-print("height: %.2f" % rg.height)
-print("Label size: %d" % rg.labfmt.labsize)
-print("Tick size: %d" % rg.labfmt.ticksize)
+print("Default width: %.2f" % rg.defwinfmt.width)
+print("Default height: %.2f" % rg.defwinfmt.height)
+print("Default label size: %d" % rg.defwinfmt.labsize)
+print("Default tick size: %d" % rg.defwinfmt.ticksize)
+
+for k, v in rg.altfmts.items():
+    print("Alt format %s width: %.2f" % (k, v.width))
+    print("Alt format %s height: %.2f" % (k, v.height))
+    print("Alt format %s label size: %d" % (k, v.labsize))
+    print("Alt format %s tick size: %d" % (k, v.ticksize))
+
 print("Trimtop: %d" % rg.trims.top)
 print("Trimbottom: %d" % rg.trims.bottom)
 print("Trimleft: %d" % rg.trims.left)

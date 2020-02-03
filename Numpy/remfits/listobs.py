@@ -14,23 +14,24 @@ import datetime
 import re
 import sys
 
+
 def parsedate(dat):
     """Parse an argument date and try to interpret common things"""
     if dat is None:
         return None
     now = datetime.datetime.now()
-    rnow = datetime.datetime(now.year,now.month,now.day)
+    rnow = datetime.datetime(now.year, now.month, now.day)
     m = re.match("(\d+)\D(\d+)(?:\D(\d+))?", dat)
     try:
         if m:
-            dy,mn,yr = m.groups()
+            dy, mn, yr = m.groups()
             dy = int(dy)
             mn = int(mn)
             if yr is None:
                 yr = now.year
                 ret = datetime.datetime(yr, mn, dy)
                 if ret > rnow:
-                    ret = datetime.datetime(yr-1,mn,dy)
+                    ret = datetime.datetime(yr - 1, mn, dy)
             else:
                 yr = int(yr)
                 if dy > 31:
@@ -58,14 +59,14 @@ def parsedate(dat):
 
     return ret.strftime("%Y-%m-%d")
 
+
 parsearg = argparse.ArgumentParser(description='List available observations',
                                    formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 parsearg.add_argument('--database', type=str, default=remdefaults.default_database(), help='Database to use')
-parsearg.add_argument('--fromdate', type=str, help='Earlist date to list from')
-parsearg.add_argument('--todate', type=str, help='Latest date to list from (same as fromdate if that specified)')
+parsearg.add_argument('--dates', type=str, help='From:to dates')
 parsearg.add_argument('--allmonth', type=str, help='All of given year-month as alternative to from/to date')
 parsearg.add_argument('--objects', type=str, nargs='*', help='Objects to limit to')
-parsearg.add_argument('--dither', type=int, nargs='*', default = [0], help='Dither ID to limit to')
+parsearg.add_argument('--dither', type=int, nargs='*', default=[0], help='Dither ID to limit to')
 parsearg.add_argument('--filter', type=str, nargs='*', help='filters to limit to')
 parsearg.add_argument('--gain', type=float, help='Restrict to given gain value')
 parsearg.add_argument('--summary', action='store_true', help='Just summarise objects and number of obs')
@@ -76,10 +77,7 @@ resargs = vars(parsearg.parse_args())
 
 dbname = resargs['database']
 idonly = resargs['idonly']
-fd = parsedate(resargs['fromdate'])
-td = parsedate(resargs['todate'])
-if td is None:
-    td = fd
+dates = resargs['dates']
 allmonth = resargs['allmonth']
 objlist = resargs['objects']
 dither = resargs['dither']
@@ -96,42 +94,57 @@ mydb = dbops.opendb(dbname)
 
 dbcurs = mydb.cursor()
 
-sel = ""
-if fd is None:
-    if allmonth is not None:
-        mtch = re.match('(\d\d\d\d)-(\d+)$', allmonth)
-        if mtch is None:
-            print("Cannot understand allmonth arg " + allmonth, file=sys.stderr);
-            sys.exit(31)
-        sel += "(date_obs>='"+allmonth+"-01' AND date_obs<=date_sub(date_add('"+allmonth+"-01',interval 1 month),interval 1 second))"
-else:
-    sel += "(date_obs>='" + fd + " 00:00:00' AND date_obs<='" + td + " 23:59:59')"
+fieldselect = ["rejreason is NULL"]
+fieldselect.append("ind!=0")
+
+if allmonth is not None:
+    mtch = re.match('(\d\d\d\d)-(\d+)$', allmonth)
+    if mtch is None:
+        print("Cannot understand allmonth arg " + allmonth, "expecting yyyy-mm", file=sys.stderr);
+        sys.exit(31)
+    smonth = allmonth + "-01" 
+    fieldselect.append("date(date_obs)>='" + smonth + "'")
+    fieldselect.append("date(date_obs)<=date_sub(date_add('" + smonth + "',interval 1 month),interval 1 day)")
+elif dates is not None:
+    datesp = dates.split(':')
+    if len(datesp) == 1:
+        fieldselect.append("date(date_obs)='" + parsedate(dates) + "'")
+    elif len(datesp) != 2:
+        print("Don't understand whate date", dates, "is supposed to be", file=sys.stderr)
+        sys.exit(20)
+    else:
+        fd, td = datesp
+        if len(fd) != 0:
+            fieldselect.append("date(date_obs)>='" + parsedate(fd) + "'")
+        if len(td) != 0:
+            fieldselect.append("date(date_obs)<='" + parsedate(td) + "'")
 
 if objlist is not None:
     qobj = [ "object='" + o + "'" for o in objlist]
-    if len(sel) != 0: sel += " AND "
-    sel += "(" + " OR ".join(qobj) +")"
+    fieldselect.append("(" + " OR ".join(qobj) + ")")
 
 if filters is not None:
     qfilt = [ "filter='" + o + "'" for o in filters]
-    if len(sel) != 0: sel += " AND "
-    sel += "(" + " OR ".join(qfilt) +")"
+    fieldselect.append("(" + " OR ".join(qfilt) + ")")
 
 if len(dither) != 1 or dither[0] != -1:
     qdith = [ "dithID=" + str(d) for d in dither]
-    if len(sel) != 0: sel += " AND "
-    sel += "(" + " OR ".join(qdith) +")"
+    fieldselect.append("(" + " OR ".join(qdith) + ")")
 
 if gain is not None:
-    if len(sel) != 0: sel += " AND "
-    sel += "ABS(gain-%.3g) < %.3g" % (gain, gain * 1e-3)
+    fieldselect.append("ABS(gain-%.3g) < %.3g" % (gain, gain * 1e-3))
 
-if len(sel) != 0: sel = " WHERE " + sel
+sel = ""
+
+if len(fieldselect) != 0:
+    sel = "WHERE " + " AND ".join(fieldselect)
+
 if summary:
     sel = "SELECT object,count(*) FROM obsinf" + sel + "GROUP BY object"
 else:
     sel += " ORDER BY object,dithID,date_obs"
-    sel = "SELECT obsind,ind,date_obs,object,filter,dithID FROM obsinf" + sel
+    sel = "SELECT obsind,ind,date_obs,object,filter,dithID FROM obsinf " + sel
+
 dbcurs.execute(sel)
 if idonly:
     n = 0
@@ -143,6 +156,6 @@ elif summary:
         print("%-10s\t%d" % row)
 else:
     for row in dbcurs.fetchall():
-        obsind,ind,dat,obj,filt,dith = row
+        obsind, ind, dat, obj, filt, dith = row
         if fitsind: obsind = ind
         print("%d\t%s\t%s\t%s\t%d" % (obsind, dat.strftime("%Y-%m-%d %H:%M:%S"), obj, filt, dith))
