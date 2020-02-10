@@ -38,6 +38,7 @@ rg = remgeom.load()
 parsearg = argparse.ArgumentParser(description='Display image files', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 parsearg.add_argument('files', type=str, nargs='+', help='File names to display')
 parsearg.add_argument('--figout', type=str, help='File to output figure(s) to')
+parsearg.add_argument('--title', type=str, help='Optional title to put at head of image')
 parsearg.add_argument('--percentiles', type=float, nargs='+', required=True, help="Percentiles to split at")
 parsearg.add_argument('--biasfile', type=str, help='Bias file to apply')
 parsearg.add_argument('--flatfile', type=str, help='Flat file to apply')
@@ -76,6 +77,7 @@ searchstd = resargs['searchstd']
 maxobjs = resargs['maxobjs']
 cosmicrit = resargs['cosmicrit']
 cosmicthreash = resargs['cosmicthresh']
+title = resargs['title']
 
 if min(percentiles) <= 0.0:
     print("Minimum percentiles must be >0", file=sys.stderr)
@@ -197,6 +199,9 @@ for file in files:
     
     if objlist is not None:
          tit += " " + str(len(objlist)) + " objects found"
+
+    if title is not None:
+        tit = title + "\n" + tit
 
     plt.title(tit)
 
