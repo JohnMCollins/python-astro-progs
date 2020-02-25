@@ -35,7 +35,7 @@ try:
         mydbname = resargs['database']
         tmpdir = resargs['tempdir']
     else:
-        mydbname = firstarg 
+        mydbname = firstarg
 except IndexError:
         pass
 
@@ -66,12 +66,12 @@ for (ind,) in rows:
         continue
 
     ffshape = ffile[0].data.shape
-    
+
     if  ffshape[0] != ffshape[-1]:
         side = 0
     else:
         side = ffshape[0]
-    
+
     dbcurs.execute("UPDATE fitsfile SET side=%d WHERE ind=%d" % (side, ind))
     ffile.close()
     nsides += 1

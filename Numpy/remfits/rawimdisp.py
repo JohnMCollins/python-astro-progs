@@ -20,6 +20,7 @@ import matplotlib.patches as mp
 from matplotlib import colors
 import argparse
 import sys
+import re
 import datetime
 import os.path
 import trimarrays
@@ -27,6 +28,16 @@ import warnings
 import miscutils
 import strreplace
 import remgeom
+
+filtfn = dict(BL='z', BR="r", UR="g", UL="i")
+revfilt = dict()
+for k, v in filtfn.items():
+    revfilt[v] = k
+
+qfilt = 'zrig'
+
+fmtch = re.compile('([FBIm]).*([UB][LR])')
+ftypes = dict(F='Daily flat', B='Daily bias', I='Image', m='Master')
 
 rg = remgeom.load()
 
@@ -38,6 +49,7 @@ parsearg.add_argument('--ylabel', type=str, default="Row number", help="Y xxis l
 parsearg.add_argument('--figout', type=str, help='File to output figure(s) to')
 parsearg.add_argument('--percentiles', type=float, nargs='+', required=True, help="Percentiles to split at")
 parsearg.add_argument('--histbins', type=int, default=20, help='Bins for histogram')
+parsearg.add_argument('--logscale', action='store_true', help='Use log scale for histogram')
 parsearg.add_argument('--colourhist', type=str, default='b', help='Colour of historgram')
 parsearg.add_argument('--histtitle', type=str, default='Distribution normalised to mean', help='Histogram Title')
 parsearg.add_argument('--histxlab', type=str, default='Pixel value normalised to mean', help='Label for histogram X axis')
@@ -46,10 +58,6 @@ parsearg.add_argument('--addsk', action='store_false', help='Add stats to histog
 rg.disp_argparse(parsearg, "dwin")
 
 resargs = vars(parsearg.parse_args())
-
-# The reason why we don't get RA and DECL info out of this is because we have
-# to adjust for proper motion which requires Python 3 (as the versions of astropy that
-# support it only run with that)
 
 # Shut up warning messages
 
@@ -61,6 +69,7 @@ autils.suppress_vo_warnings()
 files = resargs['files']
 figout = resargs['figout']
 percentiles = resargs['percentiles']
+logscale = resargs['logscale']
 title = resargs['title']
 xlab = resargs['xlabel']
 ylab = resargs['ylabel']
@@ -95,16 +104,47 @@ plt.rc('figure', max_open_warning=100)
 
 for file in files:
 
-    ff = fits.open(file)
+    try:
+        ff = fits.open(file)
+    except OSError as e:
+        print("Cannot open", file, e.strerror, file=sys.stderr)
+        continue
     hdr = ff[0].header
     dat = trimarrays.trimzeros(trimarrays.trimnan(ff[0].data.astype(np.float64)))
-    
+
     try:
         date = Time(hdr['DATE-OBS'])
         when = date.datetime
     except KeyError:
         date = None
-    
+
+    filter = None
+    try:
+        filter = hdr['FILTER']
+    except KeyError:
+        pass
+
+    ftype = 'Unknown"'
+    try:
+        intfname = hdr['FILENAME']
+        fm = fmtch.match(intfname)
+        if fm:
+            ftp, quad = fm.groups()
+            ffilt = filtfn[quad]
+            if filter is None:
+                filter = ffilt
+            elif ffilt != filter:
+                print("Odd filter type", filter, "in", file, "int file", intfname, "which suggests filter", ffilt, file=sys.stderr)
+                continue
+            ftype = ftypes[ftp]
+        else:
+            ftype = "Generated " + intfname
+    except KeyError:
+        pass
+
+    if filter is None:
+        filter = "(unknown)"
+
     plotfigure = rg.plt_figure()
     plotfigure.canvas.set_window_title('FITS Image from file ' + file)
     plt.subplot(121)
@@ -114,23 +154,23 @@ for file in files:
     cmap = colors.ListedColormap(collist)
     norm = colors.BoundaryNorm(crange, cmap.N)
     img = plt.imshow(dat, cmap=cmap, norm=norm, origin='lower')
-    plt.colorbar(img, norm=norm, cmap=cmap, boundaries=crange, ticks=crange)      
+    plt.colorbar(img, norm=norm, cmap=cmap, boundaries=crange, ticks=crange)
 
     tit = title
     if date is not None:
-        tit += date.datetime.strftime("\nfor file date  %d/%m/%Y @ %H:%M:%S")
+        tit += "\nfor " + ftype + " file filter " + filter + "\n" + date.datetime.strftime("Date %d/%m/%Y @ %H:%M:%S")
     plt.title(tit)
     plt.xlabel(xlab)
     plt.ylabel(ylab)
     plt.subplot(122)
-    
+
     flatdat = dat.flatten()
     mv = flatdat.mean()
     flatdat /= mv
-    plt.hist(flatdat, bins=histbins, color=colourhist)
+    plt.hist(flatdat, bins=histbins, color=colourhist, log=logscale)
     plt.xlabel(histxlab)
     plt.ylabel(histylab)
-    
+
     tit = histtitle
     if  addsk:
         tit += " of %.6g\nMedian=%.6g Std dev=%.4g\nSkew=%.4g Kurtosis %.4g" % (mv, np.median(flatdat), flatdat.std(), ss.skew(flatdat), ss.kurtosis(flatdat))

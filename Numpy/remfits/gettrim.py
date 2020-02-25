@@ -33,7 +33,7 @@ for file in resargs['files']:
             print("Cannot open:", file, "Error was:", e.args[1], file=sys.stderr)
             errors += 1
         continue
-    
+
     img = trimarrays.trimzeros(trimarrays.trimnan(ff[0].data))
     rows, cols = img.shape
     if asarg:

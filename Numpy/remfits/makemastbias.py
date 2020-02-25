@@ -12,13 +12,13 @@ import warnings
 import sys
 import re
 import trimarrays
-import miscutils
+import cosmic1
 
 filtfn = dict(BL='z', BR="r", UR="g", UL="i")
 revfilt = dict()
 for k, v in filtfn.items():
     revfilt[v] = k
-    
+
 qfilt = 'zrig'
 
 fmtch = re.compile('([FB]).*([UB][LR])')
@@ -37,6 +37,9 @@ parsearg.add_argument('--filter', type=str, help='Specify filter otherwise deduc
 parsearg.add_argument('--stoperr', action='store_true', help='Stop processing if any files rejected')
 parsearg.add_argument('--force', action='store_true', help='Force overwrite of existing file')
 parsearg.add_argument('--asfloat', action='store_true', help='Save in floating point format')
+parsearg.add_argument('--usemean', action='store_true', help='Use mean of values rather than median')
+parsearg.add_argument('--tcosmic', type=float, default=10.0, help='Threshold to comside values as cosmic')
+parsearg.add_argument('--nthresh', type=float, default=2.0, help='Mults of std dev to consider neighbours of cosmsics non cosmic')
 
 resargs = vars(parsearg.parse_args())
 files = resargs['files']
@@ -46,6 +49,9 @@ filter = resargs['filter']
 stoperr = resargs['stoperr']
 force = resargs['force']
 asfloat = resargs['asfloat']
+usemean = resargs['usemean']
+tcosmic = resargs['tcosmic']
+nthresh = resargs['nthresh']
 
 if listfiles is not None:
     if len(files) != 0:
@@ -56,7 +62,7 @@ if listfiles is not None:
     except OSError as e:
         print("Cannot open", listfile, "error was", e.strerror, file=sys.stderr)
         sys.exit(11)
-    
+
     descrs = []
     for lin in lf:
         fn, descr = lin.split(" ", 1)
@@ -77,6 +83,7 @@ temp = []
 mjd = []
 hdrs = []
 ims = []
+totdone = 0
 
 for file, descr in zip(files, descrs):
     try:
@@ -89,25 +96,25 @@ for file, descr in zip(files, descrs):
             print("Could not open", file, '"' + descr + '" error was', e.strerror, file=sys.stderr)
         errors += 1
         continue
-    
+
     fhdr = ff[0].header
     fdat = ff[0].data
-    
+
     ff.close()
-    
+
     try:
         fname = fhdr['FILENAME']
     except KeyError:
         print("No filename found in", file, '"' + descr + '"', file=sys.stderr)
         errors += 1
         continue
-    
+
     mtch = fmtch.match(fname)
     if mtch is None:
         print("Could not match filename", fname, "in", file, '"' + descr + '"', file=sys.stderr)
         errors += 1
         continue
-    
+
     typ, seg = mtch.groups()
     if typ != 'B':
         print(file, '"' + descr + '" filename', fname, "Does not look like a bias file", file=sys.stderr)
@@ -120,7 +127,7 @@ for file, descr in zip(files, descrs):
         print(file, '"' + descr + '" filename', fname, "appears to be bias for filter", nfilt, "not", filter, file=sys.stderr)
         errors += 1
         continue
-    
+
     try:
         if qfilt[fhdr['QUADID']] != filter:
             print(file, '"' + descr + '" filename', fname, "has unexpected quadrant for filter", qfilt[fhdr['QUADID']], "not", filter, file=sys.stderr)
@@ -130,11 +137,12 @@ for file, descr in zip(files, descrs):
         print(file, '"' + descr + '" filename', fname, "has no quadrant setting", file=sys.stderr)
         errors += 1
         continue
-    
+
     # OK Checked everything not let's do the biz
-    
+
+    fdat, ndone = cosmic1.cosmic1(fdat, nthresh, tcosmic)
     trimdata = trimarrays.trimzeros(fdat)
-    
+    totdone += ndone
     try:
         temperature = fhdr['CCDTEMP']
         mjdate = fhdr['MJD-OBS']
@@ -171,7 +179,10 @@ max_date = mjd.max()
 min_date = mjd.min()
 temp_e = np.median(temp)
 
-final_image = np.median(ims, axis=0)
+if usemean:
+    final_image = np.mean(ims, axis=0)
+else:
+    final_image = np.median(ims, axis=0)
 
 first_header = hdrs[0]
 
@@ -199,13 +210,15 @@ first_header.set('N_IMAGES', len(mjd), '  number of images used')
 first_header['DATAMIN'] = data_min
 first_header['DATAMAX'] = data_max
 first_header.set('FILTER', filter, " filter corresponding to " + revfilt[filter] + " quadrant")
-first_header.set('FILENAME', miscutils.removesuffix(outfile), ' filename of this median image')
+first_header.set('FILENAME', "bias", ' filename of the image')
 first_header.set('CCDTEMP', temp_e, ' [C] median value of CCD Temp of used images')
 
-first_header['HISTORY'] = datetime.datetime.now().strftime("Created on %a %b %d %H:%M:%S %Y") 
+first_header['HISTORY'] = datetime.datetime.now().strftime("Created on %a %b %d %H:%M:%S %Y")
 hdu = fits.PrimaryHDU(final_image, first_header)
 try:
     hdu.writeto(outfile, overwrite=force, checksum=True)
 except OSError:
     print("Could not write", outfile, file=sys.stderr)
     sys.exit(200)
+if totdone > 0:
+    print(totdone, "cosmics deleted", file=sys.stderr)

@@ -34,7 +34,7 @@ filtfn = dict(BL='z', BR="r", UR="g", UL="i")
 revfilt = dict()
 for k, v in filtfn.items():
     revfilt[v] = k
-    
+
 qfilt = 'zrig'
 fmtch = re.compile('([FB]).*([UB][LR])')
 
@@ -95,7 +95,7 @@ else:
     if side == 'l':
         xlab += " from left side"
     elif side == 'r':
-        xlab == " from right side"
+        xlab += " from right side"
     elif side == 't':
         xlab += ' from top'
     elif side == 'b':
@@ -104,7 +104,7 @@ else:
         xlab += "\nwith %d from other sides" % others
 
 for file in files:
-    
+
     try:
         ff = fits.open(file)
     except (FileNotFoundError, PermissionError):
@@ -113,15 +113,15 @@ for file in files:
 
     fhdr = ff[0].header
     fdat = ff[0].data
-    
+
     ff.close()
-    
+
     try:
         dat = Time(fhdr['DATE-OBS'])
     except KeyError:
         print("Cannot find date in", file, file=sys.stderr)
         continue
-    
+
     filter = None
     ftype = ""
     try:
@@ -141,7 +141,7 @@ for file in files:
         if forcetype is not None:
             print("File is not of type", forcetype, "as required", file=sys.stderr)
             continue
-    
+
     if filter is None:
         try:
             filter = fhdr['FILTER']
@@ -149,16 +149,16 @@ for file in files:
         except KeyError:
             print("Cannot discover filter for filt", file, file=sys.stderr)
             continue
-    
+
     ftitle = title + "\n" + ftype + "for filter " + filter + dat.datetime.strftime(" on %d/%m/%Y @ %H:%M:%S")
 
     curr = start
-    
+
     # medians = []
     means = []
     stds = []
     trims = []
-    
+
     fdat = trimarrays.trimzeros(trimarrays.trimnan(fdat))
     if side in 'lrtb' and others > 0:
         tl = tb = others
@@ -172,14 +172,14 @@ for file in files:
         elif side == 'b':
             tb = 0
         fdat = fdat[tb:tt, tl:tr]
-    
+
     if curr == 0:
         trims.append(curr)
         # medians.append(np.median(fdat))
         means.append(fdat.mean())
         stds.append(fdat.std())
         curr += step
-    
+
     while curr <= end:
         if side == 'l':
             fdat = fdat[:, step:]
@@ -196,7 +196,7 @@ for file in files:
         means.append(fdat.mean())
         stds.append(fdat.std())
         curr += step
-           
+
     plotfigure = rg.plt_figure()
 
     plt.title(ftitle)

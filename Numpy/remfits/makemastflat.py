@@ -19,7 +19,7 @@ filtfn = dict(BL='z', BR="r", UR="g", UL="i")
 revfilt = dict()
 for k, v in filtfn.items():
     revfilt[v] = k
-    
+
 qfilt = 'zrig'
 
 fmtch = re.compile('([FB]).*([UB][LR])')
@@ -96,7 +96,7 @@ if listfiles is not None:
     except OSError as e:
         print("Cannot open", listfile, "error was", e.strerror, file=sys.stderr)
         sys.exit(11)
-    
+
     descrs = []
     for lin in lf:
         fn, descr = lin.split(" ", 1)
@@ -125,25 +125,25 @@ for file, descr in zip(files, descrs):
             print("Could not open", file, '"' + descr + '" error was', e.strerror, file=sys.stderr)
         errors += 1
         continue
-    
+
     fhdr = ff[0].header
     fdat = ff[0].data
-    
+
     ff.close()
-    
+
     try:
         fname = fhdr['FILENAME']
     except KeyError:
         print("No filename found in", file, '"' + descr + '"', file=sys.stderr)
         errors += 1
         continue
-    
+
     mtch = fmtch.match(fname)
     if mtch is None:
         print("Could not match filename", fname, "in", file, '"' + descr + '"', file=sys.stderr)
         errors += 1
         continue
-    
+
     typ, seg = mtch.groups()
     if typ != 'F':
         print(file, '"' + descr + '" filename', fname, "Does not look like a flat file", file=sys.stderr)
@@ -156,7 +156,7 @@ for file, descr in zip(files, descrs):
         print(file, '"' + descr + '" filename', fname, "appears to be flat file for filter", nfilt, "not", filter, file=sys.stderr)
         errors += 1
         continue
-    
+
     try:
         if qfilt[fhdr['QUADID']] != filter:
             print(file, '"' + descr + '" filename', fname, "has unexpected quadrant for filter", qfilt[fhdr['QUADID']], "not", filter, file=sys.stderr)
@@ -166,7 +166,7 @@ for file, descr in zip(files, descrs):
         print(file, '"' + descr + '" filename', fname, "has no quadrant setting", file=sys.stderr)
         errors += 1
         continue
-    
+
     try:
         if fhdr['FILTER'] != filter:
             print(file, '"' + descr + '" filename', fname, "has unexpected filter", fhdr['FILTER'], "not", filter, file=sys.stderr)
@@ -176,19 +176,19 @@ for file, descr in zip(files, descrs):
         print(file, '"' + descr + '" filename', fname, "has no FILTER keyword", file=sys.stderr)
         errors += 1
         continue
-    
+
     try:
         mjdate = fhdr['MJD-OBS']
     except KeyError as e:
         print(file, '"' + descr + '" filename', fname, "header item missing", e.args[0], file=sys.stderr)
         errors += 1
         continue
-      
+
     ims.append(fdat)
     intfiles.append(miscutils.removesuffix(fname))
     mjd.append(mjdate)
     hdrs.append(fhdr)
-    
+
 if len(ims) == 0:
     print("Aborting as no images to process", file=sys.stderr)
     sys.exit(1)
@@ -240,7 +240,7 @@ for todel in ('BZERO', 'BSCALE', 'BUNIT', 'BLANK'):
     try:
         del first_header[todel]
     except KeyError:
-        pass 
+        pass
 hdu = fits.PrimaryHDU(final_image, first_header)
 try:
     hdu.writeto(outfile, overwrite=force, checksum=True)

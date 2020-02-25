@@ -102,7 +102,7 @@ if allmonth is not None:
     if mtch is None:
         print("Cannot understand allmonth arg " + allmonth, "expecting yyyy-mm", file=sys.stderr);
         sys.exit(31)
-    smonth = allmonth + "-01" 
+    smonth = allmonth + "-01"
     fieldselect.append("date(date_obs)>='" + smonth + "'")
     fieldselect.append("date(date_obs)<=date_sub(date_add('" + smonth + "',interval 1 month),interval 1 day)")
 elif dates is not None:

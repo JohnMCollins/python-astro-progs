@@ -43,13 +43,13 @@ elif rc is not None:
         sys.exit(10)
 else:
     print("No reference flat file or trim arg given", file=sys.stederr)
-    sys.exit(11) 
+    sys.exit(11)
 
 imlist = []
 datelist = []
 
 for ffile in filelist:
-    
+
     ff = fits.open(ffile)
     imlist.append(ff[0].data.astype(np.float64))
     datelist.append(Time(ff[0].header['DATE']).datetime)
@@ -61,7 +61,7 @@ if comparefile is not None:
     ff = fits.open(comparefile)
     (compim, ) = trimarrays.trimrc(rows, cols, ff[0].data.astype(np.float64))
     ff.close()
-    
+
     while len(imlist) != 0:
         im = imlist.pop(0)
         dat = datelist.pop(0)

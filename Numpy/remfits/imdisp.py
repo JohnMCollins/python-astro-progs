@@ -119,7 +119,7 @@ if biasfile is not None:
     bdat = bfile[0].data.astype(np.float64)
     bfile.close()
     if fdat is not None:
-        (bdat,) = trimarrays.trimto(fdat, bdat)   
+        (bdat,) = trimarrays.trimto(fdat, bdat)
     if replstd > 0.0:
         bdat = strreplace.strreplace(bdat, replstd)
 
@@ -136,18 +136,18 @@ for file in files:
         dat -= bdat
     if fdat is not None:
         dat /= fdat
-    
+
     try:
         target = hdr['OBJECT']
     except KeyError:
         target = "(None)"
-    
+
     try:
         date = Time(hdr['DATE-OBS'])
         when = date.datetime
     except KeyError:
         date = None
-    
+
     w = wcscoord.wcscoord(hdr)
     (dat,) = rg.apply_trims(w, dat)
 
@@ -166,9 +166,9 @@ for file in files:
     norm = colors.BoundaryNorm(crange, cmap.N)
     img = plt.imshow(dat, cmap=cmap, norm=norm, origin='lower')
     plt.colorbar(img, norm=norm, cmap=cmap, boundaries=crange, ticks=crange)
-    
+
     radecgridplt.radecgridplt(w, dat, rg)
-         
+
     objlist = None
     if searchstd > 0:
         objlist = findfast.findfast(dat, searchstd, mainap)
@@ -196,7 +196,7 @@ for file in files:
         tit = "Target: " + target + " (no date)"
     else:
         tit = "Target: " + target + when.strftime(" %Y-%m-%d %H:%M:%S")
-    
+
     if objlist is not None:
          tit += " " + str(len(objlist)) + " objects found"
 

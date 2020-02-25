@@ -35,9 +35,9 @@ import time
 
 def get_moonpars(targ, date):
     """Get moon parameters we want returning as tuple visibiity, phase and separation"""
-    
+
     global dbcurs, obsls
-    
+
     objdata = dbobjinfo.get_object(dbcurs, targ)
     rightasc = objdata.get_ra(date)
     decl = objdata.get_dec(date)
@@ -61,7 +61,7 @@ targerror = dict()
 
 def get_target(name):
     """Get target name from name in obsinf"""
-    
+
     global targlookup, targerror, dbcurs
     try:
         return targlookup[name]
@@ -113,9 +113,9 @@ if todo == 0:
 else:
     perc = 100.0 / todo
     nreached = 0
-    
+
     for obsind, date, obj in rows:
-        
+
         nreached += 1
         if count != 0 and nreached % count == 0:
             print("%sReached %d of %d %.2f%%" % (descr, nreached, todo, nreached * perc), file=sys.stderr)
@@ -137,9 +137,9 @@ if todo == 0:
 else:
     perc = 100.0 / todo
     nreached = 0
-    
+
     for obsind, date, obj in rows:
-        
+
         nreached += 1
         if count != 0 and nreached % count == 0:
             print("%sReached update %d of %d %.2f%%" % (descr, nreached, todo, nreached * perc), file=sys.stderr)

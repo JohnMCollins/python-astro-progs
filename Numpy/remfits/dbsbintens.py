@@ -85,4 +85,3 @@ for objt in objtab:
         dbase.commit()
         if verbose:
             print("Updated", changes, "filters on", cobj.objname, file=sys.stderr)
- 

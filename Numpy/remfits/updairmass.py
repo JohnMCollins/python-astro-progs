@@ -63,12 +63,12 @@ for (ind,) in rows:
         continue
 
     ffshape = ffile[0].data.shape
-    
+
     if  ffshape[0] != ffshape[-1]:
         side = 0
     else:
         side = ffshape[0]
-    
+
     dbcurs.execute("UPDATE fitsfile SET side=%d WHERE ind=%d" % (side, ind))
     ffile.close()
     nsides += 1
@@ -114,7 +114,7 @@ rows = dbcurs.fetchall()
 nmfb = 0
 
 for year, month, filter, typ, fitsind in rows:
-       
+
     ffile = dbremfitsobj.getfits(dbcurs, fitsind)
     ffhdr = ffile[0].header
     fgain = ffhdr['GAIN']
@@ -132,7 +132,7 @@ rows = dbcurs.fetchall()
 nifb = 0
 
 for fitsind, ind, typ in rows:
-           
+
     ffile = dbremfitsobj.getfits(dbcurs, fitsind)
     ffhdr = ffile[0].header
     fgain = ffhdr['GAIN']
@@ -143,7 +143,7 @@ for fitsind, ind, typ in rows:
     tsfdat = nzfdat
     if trimsides > 0:
         tsfdat = nzfdat[trimsides:-trimsides, trimsides:-trimsides]
-    dbcurs.execute("UPDATE iforbinf SET gain=%.6g,rows=%d,cols=%d,minv=%d,maxv=%d,sidet=%d,median=%.8e,mean=%.8e,std=%.8e,skew=%.8e,kurt=%.8e WHERE iforbind=%d" % 
+    dbcurs.execute("UPDATE iforbinf SET gain=%.6g,rows=%d,cols=%d,minv=%d,maxv=%d,sidet=%d,median=%.8e,mean=%.8e,std=%.8e,skew=%.8e,kurt=%.8e WHERE iforbind=%d" %
                    (fgain, nzfdat.shape[0], nzfdat.shape[1], sqq.min(), sqq.max(), trimsides, np.median(tsfdat), tsfdat.mean(), tsfdat.std(), ss.skew(tsfdat, axis=None), ss.kurtosis(tsfdat, axis=None), ind))
     ffile.close()
     nifb += 1

@@ -47,7 +47,7 @@ def parsedate(dat):
         elif dat == 'yesterday':
             ret = rnow - datetime.timedelta(days=1)
         else:
-            m = re.match("-(\d+)$", dat)
+            m = re.match("[tT]-(\d+)$", dat)
             if m:
                 ret = rnow - datetime.timedelta(days=int(m.group(1)))
             else:
@@ -63,7 +63,7 @@ def parsedate(dat):
 def parsepair(arg, name, fslist, colname):
     """Parse an argument pair of the form a:b with a and b optional and
     generate a field selection thing for database."""
-    
+
     if arg is None:
         return
     bits = arg.split(':')
@@ -122,7 +122,7 @@ if allmonth is not None:
     if mtch is None:
         print("Cannot understand allmonth arg " + allmonth, "expecting yyyy-mm", file=sys.stderr);
         sys.exit(31)
-    smonth = allmonth + "-01" 
+    smonth = allmonth + "-01"
     fieldselect.append("date(date_obs)>='" + smonth + "'")
     fieldselect.append("date(date_obs)<=date_sub(date_add('" + smonth + "',interval 1 month),interval 1 day)")
 elif dates is not None:

@@ -74,7 +74,7 @@ elif rc is not None:
         sys.exit(15)
 else:
     print("No reference flat file or trim arg given", file=sys.stderr)
-    sys.exit(11) 
+    sys.exit(11)
 
 ff = fits.open(ffile)
 bf = fits.open(bfile)
@@ -117,4 +117,3 @@ else:
     outfig = miscutils.replacesuffix(outfig, 'png')
     plotfigure.savefig(outfig)
     plt.close(outfig)
-

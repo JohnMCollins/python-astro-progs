@@ -54,7 +54,7 @@ elif rc is not None:
         sys.exit(15)
 else:
     print("No reference flat file or trim arg given", file=sys.stederr)
-    sys.exit(11) 
+    sys.exit(11)
 
 biasfiles = glob.glob(biaspref + '*')
 if len(biasfiles) == 0:
@@ -116,7 +116,7 @@ if latex:
     nzc = np.zeros(shape=len(biasims)+1)
     minc = np.zeros(shape=len(biasims)+1) + 1000000
     for obs, obsdate in zip(obsims, obsdates):
-    
+
         if divff:
             obs = obs.copy() / ffrefim
         print(obsdate.strftime("%H:%M:%S:"), end="&")
@@ -169,7 +169,7 @@ else:
     nzc = np.zeros(shape=len(biasims)+1)
     minc = np.zeros(shape=len(biasims)+1) + 1000000
     for obs, obsdate in zip(obsims, obsdates):
-    
+
         if divff:
             obs = obs.copy() / ffrefim
         print(obsdate.strftime("%H:%M:%S:"), end="")

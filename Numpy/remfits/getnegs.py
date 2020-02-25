@@ -130,14 +130,14 @@ dbcurs.execute("SELECT obsind,ind,object,date_obs,filter FROM obsinf WHERE " + d
 obstab = dbcurs.fetchall()
 
 for obst in obstab:
-    
+
     obsind, fitsind, object, date_obs,filter = obst
-    
+
     if filter not in 'griz':
         continue
 
     ffile = dbremfitsobj.getfits(dbcurs, fitsind)
-    
+
     ffhdr = ffile[0].header
     imagedata = ffile[0].data.astype(np.float64)
     fdat = flattab[filter].fitsimage

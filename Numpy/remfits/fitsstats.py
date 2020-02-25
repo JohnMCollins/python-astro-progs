@@ -47,7 +47,7 @@ elif rc is not None:
         sys.exit(10)
 else:
     print("No reference flat file or trim arg given", file=sys.stderr)
-    sys.exit(11) 
+    sys.exit(11)
 
 allvals = None
 for file in files:

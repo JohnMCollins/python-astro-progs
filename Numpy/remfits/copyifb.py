@@ -47,7 +47,7 @@ try:
         resargs = vars(parsearg.parse_args())
         mydbname = resargs['database']
     else:
-        mydbname = firstarg 
+        mydbname = firstarg
 except IndexError:
         pass
 

@@ -79,7 +79,7 @@ elif rc is not None:
         sys.exit(10)
 else:
     print("No reference flat file or trim arg given", file=sys.stderr)
-    sys.exit(11) 
+    sys.exit(11)
 
 bf1 = fits.open(file1)
 bim1 = bf1[0].data.astype(np.float32)
@@ -102,7 +102,7 @@ bim1, bim2 = trimarrays.trimrc(rows, cols, bim1, bim2)
 if replstd > 0.0:
     bim1 = strreplace.strreplace(bim1, replstd)
     bim2 = strreplace.strreplace(bim2, replstd)
-    
+
 bdiffs = (bim1 - bim2).flatten()
 absdiffs = np.abs(bdiffs)
 mv = np.round(absdiffs.mean())

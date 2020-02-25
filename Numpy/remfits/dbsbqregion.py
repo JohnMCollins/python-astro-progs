@@ -85,7 +85,7 @@ for qr in qres:
     if name in lookupnames:
         continue
     lookupnames[name] = 1
-    
+
     otype = qr['OTYPE']
     rvel = None
     try:
@@ -106,9 +106,9 @@ for qr in qres:
             distance = u.Quantity(distance, unit=distunit).to('pc').value
     except KeyError:
         distance = None
-    
+
     nobj = dbobjinfo.ObjData(objname = name, objtype = otype, dist = distance, rv = rvel)
-    
+
     ra = qr['RA']
     dec = qr['DEC']
     sk = coordinates.SkyCoord(ra=ra, dec=dec, unit=(u.hour, u.deg))
@@ -126,7 +126,7 @@ for qr in qres:
         raerr = None
     if is_mask(decerr):
         decerr = None
-        
+
     nobj.set_ra(value=ra, err=raerr, pm=pmra)
     nobj.set_dec(value=dec, err=decerr, pm=pmdec)
     for f in 'urigzHJK':
@@ -137,10 +137,10 @@ for qr in qres:
         if is_masked(fluxerr):
             fluxerr = None
         nobj.set_mag(f, flux, fluxerr)
-    
+
     if nobj.get_maxmag() > maxmag:
         continue
-    
+
     nobj.add_object(mycursor)
     namesadded.append(name)
 
@@ -149,4 +149,3 @@ namesadded.sort()
 print(len(namesadded), "objects added")
 for p in namesadded:
     print(p)
-

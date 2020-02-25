@@ -164,7 +164,7 @@ for filter in 'HJK':
 
         if cutoff > 0.0:
             imagedata = np.clip(imagedata, None, cutoff)
-        
+
         (imagedata, ) = rg.apply_trims(w, imagedata)
 
         med = np.median(imagedata)

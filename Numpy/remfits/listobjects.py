@@ -130,7 +130,7 @@ if order is not None and len(order) != 0:
 		results.sort(key=attrgetter('fromdate'))
 	elif f == 'l':
 		results.sort(key=attrgetter('todate'),reverse=True)
-		
+
 if summ is not None:
 	results.append(summ)
 

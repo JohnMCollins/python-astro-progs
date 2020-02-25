@@ -135,7 +135,7 @@ for obsind in obsinds:
     if filter not in 'grizHJK' and filter != 'GRI':
         print("obsid", obsind, "on", when.strftime("%d/%M/%Y"), "for target", target,  "has unsupported filter", filter, file=sys.stderr)
         continue
-    
+
     if fitsind == 0:
         print("obsid", obsind, "on", when.strftime("%d/%M/%Y"), "for target", target, "filter", filter, "has no fits file", file=sys.stderr)
         continue
@@ -157,7 +157,7 @@ for obsind in obsinds:
         fdat = trimarrays.trimzeros(trimarrays.trimnan(ff[0].data))
         ffrows, ffcols = fdat.shape
         ff.close()
-        
+
         ffile = dbremfitsobj.getfits(dbcurs, fitsind)
         ffhdr = ffile[0].header
         imagedata = ffile[0].data.astype(np.float64)
@@ -171,19 +171,19 @@ for obsind in obsinds:
             bf = dbremfitsobj.getfits(dbcurs, btab.fitsind)
             bdat = bf[0].data.astype(np.float64)
             bf.close()
-        
+
         # Get actual image data
-        
+
         (imagedata, bdatc) = trimarrays.trimto(fdat, imagedata, bdat)
-        
+
         if replstd > 0.0:
            bdatc = strreplace.strreplace(bdatc, replstd)
-        
+
         # Extra stuff
-        
+
         #fdat -= bdatc
         #print("Minimum flat =", fdat.min())
-        
+
         imagedata -= bdatc
         #imagedata *= fdat.mean()
         imagedata /= fdat

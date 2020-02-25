@@ -14,19 +14,24 @@ use Pod::Usage;
 use Astro::FITS::CFITSIO;
 
 my $prefix = "fits";
+my $suffix = "fits.gz";
 my $help;
 my $verbose;
 my $n = 1;
+my $prec = 3;
 my $dbname = remdefaults::default_database;
 
-GetOptions("database=s" => \$dbname, "prefix=s" => \$prefix, "verbose" => \$verbose, "start=i" => \$n, "help" => \$help) or pod2usage(2);
+GetOptions("database=s" => \$dbname, "prefix=s" => \$prefix, "suffix=s" => \$suffix,
+            "digits=i" => \$prec, "verbose" => \$verbose, "start=i" => \$n, "help" => \$help) or pod2usage(2);
 pod2usage(-exitval => 0, -verbose => 2) if $help;
 
 #if ($help)  {
 #    print STDERR <<EOF;
-# $0 [--help] [--prefix=string] fitsids
+# $0 [--help] [--prefix=string] [--suffix=string] [--digits=n] [--start=n] fitsids
 
-# Files are extracted with given prefix and 3 digit zero-filled numbers.
+# Files are extracted with given prefix and suffix and n digit zero-filled numbers.
+# n defaults to 3, prefix to fits and suffix to fits.gz
+# Numbering starts by the higher of the given number and first unused file name.
 # Fits ids are given by listobs.
 # EOF
 #     exit 0;
@@ -67,7 +72,7 @@ for my $id (@ARGV) {
     }
     my $fn;
     do  {
-        $fn = sprintf "%s%.3d.fits.gz", $prefix, $n++;
+        $fn = sprintf "%s%." . $prec . "d.%s", $prefix, $n++, $suffix;
     } while -f $fn;
     open(OUTF, ">$fn") or die "Cannot create output file $fn";
     my $offs = 0;

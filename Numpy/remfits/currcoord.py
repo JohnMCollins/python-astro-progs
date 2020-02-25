@@ -43,14 +43,14 @@ resarray = []
 errors = 0
 
 for obj in objids:
-    
+
     coords = objcoord.objcurrcoord(obj, odt)
-    
+
     if coords is None:
         print("Cannot find object id " + obj, file=sys.stderr)
         errors += 1
         continue
-    
+
     resarray.append(coords)
 
 if errors != 0:
