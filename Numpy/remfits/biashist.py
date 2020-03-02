@@ -20,7 +20,6 @@ import remgeom
 import miscutils
 import strreplace
 
-
 # Shut up warning messages
 
 warnings.simplefilter('ignore', AstropyWarning)
@@ -39,12 +38,9 @@ parsearg.add_argument('--bins', type=int, default=10, help='Number of histogram 
 parsearg.add_argument('--norm', type=str, help='Plot normal curse in specified colour')
 parsearg.add_argument('--histalpha', type=float, default=0.75, help='Alpha value for historgram only if plotting norm curve')
 parsearg.add_argument('--clip', type=int, default=5, help='Level at which we count exceiptionals')
-parsearg.add_argument('--width', type=float, default=rg.width, help="Width of figure")
-parsearg.add_argument('--height', type=float, default=rg.height, help="height of figure")
 parsearg.add_argument('--outfig', type=str, help='Output figure if required')
-parsearg.add_argument('--labsize', type=int, default=10, help='Label and title font size')
-parsearg.add_argument('--ticksize', type=int, default=10, help='Tick font size')
 
+rg.disp_argparse(parsearg)
 
 resargs = vars(parsearg.parse_args())
 file1, file2 = resargs['files']
@@ -57,20 +53,15 @@ replstd = resargs['replstd']
 histalpha = resargs['histalpha']
 normplot = resargs['norm']
 if normplot is None: histalpha = 1.0
-width = resargs['width']
-height = resargs['height']
 outfig = resargs['outfig']
-labsize = resargs['labsize']
-ticksize = resargs['ticksize']
 
-plt.rc('xtick',labelsize=ticksize)
-plt.rc('ytick',labelsize=ticksize)
+rg.disp_getargs(resargs)
 
 if ffref is not None:
     ffreff = fits.open(ffref)
     ffrefim = trimarrays.trimzeros(trimarrays.trimnan(ffreff[0].data))
     ffreff.close()
-    rows, cols  = ffrefim.shape
+    rows, cols = ffrefim.shape
 elif rc is not None:
     try:
         rows, cols = map(lambda x: int(x), rc.split(':'))
@@ -111,10 +102,10 @@ if absval:
     bdiffs = absdiffs
     bdiffs[bdiffs > clip * mstd] = mv
 else:
-    bdiffs[bdiffs < -clip * mstd] = - mv
+    bdiffs[bdiffs < -clip * mstd] = -mv
     bdiffs[bdiffs > clip * mstd] = mv
 
-plotfigure = plt.figure(figsize=(width, height))
+plotfigure = rg.plt_figure()
 plotfigure.canvas.set_window_title("BIAS file differences")
 
 plt.hist(bdiffs.flatten(), bins=bins, alpha=histalpha)
@@ -125,8 +116,8 @@ if normplot is not None:
     xd = np.linspace(bdiffs.min(), bdiffs.max(), 200)
     yd = rv.pdf(xd) * float(bdiffs.size)
     plt.plot(xd, yd, color=normplot)
-plt.xlabel("Differences in px values (med=%.3g std=%.3g)" % (medv, stdv), fontsize=labsize)
-plt.title("Compare bias" + bdate1.strftime(" %Y-%m-%d %H:%M:%S -v- ") + bdate2.strftime("%Y-%m-%d %H:%M:%S"), fontsize=labsize)
+plt.xlabel("Differences in px values (med=%.3g std=%.3g)" % (medv, stdv))
+plt.title("Compare bias" + bdate1.strftime(" %Y-%m-%d %H:%M:%S -v- ") + bdate2.strftime("%Y-%m-%d %H:%M:%S"))
 if outfig is None:
     plt.show()
 else:
