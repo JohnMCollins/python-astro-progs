@@ -47,7 +47,7 @@ parsearg.add_argument('--title', type=str, default="Image display", help="Title 
 parsearg.add_argument('--xlabel', type=str, default="Column number", help="X xxis label")
 parsearg.add_argument('--ylabel', type=str, default="Row number", help="Y xxis label")
 parsearg.add_argument('--figout', type=str, help='File to output figure(s) to')
-parsearg.add_argument('--percentiles', type=float, nargs='+', required=True, help="Percentiles to split at")
+parsearg.add_argument('--grayscale', type=str, required=True, help="Standard grayscale to use")
 parsearg.add_argument('--histbins', type=int, default=20, help='Bins for histogram')
 parsearg.add_argument('--logscale', action='store_true', help='Use log scale for histogram')
 parsearg.add_argument('--colourhist', type=str, default='b', help='Colour of historgram')
@@ -66,9 +66,9 @@ warnings.simplefilter('ignore', AstropyUserWarning)
 warnings.simplefilter('ignore', UserWarning)
 autils.suppress_vo_warnings()
 
+grayscalename = resargs['grayscale']
 files = resargs['files']
 figout = resargs['figout']
-percentiles = resargs['percentiles']
 logscale = resargs['logscale']
 title = resargs['title']
 xlab = resargs['xlabel']
@@ -81,17 +81,13 @@ histylab = resargs['histylab']
 histtitle = resargs['histtitle']
 addsk = resargs['addsk']
 
-if min(percentiles) <= 0.0:
-    print("Minimum percentiles must be >0", file=sys.stderr)
-    sys.exit(2)
-if max(percentiles) >= 100.0:
-    print("Maximum percentiles must be <100", file=sys.stderr)
-    sys.exit(3)
+gsdets = rg.get_grayscale(grayscalename)
+if gsdets is None:
+    print("Sorry gray scale", grayscalename, "is not defined", file=sys.stderr)
+    sys.exit(9)
 
-percentiles += [0, 100]
-colours = 255 - np.round(2.0 ** np.linspace(0, 8, len(percentiles) - 1) - 1.0).astype(np.int32)
-
-percentiles.sort()
+collist = gsdets.get_colours()
+cmap = colors.ListedColormap(collist)
 
 nfigs = len(files)
 fignum = 1
@@ -149,9 +145,7 @@ for file in files:
     plotfigure.canvas.set_window_title('FITS Image from file ' + file)
     plt.subplot(121)
 
-    crange = np.percentile(dat, percentiles)
-    collist = ["#%.2x%.2x%.2x" % (i, i, i) for i in colours]
-    cmap = colors.ListedColormap(collist)
+    crange = gsdets.get_cmap(dat)
     norm = colors.BoundaryNorm(crange, cmap.N)
     img = plt.imshow(dat, cmap=cmap, norm=norm, origin='lower')
     plt.colorbar(img, norm=norm, cmap=cmap, boundaries=crange, ticks=crange)

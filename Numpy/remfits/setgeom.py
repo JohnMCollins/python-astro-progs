@@ -36,6 +36,11 @@ parsearg.add_argument('--hilalpha', type=float, help='Object alpha')
 parsearg.add_argument('--objtextfs', type=int, help='Font size object labels')
 parsearg.add_argument('--textdisp', type=int, help='Displacement of object labels')
 parsearg.add_argument('--objfill', action='store_true', help='Fill object markers')
+parsearg.add_argument('--grayscale', type=str, help='Gray scale name')
+parsearg.add_argument('--gspercent', action='store_true', help='Grey scale is percentage otherwises nos of std devs from mean')
+parsearg.add_argument('--gscolours', type=int, nargs='+', help='List of colours 1 to 254 to use (will be sorted)')
+parsearg.add_argument('--gsvalues', type=float, nargs='+', help='List of values to use in grey scale (will be sorted')
+parsearg.add_argument('--gsdel', action='store_true', help='Delete grayscale"')
 
 resargs = vars(parsearg.parse_args())
 doreset = resargs['reset']
@@ -63,6 +68,11 @@ objcolour = resargs['objcolour']
 objalpha = resargs['hilalpha']
 objtextfs = resargs['objtextfs']
 textdisp = resargs['textdisp']
+grayscale = resargs['grayscale']
+gspercent = resargs["gspercent"]
+gscolours = resargs['gscolours']
+gsvalues = resargs['gsvalues']
+gsdel = resargs['gsdel']
 
 changes = 0
 
@@ -145,6 +155,22 @@ if objtextfs is not None:
 if textdisp is not None:
     rg.objdisp.objtextdisp = textdisp
     changes += 1
+if grayscale is not None:
+    if gsdel:
+        rg.del_grayscale(grayscale)
+    else:
+        if gscolours is None or gsvalues is None:
+            print("Need to specify colours and values with grayscale", file=sys.stderr)
+            sys.exit(10)
+        gs = remgeom.GrayScale()
+        gs.setname(grayscale)
+        try:
+            gs.setscale(gsvalues, gscolours, gspercent)
+        except remgeom.RemGeomError as e:
+            print("Grayscale gave error", e.args[0], file=sys.stderr)
+            sys.exit(11)
+        rg.set_grayscale(gs)
+    changes += 1
 
 print("Default width: %.2f" % rg.defwinfmt.width)
 print("Default height: %.2f" % rg.defwinfmt.height)
@@ -177,6 +203,17 @@ print("Object colour(s): ", ", ".join(rg.objdisp.objcolour))
 print("Object alpha: %.3g" % rg.objdisp.objalpha)
 print("Object text font size: %d" % rg.objdisp.objtextfs)
 print("Object text displacement: %d" % rg.objdisp.objtextdisp)
+
+gl = rg.list_grayscales()
+
+for g in gl:
+    gs = rg.get_grayscale(g)
+    t = "std devs"
+    if gs.isperc:
+        t = "percentiles"
+    print("Grayscale", g, "type", t)
+    print("\tShades", gs.disp_colours())
+    print("\tValues", gs.disp_values())
 
 if changes > 0:
     remgeom.save(rg)

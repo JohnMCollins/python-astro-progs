@@ -176,4 +176,3 @@ for r, c, v in colrow:
 if stsq >= 0:
     ptrail(stsq, endsq)
     stsq = endsq = -100
-

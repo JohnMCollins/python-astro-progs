@@ -38,8 +38,8 @@ rg = remgeom.load()
 parsearg = argparse.ArgumentParser(description='Display image files', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 parsearg.add_argument('files', type=str, nargs='+', help='File names to display')
 parsearg.add_argument('--figout', type=str, help='File to output figure(s) to')
+parsearg.add_argument('--grayscale', type=str, required=True, help="Standard grayscale to use")
 parsearg.add_argument('--title', type=str, help='Optional title to put at head of image')
-parsearg.add_argument('--percentiles', type=float, nargs='+', required=True, help="Percentiles to split at")
 parsearg.add_argument('--biasfile', type=str, help='Bias file to apply')
 parsearg.add_argument('--flatfile', type=str, help='Flat file to apply')
 parsearg.add_argument('--replstd', type=float, default=5.0, help='Replace exceptional values > this with median')
@@ -70,7 +70,7 @@ rg.disp_getargs(resargs)
 
 biasfile = resargs['biasfile']
 flatfile = resargs['flatfile']
-percentiles = resargs['percentiles']
+grayscalename = resargs['grayscale']
 replstd = resargs['replstd']
 mainap = resargs['mainap']
 searchstd = resargs['searchstd']
@@ -79,19 +79,17 @@ cosmicrit = resargs['cosmicrit']
 cosmicthreash = resargs['cosmicthresh']
 title = resargs['title']
 
-if min(percentiles) <= 0.0:
-    print("Minimum percentiles must be >0", file=sys.stderr)
-    sys.exit(2)
-if max(percentiles) >= 100.0:
-    print("Maximum percentiles must be <100", file=sys.stderr)
-    sys.exit(3)
+gsdets = rg.get_grayscale(grayscalename)
+if gsdets is None:
+    print("Sorry gray scale", grayscalename, "is not defined", file=sys.stderr)
+    sys.exit(9)
 
-percentiles += [0, 100]
-colours = 255 - np.round(2.0 ** np.linspace(0, 8, len(percentiles) - 1) - 1.0).astype(np.int32)
-collist = ["#%.2x%.2x%.2x" % (i, i, i) for i in colours]
-if rg.divspec.invertim:
-    collist = [p for p in reversed(collist)]
-percentiles.sort()
+collist = gsdets.get_colours()
+cmap = colors.ListedColormap(collist)
+
+# if rg.divspec.invertim:
+#    collist = [p for p in reversed(collist)]
+# percentiles.sort()
 
 nfigs = len(files)
 fignum = 1
@@ -161,8 +159,7 @@ for file in files:
     mx = dat.max()
     mn = dat.min()
     fi = dat.flatten()
-    crange = np.percentile(dat, percentiles)
-    cmap = colors.ListedColormap(collist)
+    crange = gsdets.get_cmap(dat)
     norm = colors.BoundaryNorm(crange, cmap.N)
     img = plt.imshow(dat, cmap=cmap, norm=norm, origin='lower')
     plt.colorbar(img, norm=norm, cmap=cmap, boundaries=crange, ticks=crange)

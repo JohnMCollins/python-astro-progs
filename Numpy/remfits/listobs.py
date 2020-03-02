@@ -47,7 +47,7 @@ def parsedate(dat):
         elif dat == 'yesterday':
             ret = rnow - datetime.timedelta(days=1)
         else:
-            m = re.match("-(\d+)$", dat)
+            m = re.match("t-(\d+)$", dat)
             if m:
                 ret = rnow - datetime.timedelta(days=int(m.group(1)))
             else:
@@ -127,9 +127,12 @@ if filters is not None:
     qfilt = [ "filter='" + o + "'" for o in filters]
     fieldselect.append("(" + " OR ".join(qfilt) + ")")
 
-if len(dither) != 1 or dither[0] != -1:
+if dither[0] != -1:
     qdith = [ "dithID=" + str(d) for d in dither]
-    fieldselect.append("(" + " OR ".join(qdith) + ")")
+    if len(qdith) == 1:
+        fieldselect.append(qdith[0])
+    else:
+        fieldselect.append("(" + " OR ".join(qdith) + ")")
 
 if gain is not None:
     fieldselect.append("ABS(gain-%.3g) < %.3g" % (gain, gain * 1e-3))
@@ -140,7 +143,7 @@ if len(fieldselect) != 0:
     sel = "WHERE " + " AND ".join(fieldselect)
 
 if summary:
-    sel = "SELECT object,count(*) FROM obsinf" + sel + "GROUP BY object"
+    sel = "SELECT object,count(*) FROM obsinf " + sel + " GROUP BY object"
 else:
     sel += " ORDER BY object,dithID,date_obs"
     sel = "SELECT obsind,ind,date_obs,object,filter,dithID FROM obsinf " + sel
