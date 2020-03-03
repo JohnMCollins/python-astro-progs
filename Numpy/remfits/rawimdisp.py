@@ -46,7 +46,6 @@ parsearg.add_argument('files', type=str, nargs='+', help='File names to display'
 parsearg.add_argument('--title', type=str, default="Image display", help="Title for each plot")
 parsearg.add_argument('--xlabel', type=str, default="Column number", help="X xxis label")
 parsearg.add_argument('--ylabel', type=str, default="Row number", help="Y xxis label")
-parsearg.add_argument('--figout', type=str, help='File to output figure(s) to')
 parsearg.add_argument('--grayscale', type=str, required=True, help="Standard grayscale to use")
 parsearg.add_argument('--histbins', type=int, default=20, help='Bins for histogram')
 parsearg.add_argument('--logscale', action='store_true', help='Use log scale for histogram')
@@ -68,12 +67,11 @@ autils.suppress_vo_warnings()
 
 grayscalename = resargs['grayscale']
 files = resargs['files']
-figout = resargs['figout']
 logscale = resargs['logscale']
 title = resargs['title']
 xlab = resargs['xlabel']
 ylab = resargs['ylabel']
-rg.disp_getargs(resargs)
+figout = rg.disp_getargs(resargs)
 histbins = resargs['histbins']
 colourhist = resargs['colourhist']
 histxlab = resargs['histxlab']

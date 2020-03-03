@@ -28,17 +28,13 @@ rg = remgeom.load()
 
 parsearg = argparse.ArgumentParser(description='Plot Prox/BS/Ross obs by dates', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 parsearg.add_argument('--database', type=str, default=remdefaults.default_database(), help='Database to use')
-parsearg.add_argument('--width', type=float, default=rg.width, help="Width of figure")
-parsearg.add_argument('--height', type=float, default=rg.height, help="height of figure")
 parsearg.add_argument('--marker', type=str, default=',', help='Marker style for scatter plot')
-parsearg.add_argument('--outfig', type=str, help='Output file rather than display')
+rg.disp_argparse(parsearg)
 
 resargs = vars(parsearg.parse_args())
 dbname = resargs['database']
-width = resargs['width']
-height = resargs['height']
 marker = resargs['marker']
-ofig = resargs['outfig']
+ofig = rg.disp_getargs(parsearg)
 
 mydb = dbops.opendb(dbname)
 mycurs = mydb.cursor()
@@ -66,7 +62,7 @@ for dat, count in rows:
     rosscounts. append(count)
 mydb.close()
 
-plt.figure(figsize=(width, height))
+rg.plt_figure()
 df = mdates.DateFormatter("%b %Y")
 hrloc = mdates.HourLocator()
 minloc = mdates.MinuteLocator()
@@ -75,10 +71,10 @@ ax = plt.gca()
 ax.xaxis.set_major_locator(minloc)
 ax.xaxis.set_major_formatter(df)
 
-mindate = min(proxdates+barndates+rossdates)
-maxdate = max(proxdates+barndates+rossdates)
+mindate = min(proxdates + barndates + rossdates)
+maxdate = max(proxdates + barndates + rossdates)
 sd = mindate.toordinal()
-ed = maxdate.toordinal()+1
+ed = maxdate.toordinal() + 1
 plt.xlim(sd, ed)
 dlist = []
 nextd = mindate + dateutil.relativedelta.relativedelta(day=1) + dateutil.relativedelta.relativedelta(months=1)
@@ -95,8 +91,8 @@ plt.scatter(barndates, barncounts, color='g', marker=marker)
 plt.scatter(rossdates, rosscounts, color='b', marker=marker)
 plt.legend(['Proxima Centauri', "Barnard's Star", 'Ross 154'])
 
-ofig = resargs['outfig']
 if ofig is None:
     plt.show()
 else:
+    ofig = miscutils.replacesuffix(ofig, 'png')
     plt.gcf().savefig(ofig)

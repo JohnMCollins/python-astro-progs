@@ -49,28 +49,20 @@ parsearg.add_argument('--filter', type=str, help='Restrict to given filter')
 parsearg.add_argument('--title', type=str, default='Mean count of daily flats v Std devl', help='Title for plot')
 parsearg.add_argument('--xlabel', type=str, default='Mean value', help='X axis label')
 parsearg.add_argument('--ylabel', type=str, default='Std deviation', help='Y axis label')
-parsearg.add_argument('--outfig', type=str, help='Output file rather than display')
 parsearg.add_argument('--colour', type=str, default='b', help='Plot points colour')
 parsearg.add_argument('--limscolour', type=str, default='k', help='Limit lines colour')
 parsearg.add_argument('--regcolour', type=str, default='k', help='Regression colour')
-parsearg.add_argument('--width', type=float, default=rg.width, help="Width of figure")
-parsearg.add_argument('--height', type=float, default=rg.height, help="height of figure")
-parsearg.add_argument('--labsize', type=int, default=10, help='Label and title font size')
-parsearg.add_argument('--ticksize', type=int, default=10, help='Tick font size')
+rg.disp_argparse(parsearg)
 
 resargs = vars(parsearg.parse_args())
 mydbname = resargs['database']
 title = resargs['title']
 xlab = resargs['xlabel']
 ylab = resargs['ylabel']
-ofig = resargs['outfig']
 colour = resargs['colour']
 limscolour = resargs['limscolour']
 regcolour = resargs['regcolour']
-width = resargs['width']
-height = resargs['height']
-labsize = resargs['labsize']
-ticksize = resargs['ticksize']
+ofig = rg.disp_getargs(resargs)
 filter = resargs['filter']
 divmean = resargs['divmean']
 clipstd = resargs['clipstd']
@@ -96,9 +88,6 @@ except FileNotFoundError:
 
 dbase = dbops.opendb(mydbname)
 dbcurs = dbase.cursor()
-
-plt.rc('xtick', labelsize=ticksize)
-plt.rc('ytick', labelsize=ticksize)
 
 if filter is None:
     dbcurs.execute("SELECT mean,std FROM iforbinf WHERE mean IS NOT NULL AND typ='flat' AND ind!=0 AND gain=1")
@@ -131,10 +120,8 @@ ass = np.argsort(means)
 means = means[ass]
 stdds = stdds[ass]
 
-plt.figure(figsize=(width, height))
+rg.plt_figure()
 plt.scatter(means, stdds, color=colour)
-plt.xlabel(xlab, fontsize=labsize)
-plt.ylabel(ylab, fontsize=labsize)
 if limits is not None and not cutlimit:
     plt.axvline(lowerlim, color=limscolour)
     plt.axvline(upperlim, color=limscolour)
@@ -142,8 +129,9 @@ lrslope, lrintercept, lrr, lrp, lrstd = stats.linregress(means, stdds)
 lrx = np.array([means.min(), means.max()])
 lry = lrx * lrslope + lrintercept
 plt.plot(lrx, lry, color=regcolour)
-plt.title(title + "\n" + "Slope %.6g Intercept %.6g Correlation %.6g" % (lrslope, lrintercept, lrr), fontsize=labsize)
+plt.title(title + "\n" + "Slope %.6g Intercept %.6g Correlation %.6g" % (lrslope, lrintercept, lrr))
 if ofig is None:
     plt.show()
 else:
+    ofig = miscutils.replacesuffix(ofig, 'png')
     plt.gcf().savefig(ofig)

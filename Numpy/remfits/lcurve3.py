@@ -20,6 +20,8 @@ import datetime
 import dateutil
 import parsetime
 import remgeom
+import miscutils
+
 
 def make_bucket(lastdate, bacc):
     """Make a bucket out of a section of the points"""
@@ -27,7 +29,7 @@ def make_bucket(lastdate, bacc):
     global  stdclip, clipped
 
     if stdclip > 0.0:
-        intens = np.array([targinten/denom for targinten, denom, obsind, dt in bacc])
+        intens = np.array([targinten / denom for targinten, denom, obsind, dt in bacc])
         bmean = np.mean(intens)
         bstd = np.std(intens) * stdclip
         if bstd > 0.0:
@@ -46,6 +48,9 @@ def make_bucket(lastdate, bacc):
     [1] for x in bacc]
     return  (lastdate, len(bacc), np.sum(tis), np.sum(rfs), np.std(tis), np.std(rfs))
 
+
+rg = remgeom.load()
+
 parsearg = argparse.ArgumentParser(description='Plot light curves', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 parsearg.add_argument('file', type=str, nargs='+', help='Results files from dblcuregen')
 parsearg.add_argument('--columns', type=str, help='Columns to select for reference objects')
@@ -57,7 +62,6 @@ parsearg.add_argument('--title', type=str, default='Light curve', help='Title fo
 parsearg.add_argument('--legends', action='store_false', help='Turn on/off legend')
 parsearg.add_argument('--printdates', action='store_true', help='Print dates oN x axis')
 parsearg.add_argument('--dayint', type=int, help='Interval between dates')
-parsearg.add_argument('--outfig', type=str, help='Output file rather than display')
 parsearg.add_argument('--line', action='store_true', help='Use line plots rather than scatter')
 parsearg.add_argument('--bucket', action='store_true', help='Bucket days')
 parsearg.add_argument('--sepbuck', type=int, default=12, help='Bucket separation in hours')
@@ -66,6 +70,7 @@ parsearg.add_argument('--normalise', type=str, default='none', help='Normalisati
 parsearg.add_argument('--marker', type=str, default=',', help='Marker style for scatter plot')
 parsearg.add_argument('--stdclip', type=float, default=0.0, help='Number of std devs to clip results')
 parsearg.add_argument('--clipfile', type=str, help='File to objsinds of clipped results')
+rg.disp_argparse(parsearg)
 
 resargs = vars(parsearg.parse_args())
 fnames = resargs['file']
@@ -92,6 +97,7 @@ if len(normalise) == 0 or normalise[0] not in 'arn':
 normalise = normalise[0]
 stdclip = resargs['stdclip']
 clipfile = resargs['clipfile']
+ofig = rg.disp_getargs(resargs)
 
 if fromdate is not None:
     fromdate = parsetime.parsetime(fromdate)
@@ -106,8 +112,7 @@ if fromdate is not None:
 
 forcerange = resargs['forcerange']
 
-rg = remgeom.load()
-plt.figure(figsize=(rg.width, rg.height))
+rg.plt_figure()
 
 hrloc = mdates.HourLocator()
 minloc = mdates.MinuteLocator()
@@ -119,9 +124,9 @@ else:
 ax = plt.gca()
 ax.xaxis.set_major_locator(minloc)
 ax.xaxis.set_major_formatter(df)
-#ax.xaxis.set_minor_locator(secloc)
+# ax.xaxis.set_minor_locator(secloc)
 
-#ax.format_xdata = mdates.DateFormatter('%H:%M')
+# ax.format_xdata = mdates.DateFormatter('%H:%M')
 
 legs = []
 mindate = None
@@ -146,7 +151,7 @@ for flin in fnames:
                 if objectnames is None:
                     objectnames = bits
                 else:
-                    for o,b in zip(objectnames, bits):
+                    for o, b in zip(objectnames, bits):
                         if o != b:
                             print("Objectnames differ between files", ','.join(objectnames), "-v-", ','.join(bits), file=sys.stderr)
                             sys.exit(200)
@@ -171,7 +176,7 @@ for flin in fnames:
                 continue
             if denom <= 0.0:
                 continue
-            #targinten /= denom
+            # targinten /= denom
 
         parts.append((dt, obsind, targinten, denom))
 
@@ -225,22 +230,22 @@ for flin in fnames:
             targerr = targstd * errmult
             if columns is not None:
                 referr = refstd * errmult
-                targerr = math.sqrt((targerr/targinten)**2 + (referr/refinten)**2)
+                targerr = math.sqrt((targerr / targinten) ** 2 + (referr / refinten) ** 2)
                 targinten /= refinten
             else:
                 targinten /= float(num)
             parts.append((dt, targinten, targerr))
 
         if normalise == 'a':
-            meanval = np.mean([inten for dt,inten,err in parts])
-            parts = [(dt, inten/meanval, err/meanval) for dt, inten, err in parts]
+            meanval = np.mean([inten for dt, inten, err in parts])
+            parts = [(dt, inten / meanval, err / meanval) for dt, inten, err in parts]
         if fromdate is not None:
             parts = [(dt, inten, err) for dt, inten, err in parts if dt >= fromdate and dt <= todate]
         if len(parts) == 0:
             continue
         if normalise == 'r':
-            meanval = np.mean([inten for dt,inten,err in parts])
-            parts = [(dt, inten/meanval, err/meanval) for dt, inten, err in parts]
+            meanval = np.mean([inten for dt, inten, err in parts])
+            parts = [(dt, inten / meanval, err / meanval) for dt, inten, err in parts]
 
         dates = [p[0] for p in parts]
         rats = [rat[1] for rat in parts]
@@ -251,18 +256,18 @@ for flin in fnames:
     else:
 
         if columns is not None:
-            parts = [(dt, obsind, inten/refinten, 1.0) for dt, obsind, inten, refinten in parts]
+            parts = [(dt, obsind, inten / refinten, 1.0) for dt, obsind, inten, refinten in parts]
 
         if normalise == 'a':
             meanval = np.mean([inten for dt, obsind, inten, refinten in parts])
-            parts = [(dt, obsind, inten/meanval, 1.0) for dt, obsind, inten, refinten in parts]
+            parts = [(dt, obsind, inten / meanval, 1.0) for dt, obsind, inten, refinten in parts]
         if fromdate is not None:
             parts = [(dt, obsind, inten, 1.0) for dt, obsind, inten, refinten in parts if dt >= fromdate and dt <= todate]
         if len(parts) == 0:
             continue
         if normalise == 'r':
             meanval = np.mean([inten for dt, obsind, inten, refinten in parts])
-            parts = [(dt, obsind, inten/meanval) for dt, obsind, inten,refinten in parts]
+            parts = [(dt, obsind, inten / meanval) for dt, obsind, inten, refinten in parts]
 
         dates = [p[0] for p in parts]
         rats = [rat[2] for rat in parts]
@@ -287,7 +292,7 @@ for flin in fnames:
 
 if len(clipped) != 0 and clipfile is not None:
     print(clipped)
-    clipped.sort(key=lambda x: -abs(x[2]))
+    clipped.sort(key=lambda x:-abs(x[2]))
     clipout = open(clipfile, "wt")
     for obsind, dt, idiff in clipped:
         print(dt.isoformat(), "%8d %.6e" % (obsind, idiff), file=clipout)
@@ -323,7 +328,7 @@ if printdates:
     if dayint is None:
         dayint = 1
     sd = mindate.toordinal()
-    ed = maxdate.toordinal()+1
+    ed = maxdate.toordinal() + 1
     dlist = [datetime.datetime.fromordinal(x) for x in range(sd, ed, dayint)]
     plt.xticks(dlist, rotation=45)
     plt.xlabel("Date of observation")
@@ -331,7 +336,7 @@ else:
     if dayint is None:
         plt.xticks(rotation=90)
     else:
-        tsecs = (maxdate-mindate).seconds
+        tsecs = (maxdate - mindate).seconds
         dlist = [mindate + datetime.timedelta(seconds=s) for s in np.linspace(0, tsecs, dayint)]
         plt.xticks(dlist, rotation=90)
     plt.xlabel("Time of observation HH:MM")
@@ -355,8 +360,8 @@ if normalise != 'n':
 
 plt.ylabel(ylab)
 plt.title(tit)
-ofig = resargs['outfig']
 if ofig is None:
     plt.show()
 else:
+    ofig = miscutils.replacesuffix(ofig, 'png')
     plt.gcf().savefig(ofig)

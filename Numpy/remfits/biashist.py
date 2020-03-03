@@ -38,7 +38,6 @@ parsearg.add_argument('--bins', type=int, default=10, help='Number of histogram 
 parsearg.add_argument('--norm', type=str, help='Plot normal curse in specified colour')
 parsearg.add_argument('--histalpha', type=float, default=0.75, help='Alpha value for historgram only if plotting norm curve')
 parsearg.add_argument('--clip', type=int, default=5, help='Level at which we count exceiptionals')
-parsearg.add_argument('--outfig', type=str, help='Output figure if required')
 
 rg.disp_argparse(parsearg)
 
@@ -53,9 +52,8 @@ replstd = resargs['replstd']
 histalpha = resargs['histalpha']
 normplot = resargs['norm']
 if normplot is None: histalpha = 1.0
-outfig = resargs['outfig']
 
-rg.disp_getargs(resargs)
+outfig = rg.disp_getargs(resargs)
 
 if ffref is not None:
     ffreff = fits.open(ffref)

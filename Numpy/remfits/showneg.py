@@ -34,20 +34,16 @@ parsearg.add_argument('files', type=str, nargs=2, help='image file and bias file
 parsearg.add_argument('--trim', type=str, help='rows:cols trim to')
 parsearg.add_argument('--ffref', type=str, help='Flat file for reference')
 parsearg.add_argument('--replstd', type=float, default=5.0, help='Replace exceptional values > this with median')
-parsearg.add_argument('--width', type=float, default=rg.width, help="Width of figure")
-parsearg.add_argument('--height', type=float, default=rg.height, help="height of figure")
-parsearg.add_argument('--outfig', type=str, help='Output figure if required')
 parsearg.add_argument('--divff', action='store_true', help='Divide by flat field')
 parsearg.add_argument('--extreme', type=float, default=0.5, help='Amount negative to display as extreme')
+rg.disp_argparse(parsearg)
 
 resargs = vars(parsearg.parse_args())
 ffile, bfile = resargs['files']
 ffref = resargs['ffref']
 rc = resargs['trim']
 replstd = resargs['replstd']
-width = resargs['width']
-height = resargs['height']
-outfig = resargs['outfig']
+outfig = rg.disp_getargs(resargs)
 divff = resargs['divff']
 extreme = resargs['extreme']
 if extreme >= 1.0 or extreme < 0.0:
@@ -58,7 +54,7 @@ if ffref is not None:
     ffreff = fits.open(ffref)
     ffrefim = trimarrays.trimzeros(trimarrays.trimnan(ffreff[0].data))
     ffreff.close()
-    rows, cols  = ffrefim.shape
+    rows, cols = ffrefim.shape
 elif rc is not None:
     try:
         rows, cols = map(lambda x: int(x), rc.split(':'))
@@ -88,13 +84,13 @@ if divff:
 	diffs /= ffrefim
 sdiffs = diffs.copy()
 extval = sdiffs.min() * extreme
-print("Extreme", np.count_nonzero(sdiffs<0), "neg", np.count_nonzero(sdiffs==0), "pos", np.count_nonzero(sdiffs>0))
-plotfigure = plt.figure(figsize=(width, height))
+print("Extreme", np.count_nonzero(sdiffs < 0), "neg", np.count_nonzero(sdiffs == 0), "pos", np.count_nonzero(sdiffs > 0))
+plotfigure = rg.plt_figure()
 plotfigure.canvas.set_window_title("Negatives after bias sub")
 crange = [sdiffs.min(), extval, 0.0, -extval, sdiffs.max()]
-cmap = colors.ListedColormap(['#ff0000', '#0000ff', '#00ff00','#ffffff'])
+cmap = colors.ListedColormap(['#ff0000', '#0000ff', '#00ff00', '#ffffff'])
 norm = colors.BoundaryNorm(crange, 4, clip=True)
-img = plt.imshow(sdiffs,cmap=cmap,norm=norm,origin='lower')
+img = plt.imshow(sdiffs, cmap=cmap, norm=norm, origin='lower')
 plt.colorbar(img, norm=norm, cmap=cmap, boundaries=crange, ticks=crange)
 if outfig is None:
     plt.show()

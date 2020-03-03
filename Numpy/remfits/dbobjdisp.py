@@ -34,10 +34,11 @@ import remdefaults
 import strreplace
 import radecgridplt
 
+rg = remgeom.load()
+
 parsearg = argparse.ArgumentParser(description='Display images from database', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 parsearg.add_argument('obsinds', type=int, nargs='+', help='Observation ids to display')
 parsearg.add_argument('--database', type=str, default=remdefaults.default_database(), help='Database to use')
-parsearg.add_argument('--figout', type=str, help='File to output figure(s) to')
 parsearg.add_argument('--percentiles', type=int, default=4, help="Number of percentiles to divide greyscale into")
 parsearg.add_argument('--biasvalue', type=float, help='Use this value instead of bias"')
 parsearg.add_argument('--biasid', type=int, help='ID of image to use for bias')
@@ -55,9 +56,9 @@ parsearg.add_argument('--hilalpha', type=float, default=1.0, help='Object alpha'
 parsearg.add_argument('--trim', action='store_true', help='Trim trailing empty pixels')
 parsearg.add_argument('--mainap', type=int, default=6, help='main aperture radius')
 
-resargs = vars(parsearg.parse_args())
+rg.disp_argparse(parsearg)
 
-rg = remgeom.load()
+resargs = vars(parsearg.parse_args())
 
 # The reason why we don't get RA and DECL info out of this is because we have
 # to adjust for proper motion which requires Python 3 (as the versions of astropy that
@@ -80,8 +81,8 @@ divisions = resargs['divisions']
 divprec = resargs['divprec']
 pstart = resargs['pstart']
 divthresh = resargs['divthresh']
-racol=resargs['racolour']
-deccol=resargs['deccolour']
+racol = resargs['racolour']
+deccol = resargs['deccolour']
 if invertim:
     if racol is None:
         racol = "#771111"
@@ -95,12 +96,13 @@ else:
 
 targcolour = resargs['targcolour']
 objcolour = resargs['objcolour']
-hilalpha  = resargs['hilalpha']
+hilalpha = resargs['hilalpha']
 trimem = resargs['trim']
 mainap = resargs['mainap']
-biasvalue= resargs['biasvalue']
+biasvalue = resargs['biasvalue']
 biasid = resargs['biasid']
 replstd = resargs['replstd']
+figout = rg.disp_getargs(resargs)
 
 dbase = dbops.opendb(dbname)
 dbcurs = dbase.cursor()
@@ -133,7 +135,7 @@ for obsind in obsinds:
     target, when, filter, fitsind = rows[0]
 
     if filter not in 'grizHJK' and filter != 'GRI':
-        print("obsid", obsind, "on", when.strftime("%d/%M/%Y"), "for target", target,  "has unsupported filter", filter, file=sys.stderr)
+        print("obsid", obsind, "on", when.strftime("%d/%M/%Y"), "for target", target, "has unsupported filter", filter, file=sys.stderr)
         continue
 
     if fitsind == 0:
@@ -181,11 +183,11 @@ for obsind in obsinds:
 
         # Extra stuff
 
-        #fdat -= bdatc
-        #print("Minimum flat =", fdat.min())
+        # fdat -= bdatc
+        # print("Minimum flat =", fdat.min())
 
         imagedata -= bdatc
-        #imagedata *= fdat.mean()
+        # imagedata *= fdat.mean()
         imagedata /= fdat
 
     else:
@@ -195,9 +197,9 @@ for obsind in obsinds:
         ffile.close()
 
     w = wcscoord.wcscoord(ffhdr)
-    (imagedata, ) = rg.apply_trims(w, imagedata)
+    (imagedata,) = rg.apply_trims(w, imagedata)
 
-    plotfigure = plt.figure(figsize=(rg.width, rg.height))
+    plotfigure = rg.plt_figure()
     plotfigure.canvas.set_window_title('FITS Image obsind %d' % obsind)
 
     med = np.median(imagedata)
@@ -205,13 +207,13 @@ for obsind in obsinds:
     mx = imagedata.max()
     mn = imagedata.min()
     fi = imagedata.flatten()
-    pcs = np.linspace(0, 100, percentiles+1)
+    pcs = np.linspace(0, 100, percentiles + 1)
     crange = np.percentile(imagedata, pcs)
-    mapsize = crange.shape[0]-1
+    mapsize = crange.shape[0] - 1
     cl = np.linspace(0, 255, mapsize, dtype=int)
     if invertim:
         cl = 255 - cl
-    collist = ["#%.2x%.2x%.2x" % (i,i,i) for i in cl]
+    collist = ["#%.2x%.2x%.2x" % (i, i, i) for i in cl]
     cmap = colors.ListedColormap(collist)
     norm = colors.BoundaryNorm(crange, cmap.N)
     img = plt.imshow(imagedata, cmap=cmap, norm=norm, origin='lower')

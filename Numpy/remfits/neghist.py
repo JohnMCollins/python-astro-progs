@@ -38,10 +38,8 @@ parsearg.add_argument('--delhigh', type=float, default=10.0, help='Delete values
 parsearg.add_argument('--bins', type=int, default=30, help='Number of histogram bins')
 parsearg.add_argument('--norm', type=str, help='Plot normal curse in specified colour')
 parsearg.add_argument('--histalpha', type=float, default=0.75, help='Alpha value for historgram only if plotting norm curve')
-parsearg.add_argument('--width', type=float, default=rg.width, help="Width of figure")
-parsearg.add_argument('--height', type=float, default=rg.height, help="height of figure")
-parsearg.add_argument('--outfig', type=str, help='Output figure if required')
 parsearg.add_argument('--divff', action='store_true', help='Divide by flat field')
+rg.disp_argparse(parsearg)
 
 resargs = vars(parsearg.parse_args())
 ffile, bfile = resargs['files']
@@ -49,20 +47,18 @@ ffref = resargs['ffref']
 rc = resargs['trim']
 replstd = resargs['replstd']
 delhigh = resargs['delhigh']
-width = resargs['width']
-height = resargs['height']
-outfig = resargs['outfig']
 divff = resargs['divff']
 bins = resargs['bins']
 histalpha = resargs['histalpha']
 normplot = resargs['norm']
+outfig = rg.disp_getargs(resargs)
 if normplot is None: histalpha = 1.0
 
 if ffref is not None:
     ffreff = fits.open(ffref)
     ffrefim = trimarrays.trimzeros(trimarrays.trimnan(ffreff[0].data))
     ffreff.close()
-    rows, cols  = ffrefim.shape
+    rows, cols = ffrefim.shape
 elif rc is not None:
     try:
         rows, cols = map(lambda x: int(x), rc.split(':'))
@@ -98,7 +94,7 @@ diffs = diffs.flatten()
 diffs = diffs[diffs <= np.median(diffs) + delhigh * diffs.std()]
 medv = np.median(diffs)
 stdv = diffs.std()
-plotfigure = plt.figure(figsize=(width, height))
+plotfigure = rg.plt_figure()
 plotfigure.canvas.set_window_title("Distibution of sky level values")
 plt.hist(diffs, bins=bins, alpha=histalpha)
 if normplot is not None:

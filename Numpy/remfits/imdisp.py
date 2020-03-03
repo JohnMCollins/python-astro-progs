@@ -37,7 +37,6 @@ rg = remgeom.load()
 
 parsearg = argparse.ArgumentParser(description='Display image files', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 parsearg.add_argument('files', type=str, nargs='+', help='File names to display')
-parsearg.add_argument('--figout', type=str, help='File to output figure(s) to')
 parsearg.add_argument('--grayscale', type=str, required=True, help="Standard grayscale to use")
 parsearg.add_argument('--title', type=str, help='Optional title to put at head of image')
 parsearg.add_argument('--biasfile', type=str, help='Bias file to apply')
@@ -66,7 +65,7 @@ autils.suppress_vo_warnings()
 files = resargs['files']
 figout = resargs['figout']
 
-rg.disp_getargs(resargs)
+figout = rg.disp_getargs(resargs)
 
 biasfile = resargs['biasfile']
 flatfile = resargs['flatfile']

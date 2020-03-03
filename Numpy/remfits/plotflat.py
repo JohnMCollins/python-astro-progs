@@ -31,7 +31,6 @@ parsearg.add_argument('--columns', action='store_true', help='Display by columns
 parsearg.add_argument('--nplot', type=int, nargs='+', help='Rows or columns to select')
 parsearg.add_argument('--lefttrim', type=int, default=0, help='Trim columns of display on left')
 parsearg.add_argument('--righttrim', type=int, default=0, help='Trim columns of display on right')
-parsearg.add_argument('--outfig', type=str, help='Output figure if required')
 rg.disp_argparse(parsearg)
 
 resargs = vars(parsearg.parse_args())
@@ -41,7 +40,7 @@ nplot = resargs['nplot']
 lefttrim = resargs['lefttrim']
 righttrim = resargs['righttrim']
 outfig = resargs['outfig']
-rg.disp_getargs(resargs)
+outfig = rg.disp_getargs(resargs)
 
 ff = fits.open(ffile)
 fhdr = ff[0].header

@@ -45,7 +45,6 @@ parsearg.add_argument('files', type=str, nargs='+', help='Files to analysee')
 parsearg.add_argument('--forcetype', type=str, help='f or b to force daily flat/bias otherwise anything')
 parsearg.add_argument('--title', type=str, default='Effect on trims on stats', help='Title for plot')
 parsearg.add_argument('--colour', type=str, default='b', help='Colours for plot')
-parsearg.add_argument('--outfig', type=str, help='Output file rather than display')
 parsearg.add_argument('--start', type=int, default=0, help='Starting value of clip')
 parsearg.add_argument('--step', type=int, default=5, help='Step value of clip')
 parsearg.add_argument('--end', type=int, default=200, help='End value of clip"')
@@ -61,7 +60,6 @@ rg.disp_argparse(parsearg)
 resargs = vars(parsearg.parse_args())
 files = resargs['files']
 title = resargs['title']
-ofig = resargs['outfig']
 start = resargs['start']
 step = resargs['step']
 end = resargs['end']
@@ -74,7 +72,7 @@ y1lab = resargs['y1label']
 y2lab = resargs['y2label']
 plotcol = resargs['meancolour']
 stdcol = resargs['stdcolour']
-rg.disp_getargs(resargs)
+ofig = rg.disp_getargs(resargs)
 
 if forcetype is not None:
     if len(forcetype) == 0:

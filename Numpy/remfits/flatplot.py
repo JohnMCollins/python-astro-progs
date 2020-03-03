@@ -23,7 +23,9 @@ import remgeom
 import dbops
 import remdefaults
 
+rg = remgeom.load()
 mydbname = remdefaults.default_database()
+
 parsearg = argparse.ArgumentParser(description='Plot stats for daily flat files', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 parsearg.add_argument('--database', type=str, default=mydbname, help='Database to use')
 parsearg.add_argument('--filter', type=str, required=True, help='FIlter to select')
@@ -34,7 +36,6 @@ parsearg.add_argument('--margin', type=int, default=0, help='Margin on x asix in
 parsearg.add_argument('--title', type=str, default='Means by date', help='Title for plot')
 parsearg.add_argument('--legends', action='store_false', help='Turn on/off legend')
 parsearg.add_argument('--dayint', type=int, help='Interval between dates')
-parsearg.add_argument('--outfig', type=str, help='Output file rather than display')
 parsearg.add_argument('--marker', type=str, default=',', help='Marker style for scatter plot')
 parsearg.add_argument('--lower', type=int, default=5000, help='Lower limit of means')
 parsearg.add_argument('--upper', type=int, default=50000, help='Upper limit of means')
@@ -45,6 +46,7 @@ parsearg.add_argument('--colours', type=str, default='b,g,r', help='Colours for 
 parsearg.add_argument('--smax', type=float, default=0.0, help='Max limit for skew"')
 parsearg.add_argument('--kmax', type=float, default=7.0, help='Max limit for kurtosis')
 parsearg.add_argument('--skclip', action='store_true', help='Clip values outside upper limit for skew and kurtosis')
+rg.disp_argparse(parsearg)
 
 resargs = vars(parsearg.parse_args())
 mydbname = resargs['database']
@@ -58,7 +60,6 @@ tit = resargs['title']
 plegend = resargs['legends']
 dayint = resargs['dayint']
 marker = resargs['marker']
-ofig = resargs['outfig']
 llim = resargs['lower']
 ulim = resargs['upper']
 clip = resargs['clip']
@@ -68,6 +69,7 @@ colours = resargs['colours'].split(',') * 3
 smax = resargs['smax']
 kmax = resargs['kmax']
 skclip = resargs['skclip']
+ofig = rg.disp_getargs(resargs)
 
 dsel = ""
 if fromdate is not None:
@@ -136,8 +138,7 @@ except ValueError:
     print("Nothing found between", fromdate, "and", todate, "for filter", filter, file=sys.stderr)
     sys.exit(1)
 
-rg = remgeom.load()
-plt.figure(figsize=(rg.width, rg.height))
+rg.plt_figure()
 ax1 = plt.gca()
 
 plt.xlim(mindate, maxdate)
@@ -173,4 +174,5 @@ plt.title(tit)
 if ofig is None:
     plt.show()
 else:
+    ofig = miscutils.replacesuffix(ofig, 'png')
     plt.gcf().savefig(ofig)

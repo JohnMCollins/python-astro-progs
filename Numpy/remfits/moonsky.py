@@ -19,6 +19,7 @@ import string
 import remgeom
 import dbops
 import remdefaults
+import miscutils
 
 rg = remgeom.load()
 mydbname = remdefaults.default_database()
@@ -31,36 +32,24 @@ parsearg.add_argument('--target', type=str, help='Restrict to given target')
 parsearg.add_argument('--title', type=str, default='Moon phase verus sky level', help='Title for plot')
 parsearg.add_argument('--xlabel', type=str, default='Moon phase as percentage of full', help='X axis label')
 parsearg.add_argument('--ylabel', type=str, default='Sky level', help='Y axis label')
-parsearg.add_argument('--outfig', type=str, help='Output file rather than display')
 parsearg.add_argument('--marker', type=str, default=',', help='Marker style for scatter plot')
 parsearg.add_argument('--colour', type=str, default='b', help='Plot points colour')
-parsearg.add_argument('--width', type=float, default=rg.width, help="Width of figure")
-parsearg.add_argument('--height', type=float, default=rg.height, help="height of figure")
-parsearg.add_argument('--labsize', type=int, default=10, help='Label and title font size')
-parsearg.add_argument('--ticksize', type=int, default=10, help='Tick font size')
+rg.disp_argparse(parsearg)
 
 resargs = vars(parsearg.parse_args())
 mydbname = resargs['database']
 title = resargs['title']
 xlab = resargs['xlabel']
 ylab = resargs['ylabel']
-ofig = resargs['outfig']
 marker = resargs['marker']
 colour = resargs['colour']
-width = resargs['width']
-height = resargs['height']
-outfig = resargs['outfig']
-labsize = resargs['labsize']
-ticksize = resargs['ticksize']
 usedist = resargs['usedist']
 filter = resargs['filter']
 target = resargs['target']
+ofig = rg.disp_getargs(resargs)
 
 dbase = dbops.opendb(mydbname)
 dbcurs = dbase.cursor()
-
-plt.rc('xtick',labelsize=ticksize)
-plt.rc('ytick',labelsize=ticksize)
 
 if target is None and filter is None:
     dbcurs.execute("SELECT moonphase,moondist,skylevel,skystd FROM obscalc WHERE moonvis!=0")
@@ -97,12 +86,13 @@ if len(poms) < 10:
     print("Not enought points read", file=sys.stderr)
     sys.exit(2)
 
-plt.figure(figsize=(width, height))
+rg.plt_figure()
 plt.scatter(poms, skys, color=colour, marker=marker)
-plt.title(title, fontsize=labsize)
-plt.xlabel(xlab, fontsize=labsize)
-plt.ylabel(ylab, fontsize=labsize)
+plt.title(title)
+plt.xlabel(xlab)
+plt.ylabel(ylab)
 if ofig is None:
     plt.show()
 else:
+    ofig = miscutils.replacesuffix(ofig, 'png')
     plt.gcf().savefig(ofig)
