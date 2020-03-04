@@ -52,7 +52,11 @@ rows = dbcurs.fetchall()
 
 nfiles = 0
 todo = len(rows)
-todof = float(todo)
+if todo == 0:
+    print("Nothing to no rows to dix")
+    SYS.EXIT(0)
+
+todof = 100.0 / todo
 
 for obsind, fitsind in rows:
 
@@ -70,7 +74,7 @@ for obsind, fitsind in rows:
     ffile.close()
     nfiles += 1
     if nfiles % 20 == 0:
-        print("Reached", nfiles, "of", todo, "%7.2f" % (nfiles / todof))
+        print("Reached", nfiles, "of", todo, "%7.2f" % (nfiles * todof))
         dbase.commit()
 
 dbase.commit()
