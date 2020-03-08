@@ -28,7 +28,6 @@ import warnings
 import miscutils
 import remgeom
 import strreplace
-import cosmic1
 import findfast
 import radecgridplt
 from astropy._erfa.core import apcs
@@ -45,8 +44,7 @@ parsearg.add_argument('--replstd', type=float, default=5.0, help='Replace except
 parsearg.add_argument('--mainap', type=int, default=6, help='main aperture radius')
 parsearg.add_argument('--searchstd', type=float, default=10, help='Nnumber of std deviations to search from')
 parsearg.add_argument('--maxobjs', type=int, default=10, help='Maximum number of objects to display"')
-parsearg.add_argument('--cosmicrit', type=float, default=2.0, help='Number of std deviations to discard possible cosmics from"')
-parsearg.add_argument('--cosmicthresh', type=float, default=10.0, help='Number of std deviations to search possible cosmics from"')
+
 rg.disp_argparse(parsearg)
 
 resargs = vars(parsearg.parse_args())
@@ -63,7 +61,6 @@ warnings.simplefilter('ignore', UserWarning)
 autils.suppress_vo_warnings()
 
 files = resargs['files']
-figout = resargs['figout']
 
 figout = rg.disp_getargs(resargs)
 
@@ -74,8 +71,6 @@ replstd = resargs['replstd']
 mainap = resargs['mainap']
 searchstd = resargs['searchstd']
 maxobjs = resargs['maxobjs']
-cosmicrit = resargs['cosmicrit']
-cosmicthreash = resargs['cosmicthresh']
 title = resargs['title']
 
 gsdets = rg.get_grayscale(grayscalename)
@@ -151,8 +146,6 @@ for file in files:
     plotfigure = rg.plt_figure()
     plotfigure.canvas.set_window_title('FITS Image from file ' + file)
 
-    dat, coscount = cosmic1.cosmic1(dat, sign=cosmicrit, hival=cosmicthreash)
-    print(file, ":", coscount, "cosmics deleted")
     med = np.median(dat)
     sigma = dat.std()
     mx = dat.max()

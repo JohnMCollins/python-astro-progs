@@ -22,7 +22,7 @@ import parsetime
 import remgeom
 import remdefaults
 import dbops
-from astropy._erfa.core import dat
+import miscutils
 
 rg = remgeom.load()
 
@@ -34,7 +34,7 @@ rg.disp_argparse(parsearg)
 resargs = vars(parsearg.parse_args())
 dbname = resargs['database']
 marker = resargs['marker']
-ofig = rg.disp_getargs(parsearg)
+ofig = rg.disp_getargs(resargs)
 
 mydb = dbops.opendb(dbname)
 mycurs = mydb.cursor()

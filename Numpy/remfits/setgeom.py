@@ -23,6 +23,8 @@ parsearg.add_argument('--trimbottom', type=int, help='Pixels to trim off bottom 
 parsearg.add_argument('--trimleft', type=int, help='Pixels to trim off left of picture')
 parsearg.add_argument('--trimright', type=int, help='Pixels to trim off right of picture')
 parsearg.add_argument('--trimtop', type=int, help='Pixels to trim off top of picture')
+parsearg.add_argument('--filttrim', type=str, help='Filter for trim default is default')
+parsearg.add_argument('--aftertrim', action='store_true', help='Trim zero and NaN before applying trims')
 parsearg.add_argument('--nocoords', action='store_true', help='Suppress coord display')
 parsearg.add_argument('--invert', action='store_false', help='Invert image')
 parsearg.add_argument('--divisions', type=int, help='Divisions in RA/Dec lines')
@@ -53,6 +55,8 @@ trimbottom = resargs['trimbottom']
 trimleft = resargs['trimleft']
 trimright = resargs['trimright']
 trimtop = resargs['trimtop']
+filttrim = resargs['filttrim']
+aftertrim = resargs['aftertrim']
 
 nocoords = resargs['nocoords']
 invertim = resargs['invert']
@@ -102,17 +106,26 @@ if labsize is not None:
 if ticksize is not None:
     whichfmt.ticksize = ticksize
     changes += 1
+if filttrim is None:
+    if aftertrim:
+        if not rg.deftrims.afterblank:
+            changes += 1
+        rg.deftrims.afterblank = aftertrim
+else:
+    rg.select_trim(filttrim, True)
+    rg.curtrims.afterblank = aftertrim
+    changes += 1
 if trimbottom is not None:
-    rg.trims.bottom = trimbottom
+    rg.curtrims.bottom = trimbottom
     changes += 1
 if trimleft is not None:
-    rg.trims.left = trimleft
+    rg.curtrims.left = trimleft
     changes += 1
 if trimright is not None:
-    rg.trims.right = trimright
+    rg.curtrims.right = trimright
     changes += 1
 if trimtop is not None:
-    rg.trims.top = trimtop
+    rg.curtrims.top = trimtop
     changes += 1
 
 if nocoords != rg.divspec.nocoords:
@@ -183,10 +196,20 @@ for k, v in rg.altfmts.items():
     print("Alt format %s label size: %d" % (k, v.labsize))
     print("Alt format %s tick size: %d" % (k, v.ticksize))
 
-print("Trimtop: %d" % rg.trims.top)
-print("Trimbottom: %d" % rg.trims.bottom)
-print("Trimleft: %d" % rg.trims.left)
-print("Trimright: %d" % rg.trims.right)
+print("Trimtop: %d" % rg.deftrims.top)
+print("Trimbottom: %d" % rg.deftrims.bottom)
+print("Trimleft: %d" % rg.deftrims.left)
+print("Trimright: %d" % rg.deftrims.right)
+if rg.deftrims.afterblank:
+    print("Apply trims after trimming zero/NaN")
+for filt in sorted(rg.ftrims.keys()):
+    ft = rg.ftrims[filt]
+    print("Filter %s trimtop: %d" % (filt, ft.top))
+    print("Filter %s trimbottom: %d" % (filt, ft.bottom))
+    print("Filter %s trimleft: %d" % (filt, ft.left))
+    print("Filter %s trimright: %d" % (filt, ft.right))
+    if ft.afterblank:
+        print("Filter %s Apply trims after trimming zero/NaN" % filt)
 if nocoords:
     print("No coords")
 if invertim:

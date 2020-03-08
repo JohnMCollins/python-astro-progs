@@ -62,14 +62,16 @@ for (ind,) in rows:
         print("Could not get FITS file for ind", ind, file=sys.stderr)
         continue
 
-    ffshape = ffile[0].data.shape
+    fdat = ffile[0].data
+    ffshape = fdat.shape
 
     if  ffshape[0] != ffshape[-1]:
         side = 0
     else:
         side = ffshape[0]
 
-    dbcurs.execute("UPDATE fitsfile SET side=%d WHERE ind=%d" % (side, ind))
+    nzfdat = trimarrays.trimzeros(trimarrays.trimnan(fdat))
+    dbcurs.execute("UPDATE fitsfile SET side=%d,rows=%d,cols=%d WHERE ind=%d" % (side, nzfdat.shape[0], nzfdat.shape[1], ind))
     ffile.close()
     nsides += 1
     if nsides % 20 == 0:
@@ -108,7 +110,7 @@ for obsind, fitsind, exptime in rows:
     if trimsides > 0:
         tsfdat = nzfdat[trimsides:-trimsides, trimsides:-trimsides]
 
-    dbcurs.execute("UPDATE obsinf SET airmass=%.6g,gain=%.6g,moonphase=%.6g,moondist=%.6g,rows=%d,cols=%d,minv=%d,maxv=%d,sidet=%d,median=%.8e,mean=%.8e,std=%.8e,skew=%.8e,kurt=%.8e WHERE obsind=%d" % 
+    dbcurs.execute("UPDATE obsinf SET airmass=%.6g,gain=%.6g,moonphase=%.6g,moondist=%.6g,rows=%d,cols=%d,minv=%d,maxv=%d,sidet=%d,median=%.8e,mean=%.8e,std=%.8e,skew=%.8e,kurt=%.8e WHERE obsind=%d" %
                     (fairmass, fgain, moonphase, moondist, nzfdat.shape[0], nzfdat.shape[1], sqq.min(), sqq.max(), trimsides, np.median(tsfdat), tsfdat.mean(), tsfdat.std(), ss.skew(tsfdat, axis=None), ss.kurtosis(tsfdat, axis=None), obsind))
     ffile.close()
     nfiles += 1
@@ -152,7 +154,7 @@ for fitsind, ind, typ in rows:
     tsfdat = nzfdat
     if trimsides > 0:
         tsfdat = nzfdat[trimsides:-trimsides, trimsides:-trimsides]
-    dbcurs.execute("UPDATE iforbinf SET gain=%.6g,rows=%d,cols=%d,minv=%d,maxv=%d,sidet=%d,median=%.8e,mean=%.8e,std=%.8e,skew=%.8e,kurt=%.8e WHERE iforbind=%d" % 
+    dbcurs.execute("UPDATE iforbinf SET gain=%.6g,rows=%d,cols=%d,minv=%d,maxv=%d,sidet=%d,median=%.8e,mean=%.8e,std=%.8e,skew=%.8e,kurt=%.8e WHERE iforbind=%d" %
                    (fgain, nzfdat.shape[0], nzfdat.shape[1], sqq.min(), sqq.max(),
                     trimsides, np.median(tsfdat), tsfdat.mean(), tsfdat.std(),
                     ss.skew(tsfdat, axis=None), ss.kurtosis(tsfdat, axis=None), ind))

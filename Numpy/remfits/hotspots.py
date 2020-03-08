@@ -29,6 +29,7 @@ class hotspot(object):
     def __eq__(self, other):
         return self.row == other.row and self.col == other.col
 
+
 def ptrail(s, e):
     """Print trailing stuff"""
     if e != s:
@@ -114,6 +115,7 @@ for v in collated.values():
     if len(v) >= nthresh:
         selected.append((v[0].row, v[0].col, len(v)))
 
+print(len(selected), "hostpots found")
 byvalrowcol = sorted(sorted(sorted(selected, key=lambda x: x[1]), key=lambda x: x[0]), key=lambda x: x[2], reverse=True)
 byvalcolrow = sorted(sorted(sorted(selected, key=lambda x: x[0]), key=lambda x: x[1]), key=lambda x: x[2], reverse=True)
 rowcol = sorted(sorted(selected, key=lambda x: x[1]), key=lambda x: x[0])

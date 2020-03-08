@@ -66,6 +66,9 @@ def parsepair(arg, name, fslist, colname):
 
     if arg is None:
         return
+    # Bodge because it gets args starting with - wrong
+    if len(arg) > 2 and arg[1] == '-':
+        arg = arg[1:]
     bits = arg.split(':')
     if len(bits) != 2:
         print("Cannot understand", name, "arg expection m:n with either number opptional", file=sys.stderr);

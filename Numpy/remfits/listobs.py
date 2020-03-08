@@ -72,6 +72,8 @@ parsearg.add_argument('--gain', type=float, help='Restrict to given gain value')
 parsearg.add_argument('--summary', action='store_true', help='Just summarise objects and number of obs')
 parsearg.add_argument('--idonly', action='store_true', help='Just give ids no other data')
 parsearg.add_argument('--fitsind', action='store_true', help='Show fits ind not obs ind')
+parsearg.add_argument('--hasfile', action='store_false', help='Only display obs which have FITS files')
+parsearg.add_argument('--debug', action='store_true', help='Display selection command')
 
 resargs = vars(parsearg.parse_args())
 
@@ -85,6 +87,8 @@ filters = resargs['filter']
 summary = resargs['summary']
 fitsind = resargs['fitsind']
 gain = resargs["gain"]
+hasfile = resargs['hasfile']
+debug = resargs['debug']
 
 if idonly and summary:
     print("Cannot have both idonly and summary", file=sys.stderr)
@@ -95,7 +99,8 @@ mydb = dbops.opendb(dbname)
 dbcurs = mydb.cursor()
 
 fieldselect = ["rejreason is NULL"]
-fieldselect.append("ind!=0")
+if hasfile:
+    fieldselect.append("ind!=0")
 
 if allmonth is not None:
     mtch = re.match('(\d\d\d\d)-(\d+)$', allmonth)
@@ -127,7 +132,7 @@ if filters is not None:
     qfilt = [ "filter='" + o + "'" for o in filters]
     fieldselect.append("(" + " OR ".join(qfilt) + ")")
 
-if dither[0] != -1:
+if len(dither) != 0 and dither[0] != -1:
     qdith = [ "dithID=" + str(d) for d in dither]
     if len(qdith) == 1:
         fieldselect.append(qdith[0])
@@ -148,6 +153,8 @@ else:
     sel += " ORDER BY object,dithID,date_obs"
     sel = "SELECT obsind,ind,date_obs,object,filter,dithID FROM obsinf " + sel
 
+if debug:
+    print(sel, file=sys.stderr)
 dbcurs.execute(sel)
 if idonly:
     n = 0

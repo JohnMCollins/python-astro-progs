@@ -16,9 +16,11 @@ import dbobjinfo
 import numpy as np
 import locale
 
+
 def thou(n):
     """Print n with thousands separator"""
     return locale.format_string("%d", n, grouping=True)
+
 
 class obstot(object):
 	"""Details of result"""
@@ -29,6 +31,7 @@ class obstot(object):
 		self.fromdate = None
 		self.todate = None
 		self.isundef = None
+
 
 parsearg = argparse.ArgumentParser(description='List number by filter',
                                    formatter_class=argparse.ArgumentDefaultsHelpFormatter)
@@ -50,7 +53,7 @@ dbcurs = mydb.cursor()
 sel = ''
 if objlist is not None:
     qobj = [ "object='" + o + "'" for o in objlist]
-    sel = "(" + " OR ".join(qobj) +")"
+    sel = "(" + " OR ".join(qobj) + ")"
 if gain is not None:
     if len(sel) != 0: sel += " AND "
     sel += "ABS(gain-%.3g) < %.3g" % (gain, gain * 1e-3)
@@ -61,9 +64,11 @@ dbcurs.execute("SELECT filter,COUNT(*) FROM obsinf" + sel + " GROUP BY filter")
 
 results = dict()
 
+total = 0
 for row in dbcurs.fetchall():
-	filter, count = row
-	results[filter] = count
+    filter, count = row
+    results[filter] = count
+    total += count
 
 if latex:
     locale.setlocale(locale.LC_ALL, "")
@@ -73,6 +78,8 @@ if latex:
         print('GRISM', thou(results['GRI']), sep=' & ', end=' \\\\\n')
     except KeyError:
         pass
+    print("\\hline")
+    print('Total', thou(total), sep=' & ', end=' \\\\\n')
 
 else:
     for filter in 'girzHJK':
@@ -84,3 +91,5 @@ else:
         print("%s\t%7d" % ('GRISM', results['GRI']))
     except KeyError:
         pass
+
+    print("Total\t%7d" % total)
