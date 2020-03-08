@@ -45,7 +45,7 @@ dbcurs = dbase.cursor()
 
 # First get sides and update FITS files
 
-dbcurs.execute("SELECT ind FROM fitsfile WHERE rpws IS NULL")
+dbcurs.execute("SELECT ind FROM fitsfile WHERE rows IS NULL")
 rows = dbcurs.fetchall()
 
 nsides = 0
