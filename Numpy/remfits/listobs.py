@@ -13,52 +13,7 @@ import argparse
 import datetime
 import re
 import sys
-
-
-def parsedate(dat):
-    """Parse an argument date and try to interpret common things"""
-    if dat is None:
-        return None
-    now = datetime.datetime.now()
-    rnow = datetime.datetime(now.year, now.month, now.day)
-    m = re.match("(\d+)\D(\d+)(?:\D(\d+))?", dat)
-    try:
-        if m:
-            dy, mn, yr = m.groups()
-            dy = int(dy)
-            mn = int(mn)
-            if yr is None:
-                yr = now.year
-                ret = datetime.datetime(yr, mn, dy)
-                if ret > rnow:
-                    ret = datetime.datetime(yr - 1, mn, dy)
-            else:
-                yr = int(yr)
-                if dy > 31:
-                    yr = dy
-                    dy = int(m.group(3))
-                if yr < 50:
-                    yr += 2000
-                elif yr < 100:
-                    yr += 1900
-                ret = datetime.datetime(yr, mn, dy)
-        elif dat == 'today':
-            ret = rnow
-        elif dat == 'yesterday':
-            ret = rnow - datetime.timedelta(days=1)
-        else:
-            m = re.match("t-(\d+)$", dat)
-            if m:
-                ret = rnow - datetime.timedelta(days=int(m.group(1)))
-            else:
-                print("Could not understand date", dat)
-                sys.exit(10)
-    except ValueError:
-        print("Could not understand date", dat)
-        sys.exit(10)
-
-    return ret.strftime("%Y-%m-%d")
-
+import parsetime
 
 parsearg = argparse.ArgumentParser(description='List available observations',
                                    formatter_class=argparse.ArgumentDefaultsHelpFormatter)
@@ -112,17 +67,21 @@ if allmonth is not None:
     fieldselect.append("date(date_obs)<=date_sub(date_add('" + smonth + "',interval 1 month),interval 1 day)")
 elif dates is not None:
     datesp = dates.split(':')
-    if len(datesp) == 1:
-        fieldselect.append("date(date_obs)='" + parsedate(dates) + "'")
-    elif len(datesp) != 2:
-        print("Don't understand whate date", dates, "is supposed to be", file=sys.stderr)
+    try:
+        if len(datesp) == 1:
+            fieldselect.append("date(date_obs)='" + parsetime.parsedate(dates) + "'")
+        elif len(datesp) != 2:
+            print("Don't understand whate date", dates, "is supposed to be", file=sys.stderr)
+            sys.exit(20)
+        else:
+            fd, td = datesp
+            if len(fd) != 0:
+                fieldselect.append("date(date_obs)>='" + parsetime.parsedate(fd) + "'")
+            if len(td) != 0:
+                fieldselect.append("date(date_obs)<='" + parsetime.parsedate(td) + "'")
+    except ValueError as e:
+        print(e.args[0])
         sys.exit(20)
-    else:
-        fd, td = datesp
-        if len(fd) != 0:
-            fieldselect.append("date(date_obs)>='" + parsedate(fd) + "'")
-        if len(td) != 0:
-            fieldselect.append("date(date_obs)<='" + parsedate(td) + "'")
 
 if objlist is not None:
     qobj = [ "object='" + o + "'" for o in objlist]

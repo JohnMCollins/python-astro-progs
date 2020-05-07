@@ -1,0 +1,341 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>gseditmain</class>
+ <widget class="QMainWindow" name="gseditmain">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>649</width>
+    <height>411</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>MainWindow</string>
+  </property>
+  <widget class="QWidget" name="centralwidget">
+   <widget class="QListWidget" name="gslist">
+    <property name="geometry">
+     <rect>
+      <x>20</x>
+      <y>10</y>
+      <width>641</width>
+      <height>361</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <pointsize>13</pointsize>
+     </font>
+    </property>
+    <property name="toolTip">
+     <string>This is a list of the current greyscales</string>
+    </property>
+   </widget>
+  </widget>
+  <widget class="QMenuBar" name="menubar">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>0</y>
+     <width>649</width>
+     <height>27</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>14</pointsize>
+    </font>
+   </property>
+   <widget class="QMenu" name="menu_File">
+    <property name="title">
+     <string>&amp;File</string>
+    </property>
+    <addaction name="action_New_config"/>
+    <addaction name="action_Load_working_config"/>
+    <addaction name="action_Load_config"/>
+    <addaction name="separator"/>
+    <addaction name="action_Save_working_config"/>
+    <addaction name="action_Save_config"/>
+    <addaction name="action_Save_config_as"/>
+    <addaction name="separator"/>
+    <addaction name="action_Set_Geometry"/>
+    <addaction name="separator"/>
+    <addaction name="action_Quit"/>
+   </widget>
+   <widget class="QMenu" name="menu_Grayscale">
+    <property name="title">
+     <string>&amp;Grayscale</string>
+    </property>
+    <addaction name="action_Load_Image_file"/>
+    <addaction name="action_Create_Greyscale"/>
+    <addaction name="action_Clone_Greyscale"/>
+    <addaction name="action_Edit_Greyscale"/>
+    <addaction name="action_Delete_Greyscale"/>
+   </widget>
+   <widget class="QMenu" name="menu_Help">
+    <property name="title">
+     <string>&amp;Help</string>
+    </property>
+    <addaction name="action_about_GS_Edit"/>
+   </widget>
+   <addaction name="menu_File"/>
+   <addaction name="menu_Grayscale"/>
+   <addaction name="menu_Help"/>
+  </widget>
+  <widget class="QStatusBar" name="statusbar"/>
+  <action name="action_Load_config">
+   <property name="text">
+    <string>&amp;Load config</string>
+   </property>
+   <property name="toolTip">
+    <string>Open a configureation file</string>
+   </property>
+   <property name="statusTip">
+    <string>Open a configureation file</string>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>14</pointsize>
+    </font>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+O</string>
+   </property>
+  </action>
+  <action name="action_Save_config">
+   <property name="text">
+    <string>&amp;Save config</string>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>14</pointsize>
+    </font>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+S</string>
+   </property>
+  </action>
+  <action name="action_Save_config_as">
+   <property name="text">
+    <string>Save config &amp;as</string>
+   </property>
+   <property name="toolTip">
+    <string>Save config in aplternative file</string>
+   </property>
+   <property name="statusTip">
+    <string>Save config in aplternative file</string>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>14</pointsize>
+    </font>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+Shift+S</string>
+   </property>
+  </action>
+  <action name="action_Quit">
+   <property name="text">
+    <string>&amp;Quit</string>
+   </property>
+   <property name="toolTip">
+    <string>Quit program</string>
+   </property>
+   <property name="statusTip">
+    <string>Quit program</string>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>14</pointsize>
+    </font>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+Q</string>
+   </property>
+  </action>
+  <action name="action_Load_Image_file">
+   <property name="text">
+    <string>Load &amp;Image file</string>
+   </property>
+   <property name="toolTip">
+    <string>Load Image file for display</string>
+   </property>
+   <property name="statusTip">
+    <string>Load Image file for display</string>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>14</pointsize>
+    </font>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+I</string>
+   </property>
+  </action>
+  <action name="action_Edit_Greyscale">
+   <property name="text">
+    <string>&amp;Edit Grayscale</string>
+   </property>
+   <property name="toolTip">
+    <string>Edit Greyscale</string>
+   </property>
+   <property name="statusTip">
+    <string>Edit Greyscale</string>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>14</pointsize>
+    </font>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+E</string>
+   </property>
+  </action>
+  <action name="action_about_GS_Edit">
+   <property name="text">
+    <string>&amp;about GS Edit</string>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>14</pointsize>
+    </font>
+   </property>
+  </action>
+  <action name="action_New_config">
+   <property name="text">
+    <string>&amp;New config</string>
+   </property>
+   <property name="toolTip">
+    <string>Create new config file</string>
+   </property>
+   <property name="statusTip">
+    <string>Create new config file</string>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>14</pointsize>
+    </font>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+N</string>
+   </property>
+  </action>
+  <action name="action_Create_Greyscale">
+   <property name="text">
+    <string>&amp;Create Grayscale</string>
+   </property>
+   <property name="toolTip">
+    <string>Create new grayscale</string>
+   </property>
+   <property name="statusTip">
+    <string>Create new grayscale</string>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>14</pointsize>
+    </font>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+C</string>
+   </property>
+  </action>
+  <action name="action_Delete_Greyscale">
+   <property name="text">
+    <string>&amp;Delete Greyscale</string>
+   </property>
+   <property name="iconText">
+    <string>Delete Selected Greyscale</string>
+   </property>
+   <property name="toolTip">
+    <string>Delete Selected Greyscale</string>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>14</pointsize>
+    </font>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+D</string>
+   </property>
+  </action>
+  <action name="action_Load_working_config">
+   <property name="text">
+    <string>Load &amp;working config</string>
+   </property>
+   <property name="toolTip">
+    <string>Load the config file used by other software</string>
+   </property>
+   <property name="statusTip">
+    <string>Save to config in use by other software</string>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>14</pointsize>
+    </font>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+L</string>
+   </property>
+  </action>
+  <action name="action_Save_working_config">
+   <property name="text">
+    <string>Save working config</string>
+   </property>
+   <property name="toolTip">
+    <string>Save the config file used b y other software</string>
+   </property>
+   <property name="statusTip">
+    <string>Save the config file used b y other software</string>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>14</pointsize>
+    </font>
+   </property>
+   <property name="shortcut">
+    <string>Alt+S</string>
+   </property>
+  </action>
+  <action name="action_Clone_Greyscale">
+   <property name="text">
+    <string>Clone &amp;Greyscale</string>
+   </property>
+   <property name="toolTip">
+    <string>Make a new greyscale based on existing one</string>
+   </property>
+   <property name="statusTip">
+    <string>Make a new greyscale based on existing one</string>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>14</pointsize>
+    </font>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+G</string>
+   </property>
+  </action>
+  <action name="action_Set_Geometry">
+   <property name="text">
+    <string>Set &amp;Geometry</string>
+   </property>
+   <property name="toolTip">
+    <string>Set width  and height of display window</string>
+   </property>
+   <property name="statusTip">
+    <string>Set width  and height of display window</string>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>14</pointsize>
+    </font>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+H</string>
+   </property>
+  </action>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>

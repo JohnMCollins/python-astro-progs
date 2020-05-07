@@ -74,7 +74,7 @@ for file in files:
 
     if file in filesdone:
         continue
-    
+
     filesdone[file] = 1
 
     try:
@@ -87,27 +87,27 @@ for file in files:
     ff.close()
     if np.count_nonzero(np.isnan(fdat)):
         fdat[np.isnan(fdat)] = 0.0
-    
+
     trimmed = fdat
     if zerotrim:
         trimmed = trimarrays.trimzeros(fdat)
-    
-    minrows = min(minrows, trimmed.shape[0]) 
+
+    minrows = min(minrows, trimmed.shape[0])
     mincols = min(mincols, trimmed.shape[1])
     if trimsides > 0:
         trimmed = trimmed[trimsides:-trimsides, trimsides:-trimsides]
-    
+
     fdat = fdat.astype(np.float32)
-    
+
     fmean = trimmed.mean()
     tstd = trimmed.std()
-    
+
     if fmean == 0.0 or tstd == 0.0:
         print("Mean or std is zero file", file, file=sys.stderr)
         continue
-    
+
     normed = (fdat - fmean) / tstd
-    
+
     resplus += normed >= overbad
     resminus += normed <= -underbad
     ndone += 1

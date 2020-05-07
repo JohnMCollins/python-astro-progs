@@ -31,6 +31,7 @@ import dbremfitsobj
 import os
 import os.path
 import trimarrays
+import miscutils
 
 # Shut up warning messages
 
@@ -43,10 +44,10 @@ parsearg.add_argument('--database', type=str, default=mydbname, help='Database t
 parsearg.add_argument('--tempdir', type=str, default=tmpdir, help='Temp directory to unload files')
 parsearg.add_argument('--divmean', action='store_true', help="Divide std dev by mean")
 parsearg.add_argument('--limits', type=str, help='Lower:upper limit of means')
-parsearg.add_argument('--cutlimit', action='store_true', help='Cut plot a limits')
+parsearg.add_argument('--cutlimit', type=str, default='all', choices=('all', 'limits', 'calclimits'), help='Point display and lreg calc, display all,')
 parsearg.add_argument('--clipstd', type=float, help='Clip std devs this multiple different from std dev of std devs')
 parsearg.add_argument('--filter', type=str, help='Restrict to given filter')
-parsearg.add_argument('--title', type=str, default='Mean count of daily flats v Std devl', help='Title for plot')
+parsearg.add_argument('--title', type=str, default='Mean count of daily flats v Std dev', help='Title for plot')
 parsearg.add_argument('--xlabel', type=str, default='Mean value', help='X axis label')
 parsearg.add_argument('--ylabel', type=str, default='Std deviation', help='Y axis label')
 parsearg.add_argument('--colour', type=str, default='b', help='Plot points colour')
@@ -101,18 +102,29 @@ if len(rows) < 20:
 
 means = np.array(rows[:, 0])
 stdds = np.array(rows[:, 1])
-if limits is not None and cutlimit:
+lrmeans = means.copy()
+lrstdds = stdds.copy()
+if limits is not None and cutlimit != 'all':
     mvs = (means >= lowerlim) & (means <= upperlim)
-    means = means[mvs]
-    stdds = stdds[mvs]
+    lrmeans = means[mvs]
+    lrstdds = stdds[mvs]
+    if cutlimit == 'limits':
+        means = lrmeans
+        stdds = lrstdds
 if divmean:
     stdds /= means
+    lrstdds /= lrmeans
     stdds *= 100.0
+    lrstdds *= 100.0
 
 if clipstd is not None:
     sc = np.abs(stdds - stdds.mean()) < clipstd * stdds.std()
     means = means[sc]
     stdds = stdds[sc]
+    sc = np.abs(lrstdds - lrstdds.mean()) < clipstd * lrstdds.std()
+    lrmeans = lrmeans[sc]
+    lrstdds = lrstdds[sc]
+
 ass = np.argsort(stdds)
 means = means[ass]
 stdds = stdds[ass]
@@ -122,14 +134,22 @@ stdds = stdds[ass]
 
 rg.plt_figure()
 plt.scatter(means, stdds, color=colour)
-if limits is not None and not cutlimit:
+if limits is not None and cutlimit != 'limits':
     plt.axvline(lowerlim, color=limscolour)
     plt.axvline(upperlim, color=limscolour)
-lrslope, lrintercept, lrr, lrp, lrstd = stats.linregress(means, stdds)
-lrx = np.array([means.min(), means.max()])
+lrslope, lrintercept, lrr, lrp, lrstd = stats.linregress(lrmeans, lrstdds)
+lrx = np.array([lrmeans.min(), lrmeans.max()])
 lry = lrx * lrslope + lrintercept
 plt.plot(lrx, lry, color=regcolour)
-plt.title(title + "\n" + "Slope %.6g Intercept %.6g Correlation %.6g" % (lrslope, lrintercept, lrr))
+xt = ''
+if limits is not None:
+    if cutlimit == 'all':
+        xt = ' (all points)'
+    elif cutlimit == 'calclimits':
+        xt = ' (between limits)'
+plt.title(title + "\n" + "Slope %.3g Intercept %.3g Correlation %.3g" % (lrslope, lrintercept, lrr) + xt + "\nFor " + filter + " filter")
+plt.xlabel(xlab)
+plt.ylabel(ylab)
 if ofig is None:
     plt.show()
 else:

@@ -26,7 +26,7 @@ parsearg.add_argument('--trimtop', type=int, help='Pixels to trim off top of pic
 parsearg.add_argument('--filttrim', type=str, help='Filter for trim default is default')
 parsearg.add_argument('--aftertrim', action='store_true', help='Trim zero and NaN before applying trims')
 parsearg.add_argument('--nocoords', action='store_true', help='Suppress coord display')
-parsearg.add_argument('--invert', action='store_false', help='Invert image')
+# parsearg.add_argument('--invert', action='store_false', help='Invert image')
 parsearg.add_argument('--divisions', type=int, help='Divisions in RA/Dec lines')
 parsearg.add_argument('--divprec', type=int, help='Precision for axes')
 parsearg.add_argument('--divthresh', type=int, help='Pixels from edge for displaying divisions')
@@ -38,11 +38,11 @@ parsearg.add_argument('--hilalpha', type=float, help='Object alpha')
 parsearg.add_argument('--objtextfs', type=int, help='Font size object labels')
 parsearg.add_argument('--textdisp', type=int, help='Displacement of object labels')
 parsearg.add_argument('--objfill', action='store_true', help='Fill object markers')
-parsearg.add_argument('--grayscale', type=str, help='Gray scale name')
+parsearg.add_argument('--greyscale', type=str, help='Gray scale name')
 parsearg.add_argument('--gspercent', action='store_true', help='Grey scale is percentage otherwises nos of std devs from mean')
 parsearg.add_argument('--gscolours', type=int, nargs='+', help='List of colours 1 to 254 to use (will be sorted)')
 parsearg.add_argument('--gsvalues', type=float, nargs='+', help='List of values to use in grey scale (will be sorted')
-parsearg.add_argument('--gsdel', action='store_true', help='Delete grayscale"')
+parsearg.add_argument('--gsdel', action='store_true', help='Delete greyscale"')
 
 resargs = vars(parsearg.parse_args())
 doreset = resargs['reset']
@@ -59,7 +59,7 @@ filttrim = resargs['filttrim']
 aftertrim = resargs['aftertrim']
 
 nocoords = resargs['nocoords']
-invertim = resargs['invert']
+# invertim = resargs['invert']
 divisions = resargs['divisions']
 divprec = resargs['divprec']
 divthresh = resargs['divthresh']
@@ -72,7 +72,7 @@ objcolour = resargs['objcolour']
 objalpha = resargs['hilalpha']
 objtextfs = resargs['objtextfs']
 textdisp = resargs['textdisp']
-grayscale = resargs['grayscale']
+greyscale = resargs['greyscale']
 gspercent = resargs["gspercent"]
 gscolours = resargs['gscolours']
 gsvalues = resargs['gsvalues']
@@ -131,9 +131,6 @@ if trimtop is not None:
 if nocoords != rg.divspec.nocoords:
     rg.divspec.nocoords = nocoords
     changes += 1
-if invertim != rg.divspec.invertim:
-    rg.divspec.invertim = invertim
-    changes += 1
 if divisions is not None:
     rg.divspec.divisions = divisions
     changes += 1
@@ -168,21 +165,21 @@ if objtextfs is not None:
 if textdisp is not None:
     rg.objdisp.objtextdisp = textdisp
     changes += 1
-if grayscale is not None:
+if greyscale is not None:
     if gsdel:
-        rg.del_grayscale(grayscale)
+        rg.del_greyscale(greyscale)
     else:
         if gscolours is None or gsvalues is None:
-            print("Need to specify colours and values with grayscale", file=sys.stderr)
+            print("Need to specify colours and values with greyscale", file=sys.stderr)
             sys.exit(10)
         gs = remgeom.GrayScale()
-        gs.setname(grayscale)
+        gs.setname(greyscale)
         try:
             gs.setscale(gsvalues, gscolours, gspercent)
         except remgeom.RemGeomError as e:
             print("Grayscale gave error", e.args[0], file=sys.stderr)
             sys.exit(11)
-        rg.set_grayscale(gs)
+        rg.set_greyscale(gs)
     changes += 1
 
 print("Default width: %.2f" % rg.defwinfmt.width)
@@ -212,8 +209,6 @@ for filt in sorted(rg.ftrims.keys()):
         print("Filter %s Apply trims after trimming zero/NaN" % filt)
 if nocoords:
     print("No coords")
-if invertim:
-    print("Invert image")
 print("Divisions: %d" % rg.divspec.divisions)
 print("Div prec: %d" % rg.divspec.divprec)
 print("Divthresh: %d" % rg.divspec.divthresh)
@@ -227,10 +222,10 @@ print("Object alpha: %.3g" % rg.objdisp.objalpha)
 print("Object text font size: %d" % rg.objdisp.objtextfs)
 print("Object text displacement: %d" % rg.objdisp.objtextdisp)
 
-gl = rg.list_grayscales()
+gl = rg.list_greyscales()
 
 for g in gl:
-    gs = rg.get_grayscale(g)
+    gs = rg.get_greyscale(g)
     t = "std devs"
     if gs.isperc:
         t = "percentiles"

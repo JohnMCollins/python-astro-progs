@@ -36,7 +36,7 @@ rg = remgeom.load()
 
 parsearg = argparse.ArgumentParser(description='Display image files', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 parsearg.add_argument('files', type=str, nargs='+', help='File names to display')
-parsearg.add_argument('--grayscale', type=str, required=True, help="Standard grayscale to use")
+parsearg.add_argument('--greyscale', type=str, required=True, help="Standard greyscale to use")
 parsearg.add_argument('--title', type=str, help='Optional title to put at head of image')
 parsearg.add_argument('--biasfile', type=str, help='Bias file to apply')
 parsearg.add_argument('--flatfile', type=str, help='Flat file to apply')
@@ -66,16 +66,16 @@ figout = rg.disp_getargs(resargs)
 
 biasfile = resargs['biasfile']
 flatfile = resargs['flatfile']
-grayscalename = resargs['grayscale']
+greyscalename = resargs['greyscale']
 replstd = resargs['replstd']
 mainap = resargs['mainap']
 searchstd = resargs['searchstd']
 maxobjs = resargs['maxobjs']
 title = resargs['title']
 
-gsdets = rg.get_grayscale(grayscalename)
+gsdets = rg.get_greyscale(greyscalename)
 if gsdets is None:
-    print("Sorry gray scale", grayscalename, "is not defined", file=sys.stderr)
+    print("Sorry grey scale", greyscalename, "is not defined", file=sys.stderr)
     sys.exit(9)
 
 collist = gsdets.get_colours()

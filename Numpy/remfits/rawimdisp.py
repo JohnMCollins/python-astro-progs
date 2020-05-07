@@ -46,7 +46,7 @@ parsearg.add_argument('files', type=str, nargs='+', help='File names to display'
 parsearg.add_argument('--title', type=str, default="Image display", help="Title for each plot")
 parsearg.add_argument('--xlabel', type=str, default="Column number", help="X xxis label")
 parsearg.add_argument('--ylabel', type=str, default="Row number", help="Y xxis label")
-parsearg.add_argument('--grayscale', type=str, required=True, help="Standard grayscale to use")
+parsearg.add_argument('--greyscale', type=str, required=True, help="Standard greyscale to use")
 parsearg.add_argument('--histbins', type=int, default=20, help='Bins for histogram')
 parsearg.add_argument('--logscale', action='store_true', help='Use log scale for histogram')
 parsearg.add_argument('--colourhist', type=str, default='b', help='Colour of historgram')
@@ -65,7 +65,7 @@ warnings.simplefilter('ignore', AstropyUserWarning)
 warnings.simplefilter('ignore', UserWarning)
 autils.suppress_vo_warnings()
 
-grayscalename = resargs['grayscale']
+greyscalename = resargs['greyscale']
 files = resargs['files']
 logscale = resargs['logscale']
 title = resargs['title']
@@ -79,9 +79,9 @@ histylab = resargs['histylab']
 histtitle = resargs['histtitle']
 addsk = resargs['addsk']
 
-gsdets = rg.get_grayscale(grayscalename)
+gsdets = rg.get_greyscale(greyscalename)
 if gsdets is None:
-    print("Sorry gray scale", grayscalename, "is not defined", file=sys.stderr)
+    print("Sorry grey scale", greyscalename, "is not defined", file=sys.stderr)
     sys.exit(9)
 
 collist = gsdets.get_colours()
@@ -105,6 +105,7 @@ for file in files:
         continue
     hdr = ff[0].header
     dat = trimarrays.trimzeros(trimarrays.trimnan(ff[0].data.astype(np.float64)))
+    ff.close()
 
     try:
         date = Time(hdr['DATE-OBS'])
