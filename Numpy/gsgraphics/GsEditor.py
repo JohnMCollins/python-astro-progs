@@ -90,7 +90,7 @@ class GsEditorMain(QtWidgets.QMainWindow, ui_gsedit.Ui_gseditmain):
         self.cfname = None
         self.currentimage = None
         self.currentimage_fname = None
-        self.currentImage_title = None
+        self.currentimage_title = None
         self.imwidth = 8.00
         self.imheight = 6.00
         self.set_title()

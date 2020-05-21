@@ -4,23 +4,13 @@
 # Created on Fri Aug 11 20:35:51 2017
 
 PYUIC=pyuic5
+SOURCES:=$(wildcard *.ui)
+TARGETS=$(patsubst %.ui, ui_%.py, $(SOURCES))
 
-all:	ui_gsedit.py \
-	ui_geomdlg.py \
-	ui_gseditdlg.py \
-	ui_about.py
+all:	$(TARGETS)
 
-ui_gsedit.py:	gsedit.ui
-	$(PYUIC) -o $@ $?
-
-ui_geomdlg.py:	geomdlg.ui
-	$(PYUIC) -o $@ $?
-
-ui_gseditdlg.py:	gseditdlg.ui
-	$(PYUIC) -o $@ $?
-
-ui_about.py:	about.ui
-	$(PYUIC) -o $@ $?
+ui_%.py: %.ui
+	$(PYUIC) -o $@ $<
 
 clean:
 	rm -f ui_*.py *_rc.py *.pyc
