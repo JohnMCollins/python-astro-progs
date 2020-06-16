@@ -6,6 +6,7 @@ import os.path
 import string
 import locale
 import copy
+import argparse
 import xml.etree.ElementTree as ET
 
 from PyQt5 import QtCore, QtGui, QtWidgets
@@ -14,12 +15,14 @@ from PyQt5.QtWidgets import (QWidget, QPushButton, QFrame, QApplication)
 import miscutils
 import xmlutil
 import remgeom
+import remdefaults
 
 import ui_gsetgeom
 import ui_geomabout
 
 import geomoptdlg
 import trimeditdlg
+import radecdlg
 
 
 class AboutDlg(QtWidgets.QDialog, ui_geomabout.Ui_aboutdlg):
@@ -274,13 +277,34 @@ class GsetgeomMain(QtWidgets.QMainWindow, ui_gsetgeom.Ui_setgeommain):
         self.unsaved = True
         self.redisp_config()
         self.updateUI()
-        
+
     def on_action_Edit_Trims_triggered(self, checked=None):
         if checked is None: return
         dlg = trimeditdlg.TrimEditDlg(self)
         copy_current = copy.deepcopy(self.currentconfig)
         dlg.copyin(copy_current)
         if dlg.exec_():
+            self.currentconfig = copy_current
+            self.unsaved = True
+            self.updateUI()
+
+    def on_action_Edit_Limits_triggered(self, checked=None):
+        if checked is None: return
+        dlg = trimeditdlg.ImLimDlg(self)
+        copy_current = copy.deepcopy(self.currentconfig)
+        dlg.copyin(copy_current)
+        if dlg.exec_():
+            self.currentconfig = copy_current
+            self.unsaved = True
+            self.updateUI()
+
+    def on_action_Set_RA_and_Dec_Colours_triggered(self, checked=None):
+        if checked is None: return
+        dlg = radecdlg.RaDecDlg()
+        copy_current = copy.deepcopy(self.currentconfig)
+        dlg.copyin(copy_current)
+        if dlg.exec_():
+            dlg.copyout()
             self.currentconfig = copy_current
             self.unsaved = True
             self.updateUI()
@@ -302,5 +326,10 @@ class GsetgeomMain(QtWidgets.QMainWindow, ui_gsetgeom.Ui_setgeommain):
 app = QApplication(sys.argv)
 mw = GsetgeomMain()
 mw.init_load_working_config()
+parsearg = argparse.ArgumentParser(description='Set up config', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+remdefaults.parseargs(parsearg)
+resargs = vars(parsearg.parse_args())
+remdefaults.getargs(resargs)
+
 mw.show()
 app.exec_()

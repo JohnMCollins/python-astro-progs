@@ -81,11 +81,13 @@
      <string>&amp;Trims</string>
     </property>
     <addaction name="action_Edit_Trims"/>
+    <addaction name="action_Edit_Limits"/>
    </widget>
    <widget class="QMenu" name="menu_Colours">
     <property name="title">
      <string>&amp;Colours</string>
     </property>
+    <addaction name="action_Set_RA_and_Dec_Colours"/>
    </widget>
    <addaction name="menu_File"/>
    <addaction name="menu_Grayscale"/>
@@ -359,6 +361,35 @@
    </property>
    <property name="shortcut">
     <string>Ctrl+T</string>
+   </property>
+  </action>
+  <action name="action_Edit_Limits">
+   <property name="text">
+    <string>Edit &amp;Limits</string>
+   </property>
+   <property name="statusTip">
+    <string>Edit maximum usable image</string>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>14</pointsize>
+    </font>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+Shift+L</string>
+   </property>
+  </action>
+  <action name="action_Set_RA_and_Dec_Colours">
+   <property name="text">
+    <string>Set &amp;RA and Dec Colours</string>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>14</pointsize>
+    </font>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+R</string>
    </property>
   </action>
  </widget>

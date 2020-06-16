@@ -98,11 +98,11 @@ def pressed(event):
 
 rg = remgeom.load()
 
-parsearg = argparse.ArgumentParser(description='Plot std deviation versus mean of daily flatsl', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+parsearg = argparse.ArgumentParser(description='Plot std deviation versus mean of daily flats with trims', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 remdefaults.parseargs(parsearg)
 parsetime.parseargs_daterange(parsearg)
-parsearg.add_argument('--divmean', action='store_true', help="Divide std dev by mean")
 parsearg.add_argument('--limits', type=str, help='Lower:upper limit of means')
+parsearg.add_argument('--trims', type=int, default=0, help='Amount to trim off each side')
 parsearg.add_argument('--cutlimit', type=str, default='all', choices=('all', 'limits', 'calclimits'), help='Point display and lreg calc, display all,')
 parsearg.add_argument('--clipstd', type=float, help='Clip std devs this multiple different from std dev of std devs')
 parsearg.add_argument('--filter', type=str, help='Restrict to given filter')
@@ -129,15 +129,15 @@ limscolour = resargs['limscolour']
 regcolour = resargs['regcolour']
 ofig = rg.disp_getargs(resargs)
 filter = resargs['filter']
-divmean = resargs['divmean']
 clipstd = resargs['clipstd']
 limits = resargs['limits']
+trims = resargs['trims']
 cutlimit = resargs['cutlimit']
 lowerlim = upperlim = None
 greyscale = resargs['greyscale']
 logscale = resargs['logscale']
 
-fieldselect = ["mean IS NOT NULL", "typ='flat'", "ind!=0", "gain=1"]
+fieldselect = ["rows IS NOT NULL", "typ='flat'", "ind!=0", "gain=1"]
 try:
     dstring = parsetime.getargs_daterange(resargs, fieldselect)
 except ValueError as e:
@@ -174,16 +174,32 @@ dbase, dbcurs = remdefaults.opendb()
 if filter is not None:
     fieldselect.append("filter=" + dbase.escape(filter))
 
-dbcurs.execute("SELECT mean,std,ind FROM iforbinf WHERE " + " AND ".join(fieldselect))
+dbcurs.execute("SELECT rows,cols,ind FROM iforbinf WHERE " + " AND ".join(fieldselect))
 
-rows = np.array(dbcurs.fetchall())
-if len(rows) < 20:
+dbrows = dbcurs.fetchall()
+if len(dbrows) < 20:
     print("Not enough data points found to plot", file=sys.stderr)
     sys.exit(2)
 
-means = np.array(rows[:, 0])
-stdds = np.array(rows[:, 1])
-fitsinds = np.array(rows[:, 2]).astype(np.int64)
+means = []
+stdds = []
+fitsinds = []
+for rows, cols, fitsind in dbrows:
+    try:
+        ff = dbremfitsobj.getfits(dbcurs, fitsind)
+        fdat = ff[0].data[0:rows, 0:cols].astype(np.float32)
+        ff.close()
+        if trims > 0:
+            fdat = fdat[trims:-trims, trims:-trims]
+        means.append(fdat.mean())
+        stdds.append(fdat.std())
+        fitsinds.append(fitsind)
+    except dbremfitsobj.RemObjError as e:
+        print("Error fetching", fitsind, "error was", e.args[0])
+
+means = np.array(means)
+stdds = np.array(stdds)
+fitsinds = np.array(fitsinds)
 
 lrmeans = means.copy()
 lrstdds = stdds.copy()
@@ -195,11 +211,6 @@ if limits is not None and cutlimit != 'all':
         means = lrmeans
         stdds = lrstdds
         fitsinds = fitsinds[mvs]
-if divmean:
-    stdds /= means
-    lrstdds /= lrmeans
-    stdds *= 100.0
-    lrstdds *= 100.0
 
 if clipstd is not None:
     sc = np.abs(stdds - stdds.mean()) / means < clipstd
@@ -245,6 +256,8 @@ if limits is not None:
 tit = title + "\n" + "Slope %.3g Intercept %.3g Correlation %.3g" % (lrslope, lrintercept, lrr) + xt + "\nFor " + filter + " filter"
 if dstring is not None:
     tit += " " + dstring
+if trims > 0:
+    tit += " %d pixels trimmed each side" % trims
 plt.title(tit)
 plt.xlabel(xlab)
 plt.ylabel(ylab)

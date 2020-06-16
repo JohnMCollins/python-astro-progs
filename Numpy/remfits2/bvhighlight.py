@@ -47,19 +47,19 @@ def fixtty(f):
 
 
 rg = remgeom.load()
-parsearg = argparse.ArgumentParser(description='Display image files raw', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+parsearg = argparse.ArgumentParser(description='Highlight bias values with extremes in diff colour', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 parsearg.add_argument('files', type=str, nargs='+', help='File names to display (or FITS its)')
 remdefaults.parseargs(parsearg)
-parsearg.add_argument('--title', type=str, default="Image display", help="Title for each plot")
+parsearg.add_argument('--title', type=str, default="Extremes display", help="Title for each plot")
 parsearg.add_argument('--xlabel', type=str, default="Column number", help="X xxis label")
 parsearg.add_argument('--ylabel', type=str, default="Row number", help="Y xxis label")
-parsearg.add_argument('--greyscale', type=str, required=True, help="Standard greyscale to use")
-parsearg.add_argument('--histbins', type=int, default=20, help='Bins for histogram')
+parsearg.add_argument('--histbins', type=float, nargs='+', default=[20.0], help='Bins for histogram and colour scale')
 parsearg.add_argument('--nozeros', action='store_false', help='Do not include zeros in histogram')
 parsearg.add_argument('--logscale', action='store_true', help='Use log scale for histogram')
-parsearg.add_argument('--colourhist', type=str, default='b', help='Colour of historgram')
-parsearg.add_argument('--histtitle', type=str, default='Distribution of pixel values', help='Histogram Title')
-parsearg.add_argument('--histxlab', type=str, default='Pixel value', help='Label for histogram X axis')
+parsearg.add_argument('--xlog', action='store_true', help='Use log scale on histogram X aris')
+parsearg.add_argument('--hvcolour', type=str, nargs='*', help='Colours for exceptional high values')
+parsearg.add_argument('--histtitle', type=str, default='Distribution of values', help='Histogram Title')
+parsearg.add_argument('--histxlab', type=str, default='Value', help='Label for histogram X axis')
 parsearg.add_argument('--histylab', type=str, default='Occurences of value', help='Label for histogram Y axis')
 parsearg.add_argument('--addsk', action='store_false', help='Add stats to histogram title')
 parsearg.add_argument('--detach', action='store_true', help='Detaach as child process actter checking args')
@@ -75,28 +75,35 @@ warnings.simplefilter('ignore', AstropyUserWarning)
 warnings.simplefilter('ignore', UserWarning)
 autils.suppress_vo_warnings()
 
-greyscalename = resargs['greyscale']
 files = resargs['files']
 logscale = resargs['logscale']
+hxlog = resargs['xlog']
 nozeros = resargs['nozeros']
 title = resargs['title']
 xlab = resargs['xlabel']
 ylab = resargs['ylabel']
 figout = rg.disp_getargs(resargs)
 histbins = resargs['histbins']
-colourhist = resargs['colourhist']
+hvcolour = resargs['hvcolour']
 histxlab = resargs['histxlab']
 histylab = resargs['histylab']
 histtitle = resargs['histtitle']
 addsk = resargs['addsk']
 detach = resargs['detach']
 
-gsdets = rg.get_greyscale(greyscalename)
-if gsdets is None:
-    print("Sorry grey scale", greyscalename, "is not defined", file=sys.stderr)
-    sys.exit(9)
+if hvcolour is None:
+    hvcolour = []
+nhvs = len(hvcolour)
 
-collist = gsdets.get_colours()
+nhistbins = len(histbins)
+if nhistbins == 1:
+    nhistbins = int(histbins[0])
+    histbins = None
+else:
+    nhistbins += 1  # One more than number of colours
+
+collist = ['#%.2x%.2x%.2x' % (int(l), int(l), int(l)) for l in np.linspace(255, 0, nhistbins - nhvs).round()] + hvcolour
+    
 cmap = colors.ListedColormap(collist)
 
 nfigs = len(files)
@@ -106,7 +113,6 @@ if figout is not None:
     figout = miscutils.removesuffix(figout, '.png')
 
 plt.rc('figure', max_open_warning=100)
-# Get details of object once only if doing multiple pictures
 
 dbase = None  # only open this i we need to
 
@@ -165,20 +171,8 @@ for file in files:
 
     plotfigure = rg.plt_figure()
     plotfigure.canvas.set_window_title('FITS Image from file ' + file)
-    plt.subplot(121)
-
-    crange = gsdets.get_cmap(dat)
-    norm = colors.BoundaryNorm(crange, cmap.N)
-    img = plt.imshow(dat, cmap=cmap, norm=norm, origin='lower')
-    plt.colorbar(img, norm=norm, cmap=cmap, boundaries=crange, ticks=crange)
-
-    tit = title
-    if rfh is not None:
-        tit += "\nfor " + ftype + " file filter " + filter + "\n" + when.strftime("Date %d/%m/%Y @ %H:%M:%S")
-    plt.title(tit)
-    plt.xlabel(xlab)
-    plt.ylabel(ylab)
-    plt.subplot(122)
+    
+    hax = plt.subplot(122)
 
     flatdat = dat.flatten()
     if nozeros:
@@ -186,14 +180,37 @@ for file in files:
     mv = flatdat.mean()
     medv = np.median(flatdat)
     stdv = flatdat.std()
-    plt.hist(flatdat, bins=histbins, color=colourhist, log=logscale)
+    if histbins is None:
+        bspec = nhistbins
+    else:
+        bspec = sorted(histbins + [flatdat.min(), flatdat.max()])
+    if hxlog:
+        hax.set_xscale('log')
+    vals, bins, patches = plt.hist(flatdat, bins=bspec, log=logscale)
+    for p, c in zip(patches, collist):
+        p.set_facecolor(c)
     plt.xlabel(histxlab)
     plt.ylabel(histylab)
-
+    
     tit = histtitle
     if  addsk:
         tit += " mean %.6g\nMedian=%.6g (norm %.6g)\nStd dev=%.4g (norm %.4g)" % (mv, medv, medv / mv, stdv, stdv / mv)
     plt.title(tit)
+    
+    plt.subplot(121)
+    if nozeros:
+        bins[0] = dat.min()
+    
+    norm = colors.BoundaryNorm(bins, cmap.N)
+    img = plt.imshow(dat, cmap=cmap, norm=norm, origin='lower')
+    plt.colorbar(img, norm=norm, cmap=cmap, boundaries=bins, ticks=bins)
+
+    tit = title
+    if rfh is not None:
+        tit += "\nfor " + ftype + " file filter " + filter + "\n" + when.strftime("Date %d/%m/%Y @ %H:%M:%S")
+    plt.title(tit)
+    plt.xlabel(xlab)
+    plt.ylabel(ylab)
 
     if figout is not None:
         if nfigs > 1:

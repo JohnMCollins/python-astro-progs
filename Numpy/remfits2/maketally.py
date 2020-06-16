@@ -1,0 +1,108 @@
+#!  /usr/bin/env python3
+
+import dbops
+import remdefaults
+import argparse
+import sys
+import os.path
+import dbremfitsobj
+import miscutils
+import numpy as np
+import parsetime
+import remfield
+
+parsearg = argparse.ArgumentParser(description='Gather tally of statistics for CCD array', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+remdefaults.parseargs(parsearg)
+parsetime.parseargs_daterange(parsearg)
+remfield.parseargs(parsearg)
+parsearg.add_argument('--type', type=str, default='obs', choices=('obs', 'flat', 'bias'), help='What kind of file tp process#')
+parsearg.add_argument('--create', action='store_true', help='Expecting to create file rather than append to existing file')
+parsearg.add_argument('--prefix', required=True, type=str, help='Result file prefix')
+parsearg.add_argument('--inlib', action='store_false', help='Load and store in library return than CWD by default')
+
+resargs = vars(parsearg.parse_args())
+remdefaults.getargs(resargs)
+create = resargs['create']
+prefix = resargs['prefix']
+ftype = resargs['type']
+inlib = resargs['inlib']
+
+fieldselect = []
+try:
+    parsetime.getargs_daterange(resargs, fieldselect)
+except ValueError as e:
+    print(e.args[0], file=sys.stderr)
+    sys.exit(20)
+
+try:
+    remfield.getargs(resargs, fieldselect)
+except remfield.RemFieldError as e:
+    print(e.args[0], file=sys.stderr)
+    sys.exit(21) 
+
+prefix = miscutils.removesuffix(miscutils.removesuffix(prefix, '.fitsids'), '.npy')
+
+fitsidfn = prefix + '.fitsids'
+tallyfn = prefix + '.npy'
+if inlib:
+    fitsidfn = remdefaults.libfile(fitsidfn)
+    tallyfn = remdefaults.libfile(tallyfn)
+
+fitsids = dict()
+
+if create:
+    if os.path.exists(fitsidfn):
+        print("FITS id file", fitsidfn, "already exists - aborting", file=sys.stderr)
+        sys.exit(10)
+    if os.path.exists(tallyfn):
+        print("FITS tally file", tallyfn, "already exists - aborting", file=sys.stderr)
+        sys.exit(11)
+    tally = np.zeros((3, 2048, 2048), dtype=np.float64)
+else:
+    try:
+        tally = np.load(tallyfn)
+        with open(fitsidfn, 'rt') as fidf:
+            for l in fidf:
+                dict[int(l)] = 1
+    except OSError as e:
+        print("Cannot open", e.filename, "error was", e.args[1])
+        sys.exit(12)
+
+dbase, dbcurs = remdefaults.opendb()
+fieldselect.append("gain=1")
+fieldselect.append("rows IS NOT NULL")
+fieldselect.append("rejreason IS NULL")
+
+if ftype == 'obs':
+    tab = "obsinf"
+else:
+    fieldselect.append("typ='" + ftype + "'")
+    tab = "iforbinf"
+
+dbcurs.execute("SELECT ind,rows,cols,startx,starty FROM " + tab + " WHERE " + " AND ".join(fieldselect))
+dbrows = dbcurs.fetchall()
+for dbrow in dbrows:
+    fitsind, rows, cols, startx, starty = dbrow
+    if fitsind in fitsids:
+        continue
+    fitsids[fitsind] = 1
+    ff = dbremfitsobj.getfits(dbcurs, fitsind)
+    fdat = ff[0].data
+    ff.close()
+    fdat = fdat[0:rows, 0:cols]
+    fdat = fdat.astype(np.float64)
+    endr = starty + rows
+    endc = startx + cols
+    try:
+        tally[0, starty:endr, startx:endc] += 1.0
+        tally[1, starty:endr, startx:endc] += fdat
+        tally[2, starty:endr, startx:endc] += fdat ** 2
+    except ValueError:
+        print("Wrong size ind = ", fitsind, "r/c/sx/sy", rows, cols, startx, starty, file=sys.stderr)
+
+outf = open(fitsidfn, 'wt')
+for k in sorted(fitsids.keys()):
+    print(k, file=outf)
+outf.close()
+
+np.save(tallyfn, tally)

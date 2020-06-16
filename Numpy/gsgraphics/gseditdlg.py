@@ -29,19 +29,35 @@ class GsEditDlg(QtWidgets.QDialog, ui_gseditdlg.Ui_gseditdlg):
         self.colspins = (self.shade1, self.shade2, self.shade3, self.shade4,
                          self.shade5, self.shade6, self.shade7, self.shade8,
                          self.shade9, self.shade10, self.shade11, self.shade12,
-                         self.shade13, self.shade14, self.shade15, self.shade16)
+                         self.shade13, self.shade14, self.shade15, self.shade16,
+                         self.shade17, self.shade18, self.shade19, self.shade20,
+                         self.shade21, self.shade22, self.shade23, self.shade24,
+                         self.shade25, self.shade26, self.shade27, self.shade28,
+                         self.shade29, self.shade30, self.shade31, self.shade32)
         self.pcspins = (self.pc1, self.pc2, self.pc3, self.pc4,
                         self.pc5, self.pc6, self.pc7, self.pc8,
                         self.pc9, self.pc10, self.pc11, self.pc12,
-                        self.pc13, self.pc14, self.pc15, self.pc16)
+                        self.pc13, self.pc14, self.pc15, self.pc16,
+                        self.pc17, self.pc18, self.pc19, self.pc20,
+                        self.pc21, self.pc22, self.pc23, self.pc24,
+                        self.pc25, self.pc26, self.pc27, self.pc28,
+                        self.pc29, self.pc30, self.pc31, self.pc32)
         self.nsspins = (self.nsd1, self.nsd2, self.nsd3, self.nsd4,
                         self.nsd5, self.nsd6, self.nsd7, self.nsd8,
                         self.nsd9, self.nsd10, self.nsd11, self.nsd12,
-                        self.nsd13, self.nsd14, self.nsd15, self.nsd16)
+                        self.nsd13, self.nsd14, self.nsd15, self.nsd16,
+                        self.nsd17, self.nsd18, self.nsd19, self.nsd20,
+                        self.nsd21, self.nsd22, self.nsd23, self.nsd24,
+                        self.nsd25, self.nsd26, self.nsd27, self.nsd28,
+                        self.nsd29, self.nsd30, self.nsd31, self.nsd32)
         self.vspins = (self.v1, self.v2, self.v3, self.v4,
                         self.v5, self.v6, self.v7, self.v8,
                         self.v9, self.v10, self.v11, self.v12,
-                        self.v13, self.v14, self.v15, self.v16)
+                        self.v13, self.v14, self.v15, self.v16,
+                        self.v17, self.v18, self.v19, self.v20,
+                        self.v21, self.v22, self.v23, self.v24,
+                        self.v25, self.v26, self.v27, self.v28,
+                        self.v29, self.v30, self.v31, self.v32)
         self.currentshades = None
         self.currentpercents = None
         self.currentnsigs = None
@@ -105,7 +121,7 @@ class GsEditDlg(QtWidgets.QDialog, ui_gseditdlg.Ui_gseditdlg):
             return
         else:
             vallist = np.array(self.currentnsigs) * self.stdvalue + self.meanvalue
-            self.currentvalues = list(np.round(vallist, 1))
+            self.currentvalues = list(np.round(vallist, 2))
 
         pcarray = np.round(np.array([ np.count_nonzero(self.imagearray <= x) for x in vallist ]) * 100.0 / self.imagearray.size, 3)
         pcarray[-1] = 100.0
@@ -238,9 +254,9 @@ class GsEditDlg(QtWidgets.QDialog, ui_gseditdlg.Ui_gseditdlg):
             self.maxvalue = self.imagearray.max()
             self.minstdd = (self.minvalue - self.meanvalue) / self.stdvalue
             self.maxstdd = (self.maxvalue - self.meanvalue) / self.stdvalue
-            self.meanv.setText("%.1f" % self.meanvalue)
-            self.medianv.setText("%.1f" % np.median(self.imagearray))
-            self.sigmav.setText("%.1f" % self.stdvalue)
+            self.meanv.setText("%.2f" % self.meanvalue)
+            self.medianv.setText("%.2f" % np.median(self.imagearray))
+            self.sigmav.setText("%.2f" % self.stdvalue)
 
         if self.gs.isfixed:
             self.fixedcount.setChecked(True)
@@ -331,6 +347,38 @@ class GsEditDlg(QtWidgets.QDialog, ui_gseditdlg.Ui_gseditdlg):
     def on_shade15_valueChanged(self, value): self.shadechanged(14, value)
 
     def on_shade16_valueChanged(self, value): self.shadechanged(15, value)
+    
+    def on_shade17_valueChanged(self, value): self.shadechanged(16, value)
+    
+    def on_shade18_valueChanged(self, value): self.shadechanged(17, value)
+    
+    def on_shade19_valueChanged(self, value): self.shadechanged(18, value)
+    
+    def on_shade20_valueChanged(self, value): self.shadechanged(19, value)
+    
+    def on_shade21_valueChanged(self, value): self.shadechanged(20, value)
+    
+    def on_shade22_valueChanged(self, value): self.shadechanged(21, value)
+    
+    def on_shade23_valueChanged(self, value): self.shadechanged(22, value)
+    
+    def on_shade24_valueChanged(self, value): self.shadechanged(23, value)
+    
+    def on_shade25_valueChanged(self, value): self.shadechanged(24, value)
+    
+    def on_shade26_valueChanged(self, value): self.shadechanged(25, value)
+    
+    def on_shade27_valueChanged(self, value): self.shadechanged(26, value)
+    
+    def on_shade28_valueChanged(self, value): self.shadechanged(27, value)
+    
+    def on_shade29_valueChanged(self, value): self.shadechanged(28, value)
+    
+    def on_shade30_valueChanged(self, value): self.shadechanged(29, value)
+    
+    def on_shade31_valueChanged(self, value): self.shadechanged(30, value)
+    
+    def on_shade32_valueChanged(self, value): self.shadechanged(31, value)
 
     def shadechanged(self, shadenum, newshade):
         """Deal with shade changes, adjusting neighbours if need be"""
@@ -412,7 +460,7 @@ class GsEditDlg(QtWidgets.QDialog, ui_gseditdlg.Ui_gseditdlg):
         if self.performingupdate or not newstate: return
         if not self.gs.isfixed and self.gs.isperc: return
         self.gs.isfixed = False
-        self.gs.icperc = True
+        self.gs.isperc = True
         self.performingupdate = True
 
         if self.imagearray is None:
@@ -436,7 +484,7 @@ class GsEditDlg(QtWidgets.QDialog, ui_gseditdlg.Ui_gseditdlg):
             newarray = list(np.linspace(self.minvalue, self.maxvalue, self.numcols + 1))
             newarray.pop(0)
         else:
-            newarray = list(fixdups.fixdups(self.currentvalues, division=0.1, minimum=self.minvalue, maximum=self.maxvalue))
+            newarray = list(fixdups.fixdups(self.currentvalues, division=0.01, minimum=self.minvalue, maximum=self.maxvalue))
 
         self.currentvalues = newarray
         self.fillingrid()
@@ -556,6 +604,38 @@ class GsEditDlg(QtWidgets.QDialog, ui_gseditdlg.Ui_gseditdlg):
     def on_nsd15_valueChanged(self, value): self.nsdchanged(14, value)
 
     def on_nsd16_valueChanged(self, value): self.nsdchanged(15, value)
+    
+    def on_nsd17_valueChanged(self, value): self.nsdchanged(16, value)
+
+    def on_nsd18_valueChanged(self, value): self.nsdchanged(17, value)
+
+    def on_nsd19_valueChanged(self, value): self.nsdchanged(18, value)
+
+    def on_nsd20_valueChanged(self, value): self.nsdchanged(19, value)
+
+    def on_nsd21_valueChanged(self, value): self.nsdchanged(20, value)
+
+    def on_nsd22_valueChanged(self, value): self.nsdchanged(21, value)
+
+    def on_nsd23_valueChanged(self, value): self.nsdchanged(22, value)
+
+    def on_nsd24_valueChanged(self, value): self.nsdchanged(23, value)
+
+    def on_nsd25_valueChanged(self, value): self.nsdchanged(24, value)
+
+    def on_nsd26_valueChanged(self, value): self.nsdchanged(25, value)
+
+    def on_nsd27_valueChanged(self, value): self.nsdchanged(26, value)
+
+    def on_nsd28_valueChanged(self, value): self.nsdchanged(27, value)
+
+    def on_nsd29_valueChanged(self, value): self.nsdchanged(28, value)
+
+    def on_nsd30_valueChanged(self, value): self.nsdchanged(29, value)
+
+    def on_nsd31_valueChanged(self, value): self.nsdchanged(30, value)
+
+    def on_nsd32_valueChanged(self, value): self.nsdchanged(31, value)
 
     def nsdchanged(self, whichns, newvalue):
         """Deal with num stddev values"""
@@ -619,6 +699,38 @@ class GsEditDlg(QtWidgets.QDialog, ui_gseditdlg.Ui_gseditdlg):
     def on_v15_valueChanged(self, value): self.vcjamged(14, value)
 
     def on_v16_valueChanged(self, value): self.vcjamged(15, value)
+    
+    def on_v17_valueChanged(self, value): self.vcjamged(16, value)
+
+    def on_v18_valueChanged(self, value): self.vcjamged(17, value)
+
+    def on_v19_valueChanged(self, value): self.vcjamged(18, value)
+
+    def on_v20_valueChanged(self, value): self.vcjamged(19, value)
+
+    def on_v21_valueChanged(self, value): self.vcjamged(20, value)
+
+    def on_v22_valueChanged(self, value): self.vcjamged(21, value)
+
+    def on_v23_valueChanged(self, value): self.vcjamged(22, value)
+
+    def on_v24_valueChanged(self, value): self.vcjamged(23, value)
+
+    def on_v25_valueChanged(self, value): self.vcjamged(24, value)
+
+    def on_v26_valueChanged(self, value): self.vcjamged(25, value)
+
+    def on_v27_valueChanged(self, value): self.vcjamged(26, value)
+
+    def on_v28_valueChanged(self, value): self.vcjamged(27, value)
+
+    def on_v29_valueChanged(self, value): self.vcjamged(28, value)
+
+    def on_v30_valueChanged(self, value): self.vcjamged(29, value)
+
+    def on_v31_valueChanged(self, value): self.vcjamged(30, value)
+
+    def on_v32_valueChanged(self, value): self.vcjamged(31, value)
 
     def vcjamged(self, whichval, newvalue):
         """Deal with num stddev values"""
@@ -627,15 +739,15 @@ class GsEditDlg(QtWidgets.QDialog, ui_gseditdlg.Ui_gseditdlg):
             return
 
         diff = newvalue - self.currentvalues[whichval]
-        if abs(diff) < 0.1:
+        if abs(diff) < 0.01:
             return
 
-        incr = 0.1
+        incr = 0.01
         if diff < 0.0:
-            incr = -.1
+            incr = -.01
 
         while newvalue in self.currentvalues:
-            newvalue = round(newvalue + incr, 1)
+            newvalue = round(newvalue + incr, 2)
 
         # If we've run off either end, we'll have to go back to where we were
 

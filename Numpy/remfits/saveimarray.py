@@ -25,7 +25,7 @@ def getfilter(filename):
     """Get filter amd data from fits header"""
 
     global mydbname, tmpdir, dbase, dbcurs
-    
+
     if filename.isdecimal():
         if dbase is None:
             try:
@@ -160,6 +160,6 @@ if asfits:
         hdu.writeto(outfile, overwrite=True, checksum=True)
     except OSError:
         print("Could not write", outfile, file=sys.stderr)
-        sys.exit(200)   
+        sys.exit(200)
 else:
     np.save(outfile, ifdata)

@@ -14,12 +14,12 @@ import datetime
 import re
 import sys
 import parsetime
+import remfield
 
 parsearg = argparse.ArgumentParser(description='List available observations',
                                    formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-parsearg.add_argument('--database', type=str, default=remdefaults.default_database(), help='Database to use')
-parsearg.add_argument('--dates', type=str, help='From:to dates')
-parsearg.add_argument('--allmonth', type=str, help='All of given year-month as alternative to from/to date')
+remdefaults.parseargs(parsearg)
+parsetime.parseargs_daterange(parsearg)
 parsearg.add_argument('--objects', type=str, nargs='*', help='Objects to limit to')
 parsearg.add_argument('--dither', type=int, nargs='*', default=[0], help='Dither ID to limit to')
 parsearg.add_argument('--filter', type=str, nargs='*', help='filters to limit to')
@@ -28,14 +28,20 @@ parsearg.add_argument('--summary', action='store_true', help='Just summarise obj
 parsearg.add_argument('--idonly', action='store_true', help='Just give ids no other data')
 parsearg.add_argument('--fitsind', action='store_true', help='Show fits ind not obs ind')
 parsearg.add_argument('--hasfile', action='store_false', help='Only display obs which have FITS files')
+remfield.parseargs(parsearg)
 parsearg.add_argument('--debug', action='store_true', help='Display selection command')
 
 resargs = vars(parsearg.parse_args())
+remdefaults.getargs(resargs)
 
-dbname = resargs['database']
+fieldselect = ["rejreason is NULL"]
+try:
+    parsetime.getargs_daterange(resargs, fieldselect)
+except ValueError as e:
+    print(e.args[0], file=sys.stderr)
+    sys.exit(20)
+
 idonly = resargs['idonly']
-dates = resargs['dates']
-allmonth = resargs['allmonth']
 objlist = resargs['objects']
 dither = resargs['dither']
 filters = resargs['filter']
@@ -49,39 +55,16 @@ if idonly and summary:
     print("Cannot have both idonly and summary", file=sys.stderr)
     sys.exit(10)
 
-mydb = dbops.opendb(dbname)
+try:
+    remfield.getargs(resargs, fieldselect)
+except remfield.RemFieldError as e:
+    print(e.args[0], file=sys.stderr)
+    sys.exit(21) 
 
-dbcurs = mydb.cursor()
+mydb, dbcurs = remdefaults.opendb()
 
-fieldselect = ["rejreason is NULL"]
 if hasfile:
     fieldselect.append("ind!=0")
-
-if allmonth is not None:
-    mtch = re.match('(\d\d\d\d)-(\d+)$', allmonth)
-    if mtch is None:
-        print("Cannot understand allmonth arg " + allmonth, "expecting yyyy-mm", file=sys.stderr);
-        sys.exit(31)
-    smonth = allmonth + "-01"
-    fieldselect.append("date(date_obs)>='" + smonth + "'")
-    fieldselect.append("date(date_obs)<=date_sub(date_add('" + smonth + "',interval 1 month),interval 1 day)")
-elif dates is not None:
-    datesp = dates.split(':')
-    try:
-        if len(datesp) == 1:
-            fieldselect.append("date(date_obs)='" + parsetime.parsedate(dates) + "'")
-        elif len(datesp) != 2:
-            print("Don't understand whate date", dates, "is supposed to be", file=sys.stderr)
-            sys.exit(20)
-        else:
-            fd, td = datesp
-            if len(fd) != 0:
-                fieldselect.append("date(date_obs)>='" + parsetime.parsedate(fd) + "'")
-            if len(td) != 0:
-                fieldselect.append("date(date_obs)<='" + parsetime.parsedate(td) + "'")
-    except ValueError as e:
-        print(e.args[0])
-        sys.exit(20)
 
 if objlist is not None:
     qobj = [ "object='" + o + "'" for o in objlist]

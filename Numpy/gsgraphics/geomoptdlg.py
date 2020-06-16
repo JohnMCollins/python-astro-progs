@@ -10,7 +10,7 @@ class GeomOptDlg(QtWidgets.QDialog, ui_geomoptdlg.Ui_geomoptdlg):
     def __init__(self, parent=None):
         super(GeomOptDlg, self).__init__(parent)
         self.setupUi(self)
-    
+
     def copyin(self, name, geom):
         """Copy in and set up parameters"""
         self.geomname.setText(name)
@@ -39,4 +39,3 @@ class GeomOptDlg(QtWidgets.QDialog, ui_geomoptdlg.Ui_geomoptdlg):
         geom.height = self.height.value()
         geom.labsize = self.labsize.value()
         geom.ticksize = self.ticksize.value()
-

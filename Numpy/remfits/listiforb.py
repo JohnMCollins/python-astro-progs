@@ -14,93 +14,42 @@ import datetime
 import re
 import sys
 import parsetime
-
-
-def parsepair(arg, name, fslist, colname):
-    """Parse an argument pair of the form a:b with a and b optional and
-    generate a field selection thing for database."""
-
-    if arg is None:
-        return
-    # Bodge because it gets args starting with - wrong
-    if len(arg) > 2 and arg[1] == '-':
-        arg = arg[1:]
-    bits = arg.split(':')
-    if len(bits) != 2:
-        print("Cannot understand", name, "arg expection m:n with either number opptional", file=sys.stderr);
-        sys.exit(21)
-    lov, hiv = bits
-    if len(lov) != 0:
-        fslist.append(colname + ">=" + lov)
-    if len(hiv) != 0:
-        fslist.append(colname + "<=" + hiv)
-
+import remfield
 
 parsearg = argparse.ArgumentParser(description='List flat or bias',
                                    formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-parsearg.add_argument('--database', type=str, default=remdefaults.default_database(), help='Database to use')
-parsearg.add_argument('--dates', type=str, help='From:to dates')
-parsearg.add_argument('--allmonth', type=str, help='All of given year-month as alternative to from/to date')
+remdefaults.parseargs(parsearg)
+parsetime.parseargs_daterange(parsearg)
 parsearg.add_argument('--filter', type=str, nargs='*', help='filters to limit to')
 parsearg.add_argument('--type', type=str, default='any', help='Type wanted flat, bias, any')
 parsearg.add_argument('--gain', type=float, help='Restrict to given gain value')
-parsearg.add_argument('--minval', type=str, help='Minimum value to restrict to as m:n')
-parsearg.add_argument('--maxval', type=str, help='Maximum value to restrict to as m:n')
-parsearg.add_argument('--median', type=str, help='Median value to restrict to as m:n')
-parsearg.add_argument('--mean', type=str, help='Meanv value to restrict to as m:n')
-parsearg.add_argument('--std', type=str, help='Stde dev value to restrict to as m:n')
-parsearg.add_argument('--skew', type=str, help='Skew value to restrict to as m:n')
-parsearg.add_argument('--kurt', type=str, help='Kurtosis value to restrict to as m:n')
+remfield.parseargs(parsearg)
 parsearg.add_argument('--idonly', action='store_true', help='Just give ids no other data')
 
 resargs = vars(parsearg.parse_args())
-
-dbname = resargs['database']
-idonly = resargs['idonly']
-dates = resargs['dates']
-allmonth = resargs['allmonth']
-filters = resargs['filter']
-typereq = resargs['type']
-gain = resargs["gain"]
-minval = resargs['minval']
-maxval = resargs['maxval']
-medians = resargs['median']
-means = resargs['mean']
-stds = resargs['std']
-skews = resargs['skew']
-kurts = resargs['kurt']
-
-mydb = dbops.opendb(dbname)
-dbcurs = mydb.cursor()
+remdefaults.getargs(resargs)
 
 fieldselect = ["rejreason is NULL"]
 fieldselect.append("ind!=0")
 
-if allmonth is not None:
-    mtch = re.match('(\d\d\d\d)-(\d+)$', allmonth)
-    if mtch is None:
-        print("Cannot understand allmonth arg " + allmonth, "expecting yyyy-mm", file=sys.stderr);
-        sys.exit(31)
-    smonth = allmonth + "-01"
-    fieldselect.append("date(date_obs)>='" + smonth + "'")
-    fieldselect.append("date(date_obs)<=date_sub(date_add('" + smonth + "',interval 1 month),interval 1 day)")
-elif dates is not None:
-    datesp = dates.split(':')
-    try:
-        if len(datesp) == 1:
-            fieldselect.append("date(date_obs)='" + parsetime.parsedate(dates) + "'")
-        elif len(datesp) != 2:
-            print("Don't understand whate date", dates, "is supposed to be", file=sys.stderr)
-            sys.exit(20)
-        else:
-            fd, td = datesp
-            if len(fd) != 0:
-                fieldselect.append("date(date_obs)>='" + parsetime.parsedate(fd) + "'")
-            if len(td) != 0:
-                fieldselect.append("date(date_obs)<='" + parsetime.parsedate(td) + "'")
-    except ValueError as e:
-        print(e.args[0])
-        sys.exit(20)
+try:
+    parsetime.getargs_daterange(resargs, fieldselect)
+except ValueError as e:
+    print(e.args[0], file=sys.stderr)
+    sys.exit(20)
+
+try:
+    remfield.getargs(resargs, fieldselect)
+except remfield.RemFieldError as e:
+    print(e.args[0], file=sys.stderr)
+    sys.exit(21) 
+
+idonly = resargs['idonly']
+filters = resargs['filter']
+typereq = resargs['type']
+gain = resargs["gain"]
+
+mydb, dbcurs = remdefaults.opendb()
 
 if filters is not None:
     qfilt = [ "filter='" + o + "'" for o in filters]
@@ -113,14 +62,6 @@ elif typereq[0] == 'b':
 
 if gain is not None:
     fieldselect.append("ABS(gain-%.3g) < %.3g" % (gain, gain * 1e-3))
-
-parsepair(minval, "minval", fieldselect, "minv")
-parsepair(maxval, "maxval", fieldselect, "maxv")
-parsepair(medians, "median", fieldselect, "median")
-parsepair(means, "mean", fieldselect, "mean")
-parsepair(stds, "std", fieldselect, "std")
-parsepair(skews, "skew", fieldselect, "skew")
-parsepair(kurts, "kurtosis", fieldselect, "kurt")
 
 sel = ""
 

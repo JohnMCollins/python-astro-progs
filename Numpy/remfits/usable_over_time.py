@@ -27,10 +27,9 @@ import remdefaults
 rg = remgeom.load()
 
 parsearg = argparse.ArgumentParser(description='Display usable rows/cols over time', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-parsearg.add_argument('--database', type=str, default=remdefaults.default_database(), help='Database to use')
+remdefaults.parseargs(parsearg)
+parsetime.parseargs_daterange(parsearg)
 parsearg.add_argument('--filter', type=str, required=True, help='Filter to display for')
-parsearg.add_argument('--dates', type=str, help='Dates to select between')
-parsearg.add_argument('--allmonth', type=str, help='All of given year-month as alternative')
 parsearg.add_argument('--title', type=str, default='Usable rows and columns', help='Title for plot')
 parsearg.add_argument('--rowcolour', type=str, default='b', help='Colour for row display')
 parsearg.add_argument('--colcolour', type=str, default='g', help='Colour for column display')
@@ -39,11 +38,9 @@ parsearg.add_argument('--dayint', type=int, help='Interval between dates')
 rg.disp_argparse(parsearg)
 
 resargs = vars(parsearg.parse_args())
-dbname = resargs['database']
+remdefaults.getargs(resargs)
 title = resargs['title']
 filter = resargs['filter']
-dates = resargs['dates']
-allmonth = resargs['allmonth']
 title = resargs['title']
 plegend = resargs['legends']
 rowcolour = resargs['rowcolour']
@@ -51,37 +48,16 @@ colcolour = resargs['colcolour']
 dayint = resargs['dayint']
 ofig = rg.disp_getargs(resargs)
 
-mydb = dbops.opendb(dbname)
-dbcurs = mydb.cursor()
+mydb, dbcurs = remdefaults.opendb()
 fieldselect = ["rejreason is NULL"]
 fieldselect.append("ind!=0")
 fieldselect.append("filter=" + mydb.escape(filter))
 
-if allmonth is not None:
-    mtch = re.match('(\d\d\d\d)-(\d+)$', allmonth)
-    if mtch is None:
-        print("Cannot understand allmonth arg " + allmonth, "expecting yyyy-mm", file=sys.stderr);
-        sys.exit(31)
-    smonth = allmonth + "-01"
-    fieldselect.append("date(date_obs)>='" + smonth + "'")
-    fieldselect.append("date(date_obs)<=date_sub(date_add('" + smonth + "',interval 1 month),interval 1 day)")
-elif dates is not None:
-    datesp = dates.split(':')
-    try:
-        if len(datesp) == 1:
-            fieldselect.append("date(date_obs)='" + parsedarg.parsedate(dates) + "'")
-        elif len(datesp) != 2:
-            print("Don't understand whate date", dates, "is supposed to be", file=sys.stderr)
-            sys.exit(20)
-        else:
-            fd, td = datesp
-            if len(fd) != 0:
-                fieldselect.append("date(date_obs)>='" + parsedarg.parsedate(fd) + "'")
-            if len(td) != 0:
-                fieldselect.append("date(date_obs)<='" + parsedarg.parsedate(td) + "'")
-    except ValueError as e:
-        print(e.args[0])
-        sys.exit(20)
+try:
+    parsetime.getargs_daterange(resargs, fieldselect)
+except ValueError as e:
+    print(e.args[0], file=sys.stderr)
+    sys.exit(20)
 
 datelist = []
 rows = []
@@ -107,8 +83,12 @@ maxdate = datelist.max()
 
 order = datelist.argsort()
 datelist = datelist[order]
-rpws = rows[order]
+rows = rows[order]
 cols = cols[order]
+msk = np.append([True], np.diff(datelist, 1) != 0)
+datelist = datelist[msk]
+rows = rows[msk]
+cols = cols[msk]
 
 plotfigure = rg.plt_figure()
 
