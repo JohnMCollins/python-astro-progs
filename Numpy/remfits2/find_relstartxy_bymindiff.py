@@ -8,14 +8,12 @@ import miscutils
 import arrayfiles
 import numpy as np
 
-parsearg = argparse.ArgumentParser(description='Match up relative startx/starty between two tallied/ms arrays', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+parsearg = argparse.ArgumentParser(description='Match up relative startx/starty between two tallied/ms arrays v2', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 parsearg.add_argument('files', nargs=2, type=str, help='File A and file B with :plene number if 3-D')
-remdefaults.parseargs(parsearg, inlib=False, tempdir=False, database=False)
-parsearg.add_argument('--percentile', type=float, default=90, help='Percent above which we take as exceptional')
+remdefaults.parseargs(parsearg, inlib=False, tempdir=False)
 parsearg.add_argument('--offlim', type=int, default=100, help='Limits of offsets"')
 resargs = vars(parsearg.parse_args())
 files = resargs['files']
-percentile = resargs['percentile']
 remdefaults.getargs(resargs)
 offlim = resargs['offlim']
 
@@ -26,15 +24,8 @@ except arrayfiles.ArrayFileError as e:
     print(e.args[0], file=sys.stderr)
     sys.exit(20)
 
-perca = np.percentile(arra, percentile)
-percb = np.percentile(arrb, percentile)
-print("array a percentile", perca, "array b", percb)
-
-bina = arra >= perca
-binb = arrb >= percb
-
-rowsa, colsa = bina.shape
-rowsb, colsb = binb.shape
+rowsa, colsa = arra.shape
+rowsb, colsb = arrb.shape
 
 results = []
 
@@ -44,18 +35,24 @@ for rowoff in range(-offlim, offlim + 1):
     commr = min(rowsa - arstart, rowsb - brstart)
     arend = arstart + commr
     brend = brstart + commr
-    asub = bina[arstart:arend]
-    bsub = binb[brstart:brend]
+    asub = arra[arstart:arend]
+    bsub = arrb[brstart:brend]
     for coloff in range(-offlim, offlim + 1):
         acstart = max(0, -coloff)
         bcstart = max(0, coloff)
         commc = min(colsa - acstart, colsb - bcstart)
         acend = acstart + commc
         bcend = bcstart + commc
-        totm = np.count_nonzero(asub[:, acstart:acend] & bsub[:, bcstart:bcend])
-        if totm != 0:
-            results.append((totm, commr * commc, rowoff, coloff))
+        totm = np.sum(np.abs(asub[:, acstart:acend] - bsub[:, bcstart:bcend]))
+        numb = commr * commc
+        results.append((totm / numb, totm, numb, rowoff, coloff))
 
-results.sort(key=lambda x: x[0] / x[1])
-for totm, els, row, col in results:
-    print("%3d %6d %4d %4d" % (totm, els, row, col))
+print("By prop")
+results.sort(key=lambda x: x[0], reverse=True)
+for prop, totm, els, row, col in results[-10:]:
+    print("%8.4f %3d %6d %4d %4d" % (prop, totm, els, row, col))
+
+print("By total")
+results.sort(key=lambda x: x[1], reverse=True)
+for prop, totm, els, row, col in results[-10:]:
+    print("%8.4f %3d %6d %4d %4d" % (prop, totm, els, row, col))

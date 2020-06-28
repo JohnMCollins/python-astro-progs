@@ -49,7 +49,7 @@ def fixtty(f):
 rg = remgeom.load()
 parsearg = argparse.ArgumentParser(description='Highlight bias values with extremes in diff colour', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 parsearg.add_argument('files', type=str, nargs='+', help='File names to display (or FITS its)')
-remdefaults.parseargs(parsearg)
+remdefaults.parseargs(parsearg, tempdir=False)
 parsearg.add_argument('--title', type=str, default="Extremes display", help="Title for each plot")
 parsearg.add_argument('--xlabel', type=str, default="Column number", help="X xxis label")
 parsearg.add_argument('--ylabel', type=str, default="Row number", help="Y xxis label")
@@ -63,6 +63,8 @@ parsearg.add_argument('--histxlab', type=str, default='Value', help='Label for h
 parsearg.add_argument('--histylab', type=str, default='Occurences of value', help='Label for histogram Y axis')
 parsearg.add_argument('--addsk', action='store_false', help='Add stats to histogram title')
 parsearg.add_argument('--detach', action='store_true', help='Detaach as child process actter checking args')
+parsearg.add_argument('--xlim', type=str, help='X limits for initial plot')
+parsearg.add_argument('--ylim', type=str, help='Y limits for initial plot')
 rg.disp_argparse(parsearg, "dwin")
 
 resargs = vars(parsearg.parse_args())
@@ -90,6 +92,28 @@ histylab = resargs['histylab']
 histtitle = resargs['histtitle']
 addsk = resargs['addsk']
 detach = resargs['detach']
+xlim = resargs['xlim']
+ylim = resargs['ylim']
+if xlim is not None:
+    xlb = xlim.split(':')
+    if len(xlb) != 2:
+        print("Exepecting x limit to be bounds pair not", xlim, file=sys.stderr)
+        sys.exit(30)
+    try:
+        xlim = [ int(x) for x in xlb ]
+    except ValueError:
+        print("Exepecting x limit to be integers nott", xlim, file=sys.stderr)
+        sys.exit(31)
+if ylim is not None:
+    ylb = ylim.split(':')
+    if len(ylb) != 2:
+        print("Exepecting y limit to be bounds pair not", ylim, file=sys.stderr)
+        sys.exit(30)
+    try:
+        ylim = [ int(y) for y in ylb ]
+    except ValueError:
+        print("Exepecting y limit to be integers nott", ylim, file=sys.stderr)
+        sys.exit(31)
 
 if hvcolour is None:
     hvcolour = []
@@ -202,6 +226,10 @@ for file in files:
         bins[0] = dat.min()
     
     norm = colors.BoundaryNorm(bins, cmap.N)
+    if xlim is not None:
+        plt.xlim(*xlim)
+    if ylim is not None:
+        plt.ylim(*ylim)
     img = plt.imshow(dat, cmap=cmap, norm=norm, origin='lower')
     plt.colorbar(img, norm=norm, cmap=cmap, boundaries=bins, ticks=bins)
 

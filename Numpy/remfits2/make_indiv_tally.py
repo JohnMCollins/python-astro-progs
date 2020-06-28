@@ -12,7 +12,7 @@ import remfitshdr
 
 parsearg = argparse.ArgumentParser(description='Gather tally of statistics from arbitrary fits filts limiter to filter and type', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 parsearg.add_argument('fitsids', nargs='+', type=int, help='List of FITS ids')
-remdefaults.parseargs(parsearg)
+remdefaults.parseargs(parsearg, tempdir=False, inlib=False)
 parsearg.add_argument('--outfile', required=True, type=str, help='Result file')
 parsearg.add_argument('--force', action='store_true', help='OK to overwrite existing file')
 parsearg.add_argument('--inlib', action='store_true', help='Load and store in library return than CWD by default')
@@ -21,10 +21,7 @@ resargs = vars(parsearg.parse_args())
 fitsids = resargs['fitsids']
 remdefaults.getargs(resargs)
 force = resargs['force']
-outfile = resargs['outfile']
-
-if resargs['inlib']:
-    outfile = remdefaults.libfile(outfile)
+outfile = remdefaults.libfileresargs['outfile'])
 
 fitsdone = dict()
 if os.path.exists(outfile) and not force:

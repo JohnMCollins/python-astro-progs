@@ -16,11 +16,10 @@ warnings.simplefilter('ignore', RuntimeWarning)
 
 parsearg = argparse.ArgumentParser(description='Extract required segment of tally file', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 parsearg.add_argument('tfile', type=str, nargs=1, help='Input processed tally file')
-remdefaults.parseargs(parsearg)
+remdefaults.parseargs(parsearg, tempdir=False)
 parsearg.add_argument('--outfile', type=str, required=True, help='Output file')
 parsearg.add_argument('--force', action='store_true', help='Force if file exists')
 parsearg.add_argument('--which', required=True, type=str, choices=['m', 's'], help='Choose m for mean or s for std dev')
-parsearg.add_argument('--inlib', action='store_false', help='Load and store in library return than CWD by default')
 parsearg.add_argument('--nocheck', action='store_true', help='Do not check dimensions of array"')
 
 resargs = vars(parsearg.parse_args())
@@ -31,11 +30,8 @@ force = resargs['force']
 which = resargs['which']
 nocheck = resargs['nocheck']
 
-tfile = miscutils.addsuffix(tfile, '.npy')
-outfile = miscutils.addsuffix(outfile, '.npy')
-if resargs['inlib']:
-    tfile = remdefaults.libfile(tfile)
-    outfile = remdefaults.libfile(outfile)
+tfile = remdefaults.libfile(miscutils.addsuffix(tfile, '.npy'))
+outfile = remdefaults.libfile(miscutils.addsuffix(outfile, '.npy'))
 
 if os.path.exists(outfile) and not force:
     print("Will not overwrite existing", outfile, "use --force if needed", file=sys.stderr)

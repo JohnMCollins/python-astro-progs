@@ -11,11 +11,13 @@ import numpy as np
 parsearg = argparse.ArgumentParser(description='Match up relative startx/starty between two tallied/ms arrays', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 parsearg.add_argument('files', nargs=2, type=str, help='File A and file B with :plene number if 3-D')
 remdefaults.parseargs(parsearg, inlib=False, tempdir=False, database=False)
-parsearg.add_argument('--percentile', type=float, default=90, help='Percent above which we take as exceptional')
+parsearg.add_argument('--anstd', type=float, default=5, help='Number of std devs in file A above which we take as exceptional')
+parsearg.add_argument('--bnstd', type=float, default=5, help='Number of std devs in file A above which we take as exceptional')
 parsearg.add_argument('--offlim', type=int, default=100, help='Limits of offsets"')
 resargs = vars(parsearg.parse_args())
 files = resargs['files']
-percentile = resargs['percentile']
+anstd = resargs['anstd']
+bnstd = resargs['bnstd']
 remdefaults.getargs(resargs)
 offlim = resargs['offlim']
 
@@ -26,12 +28,8 @@ except arrayfiles.ArrayFileError as e:
     print(e.args[0], file=sys.stderr)
     sys.exit(20)
 
-perca = np.percentile(arra, percentile)
-percb = np.percentile(arrb, percentile)
-print("array a percentile", perca, "array b", percb)
-
-bina = arra >= perca
-binb = arrb >= percb
+bina = arra >= arra.mean() + anstd * arra.std()
+binb = arrb >= arrb.mean() + bnstd * arrb.std()
 
 rowsa, colsa = bina.shape
 rowsb, colsb = binb.shape

@@ -12,21 +12,18 @@ import parsetime
 import remfield
 
 parsearg = argparse.ArgumentParser(description='Gather tally of statistics for CCD array', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-remdefaults.parseargs(parsearg)
+remdefaults.parseargs(parsearg, tempdir=False)
 parsetime.parseargs_daterange(parsearg)
 remfield.parseargs(parsearg)
 parsearg.add_argument('--type', type=str, default='obs', choices=('obs', 'flat', 'bias'), help='What kind of file tp process#')
 parsearg.add_argument('--create', action='store_true', help='Expecting to create file rather than append to existing file')
 parsearg.add_argument('--prefix', required=True, type=str, help='Result file prefix')
-parsearg.add_argument('--inlib', action='store_false', help='Load and store in library return than CWD by default')
 
 resargs = vars(parsearg.parse_args())
 remdefaults.getargs(resargs)
 create = resargs['create']
 prefix = resargs['prefix']
 ftype = resargs['type']
-inlib = resargs['inlib']
-
 fieldselect = []
 try:
     parsetime.getargs_daterange(resargs, fieldselect)
@@ -42,11 +39,8 @@ except remfield.RemFieldError as e:
 
 prefix = miscutils.removesuffix(miscutils.removesuffix(prefix, '.fitsids'), '.npy')
 
-fitsidfn = prefix + '.fitsids'
-tallyfn = prefix + '.npy'
-if inlib:
-    fitsidfn = remdefaults.libfile(fitsidfn)
-    tallyfn = remdefaults.libfile(tallyfn)
+fitsidfn = remdefaults.libfile(prefix + '.fitsids')
+tallyfn = remdefaults.libfile(prefix + '.npy')
 
 fitsids = dict()
 

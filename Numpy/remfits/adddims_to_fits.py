@@ -1,0 +1,60 @@
+#!  /usr/bin/env python3
+
+# Add dimensions to saved fits files
+
+from astropy.utils.exceptions import AstropyWarning, AstropyUserWarning
+from astropy.io import fits
+import argparse
+import warnings
+import sys
+import remdefaults
+import io
+import gzip
+
+# Shut up warning messages
+
+warnings.simplefilter('ignore', AstropyWarning)
+warnings.simplefilter('ignore', AstropyUserWarning)
+warnings.simplefilter('ignore', UserWarning)
+
+parsearg = argparse.ArgumentParser(description='Work through FITS files and add startX/Y endX/Y fields', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+remdefaults.parseargs(parsearg, inlib=False, libdir=False, tempdir=False)
+resargs = vars(parsearg.parse_args())
+remdefaults.getargs(resargs)
+
+mydb, dbcurs = remdefaults.opendb()
+
+dbcurs.execute("SELECT ind,rows,cols,startx,starty FROM fitsfile WHERE startx!=0 OR starty!=0")
+dbrows = dbcurs.fetchall()
+
+nfits = len(dbrows)
+if nfits == 0:
+    print("No FITS files to process", file=sys.stderr)
+    sys.exit(1)
+    
+ndone = 0
+
+for dbrow in dbrows:
+    ind, rows, cols, startx, starty = dbrow
+    dbcurs.execute("SELECT fitsgz FROM fitsfile WHERE ind=" + str(ind))
+    fitsgz = dbcurs.fetchone()[0]    
+    unc = gzip.decompress(fitsgz)
+    ff = fits.open(io.BytesIO(unc), memmap=False, lazy_load_hdus=False)
+    hdr = ff[0].header
+    dat = ff[0].data
+    ff.close()
+    hdr['startX'] = (startx, 'Starting CCD pixel column')
+    hdr['endX'] = (startx + cols, 'Ending CCD pixel column+1')
+    hdr['startY'] = (starty, 'Starting CCD pixel row')
+    hdr['endY'] = (starty + rows, 'Ending CCD pixel row+1')
+    hdu = fits.PrimaryHDU(dat, hdr)
+    mm = io.BytesIO()
+    hdu.writeto(mm)
+    fitsgz = gzip.compress(mm.getvalue())
+    dbcurs.execute("UPDATE fitsfile SET fitsgz=%s WHERE ind=" + str(ind), (fitsgz,))
+    ndone += 1
+    if ndone % 100 == 0:
+        print("Reached %d of %d: %.2f%%" % (ndone, nfits, ndone / nfits * 100.0), file=sys.stderr)
+        mydb.commit()
+
+mydb.commit()

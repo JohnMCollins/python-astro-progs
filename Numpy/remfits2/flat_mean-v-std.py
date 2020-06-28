@@ -99,7 +99,7 @@ def pressed(event):
 rg = remgeom.load()
 
 parsearg = argparse.ArgumentParser(description='Plot std deviation versus mean of daily flats with trims', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-remdefaults.parseargs(parsearg)
+remdefaults.parseargs(parsearg, libdir=False, tempdir=False)
 parsetime.parseargs_daterange(parsearg)
 parsearg.add_argument('--limits', type=str, help='Lower:upper limit of means')
 parsearg.add_argument('--trims', type=int, default=0, help='Amount to trim off each side')

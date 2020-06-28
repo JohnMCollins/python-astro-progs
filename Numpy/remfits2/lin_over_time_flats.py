@@ -32,7 +32,7 @@ rg = remgeom.load()
 
 parsearg = argparse.ArgumentParser(description='Plot linearity over time of daily flats with trims', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 remdefaults.parseargs(parsearg)
-parsetime.parseargs_daterange(parsearg)
+parsetime.parseargs_daterange(parsearg, libdir=False, tempdir=False)
 parsearg.add_argument('--limits', type=str, help='Lower:upper limit of means')
 parsearg.add_argument('--trims', type=int, default=0, help='Amount to trim off each side')
 parsearg.add_argument('--clipstd', type=float, help='Clip std devs this multiple different from std dev of std devs')
