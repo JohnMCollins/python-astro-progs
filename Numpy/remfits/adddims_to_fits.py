@@ -11,6 +11,7 @@ import remdefaults
 import io
 import gzip
 import datetime
+import pymysql
 
 # Shut up warning messages
 
@@ -35,6 +36,7 @@ if nfits == 0:
     
 ndone = 0
 nalready = 0
+nnew = 0
 starttime = datetime.datetime.now()
 
 for dbrow in dbrows:
@@ -57,7 +59,14 @@ for dbrow in dbrows:
         mm = io.BytesIO()
         hdu.writeto(mm)
         fitsgz = gzip.compress(mm.getvalue())
-        dbcurs.execute("UPDATE fitsfile SET fitsgz=%s WHERE ind=" + str(ind), (fitsgz,))
+        try:
+            dbcurs.execute("UPDATE fitsfile SET fitsgz=%s WHERE ind=" + str(ind), (fitsgz,))
+        except pymysql.err.OperationalError:
+            print("DATABASE aborted", file=sys.stderr)
+            sys.exit(200)
+        if nnew == 0:
+            newtime = datetime.datetime.now()
+        nnew += 1
     ndone += 1
     if ndone % 100 == 0:
         propdone = ndone / nfits
