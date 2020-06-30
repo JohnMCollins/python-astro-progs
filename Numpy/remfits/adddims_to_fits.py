@@ -65,17 +65,17 @@ for dbrow in dbrows:
         ctime = datetime.datetime.now()
         tdiff = ctime - starttime
         rate = ndone / tdiff.total_seconds()
-        print("Rate %.2f per sec elapsed" % rate, end=' ', file=sys.stderr)
+        print("Rate %.2f per sec" % rate, end=' ', file=sys.stderr)
         daysd = tdiff.days
         if daysd != 0:
-            print("%d days" % daysd, end='', file=sys.stderr)
+            print("%d days" % daysd, end=' ', file=sys.stderr)
             tdiff -= datetime.timedelta(days=daysd)
         hoursd = tdiff.seconds // 3600
         tdiff -= datetime.timedelta(hours=hoursd)
         minsd = tdiff.seconds // 60
         tdiff -= datetime.timedelta(minutes=minsd)
         secsd = tdiff.total_seconds()
-        print("%dh %dm %.2fs" % (hoursd, minsd, secsd), end='', file=sys.stderr)
+        print("%dh %dm %.2fs" % (hoursd, minsd, secsd), end=' ', file=sys.stderr)
         ediff = datetime.timedelta(seconds=todo / rate)
         eta = ctime + ediff
         print(eta.strftime("ETA %d/%m/%Y %H:%M:%S"), file=sys.stderr)
