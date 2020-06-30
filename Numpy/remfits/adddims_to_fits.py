@@ -65,7 +65,7 @@ for dbrow in dbrows:
         ctime = datetime.datetime.now()
         tdiff = ctime - starttime
         rate = ndone / tdiff.total_seconds()
-        print("Rate %.2f per sec" % rate, end=' ', file=sys.stderr)
+        print("Rate %.2f/s" % rate, end=' ', file=sys.stderr)
         daysd = tdiff.days
         if daysd != 0:
             print("%d days" % daysd, end=' ', file=sys.stderr)
