@@ -60,8 +60,8 @@ for dbrow in dbrows:
         dbcurs.execute("UPDATE fitsfile SET fitsgz=%s WHERE ind=" + str(ind), (fitsgz,))
     ndone += 1
     if ndone % 100 == 0:
-        todo = ndone / nfits
-        print("Reached %d of %d: %.2f%%" % (ndone, nfits, todo * 100.0), end=' ', file=sys.stderr)
+        propdone = ndone / nfits
+        print("Reached %d of %d: %.2f%%" % (ndone, nfits, propdone * 100.0), end=' ', file=sys.stderr)
         ctime = datetime.datetime.now()
         tdiff = ctime - starttime
         rate = ndone / tdiff.total_seconds()
@@ -76,8 +76,8 @@ for dbrow in dbrows:
         tdiff -= datetime.timedelta(minutes=minsd)
         secsd = tdiff.total_seconds()
         print("%dh %dm %.2fs" % (hoursd, minsd, secsd), end=' ', file=sys.stderr)
-        ediff = datetime.timedelta(seconds=todo / rate)
-        eta = ctime + ediff
+        ediff = datetime.timedelta(seconds=(nfits - ndone) / rate)
+        eta = starttime + ediff
         print(eta.strftime("ETA %d/%m/%Y %H:%M:%S"), file=sys.stderr)
         mydb.commit()
 
