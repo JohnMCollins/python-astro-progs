@@ -20,22 +20,36 @@ GetOptions("database=s" => \$base, "remir" => \$plusremir, "verbose" => \$verbos
 
 my $dbase = dbops::opendb($base) or die "Cannot open DB $base";
 
-if ($plusremir)  {
-	$plusremir = "";
+# Get specific IDs
+
+my @fields;
+push @fields, "ind=0";  # Always have that don't get things we've got
+
+if ($#ARGV >= 0) {
+	my @ois = map { "obsind=" . $_  } @ARGV;
+	if ($#ois == 0) {
+		push @fields, $ois[0];
+	}
+	else {
+		push @fields, "(" . join(" OR ", @ois) . ")";
+	}
 }
-else {
-	$plusremir = " dithID=0 AND";  
+else  {
+	push @fields, "dithID=0" unless $plusremir;
+	push @fields, "rejreason IS NULL";
 }
 
+my $selection = join(" AND ", @fields);
+
 if ($verbose)  {
-	$sfh = $dbase->prepare("SELECT COUNT(*) FROM obsinf WHERE$plusremir ind=0 AND rejreason IS NULL");
+	$sfh = $dbase->prepare("SELECT COUNT(*) FROM obsinf WHERE $selection");
     $sfh->execute;
     my $row = $sfh->fetchrow_arrayref();
     my ($limit) = @$row;
 	$prog = progress->new(-limit => $limit);
 }
 
-$sfh = $dbase->prepare("SELECT ffname,dithID,obsind FROM obsinf WHERE$plusremir ind=0 AND rejreason IS NULL ORDER by date_obs");
+$sfh = $dbase->prepare("SELECT ffname,dithID,obsind FROM obsinf WHERE $selection ORDER by date_obs");
 $sfh->execute;
 
 $root_url = 'http://ross.iasfbo.inaf.it';

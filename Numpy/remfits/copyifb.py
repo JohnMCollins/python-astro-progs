@@ -10,14 +10,16 @@ import sys
 import remdefaults
 import argparse
 
+
 def insert_row(typ, row):
 	"""Insert row into my copy of database"""
 	global mycurs, destfields
 	global rowsadded
-	filter, dateobs, mjddate, exptime, fname = row
+	serial, filter, dateobs, mjddate, exptime, fname = row
 	if filter not in 'griz':
 		return
 	destvals = []
+	destvals.append("%d" % serial)
 	destvals.append("'" + typ + "'")
 	destvals.append("'" + filter + "'")
 	destvals.append(dateobs.strftime("'%Y-%m-%d %H:%M:%S'"))
@@ -33,6 +35,7 @@ def insert_row(typ, row):
 	destvals = "(" + ','.join(destvals) + ")"
 	mycurs.execute(destfields + destvals)
 	rowsadded += 1
+
 
 remdb = dbops.opendb('rdotsquery')
 
@@ -57,6 +60,7 @@ remcurs = remdb.cursor()
 mycurs = mydb.cursor()
 
 destfields = []
+destfields.append('serial')
 destfields.append('typ')
 destfields.append('filter')
 destfields.append('date_obs')
@@ -66,7 +70,7 @@ destfields.append('fname')
 destfields.append('ffname')
 
 destfields = "INSERT INTO iforbinf (" + ','.join(destfields) + ") VALUES"
-obsfields = "SELECT filter,date_obs,mjdobs,exptime,fname FROM "
+obsfields = "SELECT serial,filter,date_obs,mjdobs,exptime,fname FROM "
 
 # Get the latest date we have copies of
 

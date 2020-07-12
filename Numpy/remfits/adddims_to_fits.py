@@ -33,7 +33,7 @@ nfits = len(dbrows)
 if nfits == 0:
     print("No FITS files to process", file=sys.stderr)
     sys.exit(1)
-    
+
 ndone = 0
 nalready = 0
 nnew = 0
@@ -42,7 +42,7 @@ starttime = datetime.datetime.now()
 for dbrow in dbrows:
     ind, rows, cols, startx, starty = dbrow
     dbcurs.execute("SELECT fitsgz FROM fitsfile WHERE ind=" + str(ind))
-    fitsgz = dbcurs.fetchone()[0]    
+    fitsgz = dbcurs.fetchone()[0]
     unc = gzip.decompress(fitsgz)
     ff = fits.open(io.BytesIO(unc), memmap=False, lazy_load_hdus=False)
     hdr = ff[0].header

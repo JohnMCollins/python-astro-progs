@@ -63,6 +63,7 @@ parsearg.add_argument('--histxlab', type=str, default='Pixel value', help='Label
 parsearg.add_argument('--histylab', type=str, default='Occurences of value', help='Label for histogram Y axis')
 parsearg.add_argument('--addsk', action='store_false', help='Add stats to histogram title')
 parsearg.add_argument('--detach', action='store_true', help='Detaach as child process actter checking args')
+parsearg.add_argument('--nofn', action='store_true', help='Do not look file name in header')
 rg.disp_argparse(parsearg, "dwin")
 
 resargs = vars(parsearg.parse_args())
@@ -90,6 +91,7 @@ histylab = resargs['histylab']
 histtitle = resargs['histtitle']
 addsk = resargs['addsk']
 detach = resargs['detach']
+nofn = resargs['nofn']
 
 gsdets = rg.get_greyscale(greyscalename)
 if gsdets is None:
@@ -146,16 +148,16 @@ for file in files:
                 continue
         else:
             try:
-                ff = fits.open(os.path.join(origdir, file))
+                ff = fits.open(file)
             except OSError as e:
                 print("Cannot open", file, e.strerror, file=sys.stderr)
                 continue
         try:
-            rfh = remfitshdr.RemFitsHdr(ff[0].header)
+            rfh = remfitshdr.RemFitsHdr(ff[0].header, nofn=nofn)
         except remfitshdr.RemFitsHdrErr as e:
             print("Problem with file", file, "error was", e.args[0])
             continue
-        
+
         dat = trimarrays.trimzeros(trimarrays.trimnan(ff[0].data.astype(np.float64)))
         ff.close()
 

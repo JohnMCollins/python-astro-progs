@@ -42,7 +42,7 @@ try:
     remfield.getargs(resargs, fieldselect)
 except remfield.RemFieldError as e:
     print(e.args[0], file=sys.stderr)
-    sys.exit(21) 
+    sys.exit(21)
 
 idonly = resargs['idonly']
 filters = resargs['filter']

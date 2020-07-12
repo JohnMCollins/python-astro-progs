@@ -17,25 +17,31 @@ my $prefix = "fits";
 my $suffix = "fits.gz";
 my $help;
 my $verbose;
+my $obsind;
+my $iforbind;
 my $n = 1;
 my $prec = 3;
 my $dbname = remdefaults::default_database;
 
 GetOptions("database=s" => \$dbname, "prefix=s" => \$prefix, "suffix=s" => \$suffix,
+           "obsind" => \$obsind, "iforbind" => \$iforbind,
             "digits=i" => \$prec, "verbose" => \$verbose, "start=i" => \$n, "help" => \$help) or pod2usage(2);
 pod2usage(-exitval => 0, -verbose => 2) if $help;
 
 #if ($help)  {
 #    print STDERR <<EOF;
-# $0 [--help] [--prefix=string] [--suffix=string] [--digits=n] [--start=n] fitsids
+# $0 [--help] [--prefix=string] [--suffix=string] [--digits=n] [--start=n] [--obsind] [--iforbind] fitsids
 
 # Files are extracted with given prefix and suffix and n digit zero-filled numbers.
 # n defaults to 3, prefix to fits and suffix to fits.gz
 # Numbering starts by the higher of the given number and first unused file name.
 # Fits ids are given by listobs.
+# Or select obsinds with --obsind or iforbinds with --iforbind
 # EOF
 #     exit 0;
 #
+
+die "Cannot specify both --iforbind and --obsind" if $obsind && $iforbind;
 
 if ($prefix =~ m;(.*)/(.*)$;) {
     chdir $1 or die "Cannot find directory $1";
@@ -53,11 +59,23 @@ for my $ef (glob('*.fits.gz *.fits')) {
         $nefiles++;
     }
 }
+
+my $selection;
+if ($obsind) {
+	$selection = "fitsfile.fitsgz FROM obsinf INNER JOIN fitsfile WHERE obsinf.ind=fitsfile.ind AND obsinf.obsind=";
+}
+elsif ($iforbind) {
+	$selection = "fitsfile.fitsgz FROM iforbinf INNER JOIN fitsfile WHERE iforbinf.ind=fitsfile.ind AND iforbinf.iforbind=";
+}
+else {
+	$selection = "fitsgz FROM fitsfile WHERE ind=";
+}
+
 my $dbase = dbops::opendb($dbname) or die "Cannot open DB $dbname";
 
 for my $id (@ARGV) {
     my $nid = $id + 0;
-    my $sfh = $dbase->prepare("SELECT fitsgz FROM fitsfile WHERE ind=$nid");
+    my $sfh = $dbase->prepare("SELECT $selection$nid");
     $sfh->execute;
     my $row = $sfh->fetchrow_arrayref;
     unless ($row) {

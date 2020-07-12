@@ -59,7 +59,7 @@ try:
     remfield.getargs(resargs, fieldselect)
 except remfield.RemFieldError as e:
     print(e.args[0], file=sys.stderr)
-    sys.exit(21) 
+    sys.exit(21)
 
 mydb, dbcurs = remdefaults.opendb()
 
@@ -98,16 +98,19 @@ else:
 if debug:
     print(sel, file=sys.stderr)
 dbcurs.execute(sel)
-if idonly:
-    n = 0
-    if fitsind: n = 1
-    for row in dbcurs.fetchall():
-        print(row[n])
-elif summary:
-    for row in dbcurs.fetchall():
-        print("%-10s\t%d" % row)
-else:
-    for row in dbcurs.fetchall():
-        obsind, ind, dat, obj, filt, dith = row
-        if fitsind: obsind = ind
-        print("%d\t%s\t%s\t%s\t%d" % (obsind, dat.strftime("%Y-%m-%d %H:%M:%S"), obj, filt, dith))
+try:
+    if idonly:
+        n = 0
+        if fitsind: n = 1
+        for row in dbcurs.fetchall():
+            print(row[n])
+    elif summary:
+        for row in dbcurs.fetchall():
+            print("%-10s\t%d" % row)
+    else:
+        for row in dbcurs.fetchall():
+            obsind, ind, dat, obj, filt, dith = row
+            if fitsind: obsind = ind
+            print("%d\t%s\t%s\t%s\t%d" % (obsind, dat.strftime("%Y-%m-%d %H:%M:%S"), obj, filt, dith))
+except (BrokenPipeError, KeyboardInterrupt):
+    sys.exit(0)

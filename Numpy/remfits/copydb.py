@@ -10,12 +10,14 @@ import sys
 import remdefaults
 import argparse
 
+
 def insert_row(row):
 	"""Insert row into my copy of database"""
 	global mycurs, destfields
 	global rowsadded
-	radeg, decdeg, object, dithid, filter, dateobs, mjddate, exptime, fname, ffname = row
+	serial, radeg, decdeg, object, dithid, filter, dateobs, mjddate, exptime, fname, ffname = row
 	destvals = []
+	destvals.append("%d" % serial)
 	destvals.append("%.16e" % radeg)
 	destvals.append("%.16e" % decdeg)
 	destvals.append("'" + object + "'")
@@ -29,6 +31,7 @@ def insert_row(row):
 	destvals = "(" + ','.join(destvals) + ")"
 	mycurs.execute(destfields + destvals)
 	rowsadded += 1
+
 
 remdb = dbops.opendb('rdots')
 
@@ -53,6 +56,7 @@ remcurs = remdb.cursor()
 mycurs = mydb.cursor()
 
 destfields = []
+destfields.append('serial')
 destfields.append('radeg')
 destfields.append('decdeg')
 destfields.append('object')
@@ -65,7 +69,7 @@ destfields.append('fname')
 destfields.append('ffname')
 
 destfields = "INSERT INTO obsinf (" + ','.join(destfields) + ") VALUES"
-obsfields = "SELECT radeg,decdeg,object,dithID,filter,date_obs,mjdobs,exptime,fname,ffname(date_obs,fname) AS ff FROM Obslog"
+obsfields = "SELECT serial,radeg,decdeg,object,dithID,filter,date_obs,mjdobs,exptime,fname,ffname(date_obs,fname) AS ff FROM Obslog"
 
 # Get the latest date we have copies of
 
