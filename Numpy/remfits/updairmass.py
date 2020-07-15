@@ -27,25 +27,14 @@ import remfitshdr
 import argparse
 import trimarrays
 
-tmpdir = remdefaults.get_tmpdir()
-mydbname = remdefaults.default_database()
 parsearg = argparse.ArgumentParser(description='Update database fields from newly-loaded FITS files', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-parsearg.add_argument('--database', type=str, default=mydbname, help='Database to use')
-parsearg.add_argument('--tempdir', type=str, default=tmpdir, help='Temp directory to unload files')
+remdefaults.parseargs(parsearg, libdir=False, tempdir=False)
 parsearg.add_argument('--trimsides', type=int, default=100, help='Amount to trip off edges')
 resargs = vars(parsearg.parse_args())
-mydbname = resargs['database']
-tmpdir = resargs['tempdir']
+remdefaults.getargs(resargs)
 trimsides = resargs['trimsides']
 
-try:
-    os.chdir(tmpdir)
-except FileNotFoundError:
-    print("Unable to select temporary directory", tmpdir, file=sys.stderr)
-    sys.exit(100)
-
-dbase = dbops.opendb(mydbname)
-dbcurs = dbase.cursor()
+dbase, dbcurs = remdefaults.opendb()
 
 # # First get sides and update FITS files
 #
