@@ -35,7 +35,7 @@ try:
     remfield.getargs(resargs, fieldselect)
 except remfield.RemFieldError as e:
     print(e.args[0], file=sys.stderr)
-    sys.exit(21) 
+    sys.exit(21)
 
 prefix = miscutils.removesuffix(miscutils.removesuffix(prefix, '.fitsids'), '.npy')
 

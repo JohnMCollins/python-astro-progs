@@ -16,141 +16,87 @@ import dbremfitsobj
 import dbops
 import remdefaults
 import argparse
+import remget
+import fitsops
+
+
+def delfits(ind):
+    """Delete any FITS file we are dumping"""
+    global dbcurs, fitsdeleted
+
+    if ind != 0:
+        dbcurs.execute("DELETE FROM fitsfile WHERE ind=%d" % ind)
+        dbcurs.execute("UPDATE obsinf SET ind=0 WHERE ind=%d" % ind)
+        fitsdeleted += 1
+
 
 parsearg = argparse.ArgumentParser(description='Check for duplicate files in observations', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-remdefaults.parseargs(libdir=False, tempdir=False)
-parsearg.add_argument('--trimsides', type=int, default=100, help='Amount to trip off edges')
+remdefaults.parseargs(parsearg, libdir=False, tempdir=False)
 resargs = vars(parsearg.parse_args())
 remdefaults.getargs(resargs)
-trimsides = resargs['trimsides']
 
 dbase, dbcurs = remdefaults.opendb()
 
 # First get list of duplicated files
 
-dbcurs.execute("SELECT COUNT(*) AS n,fname FROM obsinf GROUP BY fname HAVING n!=1")
+dbcurs.execute("SELECT COUNT(*) AS n,ffname FROM obsinf WHERE rejreason IS NULL GROUP BY ffname HAVING n>1")
 dbrows = dbcurs.fetchall()
 
-for nused, fname in dbrows:
-    dbcurs.execute("SELECT ind,object,dithID,filter,date_obs,exptime,gain,obsind FROM obsinf WHERE fname=%s", fname)
-    usedlist = dbcurs.fetchall()
+fitsdeleted = 0
+obsdeleted = 0
 
-nsides = 0
-errorfiles = []
-
-for (ind,) in rows:
-
-    try:
-        ffile = dbremfitsobj.getfits(dbcurs, ind)
-    except OSError:
-        errorfiles.append(ind)
-        print("Could not get FITS file for ind", ind, file=sys.stderr)
+for nused, ffname in dbrows:
+    if nused != 2:
+        print(ffname, "used in", nused, "rows", file=sys.stderr)
         continue
-
-    fdat = ffile[0].data
-    ffshape = fdat.shape
-
-    if  ffshape[0] != ffshape[-1]:
-        side = 0
-    else:
-        side = ffshape[0]
-
-    nzfdat = trimarrays.trimzeros(trimarrays.trimnan(fdat))
-    dbcurs.execute("UPDATE fitsfile SET side=%d,rows=%d,cols=%d WHERE ind=%d" % (side, nzfdat.shape[0], nzfdat.shape[1], ind))
-    ffile.close()
-    nsides += 1
-    if nsides % 20 == 0:
-        dbase.commit()
-
-for find in errorfiles:
-    dbremfitsobj.badfitsfile(dbcurs, find)
-
-dbase.commit()
-
-# Fix gain and airmass, check exp time in observations
-
-dbcurs.execute("SELECT obsind,ind,exptime FROM obsinf WHERE ind!=0 AND rejreason IS NULL AND (airmass IS NULL OR gain IS NULL)")
-rows = dbcurs.fetchall()
-
-nfiles = 0
-
-for obsind, fitsind, exptime in rows:
-
-    ffile = dbremfitsobj.getfits(dbcurs, fitsind)
-    ffhdr = ffile[0].header
-    fexptime = ffhdr['EXPTIME']
-    fairmass = ffhdr['AIRMASS']
-    moonphase = ffhdr['MOONPHAS']
-    moondist = ffhdr['MOONDIST']
-    fgain = ffhdr['GAIN']
-
-    if fexptime != exptime:
-        print("Obsind", obsind, "DB hdr exptime", exptime, "FITS exptime", fexptime, file=sys.stderr)
-
-    fdat = ffile[0].data
-    sqq = fdat.flatten()
-    sqq = sqq[sqq != 0]
-    nzfdat = trimarrays.trimzeros(fdat)
-    tsfdat = nzfdat
-    if trimsides > 0:
-        tsfdat = nzfdat[trimsides:-trimsides, trimsides:-trimsides]
-
-    dbcurs.execute("UPDATE obsinf SET airmass=%.6g,gain=%.6g,moonphase=%.6g,moondist=%.6g,rows=%d,cols=%d,minv=%d,maxv=%d,sidet=%d,median=%.8e,mean=%.8e,std=%.8e,skew=%.8e,kurt=%.8e WHERE obsind=%d" %
-                    (fairmass, fgain, moonphase, moondist, nzfdat.shape[0], nzfdat.shape[1], sqq.min(), sqq.max(), trimsides, np.median(tsfdat), tsfdat.mean(), tsfdat.std(), ss.skew(tsfdat, axis=None), ss.kurtosis(tsfdat, axis=None), obsind))
-    ffile.close()
-    nfiles += 1
+    dbcurs.execute("SELECT ind,serial,object,dithID,filter,date_obs,exptime,gain,obsind FROM obsinf WHERE ffname=%s", ffname)
+    usedlist = dbcurs.fetchall()
+    if len(usedlist) != 2:
+        print("expecting", ffname, "to be used twice not", len(usedlist), "times", file=sys.stderr)
+        continue
+    row1, row2 = usedlist
+    r1ind, r1serial, r1obj, r1dith, r1filt, r1date, r1exptime, r1gain, r1obsind = row1
+    r2ind, r2serial, r2obj, r2dith, r2filt, r2date, r2exptime, r2gain, r2obsind = row2
+    if r1obj != r2obj or r1dith != r2dith or r1filt != r2filt or r1exptime != r2exptime or r1gain != r2gain or r1serial != r2serial:
+        print("Fields do not correspnd for", ffname, file=sys.stderr)
+        try:
+            fhdr, fdata = fitsops.mem_get(remget.get_obs(ffname, r1dith != 0))
+            obsdate = Time(fhdr['DATE-OBS']).datetime
+            obsfilt = fhdr['FILTER']
+            obsdith = fhdr['DITHID']
+        except remget.RemGetError as e:
+            print("Cannot fetch filel", ff, "error was", e.args[0], file=sys.stderr)
+            dbcurs.execute("UPDATE obsinf SET rejreason='%s' WHERE obsind=%d OR obsind=%d" % ('FITS file unfetchable', r1obsind, r2obsind))
+            delfits(r1ind)
+            delfits(r2ind)
+            continue
+        except OSError as e:
+            print("Cannot open FITS file from", ff, "error was", e.args[0], file=sys.stderr)
+            dbcurs.execute("UPDATE obsinf SET rejreason='%s' WHERE obsind=%d OR obsind=%d" % ('FITS file could not open', r1obsind, r2obsind))
+            delfits(r1ind)
+            delfits(r2ind)
+            continue
+        except KeyError:
+            print("Cannot find date in file", ff, file=sys.stderr)
+            dbcurs.execute("UPDATE obsinf SET rejreason='%s' WHERE obsind=%d OR obsind=%d" % ('FITS file incomplete', r1obsind, r2obsind))
+            delfits(r1ind)
+            delfits(r2ind)
+            continue
+        if abs((r1date - obsdate).total_seconds()) > 1 or r1filt != obsfilt or r1dith != obsdith:
+            dbcurs.execute("UPDATE obsinf SET rejreason='%s' WHERE obsind=%d" % ('Refers to wrong file', r1obsind))
+            delfits(r1ind)
+        if abs((r2date - obsdate).total_seconds()) > 1 or r2filt != obsfilt or r2dith != obsdith:
+            dbcurs.execute("UPDATE obsinf SET rejreason='%s' WHERE obsind=%d" % ('Refers to wrong file', r2obsind))
+            delfits(r2ind)
+        continue
+    delobsind = r2obsind
+    if r1ind != r2ind:
+        if r1ind == 0:
+            delobsind = r1obsind
+        elif r2ind != 0:
+            delfits(r2ind)
+    dbcurs.execute("DELETE FROM obsinf WHERE obsind=%d" % delobsind)
+    obsdeleted += 1
 
 dbase.commit()
-
-# Repeat for master flats and biases
-
-dbcurs.execute("SELECT year,month,filter,typ,fitsind FROM forbinf WHERE gain IS NULL AND rejreason IS NULL AND fitsind!=0")
-rows = dbcurs.fetchall()
-
-nmfb = 0
-
-for year, month, filter, typ, fitsind in rows:
-
-    ffile = dbremfitsobj.getfits(dbcurs, fitsind)
-    ffhdr = ffile[0].header
-    fgain = ffhdr['GAIN']
-    dbcurs.execute("UPDATE forbinf SET gain=%.6g WHERE filter='%s' AND typ='%s' AND year=%d AND month=%d" % (fgain, filter, typ, year, month))
-    ffile.close()
-    nmfb += 1
-
-dbase.commit()
-
-# Finally indiviaul flag and bias
-
-dbcurs.execute("SELECT ind,iforbind,typ FROM iforbinf WHERE (sidet!=%d OR gain IS NULL) AND rejreason IS NULL AND ind!=0" % trimsides)
-rows = dbcurs.fetchall()
-
-nifb = 0
-
-for fitsind, ind, typ in rows:
-
-    ffile = dbremfitsobj.getfits(dbcurs, fitsind)
-    ffhdr = ffile[0].header
-    fgain = ffhdr['GAIN']
-    fdat = ffile[0].data
-    sqq = fdat.flatten()
-    sqq = sqq[sqq != 0]
-    nzfdat = trimarrays.trimzeros(fdat)
-    tsfdat = nzfdat
-    if trimsides > 0:
-        tsfdat = nzfdat[trimsides:-trimsides, trimsides:-trimsides]
-    dbcurs.execute("UPDATE iforbinf SET gain=%.6g,rows=%d,cols=%d,minv=%d,maxv=%d,sidet=%d,median=%.8e,mean=%.8e,std=%.8e,skew=%.8e,kurt=%.8e WHERE iforbind=%d" %
-                   (fgain, nzfdat.shape[0], nzfdat.shape[1], sqq.min(), sqq.max(),
-                    trimsides, np.median(tsfdat), tsfdat.mean(), tsfdat.std(),
-                    ss.skew(tsfdat, axis=None), ss.kurtosis(tsfdat, axis=None), ind))
-    ffile.close()
-    nifb += 1
-
-dbase.commit()
-
-# Finally indiv flat or bias
-
-print(nsides, "sides added", len(errorfiles), "errors", file=sys.stderr)
-print(nfiles, "airmess/gains added", file=sys.stderr)
-print(nmfb, "naster flat/bias/gains added", file=sys.stderr)
-print(nifb, "individual flat/bias/gains added", file=sys.stderr)
+print(fitsdeleted, "FITS files deleted", obsdeleted, "observations", file=sys.stderr)

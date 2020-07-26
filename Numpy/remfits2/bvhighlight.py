@@ -127,7 +127,7 @@ else:
     nhistbins += 1  # One more than number of colours
 
 collist = ['#%.2x%.2x%.2x' % (int(l), int(l), int(l)) for l in np.linspace(255, 0, nhistbins - nhvs).round()] + hvcolour
-    
+
 cmap = colors.ListedColormap(collist)
 
 nfigs = len(files)
@@ -185,7 +185,7 @@ for file in files:
         except remfitshdr.RemFitsHdrErr as e:
             print("Problem with file", file, "error was", e.args[0])
             continue
-        
+
         dat = trimarrays.trimzeros(trimarrays.trimnan(ff[0].data.astype(np.float64)))
         ff.close()
 
@@ -195,7 +195,7 @@ for file in files:
 
     plotfigure = rg.plt_figure()
     plotfigure.canvas.set_window_title('FITS Image from file ' + file)
-    
+
     hax = plt.subplot(122)
 
     flatdat = dat.flatten()
@@ -215,16 +215,16 @@ for file in files:
         p.set_facecolor(c)
     plt.xlabel(histxlab)
     plt.ylabel(histylab)
-    
+
     tit = histtitle
     if  addsk:
         tit += " mean %.6g\nMedian=%.6g (norm %.6g)\nStd dev=%.4g (norm %.4g)" % (mv, medv, medv / mv, stdv, stdv / mv)
     plt.title(tit)
-    
+
     plt.subplot(121)
     if nozeros:
         bins[0] = dat.min()
-    
+
     norm = colors.BoundaryNorm(bins, cmap.N)
     if xlim is not None:
         plt.xlim(*xlim)

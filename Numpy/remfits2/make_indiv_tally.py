@@ -48,9 +48,9 @@ try:
 except remfitshdr.RemFitsHdrErr as e:
     print("fitsid", firstone, "gave error", e.args[0], file=sys.stderr)
     sys.exit(13)
-    
+
 fdat = ff[0].data[0:rows, 0:cols].astype(np.float64)
-ff.close() 
+ff.close()
 tally[0] += 1.0
 tally[1] += fdat
 tally[2] += fdat ** 2
@@ -82,7 +82,7 @@ for fid in fitsids:
         print("fitsid", fid, "gave error", e.args[0], file=sys.stderr)
         continue
     fdat = ff[0].data[0:rows, 0:cols].astype(np.float64)
-    ff.close() 
+    ff.close()
     tally[0] += 1.0
     tally[1] += fdat
     tally[2] += fdat ** 2

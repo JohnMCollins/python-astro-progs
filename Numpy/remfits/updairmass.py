@@ -24,6 +24,7 @@ import dbremfitsobj
 import dbops
 import remdefaults
 import remfitshdr
+import ritsops
 import argparse
 import trimarrays
 
@@ -121,7 +122,7 @@ for obsind, fitsind, exptime, filter, date_obs in rows:
     dbcurs.execute("UPDATE fitsfile SET side=%d,rows=%d,cols=%d,startx=%d,starty=%d WHERE ind=%d" % (sidesize, fitsrows, fitscols, startx, starty, fitsind))
     if not remfitshdr.check_has_dims(ffhdr):
         remfitshdr.set_dims_in_hdr(ffhdr, startx, starty, fitscols, fitsrows)
-        dbcurs.execute("UPDATE fitsfile SET fitsgz=%s WHERE ind=" + str(fitsind), remfitshdr.make_fits(ffhdr, fdat))
+        dbcurs.execute("UPDATE fitsfile SET fitsgz=%s WHERE ind=" + str(fitsind), fitsops.mem_makefits(ffhdr, fdat))
         dims_added += 1
         dbase.commit()
     nfiles += 1
@@ -165,7 +166,7 @@ for year, month, filter, typ, fitsind in rows:
     dbcurs.execute("UPDATE fitsfile SET side=%d,rows=%d,cols=%d,startx=%d,starty=%d WHERE ind=%d" % (sidesize, fitsrows, fitscols, startx, starty, fitsind))
     if not remfitshdr.check_has_dims(ffhdr):
         remfitshdr.set_dims_in_hdr(ffhdr, startx, starty, fitscols, fitsrows)
-        dbcurs.execute("UPDATE fitsfile SET fitsgz=%s WHERE ind=" + str(fitsind), remfitshdr.make_fits(ffhdr, fdat))
+        dbcurs.execute("UPDATE fitsfile SET fitsgz=%s WHERE ind=" + str(fitsind), fitsops.mem_makefits(ffhdr, fdat))
         dims_added += 1
         dbase.commit()
     nmfb += 1
@@ -213,7 +214,7 @@ for fitsind, ind, typ, filter, date_obs in rows:
     dbcurs.execute("UPDATE fitsfile SET side=%d,rows=%d,cols=%d,startx=%d,starty=%d WHERE ind=%d" % (sidesize, fitsrows, fitscols, startx, starty, fitsind))
     if not remfitshdr.check_has_dims(ffhdr):
         remfitshdr.set_dims_in_hdr(ffhdr, startx, starty, fitscols, fitsrows)
-        dbcurs.execute("UPDATE fitsfile SET fitsgz=%s WHERE ind=" + str(fitsind), remfitshdr.make_fits(ffhdr, fdat))
+        dbcurs.execute("UPDATE fitsfile SET fitsgz=%s WHERE ind=" + str(fitsind), fitsops.mem_makefits(ffhdr, fdat)(ffhdr, fdat))
         dims_added += 1
         dbase.commit()
     nifb += 1
