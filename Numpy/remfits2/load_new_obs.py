@@ -54,7 +54,10 @@ dbrows = mycurs.fetchall()
 for ffname, dithID, obsind in dbrows:
 	try:
 		ffile = remget.get_obs(ffname, dithID != 0)
-		mycurs.execute("INSERT INTO fitsfile (fitsgz) VALUES (%s)", ffile)
+		side = 1024
+		if dithID != 0:
+			side = 512
+		mycurs.execute("INSERT INTO fitsfile (side,fitsgz) VALUES (" + str(side) + ",%s)", ffile)
 		mycurs.execute("UPDATE obsinf SET ind=%d WHERE obsind=%d" % (mycurs.lastrowid, obsind))
 		mydb.commit()
 		loaded += 1

@@ -32,7 +32,7 @@ dbrows = mycurs.fetchall()
 for iforbind, ffname in dbrows:
 	try:
 		ffile = remget.get_iforb(ffname)
-		mycurs.execute("INSERT INTO fitsfile (fitsgz) VALUES (%s)", ffile)
+		mycurs.execute("INSERT INTO fitsfile (side,fitsgz) VALUES (1024,%s)", ffile)
 		mycurs.execute("UPDATE iforbinf SET ind=%d WHERE obsind=%d" % (mycurs.lastrowid, iforbind))
 		mydb.commit()
 		loaded += 1

@@ -24,7 +24,7 @@ import dbremfitsobj
 import dbops
 import remdefaults
 import remfitshdr
-import ritsops
+import fitsops
 import argparse
 import trimarrays
 

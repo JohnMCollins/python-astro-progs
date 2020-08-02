@@ -23,7 +23,7 @@ sub wgetfile ($) {
 sub insertfits ($$) {
     my $dbase = shift;
     my $fitsfile = shift;
-    my $sfh = $dbase->prepare("INSERT INTO fitsfile (fitsgz) VALUES (?)");
+    my $sfh = $dbase->prepare("INSERT INTO fitsfile (side,fitsgz) VALUES (1024,?)");
     $sfh->execute($fitsfile);
     $sfh = $dbase->prepare("SELECT LAST_INSERT_ID()");
     $sfh->execute;
