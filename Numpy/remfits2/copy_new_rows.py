@@ -136,9 +136,11 @@ destfields.append('ffname')
 destfields = "INSERT INTO iforbinf (" + ','.join(destfields) + ") VALUES"
 obsfields = "SELECT serial,filter,date_obs,mjdobs,exptime,fname FROM "
 
-for tab, constr, typ in (("Dark", "exptime=0", 'bias'), ("Flat", None, 'flat')):
+for tab, constr, typ in (("Dark", "exptime=0", 'bias'), ("Dark", "exptime!=0", 'dark'), ("Flat", None, 'flat')):
 	rowsadded = 0
 	max_serial = get_max_serial(mycurs, "iforbinf", "typ='" + typ + "'")
+	if max_serial is None:
+		continue
 	query = obsfields + tab + " WHERE serial>%d" % max_serial
 	if constr is not None:
 		query += " AND " + constr

@@ -16,6 +16,29 @@ import sys
 import parsetime
 import remfield
 
+Format_keys = ('ind', 'iforbind', 'filter', 'type', 'date', 'gain',
+               'minval', 'nsminval', 'ansminval', 'maxval', 'nsmaxval', 'ansmaxval',
+               'median', 'nsmeidan', 'ansmedian', 'mean', 'nsmean', 'ansmean',
+               'std', 'nsstd', 'ansstd', 'skew', 'nsskew', 'ansskew',
+               'kurt', 'nskurt', 'anskurt')
+
+Format_header = ('^FITS', '^Serial', '<Filter', '<Type', '<Date/Time', '>Gain',
+               '^Minimum', '^Ns min', '^Abs ns min',
+               '^Maximum', '^Ns max', '^Abs ns max',
+               '^Median', '>Ns meidan', '>Abs ns median',
+               '^Mean', '>Ns mean', '>Abs ns mean',
+               '^Std', '>Ns std', '>Abs ns std',
+               '^Skew', '>Ns skew', '>Abs ns skew',
+               '^Kurtosis', '>Ns kurtosis', '>Abs ns kurtosis')
+
+Format_codes = ('d', 'd', 's', '.1s', '%Y-%m-%d %H:%M:%S', '.1f',
+                'd', '.3g', '.3g', 'd', '.3g', '.3g',
+                '.2f', '.3g', '.3g', '.2f', '.3g', '.3g',
+                '.3g', '.3g', '.3g', '.3g', '.3g', '.3g', '.3g', '.3g', '.3g')
+
+Fc_dict = dict(zip(Format_keys, Format_codes))
+Fh_dict = dict(zip(Format_keys, Format_header))
+
 parsearg = argparse.ArgumentParser(description='List flat or bias',
                                    formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 remdefaults.parseargs(parsearg)
@@ -23,8 +46,12 @@ parsetime.parseargs_daterange(parsearg)
 parsearg.add_argument('--filter', type=str, nargs='*', help='filters to limit to')
 parsearg.add_argument('--type', type=str, default='any', help='Type wanted flat, bias, any')
 parsearg.add_argument('--gain', type=float, help='Restrict to given gain value')
-remfield.parseargs(parsearg)
+remfield.parseargs(parsearg, multstd=True)
 parsearg.add_argument('--idonly', action='store_true', help='Just give ids no other data')
+parsearg.add_argument('--skprint', action='store_true', help='Print skew and kurtosis')
+parsearg.add_argument('--fitsind', action='store_true', help='Print FITS ind not iforbind')
+parsearg.add_argument('--format', type=str, help='Specify which fields to display')
+parsearg.add_argument('--header', action='store_true', help='Provide a header')
 
 resargs = vars(parsearg.parse_args())
 remdefaults.getargs(resargs)
@@ -48,6 +75,41 @@ idonly = resargs['idonly']
 filters = resargs['filter']
 typereq = resargs['type']
 gain = resargs["gain"]
+skprint = resargs['skprint']
+fitsind = resargs['fitsind']
+format = resargs['format']
+header = resargs['header']
+
+if format is None:
+    format = []
+    if fitsind:
+        format.append('ind')
+    else:
+        format.append('iforbind')
+    if not idonly:
+        format.append('filter')
+        format.append('type')
+        format.append('date')
+        if gain is None:
+            format.append('gain')
+        format.append('minval')
+        format.append('maxval')
+        format.append('median')
+        format.append('mean')
+        format.append('std')
+        if skprint:
+            format.append('skew')
+            format.append('kurt')
+else:
+    fbits = format.split(',')
+    errors = 0
+    for fb in fbits:
+        if fb not in Fc_dict:
+            print("Format code", fb, "not known", file=sys.stderr)
+            errors += 1
+    if errors != 0:
+        sys.exit(30)
+    format = fbits
 
 mydb, dbcurs = remdefaults.opendb()
 
@@ -63,34 +125,39 @@ elif typereq[0] == 'b':
 if gain is not None:
     fieldselect.append("ABS(gain-%.3g) < %.3g" % (gain, gain * 1e-3))
 
-sel = ""
-
-if len(fieldselect) != 0:
-    sel = "WHERE " + " AND ".join(fieldselect)
-
+sel = remfield.get_extended_args(resargs, "iforbinf", "SELECT ind,iforbind,filter,UPPER(typ),date_obs,gain", fieldselect)
 sel += " ORDER BY date_obs"
-sel = "SELECT ind,filter,typ,date_obs,gain,minv,maxv,median,mean,std,skew,kurt FROM iforbinf " + sel
-
 dbcurs.execute(sel)
 
-if idonly:
-    for row in dbcurs.fetchall():
-        print(row[0])
+dbrows = dbcurs.fetchall()
+
+if header:
+    headers = [Fh_dict[i] for i in format]
+    maxwids = [len(h[1:]) for h in headers]
 else:
-    for row in dbcurs.fetchall():
-        ind, filt, typ, dat, g, minv, maxv, median, mean, std, skew, kurt = row
-        print(filt, end=' ')
-        if typ == 'flat':
-            print('F', end=' ')
+    maxwids = [0] * len(format)
+
+# First run through to get widths
+
+Fcodes = ["{" + fc + ":" + Fc_dict[fc] + "}" for fc in format]
+for dbrow in dbrows:
+    res = dict(zip(Format_keys, dbrow))
+    rf = [fc.format(**res) for fc in Fcodes]
+    maxwids = [max(n, len(p)) for n, p in zip(maxwids, rf)]
+
+try:
+    if header:
+        print(" ".join(["{v:{a}{w}s}".format(a=h[0], v=h[1:], w=maxwids[n]) for n, h in enumerate(headers)]))
+
+    Fcodes = []
+    for n, fc in enumerate(format):
+        if fc == 'date':
+            Fcodes.append("{" + fc + ":" + Fc_dict[fc] + "}")
         else:
-            print('B', end=' ')
-        print(dat.strftime("%Y-%m-%d %H:%M:%S"), end=' ')
-        if gain is None:
-            print("%3.1f" % g, end=' ')
-        print("%5d" % minv, end=' ')
-        print("%5d" % maxv, end=' ')
-        print("%9.2f" % median, end=' ')
-        print("%9.2f" % mean, end=' ')
-        print("%#9.3g" % std, end=' ')
-        print("%#10.3g" % skew, end=' ')
-        print("%#10.3g" % kurt)
+            Fcodes.append("{" + fc + ":" + str(maxwids[n]) + Fc_dict[fc] + "}")
+
+    for dbrow in dbrows:
+        res = dict(zip(Format_keys, dbrow))
+        print(" ".join([f.format(**res) for f in Fcodes]))
+except (KeyboardInterrupt, BrokenPipeError):
+    sys.exit(0)

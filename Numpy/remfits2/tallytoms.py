@@ -17,19 +17,21 @@ warnings.simplefilter('ignore', RuntimeWarning)
 parsearg = argparse.ArgumentParser(description='Make mean and standard deviations from tally', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 parsearg.add_argument('tfile', type=str, nargs=1, help='Input tally file"')
 remdefaults.parseargs(parsearg, tempdir=False, database=False)
-parsearg.add_argument('--outfile', type=str, required=True, help='Output file - 0th plane mean, 1st plane sd dev')
+parsearg.add_argument('--outfile', type=str, help='Output file - 0th plane mean, 1st plane sd dev use same name as input if not given')
 parsearg.add_argument('--force', action='store_true', help='Force if file exists')
 parsearg.add_argument('--nocheck', action='store_true', help='Do not check dimensions of array"')
 
 resargs = vars(parsearg.parse_args())
 remdefaults.getargs(resargs)
-tfile = resargs['tfile'][0]
+ptfile = resargs['tfile'][0]
 outfile = resargs['outfile']
 force = resargs['force']
 nocheck = resargs['nocheck']
 
-tfile = remdefaults.libfile(miscutils.addsuffix(tfile, '.npy'))
-outfile = remdefaults.libfile(miscutils.addsuffix(outfile, '.npy'))
+tfile = remdefaults.tally_file(ptfile)
+if outfile is None:
+    outfile = ptfile
+outfile = remdefaults.meanstd_file(outfile)
 
 if os.path.exists(outfile) and not force:
     print("Will not overwrite existing", outfile, "use --force if needed", file=sys.stderr)
@@ -54,4 +56,6 @@ sdds = np.sqrt(vars)
 result = np.array([counts, means, sdds])
 
 result[np.isnan(result)] = 0
-np.save(outfile, result)
+outf = open(outfile, "wb")
+np.save(outf, result)
+outf.close()

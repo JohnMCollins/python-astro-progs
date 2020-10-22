@@ -45,7 +45,7 @@ dbcurs = dbase.cursor()
 
 # First get sides and update FITS files
 
-dbcurs.execute("SELECT ind FROM fitsfile WHERE rows IS NULL")
+dbcurs.execute("SELECT ind FROM fitsfile WHERE nrows IS NULL")
 rows = dbcurs.fetchall()
 
 nsides = 0
@@ -62,7 +62,7 @@ for (ind,) in rows:
 
     fdat = ffile[0].data
     nzfdat = trimarrays.trimzeros(trimarrays.trimnan(fdat))
-    dbcurs.execute("UPDATE fitsfile SET rows=%d,cols=%d WHERE ind=%d" % (nzfdat.shape[0], nzfdat.shape[1], ind))
+    dbcurs.execute("UPDATE fitsfile SET nrows=%d,ncols=%d WHERE ind=%d" % (nzfdat.shape[0], nzfdat.shape[1], ind))
     ffile.close()
     nsides += 1
     if nsides % 20 == 0:

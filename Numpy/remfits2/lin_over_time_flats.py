@@ -31,8 +31,8 @@ import datetime
 rg = remgeom.load()
 
 parsearg = argparse.ArgumentParser(description='Plot linearity over time of daily flats with trims', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-remdefaults.parseargs(parsearg)
-parsetime.parseargs_daterange(parsearg, libdir=False, tempdir=False)
+remdefaults.parseargs(parsearg, libdir=False, tempdir=False)
+parsetime.parseargs_daterange(parsearg)
 parsearg.add_argument('--limits', type=str, help='Lower:upper limit of means')
 parsearg.add_argument('--trims', type=int, default=0, help='Amount to trim off each side')
 parsearg.add_argument('--clipstd', type=float, help='Clip std devs this multiple different from std dev of std devs')
@@ -59,7 +59,7 @@ trims = resargs['trims']
 limits = resargs['limits']
 dayint = resargs['dayint']
 
-fieldselect = ["rows IS NOT NULL", "typ='flat'", "ind!=0", "gain=1"]
+fieldselect = ["nrows IS NOT NULL", "typ='flat'", "ind!=0", "gain=1"]
 try:
     dstring = parsetime.getargs_daterange(resargs, fieldselect)
 except ValueError as e:
@@ -79,7 +79,7 @@ dbase, dbcurs = remdefaults.opendb()
 if filter is not None:
     fieldselect.append("filter=" + dbase.escape(filter))
 
-dbcurs.execute("SELECT rows,cols,ind,date_obs FROM iforbinf WHERE " + " AND ".join(fieldselect))
+dbcurs.execute("SELECT nrows,ncols,ind,date_obs FROM iforbinf WHERE " + " AND ".join(fieldselect))
 
 dbrows = dbcurs.fetchall()
 if len(dbrows) < 20:

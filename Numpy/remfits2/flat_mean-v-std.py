@@ -137,7 +137,7 @@ lowerlim = upperlim = None
 greyscale = resargs['greyscale']
 logscale = resargs['logscale']
 
-fieldselect = ["rows IS NOT NULL", "typ='flat'", "ind!=0", "gain=1"]
+fieldselect = ["nrows IS NOT NULL", "typ='flat'", "ind!=0", "gain=1"]
 try:
     dstring = parsetime.getargs_daterange(resargs, fieldselect)
 except ValueError as e:
@@ -174,7 +174,7 @@ dbase, dbcurs = remdefaults.opendb()
 if filter is not None:
     fieldselect.append("filter=" + dbase.escape(filter))
 
-dbcurs.execute("SELECT rows,cols,ind FROM iforbinf WHERE " + " AND ".join(fieldselect))
+dbcurs.execute("SELECT nrows,ncols,ind FROM iforbinf WHERE " + " AND ".join(fieldselect))
 
 dbrows = dbcurs.fetchall()
 if len(dbrows) < 20:

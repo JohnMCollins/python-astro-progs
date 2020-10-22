@@ -10,7 +10,6 @@ import datetime
 import astropy.units as u
 import astroquery.utils as autils
 import numpy as np
-import os.path
 import argparse
 import warnings
 import dbops
@@ -19,11 +18,13 @@ import dbobjinfo
 import sys
 from dbops import dbopsError
 
+
 def is_masked(num):
     """Return is number is masked"""
     return type(num) is np.ma.core.MaskedConstant
 
 # Shut up warning messages
+
 
 warnings.simplefilter('ignore', AstropyWarning)
 warnings.simplefilter('ignore', AstropyUserWarning)
@@ -31,23 +32,18 @@ warnings.simplefilter('ignore', UserWarning)
 autils.suppress_vo_warnings()
 
 parsearg = argparse.ArgumentParser(description='Get object info into database', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+remdefaults.parseargs(parsearg, libdir=False, tempdir=False)
 parsearg.add_argument('objects', nargs='+', type=str, help='Object names to process')
-parsearg.add_argument('--database', type=str, default=remdefaults.default_database(), help='Database to use')
+parsearg.add_argument('--ignoredups', action='store_true', help='Ignore names already done"')
 parsearg.add_argument('--delete', action='store_true', help='Delete names')
 
 resargs = vars(parsearg.parse_args())
-
+remdefaults.getargs(resargs)
 objnames = resargs['objects']
-dbname = os.path.expanduser(resargs['database'])
+ignoredups = resargs['ignoredups']
 delete = resargs['delete']
 
-try:
-    dbase = dbops.opendb(dbname)
-except dbops.dbopsError as e:
-    print("Could not open database", dbname, "Error was", e.args[0], file=sys.stderr)
-    sys.exit(10)
-
-mycursor = dbase.cursor()
+dbase, mycursor = remdefaults.opendb()
 
 errors = 0
 edict = dict()
@@ -81,6 +77,7 @@ for name in objnames:
             print("Already had", name, "as alias of", pname, file=sys.stderr)
         else:
             print("Already had", name, file=sys.stderr)
+        if not ignoredups:
             errors += 1
         continue
     except dbobjinfo.ObjDataError:
@@ -91,7 +88,7 @@ if errors > 0:
     sys.exit(10)
 
 sb = Simbad()
-sb.add_votable_fields('main_id','otype','ra','dec','distance','pmra','pmdec', 'rv_value')
+sb.add_votable_fields('main_id', 'otype', 'ra', 'dec', 'distance', 'pmra', 'pmdec', 'rv_value')
 
 for name in objnames:
     qres = sb.query_object(name)
@@ -125,9 +122,9 @@ for name in objnames:
         pmra = None
     if is_masked(pmdec):
         pmdec = None
-    obj = dbobjinfo.ObjData(objname = name, objtype = otype, rv = rvel, dist = distance)
-    obj.set_ra(value = ra, pm = pmra)
-    obj.set_dec(value = dec, pm = pmdec)
+    obj = dbobjinfo.ObjData(objname=name, objtype=otype, rv=rvel, dist=distance)
+    obj.set_ra(value=ra, pm=pmra)
+    obj.set_dec(value=dec, pm=pmdec)
     try:
         if qname != name:
             dbobjinfo.add_alias(mycursor, name, qname, 'Simbad')

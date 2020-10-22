@@ -10,6 +10,7 @@ import numpy as np
 import numpy.random as rn
 import matplotlib.pyplot as plt
 from matplotlib import colors
+import sys
 
 import remgeom
 import fixdups
@@ -117,7 +118,7 @@ class GsEditDlg(QtWidgets.QDialog, ui_gseditdlg.Ui_gseditdlg):
         elif self.gs.isperc:
             vallist = np.percentile(self.imagearray, self.currentpercents)
             self.currentnsigs = list(np.round((np.array(vallist) - self.meanvalue) / self.stdvalue, 3))
-            self.currentvalues = list(np.round(vallist, 1))
+            self.currentvalues = list(np.round(vallist, 2))
             return
         else:
             vallist = np.array(self.currentnsigs) * self.stdvalue + self.meanvalue
@@ -270,7 +271,7 @@ class GsEditDlg(QtWidgets.QDialog, ui_gseditdlg.Ui_gseditdlg):
             self.currentpercents = vallist
         else:
             self.nstddevs.setChecked(True)
-            vallist.append(self.maxsteps)
+            vallist.append(self.maxstdd)
             vallist.sort()
             self.currentnsigs = vallist
 
@@ -529,7 +530,7 @@ class GsEditDlg(QtWidgets.QDialog, ui_gseditdlg.Ui_gseditdlg):
 
     def on_pc9_valueChanged(self, value): self.pcchanged(8, value)
 
-    def on_pc19_valueChanged(self, value): self.pcchanged(9, value)
+    def on_pc10_valueChanged(self, value): self.pcchanged(9, value)
 
     def on_pc11_valueChanged(self, value): self.pcchanged(10, value)
 
@@ -542,14 +543,49 @@ class GsEditDlg(QtWidgets.QDialog, ui_gseditdlg.Ui_gseditdlg):
     def on_pc15_valueChanged(self, value): self.pcchanged(14, value)
 
     def on_pc16_valueChanged(self, value): self.pcchanged(15, value)
+    
+    def on_pc17_valueChanged(self, value): self.pcchanged(16, value)
+
+    def on_pc18_valueChanged(self, value): self.pcchanged(17, value)
+
+    def on_pc19_valueChanged(self, value): self.pcchanged(18, value)
+
+    def on_pc20_valueChanged(self, value): self.pcchanged(19, value)
+
+    def on_pc21_valueChanged(self, value): self.pcchanged(20, value)
+
+    def on_pc22_valueChanged(self, value): self.pcchanged(21, value)
+
+    def on_pc23_valueChanged(self, value): self.pcchanged(22, value)
+
+    def on_pc24_valueChanged(self, value): self.pcchanged(23, value)
+
+    def on_pc25_valueChanged(self, value): self.pcchanged(24, value)
+
+    def on_pc26_valueChanged(self, value): self.pcchanged(25, value)
+
+    def on_pc27_valueChanged(self, value): self.pcchanged(26, value)
+
+    def on_pc28_valueChanged(self, value): self.pcchanged(27, value)
+
+    def on_pc29_valueChanged(self, value): self.pcchanged(28, value)
+
+    def on_pc30_valueChanged(self, value): self.pcchanged(29, value)
+
+    def on_pc31_valueChanged(self, value): self.pcchanged(30, value)
+
+    def on_pc32_valueChanged(self, value): self.pcchanged(31, value)
 
     def pcchanged(self, whichpc, newvalue):
         """Deal with percent values"""
         if self.performingupdate or whichpc >= self.numcols or type(newvalue) != float:
             return
+        
+        # print("Update percent", whichpc, "current value", self.currentpercents[whichpc], "new value", newvalue, file=sys.stderr)
 
         diff = newvalue - self.currentpercents[whichpc]
         if abs(diff) < 0.001:
+            # print("Difference too small returning", file=sys.stderr)
             return
 
         incr = 0.001
@@ -558,11 +594,15 @@ class GsEditDlg(QtWidgets.QDialog, ui_gseditdlg.Ui_gseditdlg):
 
         while newvalue in self.currentpercents:
             newvalue = round(newvalue + incr, 3)
+            # print("Incrementing new value to", newvalue, file=sys.stderr)
 
         # If we've run off either end, we'll have to go back to where we were
 
         if newvalue < 0.0 or newvalue > 100.0:
+            self.performingupdate = True
             self.pcspins[whichpc].setValue(self.currentpercents[whichpc])
+            self.performingupdate = False
+            # print("Reset to previous value of", self.currentpercents[whichpc], file=sys.stderr)
             return
 
         self.performingupdate = True
@@ -657,7 +697,9 @@ class GsEditDlg(QtWidgets.QDialog, ui_gseditdlg.Ui_gseditdlg):
         # If we've run off either end, we'll have to go back to where we were
 
         if newvalue < self.minstdd or newvalue > self.maxstdd:
+            self.performingupdate = True
             self.pcspins[whichns].setValue(self.currentnsigs[whichns])
+            self.performingupdate = False
             return
 
         self.performingupdate = True
@@ -752,7 +794,9 @@ class GsEditDlg(QtWidgets.QDialog, ui_gseditdlg.Ui_gseditdlg):
         # If we've run off either end, we'll have to go back to where we were
 
         if newvalue < self.minvalue or newvalue > self.maxvalue:
+            self.performingupdate = True
             self.vspins[whichval].setValue(self.currentvalues[whichval])
+            self.performingupdate = False
             return
 
         self.performingupdate = True

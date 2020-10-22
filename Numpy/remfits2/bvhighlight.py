@@ -31,7 +31,7 @@ import remgeom
 import remdefaults
 import dbops
 import dbremfitsobj
-import remfitshdr
+import remfits
 
 
 def fixtty(f):
@@ -181,8 +181,8 @@ for file in files:
                 print("Cannot open", file, e.strerror, file=sys.stderr)
                 continue
         try:
-            rfh = remfitshdr.RemFitsHdr(ff[0].header)
-        except remfitshdr.RemFitsHdrErr as e:
+            rfh = remfits.RemFitsHdr(ff[0].header)
+        except remfits.RemFitsErr as e:
             print("Problem with file", file, "error was", e.args[0])
             continue
 

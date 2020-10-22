@@ -30,7 +30,6 @@ import remgeom
 import strreplace
 import findfast
 import radecgridplt
-from astropy._erfa.core import apcs
 
 rg = remgeom.load()
 

@@ -26,7 +26,7 @@ remdefaults.getargs(resargs)
 
 mydb, dbcurs = remdefaults.opendb()
 
-dbcurs.execute("SELECT ind,rows,cols,startx,starty FROM fitsfile WHERE startx!=0 OR starty!=0")
+dbcurs.execute("SELECT ind,nrows,ncols,startx,starty FROM fitsfile WHERE startx!=0 OR starty!=0")
 dbrows = dbcurs.fetchall()
 
 nfits = len(dbrows)

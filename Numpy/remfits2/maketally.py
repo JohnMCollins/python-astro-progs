@@ -5,11 +5,12 @@ import remdefaults
 import argparse
 import sys
 import os.path
-import dbremfitsobj
 import miscutils
 import numpy as np
 import parsetime
 import remfield
+import remget
+import fitsops
 
 parsearg = argparse.ArgumentParser(description='Gather tally of statistics for CCD array', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 remdefaults.parseargs(parsearg, tempdir=False)
@@ -37,10 +38,8 @@ except remfield.RemFieldError as e:
     print(e.args[0], file=sys.stderr)
     sys.exit(21)
 
-prefix = miscutils.removesuffix(miscutils.removesuffix(prefix, '.fitsids'), '.npy')
-
-fitsidfn = remdefaults.libfile(prefix + '.fitsids')
-tallyfn = remdefaults.libfile(prefix + '.npy')
+fitsidfn = remdefaults.fitsid_file(prefix)
+tallyfn = remdefaults.tally_file(prefix)
 
 fitsids = dict()
 
@@ -59,12 +58,12 @@ else:
             for l in fidf:
                 dict[int(l)] = 1
     except OSError as e:
-        print("Cannot open", e.filename, "error was", e.args[1])
+        print("Cannot open", e.filename, "error was", e.args[1], file=sys.stderr)
         sys.exit(12)
 
 dbase, dbcurs = remdefaults.opendb()
 fieldselect.append("gain=1")
-fieldselect.append("rows IS NOT NULL")
+fieldselect.append("nrows IS NOT NULL")
 fieldselect.append("rejreason IS NULL")
 
 if ftype == 'obs':
@@ -73,16 +72,20 @@ else:
     fieldselect.append("typ='" + ftype + "'")
     tab = "iforbinf"
 
-dbcurs.execute("SELECT ind,rows,cols,startx,starty FROM " + tab + " WHERE " + " AND ".join(fieldselect))
+dbcurs.execute("SELECT ind,nrows,ncols,startx,starty FROM " + tab + " WHERE " + " AND ".join(fieldselect))
 dbrows = dbcurs.fetchall()
 for dbrow in dbrows:
     fitsind, rows, cols, startx, starty = dbrow
     if fitsind in fitsids:
         continue
     fitsids[fitsind] = 1
-    ff = dbremfitsobj.getfits(dbcurs, fitsind)
-    fdat = ff[0].data
-    ff.close()
+    try:
+        ffmem = remget.get_saved_fits(dbcurs, fitsind)
+    except remget.RemGetError as e:
+        print("Could not fetch ind", fitsind, "error was", e.args[0], file=sys.stderr)
+        continue
+
+    ffhdr, fdat = fitsops.mem_get(ffmem)
     fdat = fdat[0:rows, 0:cols]
     fdat = fdat.astype(np.float64)
     endr = starty + rows
@@ -99,4 +102,6 @@ for k in sorted(fitsids.keys()):
     print(k, file=outf)
 outf.close()
 
-np.save(tallyfn, tally)
+outf = open(tallyfn, "wb")
+np.save(outf, tally)
+outf.close()

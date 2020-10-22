@@ -15,7 +15,7 @@ my $forward = 0;
 my $backward = 0;
 my $dbname = remdefaults::default_database;
 
-GetOptions("database=s" => \$dbname, 
+GetOptions("database=s" => \$dbname,
            "year=i" => \$year,
            "month=i" => \$month,
            "filter=s", \$filter,
@@ -80,9 +80,9 @@ unless ($row)  {
     my $fstep = 0;
     my $bstep = 0;
     my $combdate = $year * 12 + $month - 1;
-    
+
     while  ($fstep < $forward || $bstep < $backward)  {
-        
+
         if ($fstep < $forward)  {
             $fstrep++;
             my $rd = $combdate + $fstep;
@@ -96,7 +96,7 @@ unless ($row)  {
                 last;
             }
         }
-        
+
         if ($bstep < $backward)  {
             $bstep++;
             my $rd = $combdate - $bstep;
@@ -111,7 +111,7 @@ unless ($row)  {
             }
         }
     }
-    
+
     unless ($row)  {
        print STDERR "Cannot find specified $type file\n";
         exit 20;
@@ -152,29 +152,29 @@ fetrchforb - - Get monthly flat or bias file from database
 
 fetchfits options
 
-  
+
 =head1 OPTIONS
 
 Nearly all the options are actually required.
- 
+
 =over 8
- 
+
 =item B<-help>
- 
+
  Print a brief help message and exit.
- 
+
 =item B<-year> integer
- 
+
  Specify the required year.
- 
+
 =item B<-month> integer
- 
+
  Specify the required month.
 
 =item B<-type> f/b
 
  Specify the required type, flat or bias
- 
+
 =item B<-filter> g/r/i/z
 
  Specify the required filter type
@@ -182,7 +182,7 @@ Nearly all the options are actually required.
 =item B<-outfile> filename
 
  Specify the required output file name (probably should end in .gz)
- 
+
 =item B<-forward> n
 
  If the file cannot be found try successive months forward up to n.
@@ -190,7 +190,7 @@ Nearly all the options are actually required.
 =item B<-backward> n
 
  If the file cannot be found try successive months backward up to n.
- 
+
 =back
 
 If both -forward and -backward ptions are given, the forward and backward steps are tried alternately until a file is found.
@@ -198,5 +198,3 @@ If both -forward and -backward ptions are given, the forward and backward steps 
 =head1 DESCRIPTION
 
 This program copies the required flat or bias file to the specified output file
-
-

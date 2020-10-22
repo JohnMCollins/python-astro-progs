@@ -22,7 +22,7 @@ import warnings
 import dbops
 import remdefaults
 import remget
-import remfitshdr
+import remfits
 import fitsops
 import argparse
 import trimarrays
@@ -55,7 +55,7 @@ if resargs['hasfile']:
     fieldselect.append('ind!=0')
 
 orfields = []
-for orf in ('airmass', 'gain', 'rows', 'cols'):
+for orf in ('airmass', 'gain', 'nrows', 'ncols'):
     orfields.append(orf + " IS NULL")
 sxfields.append("startx=0")
 sxfields.append("starty=0")
@@ -138,12 +138,12 @@ for obsind, fitsind, exptime, filter, date_obs, gain, dithID, ffname in rows:
     updfields.append("airmass=%.6g" % fairmass)
     updfields.append("moonphase=%.6g" % moonphase)
     updfields.append("moondist=%.6g" % moondist)
-    updfields.append("rows=%d" % fitsrows)
-    updfields.append("cols=%d" % fitscols)
+    updfields.append("nrows=%d" % fitsrows)
+    updfields.append("ncols=%d" % fitscols)
     updfields.append("startx=%d" % startx)
     updfields.append("starty=%d" % starty)
     updfields.append("minv=%d" % sqq.min())
-    updfields.append("minv=%d" % sqq.max())
+    updfields.append("maxv=%d" % sqq.max())
     updfields.append("sidet=%d" % realtrimsides)
     updfields.append("median=%.8e" % np.median(tsfdat))
     updfields.append("mean=%.8e" % tsfdat.mean())
@@ -152,9 +152,9 @@ for obsind, fitsind, exptime, filter, date_obs, gain, dithID, ffname in rows:
     updfields.append("kurt=%.8e" % ss.kurtosis(tsfdat, axis=None))
     dbcurs.execute("UPDATE obsinf SET " + ",".join(updfields) + " WHERE obsind=%d" % obsind)
     if fitsind != 0:
-        dbcurs.execute("UPDATE fitsfile SET rows=%d,cols=%d,startx=%d,starty=%d WHERE ind=%d" % (fitsrows, fitscols, startx, starty, fitsind))
-        if dithID == 0 and not remfitshdr.check_has_dims(ffhdr):
-            remfitshdr.set_dims_in_hdr(ffhdr, startx, starty, fitscols, fitsrows)
+        dbcurs.execute("UPDATE fitsfile SET nrows=%d,ncols=%d,startx=%d,starty=%d WHERE ind=%d" % (fitsrows, fitscols, startx, starty, fitsind))
+        if dithID == 0 and not remfits.check_has_dims(ffhdr):
+            remfits.set_dims_in_hdr(ffhdr, startx, starty, fitscols, fitsrows)
             dbcurs.execute("UPDATE fitsfile SET fitsgz=%s WHERE ind=" + str(fitsind), fitsops.mem_makefits(ffhdr, fdat))
             dims_added += 1
 
@@ -179,7 +179,7 @@ sxfields = []
 
 fieldselect.append('fitsind!=0')
 
-for orf in ('gain', 'rows', 'cols'):
+for orf in ('gain', 'nrows', 'ncols'):
     orfields.append(orf + " IS NULL")
 
 sxfields.append("startx=0")
@@ -196,7 +196,7 @@ for year, month, filter, typ, fitsind in rows:
 
     # Manufacture end of month out of year and month
 
-    date_obs = datetime.date(year, month, 15) + dateutil.relativedelta.relativedelta(day=31)
+    date_obs = datetime.datetime(year, month, 15, 23, 59, 0) + dateutil.relativedelta.relativedelta(day=31)
 
     try:
         ffmem = remget.get_saved_fits(dbcurs, fitsind)
@@ -216,13 +216,13 @@ for year, month, filter, typ, fitsind in rows:
     fitsrows, fitscols = nzfdat.shape
     startx, starty, rcols, rrows = remdefaults.get_geom(date_obs, filter)
 
-    dbcurs.execute("UPDATE forbinf SET gain=%.6g,rows=%d,cols=%d,startx=%d,starty=%d WHERE filter='%s' AND typ='%s' AND year=%d AND month=%d" %
+    dbcurs.execute("UPDATE forbinf SET gain=%.6g,nrows=%d,ncols=%d,startx=%d,starty=%d WHERE filter='%s' AND typ='%s' AND year=%d AND month=%d" %
                     (fgain, fitsrows, fitscols, startx, starty, filter, typ, year, month))
 
-    dbcurs.execute("UPDATE fitsfile SET rows=%d,cols=%d,startx=%d,starty=%d WHERE ind=%d" % (fitsrows, fitscols, startx, starty, fitsind))
+    dbcurs.execute("UPDATE fitsfile SET nrows=%d,ncols=%d,startx=%d,starty=%d WHERE ind=%d" % (fitsrows, fitscols, startx, starty, fitsind))
 
-    if not remfitshdr.check_has_dims(ffhdr):
-        remfitshdr.set_dims_in_hdr(ffhdr, startx, starty, fitscols, fitsrows)
+    if not remfits.check_has_dims(ffhdr):
+        remfits.set_dims_in_hdr(ffhdr, startx, starty, fitscols, fitsrows)
         dbcurs.execute("UPDATE fitsfile SET fitsgz=%s WHERE ind=" + str(fitsind), fitsops.mem_makefits(ffhdr, fdat))
         dims_added += 1
 
@@ -247,7 +247,7 @@ sxfields = []
 fieldselect.append('ind!=0')
 
 orfields = []
-for orf in ('gain', 'rows', 'cols'):
+for orf in ('gain', 'nrows', 'ncols'):
     orfields.append(orf + " IS NULL")
 sxfields.append("startx=0")
 sxfields.append("starty=0")
@@ -302,12 +302,12 @@ for fitsind, iforbind, typ, gain, exptime, filter, date_obs in rows:
 
     updfields = []
     updfields.append("gain=%.6g" % fgain)
-    updfields.append("rows=%d" % fitsrows)
-    updfields.append("cols=%d" % fitscols)
+    updfields.append("nrows=%d" % fitsrows)
+    updfields.append("ncols=%d" % fitscols)
     updfields.append("startx=%d" % startx)
     updfields.append("starty=%d" % starty)
     updfields.append("minv=%d" % sqq.min())
-    updfields.append("minv=%d" % sqq.max())
+    updfields.append("maxv=%d" % sqq.max())
     updfields.append("sidet=%d" % realtrimsides)
     updfields.append("median=%.8e" % np.median(tsfdat))
     updfields.append("mean=%.8e" % tsfdat.mean())
@@ -315,13 +315,13 @@ for fitsind, iforbind, typ, gain, exptime, filter, date_obs in rows:
     updfields.append("skew=%.8e" % ss.skew(tsfdat, axis=None))
     updfields.append("kurt=%.8e" % ss.kurtosis(tsfdat, axis=None))
     dbcurs.execute("UPDATE iforbinf SET " + ",".join(updfields) + " WHERE iforbind=%d" % iforbind)
-    dbcurs.execute("UPDATE fitsfile SET rows=%d,cols=%d,startx=%d,starty=%d WHERE ind=%d" % (fitsrows, fitscols, startx, starty, fitsind))
+    dbcurs.execute("UPDATE fitsfile SET nrows=%d,ncols=%d,startx=%d,starty=%d WHERE ind=%d" % (fitsrows, fitscols, startx, starty, fitsind))
 
     # Possibly update FITS file
 
-    if not remfitshdr.check_has_dims(ffhdr):
-        remfitshdr.set_dims_in_hdr(ffhdr, startx, starty, fitscols, fitsrows)
-        dbcurs.execute("UPDATE fitsfile SET fitsgz=%s WHERE ind=" + str(fitsind), fitsops.mem_makefits(ffhdr, fdat)(ffhdr, fdat))
+    if not remfits.check_has_dims(ffhdr):
+        remfits.set_dims_in_hdr(ffhdr, startx, starty, fitscols, fitsrows)
+        dbcurs.execute("UPDATE fitsfile SET fitsgz=%s WHERE ind=" + str(fitsind), fitsops.mem_makefits(ffhdr, fdat))
         dims_added += 1
 
     # Do this check after we've put other stuff in

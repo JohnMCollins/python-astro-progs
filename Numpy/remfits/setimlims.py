@@ -38,7 +38,7 @@ for filter in 'girz':
 dbase = dbops.opendb(mydbname)
 dbcurs = dbase.cursor()
 
-dbcurs.execute("SELECT MIN(rows),MIN(cols),filter FROM obsinf WHERE rows IS NOT NULL GROUP BY filter")
+dbcurs.execute("SELECT MIN(nrows),MIN(ncols),filter FROM obsinf WHERE nrows IS NOT NULL GROUP BY filter")
 rows = dbcurs.fetchall()
 
 obsrows = dict()
@@ -48,7 +48,7 @@ for minr, minc, filt in rows:
     obsrows[filt] = minr
     obscols[filt] = minc
 
-dbcurs.execute("SELECT MIN(rows),MIN(cols),filter FROM iforbinf WHERE rows IS NOT NULL GROUP BY filter")
+dbcurs.execute("SELECT MIN(nrows),MIN(ncols),filter FROM iforbinf WHERE nrows IS NOT NULL GROUP BY filter")
 rows = dbcurs.fetchall()
 
 for minr, minc, filt in rows:

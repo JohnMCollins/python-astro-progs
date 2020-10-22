@@ -16,7 +16,7 @@ import remdefaults
 
 parsearg = argparse.ArgumentParser(description='Create/delete alias names for objects', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 parsearg.add_argument('names', nargs='*', type=str, help='Main name followed by aliases')
-parsearg.add_argument('--database', type=str, default=remdefaults.default_database(), help='Database to use')
+remdefaults.parseargs(parsearg, libdir=False, tempdir=False)
 parsearg.add_argument('--delete', action='store_true', help='Delete aliases main name not needed')
 parsearg.add_argument('--alldelete', action='store_true', help='Delete all aliases for main name')
 parsearg.add_argument('--source', type=str, default='By hand', help='Source of alias names')
@@ -24,17 +24,15 @@ parsearg.add_argument('--verbose', action='store_true', help='Give info about wh
 parsearg.add_argument('--list', action='store_true', help='Just list existing aliases')
 
 resargs = vars(parsearg.parse_args())
-
+remdefaults.getargs(resargs)
 objnames = resargs['names']
-dbname = resargs['database']
 delete = resargs['delete']
 alldelete = resargs['alldelete']
 source = resargs['source']
 verbose = resargs['verbose']
 listem = resargs['list']
 
-mydb = dbops.opendb(dbname)
-dbcurs = mydb.cursor()
+mydb, dbcurs = remdefaults.opendb()
 
 if listem:
     dbcurs.execute("SELECT objname,alias,source FROM objalias ORDER BY objname,alias,source")
@@ -43,19 +41,19 @@ if listem:
     nsize = 0
     asize = 0
     for row in stuff:
-        name,alias,source = row
-        nsize = max(nsize,len(name)+1)
-        asize = max(asize, len(alias)+1)
+        name, alias, source = row
+        nsize = max(nsize, len(name) + 1)
+        asize = max(asize, len(alias) + 1)
         tabs.append(row)
     lastname = ""
     for row in tabs:
-        name,alias,source = row
+        name, alias, source = row
         if name == lastname:
             print(" " * nsize, end=' ')
         else:
-            print(name + " " * (nsize-len(name)), end=' ')
+            print(name + " " * (nsize - len(name)), end=' ')
             lastname = name
-        print(alias + " " * (asize -len(alias)), end=' ')
+        print(alias + " " * (asize - len(alias)), end=' ')
         print(source)
     sys.exit(0)
 

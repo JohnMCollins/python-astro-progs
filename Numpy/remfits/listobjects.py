@@ -17,9 +17,11 @@ import numpy as np
 import locale
 import remdefaults
 
+
 def thou(n):
     """Print n with thousands separator"""
     return locale.format_string("%d", n, grouping=True)
+
 
 class obstot(object):
 	"""Details of result"""
@@ -31,19 +33,20 @@ class obstot(object):
 		self.todate = None
 		self.isundef = None
 
+
 parsearg = argparse.ArgumentParser(description='List all objects with first and last date',
                                    formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-parsearg.add_argument('--database', type=str, default=remdefaults.default_database(), help='Database to use')
+remdefaults.parseargs(parsearg, libdir=False, tempdir=False)
 parsearg.add_argument('--order', type=str, help='Order - (n)umber obs (e)arlist (l)atest')
-parsearg.add_argument('--cutoff', type=float, help='Summarise for %arg less than this')
-parsearg.add_argument('--dither', type=int, nargs='*', default = [0], help='Dither ID to limit to')
+parsearg.add_argument('--cutoff', type=float, help='Summarise for percent arg less than this')
+parsearg.add_argument('--dither', type=int, nargs='*', default=[0], help='Dither ID to limit to')
 parsearg.add_argument('--filter', type=str, nargs='*', help='filters to limit to')
 parsearg.add_argument('--gain', type=float, help='Restrict to given gain value')
 parsearg.add_argument('--latex', action='store_true', help='Latex output')
 parsearg.add_argument('--noundef', action='store_true', help='Do not summarise undefined')
 
 resargs = vars(parsearg.parse_args())
-dbname = resargs['database']
+remdefaults.getargs(resargs)
 order = resargs['order']
 cutoff = resargs['cutoff']
 latex = resargs['latex']
@@ -52,9 +55,7 @@ dither = resargs['dither']
 filters = resargs['filter']
 noundef = resargs['noundef']
 
-mydb = dbops.opendb(dbname)
-
-dbcurs = mydb.cursor()
+mydb, dbcurs = remdefaults.opendb()
 
 sel = ''
 if gain is not None:
@@ -63,12 +64,12 @@ if gain is not None:
 if filters is not None:
     qfilt = [ "filter='" + o + "'" for o in filters]
     if len(sel) != 0: sel += " AND "
-    sel += "(" + " OR ".join(qfilt) +")"
+    sel += "(" + " OR ".join(qfilt) + ")"
 
 if len(dither) != 1 or dither[0] != -1:
     qdith = [ "dithID=" + str(d) for d in dither]
     if len(sel) != 0: sel += " AND "
-    sel += "(" + " OR ".join(qdith) +")"
+    sel += "(" + " OR ".join(qdith) + ")"
 
 if len(sel) != 0: sel = "WHERE " + sel
 dbcurs.execute("SELECT object,COUNT(*) AS number FROM obsinf " + sel + "GROUP BY object")
@@ -125,11 +126,11 @@ if cutoff is not None:
 if order is not None and len(order) != 0:
 	f = order[0].lower()
 	if f == 'n':
-		results.sort(key=attrgetter('count'),reverse=True)
+		results.sort(key=attrgetter('count'), reverse=True)
 	elif f == 'e':
 		results.sort(key=attrgetter('fromdate'))
 	elif f == 'l':
-		results.sort(key=attrgetter('todate'),reverse=True)
+		results.sort(key=attrgetter('todate'), reverse=True)
 
 if summ is not None:
 	results.append(summ)

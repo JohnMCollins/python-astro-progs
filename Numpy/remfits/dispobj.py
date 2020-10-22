@@ -26,51 +26,53 @@ listf = resargs['list']
 
 errors = 0
 
-if listf:
-    for file in resargs['files']:
-        try:
-            ff = fits.open(file)
-        except IOError as e:
-            sys.stdout = sys.stderr
-            if len(e.args) == 1:
-                print("Incorrect format fits file", file)
-            else:
-                print("Cannot open:", file, "Error was:", e.args[1])
-            sys.stdout = sys.__stdout__
-            errors += 1
-            continue
-        h = ff[0].header
-        ks = list(h.keys())
-        ks.sort()
-        print(file + ':')
-        for k in ks:
-            print("\t" + k + "\t=\t" + str(h[k]))
-else:
-    for file in resargs['files']:
-        try:
-            ff = fits.open(file)
-        except IOError as e:
-            sys.stdout = sys.stderr
-            if len(e.args) == 1:
-                print("Incorrect format fits file", file)
-            else:
-                print("Cannot open:", file, "Error was:", e.args[1])
-            sys.stdout = sys.__stdout__
-            errors += 1
-            continue
-        h = ff[0].header
-        try:
-            t = h[whichobj]
-            if plusfn:
-                print(file + ':', end=' ')
-            print(t)
-        except KeyError:
-            sys.stdout = sys.stderr
-            print("Could not find", whichobj, "in fits file", file)
-            sys.stdout = sys.__stdout__
-            errors += 1
-        ff.close()
-
+try:
+    if listf:
+        for file in resargs['files']:
+            try:
+                ff = fits.open(file)
+            except IOError as e:
+                sys.stdout = sys.stderr
+                if len(e.args) == 1:
+                    print("Incorrect format fits file", file)
+                else:
+                    print("Cannot open:", file, "Error was:", e.args[1])
+                sys.stdout = sys.__stdout__
+                errors += 1
+                continue
+            h = ff[0].header
+            ks = list(h.keys())
+            ks.sort()
+            print(file + ':')
+            for k in ks:
+                print("\t" + k + "\t=\t" + str(h[k]))
+    else:
+        for file in resargs['files']:
+            try:
+                ff = fits.open(file)
+            except IOError as e:
+                sys.stdout = sys.stderr
+                if len(e.args) == 1:
+                    print("Incorrect format fits file", file)
+                else:
+                    print("Cannot open:", file, "Error was:", e.args[1])
+                sys.stdout = sys.__stdout__
+                errors += 1
+                continue
+            h = ff[0].header
+            try:
+                t = h[whichobj]
+                if plusfn:
+                    print(file + ':', end=' ')
+                print(t)
+            except KeyError:
+                sys.stdout = sys.stderr
+                print("Could not find", whichobj, "in fits file", file)
+                sys.stdout = sys.__stdout__
+                errors += 1
+            ff.close()
+except (KeyboardInterrupt, BrokenPipeError):
+    pass
 if errors > 0:
     sys.exit(1)
 sys.exit(0)

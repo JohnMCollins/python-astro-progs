@@ -63,7 +63,7 @@ datelist = []
 rows = []
 cols = []
 for tab in ('obsinf', 'iforbinf'):
-    selstmt = "select date_obs,rows,cols from " + tab + " where " + " and ".join(fieldselect)
+    selstmt = "select date_obs,nrows,ncols from " + tab + " where " + " and ".join(fieldselect)
     dbcurs.execute(selstmt)
     for row in dbcurs.fetchall():
         dat, r, c = row

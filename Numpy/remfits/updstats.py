@@ -51,7 +51,7 @@ rows = dbcurs.fetchall()
 nifb = 0
 nrows = len(rows)
 
-for fitsind, ind, typ in rows:
+for fitsind, ind, typ in nrows:
 
     ffile = dbremfitsobj.getfits(dbcurs, fitsind)
     fdat = ffile[0].data
@@ -61,7 +61,7 @@ for fitsind, ind, typ in rows:
     tsfdat = nzfdat
     if trimsides > 0:
         tsfdat = nzfdat[trimsides:-trimsides, trimsides:-trimsides]
-    dbcurs.execute("UPDATE iforbinf SET rows=%d,cols=%d,minv=%d,maxv=%d,sidet=%d,median=%.8e,mean=%.8e,std=%.8e,skew=%.8e,kurt=%.8e WHERE iforbind=%d" %
+    dbcurs.execute("UPDATE iforbinf SET nrows=%d,ncols=%d,minv=%d,maxv=%d,sidet=%d,median=%.8e,mean=%.8e,std=%.8e,skew=%.8e,kurt=%.8e WHERE iforbind=%d" %
                    (nzfdat.shape[0], nzfdat.shape[1], sqq.min(), sqq.max(), trimsides, np.median(tsfdat), tsfdat.mean(), tsfdat.std(), ss.skew(tsfdat, axis=None), ss.kurtosis(tsfdat, axis=None), ind))
     ffile.close()
     nifb += 1

@@ -126,7 +126,7 @@ for file in files:
     if filter is None:
         filter = ffilt
         qfilt = dbase.escape(filter)
-        dbcurs.execute("SELECT MIN(rows),MIN(cols) FROM iforbinf WHERE rows IS NOT NULL AND filter=" + qfilt)
+        dbcurs.execute("SELECT MIN(nrows),MIN(ncols) FROM iforbinf WHERE nrows IS NOT NULL AND filter=" + qfilt)
         rows = dbcurs.fetchall()
         rdim, coldim = rows[0]
         fdat = fdat[0:rdim, 0:coldim]

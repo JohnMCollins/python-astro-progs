@@ -35,20 +35,18 @@ class obstot(object):
 
 parsearg = argparse.ArgumentParser(description='List number by filter',
                                    formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-parsearg.add_argument('--database', type=str, default=remdefaults.default_database(), help='Database to use')
+remdefaults.parseargs(parsearg, libdir=False, tempdir=False)
 parsearg.add_argument('--objects', type=str, nargs='*', help='Objects to limit to')
 parsearg.add_argument('--gain', type=float, help='Restrict to given gain value')
 parsearg.add_argument('--latex', action='store_true', help='Latex output')
 
 resargs = vars(parsearg.parse_args())
-dbname = resargs['database']
+remdefaults.getargs(resargs)
 objlist = resargs['objects']
 latex = resargs['latex']
 gain = resargs['gain']
 
-mydb = dbops.opendb(dbname)
-
-dbcurs = mydb.cursor()
+mydb, dbcurs = remdefaults.opendb()
 
 sel = ''
 if objlist is not None:
@@ -73,7 +71,10 @@ for row in dbcurs.fetchall():
 if latex:
     locale.setlocale(locale.LC_ALL, "")
     for filter in 'girzHJK':
-        print(filter, thou(results[filter]), sep=' & ', end=' \\\\\n')
+        try:
+            print(filter, thou(results[filter]), sep=' & ', end=' \\\\\n')
+        except KeyError:
+            pass
     try:
         print('GRISM', thou(results['GRI']), sep=' & ', end=' \\\\\n')
     except KeyError:

@@ -67,4 +67,3 @@ print STDERR "$count daily flat/bias FITS files loaded";
 print STDERR " 1 error" if $errors == 1;
 print STDERR " $errors errors" if $errors > 1;
 print STDERR "\n";
-

@@ -63,7 +63,7 @@ dbase, dbcurs = remdefaults.opendb()
 #         side = ffshape[0]
 #
 #     nzfdat = trimarrays.trimzeros(trimarrays.trimnan(fdat))
-#     dbcurs.execute("UPDATE fitsfile SET side=%d,rows=%d,cols=%d WHERE ind=%d" % (side, nzfdat.shape[0], nzfdat.shape[1], ind))
+#     dbcurs.execute("UPDATE fitsfile SET side=%d,nrows=%d,ncols=%d WHERE ind=%d" % (side, nzfdat.shape[0], nzfdat.shape[1], ind))
 #     ffile.close()
 #     nsides += 1
 #     if nsides % 20 == 0:
@@ -76,7 +76,7 @@ dbase, dbcurs = remdefaults.opendb()
 
 # Fix gain and airmass, check exp time in observations and update fits details as well
 
-dbcurs.execute("SELECT obsind,ind,exptime,filter, date_obs FROM obsinf WHERE dithID=0 AND ind!=0 AND rejreason IS NULL AND (airmass IS NULL OR gain IS NULL OR rows IS NULL OR cols IS NULL OR (startx=0 and starty=0))")
+dbcurs.execute("SELECT obsind,ind,exptime,filter, date_obs FROM obsinf WHERE dithID=0 AND ind!=0 AND rejreason IS NULL AND (airmass IS NULL OR gain IS NULL OR nrows IS NULL OR ncols IS NULL OR (startx=0 and starty=0))")
 rows = dbcurs.fetchall()
 
 dims_added = 0
@@ -117,9 +117,9 @@ for obsind, fitsind, exptime, filter, date_obs in rows:
     if rrows != fitsrows:
         print("Obsind", obsind, "Expected height of image to be", rrows, "but it is", fitsrows, file=sys.stderr)
 
-    dbcurs.execute("UPDATE obsinf SET airmass=%.6g,gain=%.6g,moonphase=%.6g,moondist=%.6g,rows=%d,cols=%d,startx=%d,starty=%d,minv=%d,maxv=%d,sidet=%d,median=%.8e,mean=%.8e,std=%.8e,skew=%.8e,kurt=%.8e WHERE obsind=%d" %
+    dbcurs.execute("UPDATE obsinf SET airmass=%.6g,gain=%.6g,moonphase=%.6g,moondist=%.6g,nrows=%d,ncols=%d,startx=%d,starty=%d,minv=%d,maxv=%d,sidet=%d,median=%.8e,mean=%.8e,std=%.8e,skew=%.8e,kurt=%.8e WHERE obsind=%d" %
                     (fairmass, fgain, moonphase, moondist, fitsrows, fitscols, startx, starty, sqq.min(), sqq.max(), trimsides, np.median(tsfdat), tsfdat.mean(), tsfdat.std(), ss.skew(tsfdat, axis=None), ss.kurtosis(tsfdat, axis=None), obsind))
-    dbcurs.execute("UPDATE fitsfile SET side=%d,rows=%d,cols=%d,startx=%d,starty=%d WHERE ind=%d" % (sidesize, fitsrows, fitscols, startx, starty, fitsind))
+    dbcurs.execute("UPDATE fitsfile SET side=%d,nrows=%d,ncols=%d,startx=%d,starty=%d WHERE ind=%d" % (sidesize, fitsrows, fitscols, startx, starty, fitsind))
     if not remfitshdr.check_has_dims(ffhdr):
         remfitshdr.set_dims_in_hdr(ffhdr, startx, starty, fitscols, fitsrows)
         dbcurs.execute("UPDATE fitsfile SET fitsgz=%s WHERE ind=" + str(fitsind), fitsops.mem_makefits(ffhdr, fdat))
@@ -131,7 +131,7 @@ dbase.commit()
 
 # Repeat for master flats and biases
 
-dbcurs.execute("SELECT year,month,filter,typ,fitsind FROM forbinf WHERE (rows IS NULL OR cols IS NULL OR gain IS NULL OR (startx=0 AND starty=0)) AND rejreason IS NULL AND fitsind!=0")
+dbcurs.execute("SELECT year,month,filter,typ,fitsind FROM forbinf WHERE (nrows IS NULL OR ncols IS NULL OR gain IS NULL OR (startx=0 AND starty=0)) AND rejreason IS NULL AND fitsind!=0")
 rows = dbcurs.fetchall()
 
 nmfb = 0
@@ -163,7 +163,7 @@ for year, month, filter, typ, fitsind in rows:
         print("Master", typ, year, month, "filter", filter, "Expected height of image to be", rrows, "but it is", fitsrows, file=sys.stderr)
 
     dbcurs.execute("UPDATE forbinf SET gain=%.6g WHERE filter='%s' AND typ='%s' AND year=%d AND month=%d" % (fgain, filter, typ, year, month))
-    dbcurs.execute("UPDATE fitsfile SET side=%d,rows=%d,cols=%d,startx=%d,starty=%d WHERE ind=%d" % (sidesize, fitsrows, fitscols, startx, starty, fitsind))
+    dbcurs.execute("UPDATE fitsfile SET side=%d,nrows=%d,ncols=%d,startx=%d,starty=%d WHERE ind=%d" % (sidesize, fitsrows, fitscols, startx, starty, fitsind))
     if not remfitshdr.check_has_dims(ffhdr):
         remfitshdr.set_dims_in_hdr(ffhdr, startx, starty, fitscols, fitsrows)
         dbcurs.execute("UPDATE fitsfile SET fitsgz=%s WHERE ind=" + str(fitsind), fitsops.mem_makefits(ffhdr, fdat))
@@ -175,7 +175,7 @@ dbase.commit()
 
 # Finally indiviaul flag and bias
 
-dbcurs.execute("SELECT ind,iforbind,typ,filter,date_obs FROM iforbinf WHERE (sidet!=%d OR gain IS NULL OR rows IS NULL OR cols IS NULL OR (startx=0 AND starty=0)) AND rejreason IS NULL AND ind!=0" % trimsides)
+dbcurs.execute("SELECT ind,iforbind,typ,filter,date_obs FROM iforbinf WHERE (sidet!=%d OR gain IS NULL OR nrows IS NULL OR ncols IS NULL OR (startx=0 AND starty=0)) AND rejreason IS NULL AND ind!=0" % trimsides)
 rows = dbcurs.fetchall()
 
 nifb = 0
@@ -207,11 +207,11 @@ for fitsind, ind, typ, filter, date_obs in rows:
     if rrows != fitsrows:
         print("Iforbind", ind, "Expected height of image to be", rrows, "but it is", fitsrows, file=sys.stderr)
 
-    dbcurs.execute("UPDATE iforbinf SET gain=%.6g,rows=%d,cols=%d,startx=%d,starty=%d,minv=%d,maxv=%d,sidet=%d,median=%.8e,mean=%.8e,std=%.8e,skew=%.8e,kurt=%.8e WHERE iforbind=%d" %
+    dbcurs.execute("UPDATE iforbinf SET gain=%.6g,nrows=%d,ncols=%d,startx=%d,starty=%d,minv=%d,maxv=%d,sidet=%d,median=%.8e,mean=%.8e,std=%.8e,skew=%.8e,kurt=%.8e WHERE iforbind=%d" %
                    (fgain, fitsrows, fitscols, startx, starty, sqq.min(), sqq.max(),
                     trimsides, np.median(tsfdat), tsfdat.mean(), tsfdat.std(),
                     ss.skew(tsfdat, axis=None), ss.kurtosis(tsfdat, axis=None), ind))
-    dbcurs.execute("UPDATE fitsfile SET side=%d,rows=%d,cols=%d,startx=%d,starty=%d WHERE ind=%d" % (sidesize, fitsrows, fitscols, startx, starty, fitsind))
+    dbcurs.execute("UPDATE fitsfile SET side=%d,nrows=%d,ncols=%d,startx=%d,starty=%d WHERE ind=%d" % (sidesize, fitsrows, fitscols, startx, starty, fitsind))
     if not remfitshdr.check_has_dims(ffhdr):
         remfitshdr.set_dims_in_hdr(ffhdr, startx, starty, fitscols, fitsrows)
         dbcurs.execute("UPDATE fitsfile SET fitsgz=%s WHERE ind=" + str(fitsind), fitsops.mem_makefits(ffhdr, fdat)(ffhdr, fdat))

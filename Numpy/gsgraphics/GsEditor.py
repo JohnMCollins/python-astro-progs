@@ -26,7 +26,7 @@ import miscutils
 import xmlutil
 import remgeom
 import trimarrays
-import remfitshdr
+import remfits
 
 import ui_gsedit
 import ui_geomdlg
@@ -131,8 +131,8 @@ class GsEditorMain(QtWidgets.QMainWindow, ui_gsedit.Ui_gseditmain):
                 QtWidgets.QMessageBox.warning(self, "FITS file errorr", "Loading from: " + fname + "  wrong file type")
                 return False
             try:
-                fhdr = remfitshdr.RemFitsHdr(ffile[0].header)
-            except remfitshdr.RemFitsHdrErr as e:
+                fhdr = remfits.RemFitsHdr(ffile[0].header)
+            except remfits.RemFitsErr as e:
                 ffile.close()
                 QtWidgets.QMessageBox.warning(self, "FITS file errorr", "Loading from: " + fname + " " + e.args[0])
                 return False
