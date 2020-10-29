@@ -18,6 +18,7 @@ parsetime.parseargs_daterange(parsearg)
 remfield.parseargs(parsearg)
 parsearg.add_argument('--type', type=str, default='obs', choices=('obs', 'flat', 'bias'), help='What kind of file tp process#')
 parsearg.add_argument('--create', action='store_true', help='Expecting to create file rather than append to existing file')
+parsearg.add_argument('--force', action='store_true', help='Force create new file on top of existing')
 parsearg.add_argument('--prefix', required=True, type=str, help='Result file prefix')
 
 resargs = vars(parsearg.parse_args())
@@ -25,6 +26,7 @@ remdefaults.getargs(resargs)
 create = resargs['create']
 prefix = resargs['prefix']
 ftype = resargs['type']
+force = resargs['force']
 fieldselect = []
 try:
     parsetime.getargs_daterange(resargs, fieldselect)
@@ -44,13 +46,14 @@ tallyfn = remdefaults.tally_file(prefix)
 fitsids = dict()
 
 if create:
-    if os.path.exists(fitsidfn):
-        print("FITS id file", fitsidfn, "already exists - aborting", file=sys.stderr)
-        sys.exit(10)
-    if os.path.exists(tallyfn):
-        print("FITS tally file", tallyfn, "already exists - aborting", file=sys.stderr)
-        sys.exit(11)
-    tally = np.zeros((3, 2048, 2048), dtype=np.float64)
+    if not force:
+        if os.path.exists(fitsidfn):
+            print("FITS id file", fitsidfn, "already exists - aborting use --force if needed", file=sys.stderr)
+            sys.exit(10)
+        if os.path.exists(tallyfn):
+            print("FITS tally file", tallyfn, "already exists - aborting use --force if needed", file=sys.stderr)
+            sys.exit(11)
+    tally = np.concatenate((np.zeros((3, 2048, 2048), dtype=np.float64), np.full((1, 2048, 2048), 1e60, dtype=np.float64), np.full((1, 2048, 2048), -1e60, dtype=np.float64)), axis=0)
 else:
     try:
         tally = np.load(tallyfn)
@@ -94,6 +97,8 @@ for dbrow in dbrows:
         tally[0, starty:endr, startx:endc] += 1.0
         tally[1, starty:endr, startx:endc] += fdat
         tally[2, starty:endr, startx:endc] += fdat ** 2
+        tally[3, starty:endr, startx:endc] = np.minimum(tally[3, starty:endr, startx:endc], fdat)
+        tally[4, starty:endr, startx:endc] = np.maximum(tally[4, starty:endr, startx:endc], fdat)
     except ValueError:
         print("Wrong size ind = ", fitsind, "r/c/sx/sy", rows, cols, startx, starty, file=sys.stderr)
 

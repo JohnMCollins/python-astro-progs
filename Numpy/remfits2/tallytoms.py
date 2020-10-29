@@ -43,17 +43,17 @@ except OSError as e:
     print("Problem with file", tfile, "error was", e.args[1], file=sys.stderr)
     sys.exit(11)
 
-if not nocheck and tally.shape != (3, 2048, 2048):
-    print("Expecting tally file", tfile, "to be 3x2048x2048", file=sys.stderr)
+if not nocheck and tally.shape != (5, 2048, 2048):
+    print("Expecting tally file", tfile, "to be 5x2048x2048", file=sys.stderr)
     sys.exit(12)
 
-counts, sums, sumsq = tally
+counts, sums, sumsq, mins, maxes = tally
 
 means = sums / counts
 vars = sumsq / counts - means ** 2
 sdds = np.sqrt(vars)
 
-result = np.array([counts, means, sdds])
+result = np.array([counts, means, sdds, mins, maxes])
 
 result[np.isnan(result)] = 0
 outf = open(outfile, "wb")

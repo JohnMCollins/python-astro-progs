@@ -33,10 +33,10 @@ for iforbind, ffname in dbrows:
 	try:
 		ffile = remget.get_iforb(ffname)
 		mycurs.execute("INSERT INTO fitsfile (side,fitsgz) VALUES (1024,%s)", ffile)
-		mycurs.execute("UPDATE iforbinf SET ind=%d WHERE obsind=%d" % (mycurs.lastrowid, iforbind))
+		mycurs.execute("UPDATE iforbinf SET ind=%d WHERE iforbind=%d" % (mycurs.lastrowid, iforbind))
 		mydb.commit()
 		loaded += 1
-	except RemGetError as e:
+	except remget.RemGetError as e:
 		print("Caould not fetch %d error was %s" % (iforbind, e.args[0]), file=sys.stderr)
 		mycurs.execute("UPDATE iforbinf SET rejreason='FITS file not found' WHERE iforbind=%d" % iforbind)
 		errors += 1

@@ -61,7 +61,7 @@ for ffname, dithID, obsind in dbrows:
 		mycurs.execute("UPDATE obsinf SET ind=%d WHERE obsind=%d" % (mycurs.lastrowid, obsind))
 		mydb.commit()
 		loaded += 1
-	except RemGetError as e:
+	except remget.RemGetError as e:
 		print("Caould not fetch %d error was %s" % (obsind, e.args[0]), file=sys.stderr)
 		mycurs.execute("UPDATE obsinf SET rejreason='FITS file not found' WHERE obsind=%d" % obsind)
 		errors += 1
