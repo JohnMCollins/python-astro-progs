@@ -13,8 +13,10 @@ import argparse
 parsearg = argparse.ArgumentParser(description='Copy new bias or flat FITS files to local DB', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 remdefaults.parseargs(parsearg, libdir=False, tempdir=False)
 parsearg.add_argument('--verbose', action='store_false', help='Print out summary of what has been loaded')
+parsearg.add_argument('--debug', action='store_true', help='Debug queries')
 resargs = vars(parsearg.parse_args())
 verbose = resargs['verbose']
+debug = resargs['debug']
 remdefaults.getargs(resargs)
 
 fieldselect = []
@@ -26,6 +28,8 @@ mydb, mycurs = remdefaults.opendb()
 loaded = errors = 0
 
 selection = "SELECT iforbind,ffname FROM iforbinf WHERE " + " AND ".join(fieldselect)
+if debug:
+	print("Selection is:", selection, file=sys.stderr)
 mycurs.execute(selection)
 dbrows = mycurs.fetchall()
 

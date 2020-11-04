@@ -81,8 +81,10 @@ else:
 	parsearg = argparse.ArgumentParser(description='Copy new entries from rdots log to local DB', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 	remdefaults.parseargs(parsearg, libdir=False, tempdir=False)
 	parsearg.add_argument('--verbose', action='store_false', help='Print out summary of what has been loaded')
+	parsearg.add_argument('--debug', action='store_true', help='Debug queries')
 	resargs = vars(parsearg.parse_args())
 	verbose = resargs['verbose']
+	debug = resargs['debug']
 	remdefaults.getargs(resargs)
 
 mydb, mycurs = remdefaults.opendb()
@@ -110,7 +112,10 @@ row_add_list = []
 for dith_state in ("dithID=0", "dithID!=0"):
 	rowsadded = 0
 	max_serial = get_max_serial(mycurs, "obsinf", dith_state)
-	remcurs.execute(obsfields % (max_serial, dith_state))
+	query = obsfields % (max_serial, dith_state)
+	if debug:
+		print("Obs query:", query, file=sys.stderr)
+	remcurs.execute(query)
 	for dbrow in remcurs.fetchall():
 		insert_obs_row(dbrow)
 	row_add_list.append(rowsadded)
@@ -140,10 +145,13 @@ for tab, constr, typ in (("Dark", "exptime=0", 'bias'), ("Dark", "exptime!=0", '
 	rowsadded = 0
 	max_serial = get_max_serial(mycurs, "iforbinf", "typ='" + typ + "'")
 	if max_serial is None:
+		row_add_list.append(0)
 		continue
 	query = obsfields + tab + " WHERE serial>%d" % max_serial
 	if constr is not None:
 		query += " AND " + constr
+	if debug:
+		print("Running query for", typ, "-", query, file=sys.stderr)
 	remcurs.execute(query)
 	for dbrow in remcurs.fetchall():
 		insert_iforb_row(typ, dbrow)
@@ -157,14 +165,16 @@ if sum(row_add_list) == 0:
 	sys.exit(1)
 
 if verbose:
-	ros, remir, bias, flat = row_add_list
+	ros, remir, bias, dark, flat = row_add_list
 	if ros != 0:
-		print(ros, " new ROS2 rows added")
+		print(ros, "new ROS2 rows added")
 	if remir != 0:
-		print(remir, " new REMIR rows added")
-	if ros != 0:
-		print(bias, " new daily bias rows added")
-	if ros != 0:
-		print(flat, " new daily flat rows added")
+		print(remir, "new REMIR rows added")
+	if bias != 0:
+		print(bias, "new daily bias rows added")
+	if dark != 0:
+		print(dark, "new daily dark rows added")
+	if flat != 0:
+		print(flat, "new daily flat rows added")
 
 sys.exit(0)
