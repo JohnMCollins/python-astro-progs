@@ -348,37 +348,37 @@ class GsEditDlg(QtWidgets.QDialog, ui_gseditdlg.Ui_gseditdlg):
     def on_shade15_valueChanged(self, value): self.shadechanged(14, value)
 
     def on_shade16_valueChanged(self, value): self.shadechanged(15, value)
-    
+
     def on_shade17_valueChanged(self, value): self.shadechanged(16, value)
-    
+
     def on_shade18_valueChanged(self, value): self.shadechanged(17, value)
-    
+
     def on_shade19_valueChanged(self, value): self.shadechanged(18, value)
-    
+
     def on_shade20_valueChanged(self, value): self.shadechanged(19, value)
-    
+
     def on_shade21_valueChanged(self, value): self.shadechanged(20, value)
-    
+
     def on_shade22_valueChanged(self, value): self.shadechanged(21, value)
-    
+
     def on_shade23_valueChanged(self, value): self.shadechanged(22, value)
-    
+
     def on_shade24_valueChanged(self, value): self.shadechanged(23, value)
-    
+
     def on_shade25_valueChanged(self, value): self.shadechanged(24, value)
-    
+
     def on_shade26_valueChanged(self, value): self.shadechanged(25, value)
-    
+
     def on_shade27_valueChanged(self, value): self.shadechanged(26, value)
-    
+
     def on_shade28_valueChanged(self, value): self.shadechanged(27, value)
-    
+
     def on_shade29_valueChanged(self, value): self.shadechanged(28, value)
-    
+
     def on_shade30_valueChanged(self, value): self.shadechanged(29, value)
-    
+
     def on_shade31_valueChanged(self, value): self.shadechanged(30, value)
-    
+
     def on_shade32_valueChanged(self, value): self.shadechanged(31, value)
 
     def shadechanged(self, shadenum, newshade):
@@ -543,7 +543,7 @@ class GsEditDlg(QtWidgets.QDialog, ui_gseditdlg.Ui_gseditdlg):
     def on_pc15_valueChanged(self, value): self.pcchanged(14, value)
 
     def on_pc16_valueChanged(self, value): self.pcchanged(15, value)
-    
+
     def on_pc17_valueChanged(self, value): self.pcchanged(16, value)
 
     def on_pc18_valueChanged(self, value): self.pcchanged(17, value)
@@ -580,7 +580,7 @@ class GsEditDlg(QtWidgets.QDialog, ui_gseditdlg.Ui_gseditdlg):
         """Deal with percent values"""
         if self.performingupdate or whichpc >= self.numcols or type(newvalue) != float:
             return
-        
+
         # print("Update percent", whichpc, "current value", self.currentpercents[whichpc], "new value", newvalue, file=sys.stderr)
 
         diff = newvalue - self.currentpercents[whichpc]
@@ -644,7 +644,7 @@ class GsEditDlg(QtWidgets.QDialog, ui_gseditdlg.Ui_gseditdlg):
     def on_nsd15_valueChanged(self, value): self.nsdchanged(14, value)
 
     def on_nsd16_valueChanged(self, value): self.nsdchanged(15, value)
-    
+
     def on_nsd17_valueChanged(self, value): self.nsdchanged(16, value)
 
     def on_nsd18_valueChanged(self, value): self.nsdchanged(17, value)
@@ -741,7 +741,7 @@ class GsEditDlg(QtWidgets.QDialog, ui_gseditdlg.Ui_gseditdlg):
     def on_v15_valueChanged(self, value): self.vcjamged(14, value)
 
     def on_v16_valueChanged(self, value): self.vcjamged(15, value)
-    
+
     def on_v17_valueChanged(self, value): self.vcjamged(16, value)
 
     def on_v18_valueChanged(self, value): self.vcjamged(17, value)

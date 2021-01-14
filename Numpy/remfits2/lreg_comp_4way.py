@@ -122,7 +122,7 @@ for filter, subp in ('i', 221), ('g', 222), ('z', 223), ('r', 224):
                 corrs.append(lrr)
                 errs.append(lrstd)
             if xlab is None:
-                xlab = "Cuttoff maximum value min {:.0f}".format(minval)
+                xlab = "cutoff maximum value min {:.0f}".format(minval)
         else:
             for m in maxrange:
                 sc = (means <= m) & (means >= minval)
@@ -132,7 +132,7 @@ for filter, subp in ('i', 221), ('g', 222), ('z', 223), ('r', 224):
                 corrs.append(lrr)
                 errs.append(lrstd)
             if xlab is None:
-                xlab = "Cuttoff maximum mean value min {:.0f}".format(minval)
+                xlab = "cutoff maximum mean value min {:.0f}".format(minval)
         xax = maxrange
     else:
         if bymaxmin:
@@ -144,7 +144,7 @@ for filter, subp in ('i', 221), ('g', 222), ('z', 223), ('r', 224):
                 corrs.append(lrr)
                 errs.append(lrstd)
             if xlab is None:
-                xlab = "Cuttoff minimum value max {:.0f}".format(maxval)
+                xlab = "cutoff minimum value max {:.0f}".format(maxval)
         else:
             for m in minrange:
                 sc = (means >= m) & (means <= maxval)
@@ -154,7 +154,7 @@ for filter, subp in ('i', 221), ('g', 222), ('z', 223), ('r', 224):
                 corrs.append(lrr)
                 errs.append(lrstd)
             if xlab is None:
-                xlab = "Cuttoff minimum mean value max {:.0f}".format(maxval)
+                xlab = "cutoff minimum mean value max {:.0f}".format(maxval)
         xax = minrange
 
     ax = plt.subplot(subp)

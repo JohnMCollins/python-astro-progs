@@ -33,6 +33,7 @@ parsearg.add_argument('--divthresh', type=int, help='Pixels from edge for displa
 parsearg.add_argument('--racolour', type=str, help='Colour of RA lines')
 parsearg.add_argument('--deccolour', type=str, help='Colour of DEC lines')
 parsearg.add_argument('--divalpha', type=float, help='Alpha of divisions')
+parsearg.add_argument('--targcolour', type=str, help='Target colour')
 parsearg.add_argument('--objcolour', type=str, help='Object colour or colon-sep list')
 parsearg.add_argument('--hilalpha', type=float, help='Object alpha')
 parsearg.add_argument('--objtextfs', type=int, help='Font size object labels')
@@ -68,6 +69,7 @@ deccol = resargs['deccolour']
 divalpha = resargs['divalpha']
 
 objfill = resargs['objfill']
+targcolour = resargs['targcolour']
 objcolour = resargs['objcolour']
 objalpha = resargs['hilalpha']
 objtextfs = resargs['objtextfs']
@@ -153,6 +155,9 @@ if divalpha is not None:
 if objfill != rg.objdisp.objfill:
     rg.objdisp.objfill = objfill
     changes += 1
+if targcolour is not None:
+    rg.objdisp.targcolour = targcolour
+    changes += 1
 if objcolour is not None:
     rg.objdisp.objcolour = objcolour.split(":")
     changes += 1
@@ -217,6 +222,7 @@ print("Dec colour: %s" % rg.divspec.deccol)
 print("Div alpha: %.3g" % rg.divspec.divalpha)
 if objfill:
     print("Fill object highlight")
+print("Target colour:", rg.objdisp.targcolour)
 print("Object colour(s): ", ", ".join(rg.objdisp.objcolour))
 print("Object alpha: %.3g" % rg.objdisp.objalpha)
 print("Object text font size: %d" % rg.objdisp.objtextfs)

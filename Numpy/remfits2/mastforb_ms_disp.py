@@ -43,21 +43,31 @@ autils.suppress_vo_warnings()
 
 rg = remgeom.load()
 
-parsearg = argparse.ArgumentParser(description='Display mean and standard deviations of master flats', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+parsearg = argparse.ArgumentParser(description='Display mean and standard deviations of master flats or biases', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 remdefaults.parseargs(parsearg, tempdir=False, libdir=False)
 parsearg.add_argument('--stderrmult', type=float, default=1.5, help='Multiple of std devs to allow for neat plot of errorbars')
-
+parsearg.add_argument('--bias', action='store_true', help='Plot bias rather than flat files')
+parsearg.add_argument('--rotation', type=float, default=40.0, help='Rotation for date labels')
+parsearg.add_argument('--prelockdown', action='store_false', help='Restrict to prior to lockdown')
 figout = rg.disp_argparse(parsearg)
 
 resargs = vars(parsearg.parse_args())
 remdefaults.getargs(resargs)
 stderrmult = resargs['stderrmult']
+rot = resargs['rotation']
+ftype = 'flat'
+if resargs['bias']:
+    ftype = 'bias'
 
 figout = rg.disp_getargs(resargs)
 
 db, dbcurs = remdefaults.opendb()
 
-dbcurs.execute("SELECT month,year,filter,fitsind FROM forbinf WHERE year>2016 AND (year>2017 OR month>6) AND rejreason IS NULL AND gain=1 AND typ='flat' ORDER BY year,month")
+fieldselect = [ 'year>2016', '(year>2017 OR month>6)', 'rejreason IS NULL', 'gain=1']
+fieldselect.append("typ='" + ftype + "'")
+if resargs['prelockdown']:
+    fieldselect.append('(year < 2020 OR month<4)')
+dbcurs.execute("SELECT month,year,filter,fitsind FROM forbinf WHERE " + " AND ".join(fieldselect) + " ORDER BY year,month")
 forbrows = dbcurs.fetchall()
 
 # Pairs of arrays to hold meams and standard deviations
@@ -109,6 +119,9 @@ for filter, subp in ('i', 221), ('g', 222), ('z', 223), ('r', 224):
     plt.ylim(minv - stderrmult * maxstd, maxv + stderrmult * maxstd)
     plt.errorbar(datelist, means, stddevs)
     ax.xaxis.set_major_formatter(df)
+    for label in ax.get_xticklabels():
+        label.set_rotation(rot)
+        label.set_horizontalalignment('right')
     plt.legend([filter + " filter mean/std"])
 
 plt.tight_layout()

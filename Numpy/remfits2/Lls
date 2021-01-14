@@ -1,0 +1,5 @@
+#! /bin/bash
+
+cd ${REMLIB:-~/src/astro/lib}
+ls "$@"
+

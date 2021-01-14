@@ -60,7 +60,7 @@ plt.colorbar(img, norm=norm, cmap=cmap, boundaries=crange, ticks=crange)
 plt.xlabel("Column number")
 plt.ylabel("Row number")
 if figout is not None:
-    outfile = figout + ".png"
+    outfile = miscutils.addsuffix(figout, "png")
     plotfigure.savefig(outfile)
     plt.close(plotfigure)
 else:

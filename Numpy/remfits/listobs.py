@@ -15,6 +15,36 @@ import re
 import sys
 import parsetime
 import remfield
+import numpy as np
+
+Format_keys = ('ind', 'obsind', "object", 'filter', 'dither', 'date', 'gain',
+               'minval', 'nsminval', 'ansminval', 'maxval', 'nsmaxval', 'ansmaxval',
+               'median', 'nsmeidan', 'ansmedian', 'mean', 'nsmean', 'ansmean',
+               'std', 'nsstd', 'ansstd', 'skew', 'nsskew', 'ansskew',
+               'kurt', 'nskurt', 'anskurt')
+
+Format_header = ('^FITS', '^Serial', "<Object", '<Filter', '>Dither', '<Date/Time', '>Gain',
+               '^Minimum', '^Ns min', '^Abs ns min',
+               '^Maximum', '^Ns max', '^Abs ns max',
+               '^Median', '>Ns meidan', '>Abs ns median',
+               '^Mean', '>Ns mean', '>Abs ns mean',
+               '^Std', '>Ns std', '>Abs ns std',
+               '^Skew', '>Ns skew', '>Abs ns skew',
+               '^Kurtosis', '>Ns kurtosis', '>Abs ns kurtosis')
+
+Format_codes = ('d', 'd', 's', 's', 'd', '%Y-%m-%d %H:%M:%S', '.1f',
+                'd', '.3g', '.3g', 'd', '.3g', '.3g',
+                '.2f', '.3g', '.3g', '.2f', '.3g', '.3g',
+                '.3g', '.3g', '.3g', '.3g', '.3g', '.3g', '.3g', '.3g', '.3g')
+
+Format_accum = (False, False, False, False, False, False, False,
+                True, True, True, True, True, True,
+                True, True, True, True, True, True,
+                True, True, True, True, True, True, True, True, True)
+
+Fc_dict = dict(zip(Format_keys, Format_codes))
+Fh_dict = dict(zip(Format_keys, Format_header))
+Facc_dict = dict(zip(Format_keys, Format_accum))
 
 parsearg = argparse.ArgumentParser(description='List available observations',
                                    formatter_class=argparse.ArgumentDefaultsHelpFormatter)
@@ -28,9 +58,12 @@ parsearg.add_argument('--summary', action='store_true', help='Just summarise obj
 parsearg.add_argument('--idonly', action='store_true', help='Just give ids no other data')
 parsearg.add_argument('--fitsind', action='store_true', help='Show fits ind not obs ind')
 parsearg.add_argument('--hasfile', action='store_false', help='Only display obs which have FITS files')
-remfield.parseargs(parsearg)
+remfield.parseargs(parsearg, multstd=True)
 parsearg.add_argument('--debug', action='store_true', help='Display selection command')
-
+parsearg.add_argument('--format', type=str, help='Specify which fields to display')
+parsearg.add_argument('--header', action='store_true', help='Provide a header')
+parsearg.add_argument('--totals', action='store_true', help='Print totals'
+                      )
 resargs = vars(parsearg.parse_args())
 remdefaults.getargs(resargs)
 
@@ -50,16 +83,59 @@ fitsind = resargs['fitsind']
 gain = resargs["gain"]
 hasfile = resargs['hasfile']
 debug = resargs['debug']
+format = resargs['format']
+header = resargs['header']
+ptots = resargs['totals']
 
-if idonly and summary:
-    print("Cannot have both idonly and summary", file=sys.stderr)
+if idonly and (summary or format is not None or header):
+    print("Cannot have idonly and specify format or header or summary", file=sys.stderr)
     sys.exit(10)
 
-try:
-    remfield.getargs(resargs, fieldselect)
-except remfield.RemFieldError as e:
-    print(e.args[0], file=sys.stderr)
-    sys.exit(21)
+if idonly:
+    if summary:
+        print("Cannot have --idonly and --summary together", file=sys.stderr)
+        sys.exit(10)
+    if header:
+        print("Cannot have --idonly and --header together", file=sys.stderr)
+        sys.exit(11)
+    if format is not None:
+        print("Cannot have --idonly and --format together", file=sys.stderr)
+        sys.exit(12)
+elif summary:
+    if header:
+        print("Cannot have --summary and --header together", file=sys.stderr)
+        sys.exit(13)
+    if format is not None:
+        print("Cannot have --summary and --format together", file=sys.stderr)
+        sys.exit(14)
+
+if format is None:
+    format = []
+    if fitsind:
+        format.append('ind')
+    else:
+        format.append('obsind')
+    if not idonly:
+        format.append('date')
+        format.append('object')
+        format.append('filter')
+        # format.append('dither')
+else:
+    fbits = format.split(',')
+    errors = 0
+    for fb in fbits:
+        if fb not in Fc_dict:
+            print("Format code", fb, "not known", file=sys.stderr)
+            errors += 1
+    if errors != 0:
+        sys.exit(30)
+    format = fbits
+
+extras_reqd = False
+for f in format:
+    if f[0:3] == "ans" or f[0:2] == "ns":
+        extras_reqd = True
+        break
 
 mydb, dbcurs = remdefaults.opendb()
 
@@ -84,33 +160,88 @@ if len(dither) != 0 and dither[0] != -1:
 if gain is not None:
     fieldselect.append("ABS(gain-%.3g) < %.3g" % (gain, gain * 1e-3))
 
-sel = ""
-
-if len(fieldselect) != 0:
-    sel = "WHERE " + " AND ".join(fieldselect)
-
-if summary:
-    sel = "SELECT object,count(*) FROM obsinf " + sel + " GROUP BY object"
-else:
-    sel += " ORDER BY object,dithID,date_obs"
-    sel = "SELECT obsind,ind,date_obs,object,filter,dithID FROM obsinf " + sel
+try:
+    remfield.getargs(resargs, fieldselect)
+    if summary:
+        sel = "SELECT object,COUNT(*) FROM obsinf WHERE " + " AND ".join(fieldselect) + " GROUP BY object ORDER BY object"
+    else:
+        sel = remfield.get_extended_args(resargs, "obsinf", "SELECT ind,obsind,object,filter,dithID,date_obs,gain", fieldselect, extras_reqd)
+        sel += " ORDER BY date_obs"
+except remfield.RemFieldError as e:
+    print(e.args[0], file=sys.stderr)
+    sys.exit(21)
 
 if debug:
-    print(sel, file=sys.stderr)
+    print("Selection statement:\n", sel, sep="\t", file=sys.stderr)
+
 dbcurs.execute(sel)
-try:
-    if idonly:
-        n = 0
-        if fitsind: n = 1
-        for row in dbcurs.fetchall():
-            print(row[n])
-    elif summary:
-        for row in dbcurs.fetchall():
-            print("%-10s\t%d" % row)
-    else:
-        for row in dbcurs.fetchall():
-            obsind, ind, dat, obj, filt, dith = row
-            if fitsind: obsind = ind
-            print("%d\t%s\t%s\t%s\t%d" % (obsind, dat.strftime("%Y-%m-%d %H:%M:%S"), obj, filt, dith))
-except (BrokenPipeError, KeyboardInterrupt):
+dbrows = dbcurs.fetchall()
+if summary:
+    for row in dbrows:
+        print("{:<12s}{:7d}".format(row[0], row[1]))
     sys.exit(0)
+
+if header:
+    headers = [Fh_dict[i] for i in format]
+    maxwids = [len(h[1:]) for h in headers]
+else:
+    maxwids = [0] * len(format)
+
+# First run through to get widths
+
+Fcodes = ["{" + fc + ":" + Fc_dict[fc] + "}" for fc in format]
+for dbrow in dbrows:
+    res = dict(zip(Format_keys, dbrow))
+    rf = [fc.format(**res) for fc in Fcodes]
+    maxwids = [max(n, len(p)) for n, p in zip(maxwids, rf)]
+
+accums = []
+for f in format:
+    if Facc_dict[f]:
+        accums.append([])
+    else:
+        accums.append(None)
+
+try:
+    if header:
+        print(" ".join(["{v:{a}{w}s}".format(a=h[0], v=h[1:], w=maxwids[n]) for n, h in enumerate(headers)]))
+
+    Fcodes = []
+    TFcodes = []
+    for n, fc in enumerate(format):
+        if fc == 'date':
+            Fcodes.append("{" + fc + ":" + Fc_dict[fc] + "}")
+        else:
+            Fcodes.append("{" + fc + ":" + str(maxwids[n]) + Fc_dict[fc] + "}")
+        TFcodes.append("{:" + str(maxwids[n]) + Fc_dict[fc] + "}")
+
+    for dbrow in dbrows:
+        res = dict(zip(Format_keys, dbrow))
+        print(" ".join([f.format(**res) for f in Fcodes]))
+        if ptots:
+            for n, c in enumerate(format):
+                try:
+                    accums[n].append(res[c])
+                except AttributeError:
+                    pass
+except (KeyboardInterrupt, BrokenPipeError):
+    sys.exit(0)
+
+if ptots and len(dbrows) > 1:
+    aaccums = []
+    for a in accums:
+        if a is not None:
+            aaccums.append(np.array(a))
+        else:
+            aaccums.append(None)
+    for func, descr, fl in zip((np.min, np.max, np.median, np.mean, np.std), ("Minimum", "Maximum", "Median", "Mean", "Std"), (False, False, True, True, True)):
+        outline = []
+        for a, w, fc in zip(aaccums, maxwids, TFcodes):
+            if a is None:
+                outline.append(" " * w)
+            elif fl and fc[-2] == 'd':
+                outline.append(fc.format(int(round(func(a)))))
+            else:
+                outline.append(fc.format(func(a)))
+        outline.append(descr)
+        print(" ".join(outline))

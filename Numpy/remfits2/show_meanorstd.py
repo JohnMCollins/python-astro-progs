@@ -23,17 +23,15 @@ rg = remgeom.load()
 parsearg = argparse.ArgumentParser(description='Display extreme mean or std', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 remdefaults.parseargs(parsearg, tempdir=False, database=False)
 parsearg.add_argument('file', type=str, nargs=1, help='Maan/std file to display')
-parsearg.add_argument('--nlower', type=int, default=10, help='Number of grey scales below mean value')
-parsearg.add_argument('--nupper', type=int, default=10, help='Number of grey scales above mean value')
-parsearg.add_argument('--meanorstd', type=str, choices=['M', 'S'], default='M', help='Select mean or std')
+parsearg.add_argument('--nscales', type=int, default=10, help='Number of grey scales')
+parsearg.add_argument('--meanorstd', type=str, choices=['M', 'S', 'L', 'H'], default='M', help='Select mean, std, min, max')
 rg.disp_argparse(parsearg)
 
 resargs = vars(parsearg.parse_args())
 remdefaults.getargs(resargs)
 
 file = remdefaults.meanstd_file(resargs['file'][0])
-nlower = resargs['nlower']
-nupper = resargs['nupper']
+nscales = resargs['nscales']
 meanorstd = resargs['meanorstd']
 figout = rg.disp_getargs(resargs)
 
@@ -52,10 +50,8 @@ if msfile.shape != (5, 2048, 2048):
 
 plotfigure = rg.plt_figure()
 plotfigure.canvas.set_window_title('Extreme mean/std counts from ' + file)
-if meanorstd == 'M':
-    values = msfile[1]
-else:
-    values = msfile[2]
+wplane = dict(M=1, S=2, L=3, H=4)
+values = msfile[wplane[meanorstd]]
 counts = msfile[0]
 
 fvalues = values.flatten()
@@ -64,17 +60,17 @@ fvalues = fvalues[fcounts > 0]
 meanv = fvalues.mean()
 stdv = fvalues.std()
 
-lpart = list(np.linspace(0, meanv, nlower + 1))
-
-crange = [0.0] + list(np.arange(-nlower, nupper) * stdv + meanv) + [fvalues.max()]
+crange = list(np.linspace(fvalues.min(), fvalues.max(), nscales))
+if fvalues.min() > 0:
+    crange = [0.0] + crange
 cmap = colors.ListedColormap(["#%.2x%.2x%.2x" % (i, i, i) for i in np.linspace(255, 0, len(crange) - 1).round().astype(np.int32)])
 norm = colors.BoundaryNorm(crange, cmap.N)
 img = plt.imshow(values, cmap=cmap, norm=norm, origin='lower')
-plt.colorbar(img, norm=norm, cmap=cmap, boundaries=crange, ticks=crange)
+plt.colorbar(img, boundaries=crange, ticks=crange)
 plt.xlabel("Column number")
 plt.ylabel("Row number")
 if figout is not None:
-    outfile = figout + ".png"
+    outfile = miscutils.addsuffix(figout, ".png")
     plotfigure.savefig(outfile)
     plt.close(plotfigure)
 else:

@@ -51,11 +51,16 @@ counts, sums, sumsq, mins, maxes = tally
 
 means = sums / counts
 vars = sumsq / counts - means ** 2
+msk = np.isnan(means)
+means[msk] = 0.0
+vars[msk] = 0.0
+mins[msk] = 0.0
+maxes[msk] = 0.0
+
 sdds = np.sqrt(vars)
 
 result = np.array([counts, means, sdds, mins, maxes])
 
-result[np.isnan(result)] = 0
 outf = open(outfile, "wb")
 np.save(outf, result)
 outf.close()

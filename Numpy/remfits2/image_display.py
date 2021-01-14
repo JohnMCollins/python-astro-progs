@@ -53,7 +53,7 @@ parsearg.add_argument('--greyscale', type=str, required=True, help="Standard gre
 parsearg.add_argument('--title', type=str, help='Optional title to put at head of image otherwise based on file')
 parsearg.add_argument('--findres', type=str, help='File of find results')
 parsearg.add_argument('--limfind', type=int, default=1000000, help='Maximumm number of find results')
-parsearg.add_argument('--brightest', action='store_true', help='Mark brightest object as target')
+parsearg.add_argument('--brightest', action='store_true', help='Mark brightest object as target if no target')
 parsearg.add_argument('--displimit', type=int, default=30, help='Maximum number of images to display')
 
 rg.disp_argparse(parsearg)
@@ -81,9 +81,7 @@ if findres is not None:
         print("Read of results file gave error", e.args[0], file=sys.stderr)
         sys.exit(6)
     objcolours = rg.objdisp.objcolour
-    targetcolour = objcolours[0]
-    if len(objcolours) > 1:
-        objcolours.pop(0)
+    targetcolour = rg.objdisp.targcolour
 
 gsdets = rg.get_greyscale(greyscalename)
 if gsdets is None:
@@ -130,28 +128,31 @@ for file in files:
 
     if findresults is not None:
         w = ff.wcs
-        countt = n = 0
+        countt = 0
+        targetcount = -1
+        for fr in findresults.results():
+            if fr.istarget:
+                targetcount = countt
+                break
+            countt += 1
+        if targetcount < 0 and brightest:
+            targetcount = 0
+        n = countt = 0
         for fr in findresults.results():
             coords = w.coords_to_pix(np.array((fr.radeg, fr.decdeg)).reshape(1, 2))[0]
-            if brightest:
-                if countt == 0:
-                    objc = targetcolour
-                else:
-                    objc = objcolours[n % len(objcolours)]
-                    n += 1
-            elif fr.istarget:
+            if n == targetcount:
                 objc = targetcolour
             else:
-                objc = objcolours[n % len(objcolours)]
-                n += 1
+                objc = objcolours[countt % len(objcolours)]
+                countt += 1
             ptch = mp.Circle(coords, radius=fr.apsize, alpha=rg.objdisp.objalpha, color=objc, fill=rg.objdisp.objfill)
             plt.gca().add_patch(ptch)
             displ = coords[0] + rg.objdisp.objtextdisp
             if displ > data.shape[0]:
                 displ = coords[0] - rg.objdisp.objtextdisp
             plt.text(displ, coords[1], fr.label, fontsize=rg.objdisp.objtextfs, color=objc)
-            countt += 1
-            if countt >= limfind:
+            n += 1
+            if n >= limfind:
                 break
     fignum += 1
     if figout is None:

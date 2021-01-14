@@ -49,6 +49,7 @@ class RaDecDlg(QtWidgets.QDialog, ui_radecdlg.Ui_radecdlg):
         self.divalpha.setValue(config.divspec.divalpha)
         set_text_colours(self.Racolour, decode_colour(config.divspec.racol))
         set_text_colours(self.DECcolour, decode_colour(config.divspec.deccol))
+        set_text_colours(self.targetcolour, decode_colour(config.objdisp.targcolour))
         self.objalpha.setValue(config.objdisp.objalpha)
         self.objfontsz.setValue(config.objdisp.objtextfs)
         self.objdispl.setValue(config.objdisp.objtextdisp)
@@ -74,6 +75,7 @@ class RaDecDlg(QtWidgets.QDialog, ui_radecdlg.Ui_radecdlg):
         divspec.racol = str(self.Racolour.palette().color(QPalette.Active, QPalette.Base).name())
         divspec.deccol = str(self.DECcolour.palette().color(QPalette.Active, QPalette.Base).name())
         objdisp = config.objdisp
+        objdisp.targcolour = str(self.targetcolour.palette().color(QPalette.Active, QPalette.Base).name())
         objdisp.objalpha = self.objalpha.value()
         objdisp.objtextfs = self.objfontsz.value()
         objdisp.objtextdisp = self.objdispl.value()
@@ -98,6 +100,10 @@ class RaDecDlg(QtWidgets.QDialog, ui_radecdlg.Ui_radecdlg):
     def on_resetdeccol_clicked(self, b=None):
         if b is None: return
         self.select_text_colour(self.DECcolour, "Declination grid lines")
+
+    def on_resettargetcolour_clicked(self, b=None):
+        if b is None: return
+        self.select_text_colour(self.targetcolour, "Colour to mark target object with")
 
     def on_newobjcolour_clicked(self, b=None):
         if b is None: return

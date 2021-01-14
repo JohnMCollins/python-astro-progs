@@ -41,7 +41,7 @@ for bpmf in bpmfiles:
     try:
         mask = np.load(bpmfile)
     except OSError as e:
-        print("Could not load", bpmflle, "error was", e.args[1], file=sys.stderr)
+        print("Could not load", bpmfile, "error was", e.args[1], file=sys.stderr)
         sys.exit(10)
     masks.append(mask)
 

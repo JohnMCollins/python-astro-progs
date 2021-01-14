@@ -68,7 +68,7 @@ for file in files:
     fdat = ff.data
     diffs = fdat - bdata
     if np.count_nonzero(diffs <= crit) == 0:
-        print("No negative or zeros in differences for", file)
+        print(file + ": ", "No negative or zeros in differences for", file)
         continue
 
     bycol = dict()
@@ -102,16 +102,17 @@ for file in files:
 
     if bycols:
         if len(bycol) == 0:
-            print("No negative or zeros columns left after pruning to trim", trim, "and nzeros", nzeros, "in", file)
+            print(file + ": ", "No negative or zeros columns left after pruning to trim", trim, "and nzeros", nzeros, "in", file)
             continue
-        print("File", file)
+        print("File:", file)
         for c in sorted(bycol.keys()):
             l = bycol[c]
             print("{}:".format(c), " ".join([str(i) for i in sorted(l)]))
     else:
         if len(byrow) == 0:
-            print("No negative or zeros rows left after pruning to trim", trim, "and nzeros", nzeros, "in", file)
+            print(file + ": ", "No negative or zeros rows left after pruning to trim", trim, "and nzeros", nzeros, "in", file)
             continue
+        print("File:", file)
         for r in sorted(byrow.keys()):
             l = byrow[r]
             print("{}:".format(r), " ".join([str(i) for i in sorted(l)]))
