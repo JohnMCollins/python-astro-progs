@@ -1,38 +1,27 @@
 #! /usr/bin/env python3
 
-# @Author: John M Collins <jmc>
-# @Date:   2018-11-29T16:49:45+00:00
-# @Email:  jmc@toad.me.uk
-# @Filename: updairmass.py
-# @Last modified by:   jmc
-# @Last modified time: 2019-01-04T22:57:17+00:00
+"""Obtain parameters of new FITS files and insert into database"""
 
-from astropy.io import fits
-from astropy.utils.exceptions import AstropyWarning, AstropyUserWarning
-from astropy.time import Time
-import astroquery.utils as autils
-import scipy.stats as ss
-import numpy as np
-import os
 import sys
 import datetime
+import argparse
+from astropy.time import Time
+import scipy.stats as ss
+import numpy as np
 import dateutil.relativedelta
-import string
-import warnings
-import dbops
 import remdefaults
 import remget
 import remfits
 import fitsops
-import argparse
 import trimarrays
 import mydateutil
+import wcscoord
 
 
-def rejectmast(dbcurs, typ, year, month, filter, reason):
+def rejectmast(cu, mtyp, myear, mmonth, mfilter, mreason):
     """Set master file to rejected for various reasons"""
-    dbcurs.execute("UPDATE forbinf SET rejreason=%s WHERE filter=%s AND typ=%s AND " + "year=%d AND month=%d" % (year, month), (reason, filter, typ))
-    dbcurs.connection.commit()
+    cu.execute("UPDATE forbinf SET rejreason=%s WHERE filter=%s AND typ=%s AND " + "year=%d AND month=%d" % (myear, mmonth), (mreason, mfilter, mtyp))
+    cu.connection.commit()
 
 
 parsearg = argparse.ArgumentParser(description='Update database fields from newly-loaded FITS files', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
@@ -76,7 +65,7 @@ dims_added = 0
 nfiles = 0
 nreject = 0
 
-for obsind, fitsind, exptime, filter, date_obs, gain, dithID, ffname in rows:
+for obsind, fitsind, exptime, ofilter, date_obs, gain, dithID, ffname in rows:
 
     try:
         if fitsind == 0:
@@ -123,7 +112,7 @@ for obsind, fitsind, exptime, filter, date_obs, gain, dithID, ffname in rows:
         nreject += 1
         continue
 
-    startx, starty, rcols, rrows = remdefaults.get_geom(date_obs, filter)
+    startx, starty, rcols, rrows = remdefaults.get_geom(date_obs, ofilter)
     nzfdat = trimarrays.trimzeros(fdat)
     fitsrows, fitscols = nzfdat.shape
 
@@ -133,8 +122,22 @@ for obsind, fitsind, exptime, filter, date_obs, gain, dithID, ffname in rows:
     if realtrimsides > 0:
         tsfdat = nzfdat[realtrimsides:-realtrimsides, realtrimsides:-realtrimsides]
 
+    w = wcscoord.wcscoord(ffhdr)
+    cornerpix = ((0, 0), (fitscols - 1, fitsrows - 1))
+    ((blra, bldec), (trra, trdec)) = w.pix_to_coords(cornerpix)
+    if trra < blra:
+        if trdec > bldec:
+            orient = 0
+        else:
+            orient = 1
+    else:
+        if trdec > bldec:
+            orient = 3
+        else:
+            orient = 2
     updfields = []
     updfields.append("gain=%.6g" % fgain)
+    updfields.append("orient=%d" % orient)
     updfields.append("airmass=%.6g" % fairmass)
     updfields.append("moonphase=%.6g" % moonphase)
     updfields.append("moondist=%.6g" % moondist)
@@ -192,7 +195,7 @@ rows = dbcurs.fetchall()
 
 nmfb = 0
 
-for year, month, filter, typ, fitsind in rows:
+for year, month, ofilter, typ, fitsind in rows:
 
     # Manufacture end of month out of year and month
 
@@ -201,7 +204,7 @@ for year, month, filter, typ, fitsind in rows:
     try:
         ffmem = remget.get_saved_fits(dbcurs, fitsind)
     except remget.RemGetError as e:
-        rejectmast(dbcurs, typ, year, month, filter, e.args[0])
+        rejectmast(dbcurs, typ, year, month, ofilter, e.args[0])
         nreject += 1
         continue
 
@@ -214,10 +217,10 @@ for year, month, filter, typ, fitsind in rows:
         nzfdat = trimarrays.trimzeros(fdat)
 
     fitsrows, fitscols = nzfdat.shape
-    startx, starty, rcols, rrows = remdefaults.get_geom(date_obs, filter)
+    startx, starty, rcols, rrows = remdefaults.get_geom(date_obs, ofilter)
 
     dbcurs.execute("UPDATE forbinf SET gain=%.6g,nrows=%d,ncols=%d,startx=%d,starty=%d WHERE filter='%s' AND typ='%s' AND year=%d AND month=%d" %
-                    (fgain, fitsrows, fitscols, startx, starty, filter, typ, year, month))
+                    (fgain, fitsrows, fitscols, startx, starty, ofilter, typ, year, month))
 
     dbcurs.execute("UPDATE fitsfile SET nrows=%d,ncols=%d,startx=%d,starty=%d WHERE ind=%d" % (fitsrows, fitscols, startx, starty, fitsind))
 
@@ -229,11 +232,11 @@ for year, month, filter, typ, fitsind in rows:
     # Do this check after we've updated the fields
 
     if rrows != fitsrows:
-        rejectmast(dbcurs, typ, year, month, filter, "*** Height %d of FITS not %d as expected" % (fitsrows, rrows))
+        rejectmast(dbcurs, typ, year, month, ofilter, "*** Height %d of FITS not %d as expected" % (fitsrows, rrows))
         nreject += 1
         continue
     if rcols != fitscols:
-        rejectmast(dbcurs, typ, year, month, filter, "*** Width %d of FITS not %d as expected" % (fitscols, rcols))
+        rejectmast(dbcurs, typ, year, month, ofilter, "*** Width %d of FITS not %d as expected" % (fitscols, rcols))
         nreject += 1
         continue
 
@@ -261,7 +264,7 @@ rows = dbcurs.fetchall()
 
 nifb = 0
 
-for fitsind, iforbind, typ, gain, exptime, filter, date_obs in rows:
+for fitsind, iforbind, typ, gain, exptime, ofilter, date_obs in rows:
 
     try:
         ffmem = remget.get_saved_fits(dbcurs, fitsind)
@@ -298,7 +301,7 @@ for fitsind, iforbind, typ, gain, exptime, filter, date_obs in rows:
     if realtrimsides > 0:
         tsfdat = nzfdat[realtrimsides:-realtrimsides, realtrimsides:-realtrimsides]
 
-    startx, starty, rcols, rrows = remdefaults.get_geom(date_obs, filter)
+    startx, starty, rcols, rrows = remdefaults.get_geom(date_obs, ofilter)
 
     updfields = []
     updfields.append("gain=%.6g" % fgain)

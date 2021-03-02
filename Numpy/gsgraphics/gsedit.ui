@@ -72,6 +72,7 @@
     <addaction name="action_Clone_Greyscale"/>
     <addaction name="action_Edit_Greyscale"/>
     <addaction name="action_Delete_Greyscale"/>
+    <addaction name="action_Set_default"/>
    </widget>
    <widget class="QMenu" name="menu_Help">
     <property name="title">
@@ -333,6 +334,22 @@
    </property>
    <property name="shortcut">
     <string>Ctrl+H</string>
+   </property>
+  </action>
+  <action name="action_Set_default">
+   <property name="text">
+    <string>&amp;Set default</string>
+   </property>
+   <property name="toolTip">
+    <string>Set selected as default greyscale</string>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>14</pointsize>
+    </font>
+   </property>
+   <property name="shortcut">
+    <string>Shift+D</string>
    </property>
   </action>
  </widget>

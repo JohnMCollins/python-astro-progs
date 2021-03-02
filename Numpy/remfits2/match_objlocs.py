@@ -1,19 +1,15 @@
 #!  /usr/bin/env python3
 
-from astropy.utils.exceptions import AstropyWarning, AstropyUserWarning
-from astropy.io import fits
-from astropy.time import Time
-import datetime
-import numpy as np
+"""Match locations of objects and find results"""
+
 import argparse
 import warnings
 import sys
-import miscutils
 import remdefaults
-import os.path
 import obj_locations
 import find_results
 import match_finds
+from astropy.utils.exceptions import AstropyWarning, AstropyUserWarning
 
 # Shut up warning messages
 
@@ -26,12 +22,16 @@ parsearg.add_argument('files', nargs='+', type=str, help='Location file and find
 remdefaults.parseargs(parsearg, tempdir=False)
 parsearg.add_argument('--threshold', type=float, default=20.0, help='Threshold for match in arcsec')
 parsearg.add_argument('--verbose', action='store_true', help='Give statistics')
+parsearg.add_argument('--idonly', action='store_true', help='Just keep things that have been identified')
+parsearg.add_argument('--usonly', action='store_true', help='Just keep things that are usable')
 
 resargs = vars(parsearg.parse_args())
 files = resargs['files']
 remdefaults.getargs(resargs)
 threshold = resargs['threshold']
 verbose = resargs['verbose']
+idonly = resargs['idonly']
+usonly = resargs['usonly']
 
 locfile = files[0]
 if len(files) > 1:
@@ -48,11 +48,13 @@ findres = find_results.load_results_from_file(findresfile)
 try:
     matchlist = match_finds.allocate_locs(locations, findres, threshold)
 except match_finds.FindError as e:
-    print("Match gave error". e.args[0], file=sys.stderr)
+    print("Match gave error", e.args[0], file=sys.stderr)
     sys.exit(200)
 
 locr = locations.resultlist
 findr = findres.resultlist
+
+hadt = 0
 
 for row, col, dist in matchlist:
     f = findr[col]
@@ -60,6 +62,37 @@ for row, col, dist in matchlist:
     f.name = l.name
     f.dispname = l.dispname
     f.istarget = l.istarget
+    if f.istarget:
+        hadt += 1
+    f.invented = l.invented
+    f.isusable = l.isusable
+    f.apsize = l.apsize
+
+if hadt != 1:
+    print("Did not find a target", file=sys.stderr)
+    sys.exit(240)
+
+if idonly or usonly:
+    noid = nouse = 0
+    newf = []
+    for fr in findr:
+        if idonly and len(fr.name) == 0:
+            noid += 1
+        elif usonly and not fr.usable:
+            nouse += 1
+        else:
+            newf.append(fr)
+    if nouse + noid > 0:
+        findres.resultlist = newf
+        if verbose:
+            if nouse > 0:
+                print(nouse, "not usable eliminated", file=sys.stderr)
+            if noid > 0:
+                print(noid, "not identified eliminated", file=sys.stderr)
+
+if len(findres.resultlist) < 2:
+    print("No results in file other than target", file=sys.stderr)
+    sys.exit(241)
 
 findres.reorder()
 findres.relabel()

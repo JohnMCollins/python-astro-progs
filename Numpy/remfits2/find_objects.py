@@ -1,18 +1,13 @@
 #!  /usr/bin/env python3
 
-from astropy.utils.exceptions import AstropyWarning, AstropyUserWarning
-from astropy.io import fits
-from astropy.time import Time
-import datetime
-import numpy as np
+"""Find objects in image"""
+
 import argparse
 import warnings
 import sys
-import miscutils
-import math
+from astropy.utils.exceptions import AstropyWarning, AstropyUserWarning
 import remdefaults
 import remfits
-import os.path
 import find_results
 
 # Shut up warning messages
@@ -22,7 +17,7 @@ warnings.simplefilter('ignore', AstropyUserWarning)
 warnings.simplefilter('ignore', UserWarning)
 
 parsearg = argparse.ArgumentParser(description='Find objects in image ', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-parsearg.add_argument('files', nargs=2, type=str, help='Image file and output find results')
+parsearg.add_argument('files', nargs='+', type=str, help='Image file and output find results')
 remdefaults.parseargs(parsearg, tempdir=False)
 parsearg.add_argument('--force', action='store_true', help='Force overwrite of existing file')
 parsearg.add_argument('--significance', type=float, default=10.0, help='Multiples of standard deviation to look for in search')
@@ -34,7 +29,15 @@ parsearg.add_argument('--igntop', type=int, default=0, help='Amount on top to ig
 parsearg.add_argument('--ignbottom', type=int, default=0, help='Amount on bottom to ignore')
 
 resargs = vars(parsearg.parse_args())
-infile, outfile = resargs['files']
+flist = resargs['files']
+if len(flist) == 1:
+    infile = outfile = flist[0]
+else:
+    try:
+        infile, outfile = flist
+    except ValueError:
+        print("Expecting one or two file arguments not", ", ".join(flist))
+        sys.exit(50)
 remdefaults.getargs(resargs)
 force = resargs['force']
 signif = resargs['significance']

@@ -1,18 +1,13 @@
 #!  /usr/bin/env python3
 
-from astropy.utils.exceptions import AstropyWarning, AstropyUserWarning
-from astropy.io import fits
-from astropy.time import Time
-import datetime
-import numpy as np
+"""Get locations of known object in area of image"""
+
+import sys
 import argparse
 import warnings
-import sys
-import miscutils
-import math
+from astropy.utils.exceptions import AstropyWarning, AstropyUserWarning
 import remdefaults
 import remfits
-import os.path
 import obj_locations
 import objdata
 import wcscoord
@@ -24,13 +19,22 @@ warnings.simplefilter('ignore', AstropyUserWarning)
 warnings.simplefilter('ignore', UserWarning)
 
 parsearg = argparse.ArgumentParser(description='Get locations from database corresponding to image', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-parsearg.add_argument('files', nargs=2, type=str, help='Image file and output location file')
+parsearg.add_argument('files', nargs='+', type=str, help='Image file and output location file')
 remdefaults.parseargs(parsearg, tempdir=False)
 parsearg.add_argument('--force', action='store_true', help='Force overwrite of existing file')
 parsearg.add_argument('--verbose', action='store_true', help='List details')
 
 resargs = vars(parsearg.parse_args())
-infile, outfile = resargs['files']
+flist = resargs['files']
+if len(flist) == 1:
+    infile = outfile = flist[0]
+else:
+    try:
+        infile, outfile = flist
+    except ValueError:
+        print("Expecting one or two file arguments not", ", ".join(flist))
+        sys.exit(50)
+
 remdefaults.getargs(resargs)
 force = resargs['force']
 verbose = resargs['verbose']

@@ -26,11 +26,11 @@ Format_keys = ('ind', 'iforbind', 'filter', 'type', 'date', 'gain',
 Format_header = ('^FITS', '^Serial', '<Filter', '<Type', '<Date/Time', '>Gain',
                '^Minimum', '^Ns min', '^Abs ns min',
                '^Maximum', '^Ns max', '^Abs ns max',
-               '^Median', '>Ns meidan', '>Abs ns median',
-               '^Mean', '>Ns mean', '>Abs ns mean',
-               '^Std', '>Ns std', '>Abs ns std',
-               '^Skew', '>Ns skew', '>Abs ns skew',
-               '^Kurtosis', '>Ns kurtosis', '>Abs ns kurtosis')
+               '>Median', '>Ns meidan', '>Abs ns median',
+               '>Mean', '>Ns mean', '>Abs ns mean',
+               '>Std', '>Ns std', '>Abs ns std',
+               '>Skew', '>Ns skew', '>Abs ns skew',
+               '>Kurtosis', '>Ns kurtosis', '>Abs ns kurtosis')
 
 Format_codes = ('d', 'd', 's', '.1s', '%Y-%m-%d %H:%M:%S', '.1f',
                 'd', '.3g', '.3g', 'd', '.3g', '.3g',

@@ -1,39 +1,18 @@
 #! /usr/bin/env python3
 
-# @Author: John M Collins <jmc>
-# @Date:   2018-08-23T14:20:00+01:00
-# @Email:  jmc@toad.me.uk
-# @Filename: dbobjdisp.py
-# @Last modified by:   jmc
-# @Last modified time: 2019-01-04T23:02:43+00:00
+"""Display a pair of images side by side"""
 
-from astropy.io import fits
-from astropy import wcs
-from astropy.utils.exceptions import AstropyWarning, AstropyUserWarning
-from astropy.time import Time
-import astroquery.utils as autils
-import math
-import numpy as np
-import matplotlib.pyplot as plt
-import matplotlib.patches as mp
-from matplotlib import colors
 import argparse
 import sys
-import datetime
-import os.path
-import objcoord
-import trimarrays
-import wcscoord
 import warnings
+from astropy.utils.exceptions import AstropyWarning, AstropyUserWarning
+import astroquery.utils as autils
+import matplotlib.pyplot as plt
+from matplotlib import colors
 import miscutils
 import remdefaults
 import remgeom
-import remget
 import remfits
-import fitsops
-import strreplace
-import col_from_file
-import find_results
 
 # Shut up warning messages
 
@@ -47,7 +26,7 @@ rg = remgeom.load()
 parsearg = argparse.ArgumentParser(description='Display 2 image files side by side', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 remdefaults.parseargs(parsearg, tempdir=False)
 parsearg.add_argument('files', type=str, nargs=2, help='File names/IDs to display')
-parsearg.add_argument('--greyscale', type=str, required=True, help="Standard greyscale to use")
+parsearg.add_argument('--greyscale', type=str, help="Standard greyscale to use")
 parsearg.add_argument('--type', type=str, help='Put F or B here to select daily flat or bias for numerics')
 
 figout = rg.disp_argparse(parsearg, "dwin")
@@ -59,6 +38,11 @@ typef = resargs['type']
 files = resargs['files']
 figout = rg.disp_getargs(resargs)
 greyscalename = resargs['greyscale']
+if greyscalename is None:
+    greyscalename = rg.defgreyscale
+    if greyscalename is None:
+        print("No greyscale given, use --greyscale or set default one", file=sys.stderr)
+        sys.exit(0)
 
 gsdets = rg.get_greyscale(greyscalename)
 if gsdets is None:
@@ -77,7 +61,7 @@ fpair = []
 for file in files:
 
     try:
-        ff = remfits.parse_filearg(file, dbcurs, type=typef)
+        ff = remfits.parse_filearg(file, dbcurs, typef=typef)
     except remfits.RemFitsErr as e:
         print("Open of", file, "gave error", e.args[0], file=sys.stderr)
         errors += 1

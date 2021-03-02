@@ -38,7 +38,6 @@ class RaDecDlg(QtWidgets.QDialog, ui_radecdlg.Ui_radecdlg):
         super(RaDecDlg, self).__init__(parent)
         self.setupUi(self)
         self.config = None
-        self.objcolours.itemDoubleClicked.connect(self.on_resetobjcolour_clicked)
 
     def copyin(self, config):
         """Copy in and set up parameters"""
@@ -50,20 +49,15 @@ class RaDecDlg(QtWidgets.QDialog, ui_radecdlg.Ui_radecdlg):
         set_text_colours(self.Racolour, decode_colour(config.divspec.racol))
         set_text_colours(self.DECcolour, decode_colour(config.divspec.deccol))
         set_text_colours(self.targetcolour, decode_colour(config.objdisp.targcolour))
+        set_text_colours(self.idcolour, decode_colour(config.objdisp.idcolour))
+        set_text_colours(self.objcolour, decode_colour(config.objdisp.objcolour))
         self.objalpha.setValue(config.objdisp.objalpha)
         self.objfontsz.setValue(config.objdisp.objtextfs)
         self.objdispl.setValue(config.objdisp.objtextdisp)
         self.objfill.setChecked(config.objdisp.objfill)
         # self.Racolour.mouseDoubleClickEvent.connect(self.on_resetracol_clicked)
         # self.DECcolour.mouseDoubleClickEvent.connect(self.on_resetdeccol_clicked)
-        for c in config.objdisp.objcolour:
-            it = QtWidgets.QListWidgetItem("")
-            cs = QColor(c)
-            it.setBackground(QBrush(cs))
-            it.setForeground(QBrush(inverse_colour(cs)))
-            it.setText(c)
-            self.objcolours.addItem(it)
-
+        
     def copyout(self):
         """Copy date out of dialog. We already set a copy in self.config"""
         config = self.config
@@ -76,14 +70,12 @@ class RaDecDlg(QtWidgets.QDialog, ui_radecdlg.Ui_radecdlg):
         divspec.deccol = str(self.DECcolour.palette().color(QPalette.Active, QPalette.Base).name())
         objdisp = config.objdisp
         objdisp.targcolour = str(self.targetcolour.palette().color(QPalette.Active, QPalette.Base).name())
+        objdisp.idcolour = str(self.idcolour.palette().color(QPalette.Active, QPalette.Base).name())
+        objdisp.objcolour = str(self.objcolour.palette().color(QPalette.Active, QPalette.Base).name())
         objdisp.objalpha = self.objalpha.value()
         objdisp.objtextfs = self.objfontsz.value()
         objdisp.objtextdisp = self.objdispl.value()
         objdisp.objfill = self.objfill.isChecked()
-        objc = []
-        for row in range(0, self.objcolours.count()):
-            objc.append(str(self.objcolours.item(row).background().color().name()))
-        objdisp.objcolour = objc
 
     def select_text_colour(self, widget, label):
         """Possible select new text colour"""
@@ -105,30 +97,10 @@ class RaDecDlg(QtWidgets.QDialog, ui_radecdlg.Ui_radecdlg):
         if b is None: return
         self.select_text_colour(self.targetcolour, "Colour to mark target object with")
 
-    def on_newobjcolour_clicked(self, b=None):
+    def on_resetidcolour_clicked(self, b=None):
         if b is None: return
-        newc = QColorDialog.getColor(QColor("white"), self, "Pick a new object colour")
-        if not newc.isValid(): return
-        it = QtWidgets.QListWidgetItem("")
-        it.setBackground(QBrush(newc))
-        it.setForeground(QBrush(inverse_colour(newc)))
-        it.setText(newc.name())
-        self.objcolours.addItem(it)
+        self.select_text_colour(self.idcolour, "Colour to mark identified objects with")
 
     def on_resetobjcolour_clicked(self, b=None):
         if b is None: return
-        it = self.objcolours.currentItem()
-        if it is None: return
-        newc = QColorDialog.getColor(it.background().color(), self, "Select a replacement object colour")
-        if not newc.isValid(): return
-        it.setBackground(QBrush(newc))
-        it.setForeground(QBrush(inverse_colour(newc)))
-        it.setText(newc.name())
-        self.objcolours.setCurrentItem(it)
-
-    def on_delobjcolour_clicked(self, b=None):
-        if b is None: return
-        if self.objcolours.count() < 2:
-            QtWidgets.QMessageBox.warning(self, "Cannot delete", "Must have one object colour")
-            return
-        self.objcolours.takeItem(self.objcolours.currentRow())
+        self.select_text_colour(self.objcolour, "Colour to mark other objects with")

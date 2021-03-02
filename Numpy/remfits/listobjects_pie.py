@@ -35,6 +35,7 @@ parsearg = argparse.ArgumentParser(description='List all objects with first and 
 remdefaults.parseargs(parsearg, libdir=False, tempdir=False)
 parsearg.add_argument('--order', type=str, help='Order - (n)umber obs')
 parsearg.add_argument('--cutoff', type=float, help='Summarise for percent arg less than this')
+parsearg.add_argument('--targets', action='store_true', help='Show for targets, summarise for rest')
 parsearg.add_argument('--dither', type=int, nargs='*', default=[0], help='Dither ID to limit to')
 parsearg.add_argument('--filter', type=str, nargs='*', help='filters to limit to')
 parsearg.add_argument('--gain', type=float, help='Restrict to given gain value')
@@ -47,6 +48,7 @@ resargs = vars(parsearg.parse_args())
 remdefaults.getargs(resargs)
 order = resargs['order']
 cutoff = resargs['cutoff']
+targets = resargs['targets']
 gain = resargs["gain"]
 dither = resargs['dither']
 filters = resargs['filter']
@@ -99,6 +101,18 @@ if cutoff is not None:
         summ = obstot('Others', np.sum([r.count for r in summing]))
         summ.isothers = True
     results = keeping
+elif targets:
+	intarg = []
+	summing = []
+	for r in results:
+		if r.objname == 'Proxima' or r.objname == 'BarnardStar' or r.objname == 'Ross154':
+			intarg.append(r)
+		else:
+			summing.append(r)
+	if len(summing) != 0:
+		summ = obstot('Others', np.sum([r.count for r in summing]))
+		summ.isothers = True
+	results = intarg
 
 if order is not None and len(order) != 0:
 	f = order[0].lower()
@@ -116,7 +130,7 @@ for k in results:
     if n == "Proxima":
         n = "Proxima Centauri"
     elif n == "BarnardStar":
-        n = "Barnards's Star"
+        n = "Barnard's Star"
     elif n == 'Ross154':
         n = "Ross 154"
     objnames.append(n)

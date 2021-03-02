@@ -34,7 +34,8 @@ parsearg.add_argument('--racolour', type=str, help='Colour of RA lines')
 parsearg.add_argument('--deccolour', type=str, help='Colour of DEC lines')
 parsearg.add_argument('--divalpha', type=float, help='Alpha of divisions')
 parsearg.add_argument('--targcolour', type=str, help='Target colour')
-parsearg.add_argument('--objcolour', type=str, help='Object colour or colon-sep list')
+parsearg.add_argument('--idcolour', type=str, help='Identified object colour')
+parsearg.add_argument('--objcolour', type=str, help='Object colour (not identified)')
 parsearg.add_argument('--hilalpha', type=float, help='Object alpha')
 parsearg.add_argument('--objtextfs', type=int, help='Font size object labels')
 parsearg.add_argument('--textdisp', type=int, help='Displacement of object labels')
@@ -44,6 +45,7 @@ parsearg.add_argument('--gspercent', action='store_true', help='Grey scale is pe
 parsearg.add_argument('--gscolours', type=int, nargs='+', help='List of colours 1 to 254 to use (will be sorted)')
 parsearg.add_argument('--gsvalues', type=float, nargs='+', help='List of values to use in grey scale (will be sorted')
 parsearg.add_argument('--gsdel', action='store_true', help='Delete greyscale"')
+parsearg.add_argument('--defgreyscale', type=str, help='Set default greyscale')
 
 resargs = vars(parsearg.parse_args())
 doreset = resargs['reset']
@@ -70,6 +72,7 @@ divalpha = resargs['divalpha']
 
 objfill = resargs['objfill']
 targcolour = resargs['targcolour']
+idcolour = resargs['idcolour']
 objcolour = resargs['objcolour']
 objalpha = resargs['hilalpha']
 objtextfs = resargs['objtextfs']
@@ -79,6 +82,7 @@ gspercent = resargs["gspercent"]
 gscolours = resargs['gscolours']
 gsvalues = resargs['gsvalues']
 gsdel = resargs['gsdel']
+defgreyscale = resargs['defgreyscale']
 
 changes = 0
 
@@ -158,8 +162,11 @@ if objfill != rg.objdisp.objfill:
 if targcolour is not None:
     rg.objdisp.targcolour = targcolour
     changes += 1
+if idcolour is not None:
+    rg.objdisp.idcolour = idcolour
+    changes += 1
 if objcolour is not None:
-    rg.objdisp.objcolour = objcolour.split(":")
+    rg.objdisp.objcolour = objcolour
     changes += 1
 if objalpha is not None:
     rg.objdisp.objalpha = objalpha
@@ -185,6 +192,13 @@ if greyscale is not None:
             print("Grayscale gave error", e.args[0], file=sys.stderr)
             sys.exit(11)
         rg.set_greyscale(gs)
+    changes += 1
+if defgreyscale is not None:
+    try:
+        rg.set_defgreyscale(defgreyscale)
+    except remgeom.RemGeomError as e:
+        print("Default Grayscale gave error", e.args[0], file=sys.stderr)
+        sys.exit(12)
     changes += 1
 
 print("Default width: %.2f" % rg.defwinfmt.width)
@@ -223,7 +237,8 @@ print("Div alpha: %.3g" % rg.divspec.divalpha)
 if objfill:
     print("Fill object highlight")
 print("Target colour:", rg.objdisp.targcolour)
-print("Object colour(s): ", ", ".join(rg.objdisp.objcolour))
+print("Id colour: ", rg.objdisp.idcolour)
+print("Object colour: ", rg.objdisp.objcolour)
 print("Object alpha: %.3g" % rg.objdisp.objalpha)
 print("Object text font size: %d" % rg.objdisp.objtextfs)
 print("Object text displacement: %d" % rg.objdisp.objtextdisp)
@@ -238,6 +253,9 @@ for g in gl:
     print("Grayscale", g, "type", t)
     print("\tShades", gs.disp_colours())
     print("\tValues", gs.disp_values())
+
+if rg.defgreyscale is not None:
+    print("Default greyscale:", rg.defgreyscale)
 
 if changes > 0:
     remgeom.save(rg)

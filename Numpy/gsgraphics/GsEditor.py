@@ -177,9 +177,23 @@ class GsEditorMain(QtWidgets.QMainWindow, ui_gsedit.Ui_gseditmain):
         """Reset list widget display after load"""
         self.gslist.clear()
         if self.currentconfig is not None:
+            defgs = self.currentconfig.defgreyscale
             gsl = self.currentconfig.list_greyscales()
             for g in gsl:
-                self.gslist.addItem(g)
+                if g == defgs:
+                    self.gslist.addItem('*' + g)
+                else:
+                    self.gslist.addItem(g)
+    
+    def get_selected_gs(self):
+        """Get currently selected grey scale, trimming off any * for default"""
+        cur = self.gslist.currentItem()
+        if cur is None:
+            return None
+        name = str(cur.text())
+        if name[0] == '*':
+            return  name[1:]
+        return  name
 
     def on_action_New_config_triggered(self, checked=None):
         if checked is None: return
@@ -323,10 +337,9 @@ class GsEditorMain(QtWidgets.QMainWindow, ui_gsedit.Ui_gseditmain):
 
     def on_action_Clone_Greyscale_triggered(self, checked=None):
         if checked is None: return
-        cur = self.gslist.currentItem()
-        if cur is None:
+        origname = self.get_selected_gs()
+        if origname is None:
             return
-        origname = str(cur.text())
         fromgs = self.currentconfig.get_greyscale(origname)
         newgs = copy.deepcopy(fromgs)
         newgs.name += 'CloneEdutNe'
@@ -349,10 +362,9 @@ class GsEditorMain(QtWidgets.QMainWindow, ui_gsedit.Ui_gseditmain):
 
     def on_action_Edit_Greyscale_triggered(self, checked=None):
         if checked is None: return
-        cur = self.gslist.currentItem()
-        if cur is None:
+        origname = self.get_selected_gs()
+        if origname is None:
             return
-        origname = str(cur.text())
         gs = self.currentconfig.get_greyscale(origname)
         dlg = gseditdlg.GsEditDlg(self)
         dlg.copyin(copy.deepcopy(gs), self)
@@ -366,6 +378,8 @@ class GsEditorMain(QtWidgets.QMainWindow, ui_gsedit.Ui_gseditmain):
                 newgs = dlg.copyout()
                 self.currentconfig.del_greyscale(origname)
                 self.currentconfig.set_greyscale(newgs)
+                if origname == self.currentconfig.defgreyscale:
+                    self.currentconfig.defgreyscale = newname
                 self.redisp_config()
             else:
                 newgs = dlg.copyout()
@@ -376,13 +390,22 @@ class GsEditorMain(QtWidgets.QMainWindow, ui_gsedit.Ui_gseditmain):
             break
         if dlg.plotfigure is not None:
             plt.close(dlg.plotfigure)
+    
+    def on_action_Set_default_triggered(self, checked=None):
+        if checked is None: return
+        origname = self.get_selected_gs()
+        if origname is None or origname == self.currentconfig.defgreyscale:
+            return
+        self.currentconfig.defgreyscale = origname
+        self.redisp_config()
+        self.unsaved = True
+        self.updateUI()
 
     def on_action_Delete_Greyscale_triggered(self, checked=None):
         if checked is None: return
-        cur = self.gslist.currentItem()
-        if cur is None:
+        gsname = self.get_selected_gs()
+        if gsname is None:
             return
-        gsname = str(cur.text())
         if QtWidgets.QMessageBox.question(self, "Are you sure", "Delete greyscale '" + gsname + "' are you sure?",
             QtWidgets.QMessageBox.No | QtWidgets.QMessageBox.Yes, QtWidgets.QMessageBox.No) != QtWidgets.QMessageBox.Yes:
             return

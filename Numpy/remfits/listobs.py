@@ -1,29 +1,21 @@
 #!  /usr/bin/env python3
 
-# @Author: John M Collins <jmc>
-# @Date:   2018-08-24T22:41:12+01:00
-# @Email:  jmc@toad.me.uk
-# @Filename: listobs.py
-# @Last modified by:   jmc
-# @Last modified time: 2019-01-04T23:00:35+00:00
+"""List observations in various formats"""
 
-import dbops
-import remdefaults
 import argparse
-import datetime
-import re
 import sys
+import remdefaults
 import parsetime
 import remfield
 import numpy as np
 
-Format_keys = ('ind', 'obsind', "object", 'filter', 'dither', 'date', 'gain',
+Format_keys = ('ind', 'obsind', "object", 'filter', 'dither', 'date', 'gain', 'orient',
                'minval', 'nsminval', 'ansminval', 'maxval', 'nsmaxval', 'ansmaxval',
                'median', 'nsmeidan', 'ansmedian', 'mean', 'nsmean', 'ansmean',
                'std', 'nsstd', 'ansstd', 'skew', 'nsskew', 'ansskew',
-               'kurt', 'nskurt', 'anskurt')
+               'kurt', 'nskurt', 'anskurt', 'orient')
 
-Format_header = ('^FITS', '^Serial', "<Object", '<Filter', '>Dither', '<Date/Time', '>Gain',
+Format_header = ('^FITS', '^Serial', "<Object", '<Filter', '>Dither', '<Date/Time', '>Gain', '>Orient',
                '^Minimum', '^Ns min', '^Abs ns min',
                '^Maximum', '^Ns max', '^Abs ns max',
                '^Median', '>Ns meidan', '>Abs ns median',
@@ -32,7 +24,7 @@ Format_header = ('^FITS', '^Serial', "<Object", '<Filter', '>Dither', '<Date/Tim
                '^Skew', '>Ns skew', '>Abs ns skew',
                '^Kurtosis', '>Ns kurtosis', '>Abs ns kurtosis')
 
-Format_codes = ('d', 'd', 's', 's', 'd', '%Y-%m-%d %H:%M:%S', '.1f',
+Format_codes = ('d', 'd', 's', 's', 'd', '%Y-%m-%d %H:%M:%S', '.1f', 'd',
                 'd', '.3g', '.3g', 'd', '.3g', '.3g',
                 '.2f', '.3g', '.3g', '.2f', '.3g', '.3g',
                 '.3g', '.3g', '.3g', '.3g', '.3g', '.3g', '.3g', '.3g', '.3g')
@@ -40,7 +32,7 @@ Format_codes = ('d', 'd', 's', 's', 'd', '%Y-%m-%d %H:%M:%S', '.1f',
 Format_accum = (False, False, False, False, False, False, False,
                 True, True, True, True, True, True,
                 True, True, True, True, True, True,
-                True, True, True, True, True, True, True, True, True)
+                True, True, True, True, True, True, True, True, True, False)
 
 Fc_dict = dict(zip(Format_keys, Format_codes))
 Fh_dict = dict(zip(Format_keys, Format_header))
@@ -54,6 +46,7 @@ parsearg.add_argument('--objects', type=str, nargs='*', help='Objects to limit t
 parsearg.add_argument('--dither', type=int, nargs='*', default=[0], help='Dither ID to limit to')
 parsearg.add_argument('--filter', type=str, nargs='*', help='filters to limit to')
 parsearg.add_argument('--gain', type=float, help='Restrict to given gain value')
+parsearg.add_argument('--orientation', type=int, help='Restrict to given orientation value (quarter turns)')
 parsearg.add_argument('--summary', action='store_true', help='Just summarise objects and number of obs')
 parsearg.add_argument('--idonly', action='store_true', help='Just give ids no other data')
 parsearg.add_argument('--fitsind', action='store_true', help='Show fits ind not obs ind')
@@ -80,14 +73,15 @@ dither = resargs['dither']
 filters = resargs['filter']
 summary = resargs['summary']
 fitsind = resargs['fitsind']
+orient = resargs['orientation']
 gain = resargs["gain"]
 hasfile = resargs['hasfile']
 debug = resargs['debug']
-format = resargs['format']
+formatlines = resargs['format']
 header = resargs['header']
 ptots = resargs['totals']
 
-if idonly and (summary or format is not None or header):
+if idonly and (summary or formatlines is not None or header):
     print("Cannot have idonly and specify format or header or summary", file=sys.stderr)
     sys.exit(10)
 
@@ -98,30 +92,30 @@ if idonly:
     if header:
         print("Cannot have --idonly and --header together", file=sys.stderr)
         sys.exit(11)
-    if format is not None:
+    if formatlines is not None:
         print("Cannot have --idonly and --format together", file=sys.stderr)
         sys.exit(12)
 elif summary:
     if header:
         print("Cannot have --summary and --header together", file=sys.stderr)
         sys.exit(13)
-    if format is not None:
+    if formatlines is not None:
         print("Cannot have --summary and --format together", file=sys.stderr)
         sys.exit(14)
 
-if format is None:
-    format = []
+if formatlines is None:
+    formatlines = []
     if fitsind:
-        format.append('ind')
+        formatlines.append('ind')
     else:
-        format.append('obsind')
+        formatlines.append('obsind')
     if not idonly:
-        format.append('date')
-        format.append('object')
-        format.append('filter')
-        # format.append('dither')
+        formatlines.append('date')
+        formatlines.append('object')
+        formatlines.append('filter')
+        # formatlines.append('dither')
 else:
-    fbits = format.split(',')
+    fbits = formatlines.split(',')
     errors = 0
     for fb in fbits:
         if fb not in Fc_dict:
@@ -129,10 +123,10 @@ else:
             errors += 1
     if errors != 0:
         sys.exit(30)
-    format = fbits
+    formatlines = fbits
 
 extras_reqd = False
-for f in format:
+for f in formatlines:
     if f[0:3] == "ans" or f[0:2] == "ns":
         extras_reqd = True
         break
@@ -160,12 +154,15 @@ if len(dither) != 0 and dither[0] != -1:
 if gain is not None:
     fieldselect.append("ABS(gain-%.3g) < %.3g" % (gain, gain * 1e-3))
 
+if orient is not None:
+    fieldselect.append("orient=%d" % orient)
+
 try:
     remfield.getargs(resargs, fieldselect)
     if summary:
         sel = "SELECT object,COUNT(*) FROM obsinf WHERE " + " AND ".join(fieldselect) + " GROUP BY object ORDER BY object"
     else:
-        sel = remfield.get_extended_args(resargs, "obsinf", "SELECT ind,obsind,object,filter,dithID,date_obs,gain", fieldselect, extras_reqd)
+        sel = remfield.get_extended_args(resargs, "obsinf", "SELECT ind,obsind,object,filter,dithID,date_obs,gain,orient", fieldselect, extras_reqd)
         sel += " ORDER BY date_obs"
 except remfield.RemFieldError as e:
     print(e.args[0], file=sys.stderr)
@@ -182,21 +179,21 @@ if summary:
     sys.exit(0)
 
 if header:
-    headers = [Fh_dict[i] for i in format]
+    headers = [Fh_dict[i] for i in formatlines]
     maxwids = [len(h[1:]) for h in headers]
 else:
-    maxwids = [0] * len(format)
+    maxwids = [0] * len(formatlines)
 
 # First run through to get widths
 
-Fcodes = ["{" + fc + ":" + Fc_dict[fc] + "}" for fc in format]
+Fcodes = ["{" + fc + ":" + Fc_dict[fc] + "}" for fc in formatlines]
 for dbrow in dbrows:
     res = dict(zip(Format_keys, dbrow))
     rf = [fc.format(**res) for fc in Fcodes]
     maxwids = [max(n, len(p)) for n, p in zip(maxwids, rf)]
 
 accums = []
-for f in format:
+for f in formatlines:
     if Facc_dict[f]:
         accums.append([])
     else:
@@ -208,7 +205,7 @@ try:
 
     Fcodes = []
     TFcodes = []
-    for n, fc in enumerate(format):
+    for n, fc in enumerate(formatlines):
         if fc == 'date':
             Fcodes.append("{" + fc + ":" + Fc_dict[fc] + "}")
         else:
@@ -219,7 +216,7 @@ try:
         res = dict(zip(Format_keys, dbrow))
         print(" ".join([f.format(**res) for f in Fcodes]))
         if ptots:
-            for n, c in enumerate(format):
+            for n, c in enumerate(formatlines):
                 try:
                     accums[n].append(res[c])
                 except AttributeError:
