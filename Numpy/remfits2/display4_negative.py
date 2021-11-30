@@ -110,7 +110,7 @@ if errors > 0:
     sys.exit(20)
 
 plotfigure = rg.plt_figure()
-plotfigure.canvas.set_window_title("Negative pixels 4 filters")
+plotfigure.canvas.manager.set_window_title("Negative pixels 4 filters")
 
 for filter, subp in ('i', 221), ('g', 222), ('z', 223), ('r', 224):
 

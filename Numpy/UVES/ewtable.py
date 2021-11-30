@@ -105,7 +105,7 @@ for day_dates, day_ews, day_prs, day_xrayvs, day_xraygrads in dateparts:
     fig = plt.figure(figsize=(width,height))
     plt.subplots_adjust(hspace = 0)
     plt.xlim(day_dates[0], day_dates[-1])
-    fig.canvas.set_window_title("Plotting for " + datedescr)
+    fig.canvas.manager.set_window_title("Plotting for " + datedescr)
     ewforday = []
     prforday = []
     ax1 = plt.subplot(3, 1, 1)
@@ -162,7 +162,7 @@ for day_dates, day_ews, day_prs, day_xrayvs, day_xraygrads in dateparts:
     # First a combined histogram
 
     fig = plt.figure(figsize=(hwidth, hheight))
-    fig.canvas.set_window_title("Equivalent widths for " + datedescr + " combined")
+    fig.canvas.manager.set_window_title("Equivalent widths for " + datedescr + " combined")
     plt.hist(ewforday, bins=bins, color=hc)
     plt.xlabel("Ews for " + datedescr + " " + titlelims)
     plt.legend(legends)
@@ -171,7 +171,7 @@ for day_dates, day_ews, day_prs, day_xrayvs, day_xraygrads in dateparts:
         fig.savefig(newf)
         filesmade.append(newf)
     fig = plt.figure(figsize=(hwidth, hheight))
-    fig.canvas.set_window_title("Peak Ratios for " + datedescr + " combined")
+    fig.canvas.manager.set_window_title("Peak Ratios for " + datedescr + " combined")
     plt.hist(prforday, bins=bins, color=hc)
     plt.xlabel("Ratios for " + datedescr + " " + titlelims)
     plt.legend(legends)
@@ -184,7 +184,7 @@ for day_dates, day_ews, day_prs, day_xrayvs, day_xraygrads in dateparts:
 
     fig = plt.figure(figsize=(hwidth, hheight))
     plt.subplots_adjust(hspace = 0)
-    fig.canvas.set_window_title("Equivalent widths for " + datedescr)
+    fig.canvas.manager.set_window_title("Equivalent widths for " + datedescr)
     plt.subplots_adjust(hspace = 0)
     ax1 = None
     for ln, ewd in enumerate(ewforday):
@@ -202,7 +202,7 @@ for day_dates, day_ews, day_prs, day_xrayvs, day_xraygrads in dateparts:
 
     fig = plt.figure(figsize=(hwidth, hheight))
     plt.subplots_adjust(hspace = 0)
-    fig.canvas.set_window_title("Peak ratios for " + datedescr)
+    fig.canvas.manager.set_window_title("Peak ratios for " + datedescr)
     plt.subplots_adjust(hspace = 0)
     ax1 = None
     for ln, prd in enumerate(prforday):
@@ -220,14 +220,14 @@ for day_dates, day_ews, day_prs, day_xrayvs, day_xraygrads in dateparts:
 # One histogram with different bars for each X-ray level
 
 fig = plt.figure(figsize=(hwidth, hheight))
-fig.canvas.set_window_title("Equivalent widths (all days) combined")
+fig.canvas.manager.set_window_title("Equivalent widths (all days) combined")
 plt.hist(ewlevs, bins=bins, color=hc)
 plt.xlabel("Equivalent widths for all days combined")
 plt.legend(legends)
 if outfile is not None:
     fig.savefig(outfile + "cewhistall.png")
 fig = plt.figure(figsize=(hwidth, hheight))
-fig.canvas.set_window_title("Peak ratios (all days) combined")
+fig.canvas.manager.set_window_title("Peak ratios (all days) combined")
 plt.hist(prlevs, bins=bins, color=hc)
 plt.xlabel("Peak ratios for all days combined")
 plt.legend(legends)
@@ -237,7 +237,7 @@ if outfile is not None:
 # Now redo as separate histograms for each level
 
 fig = plt.figure(figsize=(hwidth, hheight))
-fig.canvas.set_window_title("Equivalent widths (all days)")
+fig.canvas.manager.set_window_title("Equivalent widths (all days)")
 plt.subplots_adjust(hspace = 0)
 ax1 = None
 for ln, ewd in enumerate(ewlevs):
@@ -250,7 +250,7 @@ if outfile is not None:
     fig.savefig(outfile + "ewhistall.png")
 
 fig = plt.figure(figsize=(hwidth, hheight))
-fig.canvas.set_window_title("Peak ratios (all days)")
+fig.canvas.manager.set_window_title("Peak ratios (all days)")
 plt.subplots_adjust(hspace = 0)
 ax1 = None
 for ln, prd in enumerate(prlevs):

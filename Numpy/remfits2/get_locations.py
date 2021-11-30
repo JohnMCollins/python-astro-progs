@@ -20,7 +20,7 @@ warnings.simplefilter('ignore', UserWarning)
 
 parsearg = argparse.ArgumentParser(description='Get locations from database corresponding to image', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 parsearg.add_argument('files', nargs='+', type=str, help='Image file and output location file')
-remdefaults.parseargs(parsearg, tempdir=False)
+remdefaults.parseargs(parsearg, tempdir=False, inlib=False)
 parsearg.add_argument('--force', action='store_true', help='Force overwrite of existing file')
 parsearg.add_argument('--verbose', action='store_true', help='List details')
 
@@ -51,14 +51,7 @@ if inputfile.target is None:
     print("No target found in", infile, file=sys.stderr)
     sys.exit(53)
 
-try:
-    objlist = objdata.get_objects(dbcurs, inputfile.target, inputfile.date)
-except objdata.ObjDataError as e:
-    print("Search gave error", e.args[0], e.args[1])
-    sys.exit(54)
-
-if verbose:
-    print(len(objlist), "Possible objects prior to restriction to image", file=sys.stderr)
+target_name = objdata.get_objname(dbcurs, inputfile.target)
 
 w = wcscoord.wcscoord(inputfile.hdr)
 pixrows, pixcols = inputfile.data.shape
@@ -67,17 +60,21 @@ cornerradec = w.pix_to_coords(cornerpix)
 ras = [c[0] for c in cornerradec]
 decs = [c[1] for c in cornerradec]
 
-objlist = objdata.prune_objects(objlist, ras, decs)
+try:
+    objlist = objdata.get_sky_region(dbcurs, target_name, inputfile.date, ras, decs)
+except objdata.ObjDataError as e:
+    print("Search gave error", e.args[0], e.args[1], file=sys.stderr)
+    sys.exit(54)
 
 if verbose:
-    print(len(objlist), "Possible objects after to restriction to image", file=sys.stderr)
+    print(objlist.numobjs(), "Possible objects after restriction to image", file=sys.stderr)
 
-if len(objlist) < 2:
+if objlist.numobjs() < 2:
     print("Not enough possible objects in list", file=sys.stderr)
     sys.exit(100)
 
 objstr = obj_locations.ObjLocs(inputfile)
-for obj in objlist:
+for obj in objlist.objlist:
     objstr.add_loc(obj)
 objstr.get_offsets_in_image()
 

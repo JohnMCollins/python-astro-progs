@@ -73,7 +73,7 @@ for filter, mn, st in dbrows:
     dbyfilt[filter].append((mn, st))
 
 plotfigure = rg.plt_figure()
-plotfigure.canvas.set_window_title("BIAS file differences")
+plotfigure.canvas.manager.set_window_title("BIAS file differences")
 
 for filter, subp in ('i', 221), ('g', 222), ('z', 223), ('r', 224):
 

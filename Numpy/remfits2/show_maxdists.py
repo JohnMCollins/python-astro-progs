@@ -62,7 +62,7 @@ for filt, maxv in dbcurs.fetchall():
     filterobj[filt].append(maxv)
 
 plotfigure = rg.plt_figure()
-plotfigure.canvas.set_window_title("Max values for each of 4 filters")
+plotfigure.canvas.manager.set_window_title("Max values for each of 4 filters")
 
 for filt, subp in ('i', 221), ('g', 222), ('z', 223), ('r', 224):
 

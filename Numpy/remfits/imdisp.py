@@ -143,7 +143,7 @@ for file in files:
     (dat,) = rg.apply_trims(w, dat)
 
     plotfigure = rg.plt_figure()
-    plotfigure.canvas.set_window_title('FITS Image from file ' + file)
+    plotfigure.canvas.manager.set_window_title('FITS Image from file ' + file)
 
     med = np.median(dat)
     sigma = dat.std()

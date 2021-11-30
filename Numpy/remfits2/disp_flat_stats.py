@@ -64,7 +64,7 @@ means = dbrows[:, 0]
 stds = dbrows[:, 1]
 
 fig = rg.plt_figure()
-fig.canvas.set_window_title("Stats of daily flats")
+fig.canvas.manager.set_window_title("Stats of daily flats")
 
 for colnum, (subp, title) in enumerate(((221, 'Means'), (222, 'Std'), (223, 'Skew'), (224, 'Kurtosis'))):
     plt.subplot(subp)

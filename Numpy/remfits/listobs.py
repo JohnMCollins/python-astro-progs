@@ -10,12 +10,14 @@ import remfield
 import numpy as np
 
 Format_keys = ('ind', 'obsind', "object", 'filter', 'dither', 'date', 'gain', 'orient',
+               'startx', 'starty', 'cols', 'rows', 'airmass',
                'minval', 'nsminval', 'ansminval', 'maxval', 'nsmaxval', 'ansmaxval',
                'median', 'nsmeidan', 'ansmedian', 'mean', 'nsmean', 'ansmean',
                'std', 'nsstd', 'ansstd', 'skew', 'nsskew', 'ansskew',
                'kurt', 'nskurt', 'anskurt', 'orient')
 
 Format_header = ('^FITS', '^Serial', "<Object", '<Filter', '>Dither', '<Date/Time', '>Gain', '>Orient',
+               '>startx', '>starty', '>cols', '>rows', '>airmass'
                '^Minimum', '^Ns min', '^Abs ns min',
                '^Maximum', '^Ns max', '^Abs ns max',
                '^Median', '>Ns meidan', '>Abs ns median',
@@ -25,11 +27,13 @@ Format_header = ('^FITS', '^Serial', "<Object", '<Filter', '>Dither', '<Date/Tim
                '^Kurtosis', '>Ns kurtosis', '>Abs ns kurtosis')
 
 Format_codes = ('d', 'd', 's', 's', 'd', '%Y-%m-%d %H:%M:%S', '.1f', 'd',
+                'd', 'd', 'd', 'd', '.4f',
                 'd', '.3g', '.3g', 'd', '.3g', '.3g',
                 '.2f', '.3g', '.3g', '.2f', '.3g', '.3g',
                 '.3g', '.3g', '.3g', '.3g', '.3g', '.3g', '.3g', '.3g', '.3g')
 
 Format_accum = (False, False, False, False, False, False, False,
+                False, False, False, False, False,
                 True, True, True, True, True, True,
                 True, True, True, True, True, True,
                 True, True, True, True, True, True, True, True, True, False)
@@ -40,13 +44,19 @@ Facc_dict = dict(zip(Format_keys, Format_accum))
 
 parsearg = argparse.ArgumentParser(description='List available observations',
                                    formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+parsearg.add_argument('obsinds', type=int, nargs='*', help='Observation ids to restrict to')
 remdefaults.parseargs(parsearg)
 parsetime.parseargs_daterange(parsearg)
 parsearg.add_argument('--objects', type=str, nargs='*', help='Objects to limit to')
 parsearg.add_argument('--dither', type=int, nargs='*', default=[0], help='Dither ID to limit to')
 parsearg.add_argument('--filter', type=str, nargs='*', help='filters to limit to')
 parsearg.add_argument('--gain', type=float, help='Restrict to given gain value')
+parsearg.add_argument('--airmass', type=str, help='Restrict to min:max airmass values')
 parsearg.add_argument('--orientation', type=int, help='Restrict to given orientation value (quarter turns)')
+parsearg.add_argument('--startx', type=int, help='Restrict to given startx value on CCD')
+parsearg.add_argument('--starty', type=int, help='Restrict to given starty value on CCD')
+parsearg.add_argument('--rows', type=int, help='Restrict to given rows value on CCD')
+parsearg.add_argument('--cols', type=int, help='Restrict to given cols value on CCD')
 parsearg.add_argument('--summary', action='store_true', help='Just summarise objects and number of obs')
 parsearg.add_argument('--idonly', action='store_true', help='Just give ids no other data')
 parsearg.add_argument('--fitsind', action='store_true', help='Show fits ind not obs ind')
@@ -58,6 +68,7 @@ parsearg.add_argument('--header', action='store_true', help='Provide a header')
 parsearg.add_argument('--totals', action='store_true', help='Print totals'
                       )
 resargs = vars(parsearg.parse_args())
+obsinds = resargs['obsinds']
 remdefaults.getargs(resargs)
 
 fieldselect = ["rejreason is NULL"]
@@ -74,6 +85,10 @@ filters = resargs['filter']
 summary = resargs['summary']
 fitsind = resargs['fitsind']
 orient = resargs['orientation']
+disp_startx = resargs['startx']
+disp_starty = resargs['starty']
+disp_rows = resargs['rows']
+disp_cols = resargs['cols']
 gain = resargs["gain"]
 hasfile = resargs['hasfile']
 debug = resargs['debug']
@@ -131,6 +146,12 @@ for f in formatlines:
         extras_reqd = True
         break
 
+if len(obsinds) != 0:
+    oil = []
+    for oind in obsinds:
+        oil.append("obsind=%d" % oind)
+    fieldselect.append("(" + " OR ".join(oil) + ")")
+
 mydb, dbcurs = remdefaults.opendb()
 
 if hasfile:
@@ -157,12 +178,22 @@ if gain is not None:
 if orient is not None:
     fieldselect.append("orient=%d" % orient)
 
+if disp_startx is not None:
+    fieldselect.append("startx={:d}".format(disp_startx))
+if disp_starty is not None:
+    fieldselect.append("starty={:d}".format(disp_starty))
+if disp_rows is not None:
+    fieldselect.append("nrows={:d}".format(disp_rows))
+if disp_cols is not None:
+    fieldselect.append("ncols={:d}".format(disp_cols))
+
 try:
     remfield.getargs(resargs, fieldselect)
+    remfield.parsepair(resargs, "airmass", fieldselect, "airmass")
     if summary:
         sel = "SELECT object,COUNT(*) FROM obsinf WHERE " + " AND ".join(fieldselect) + " GROUP BY object ORDER BY object"
     else:
-        sel = remfield.get_extended_args(resargs, "obsinf", "SELECT ind,obsind,object,filter,dithID,date_obs,gain,orient", fieldselect, extras_reqd)
+        sel = remfield.get_extended_args(resargs, "obsinf", "SELECT ind,obsind,object,filter,dithID,date_obs,gain,orient,startx,starty,ncols,nrows,airmass", fieldselect, extras_reqd)
         sel += " ORDER BY date_obs"
 except remfield.RemFieldError as e:
     print(e.args[0], file=sys.stderr)

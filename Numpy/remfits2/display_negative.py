@@ -90,7 +90,7 @@ for file in files:
 
     fdat = ff.data
     plotfigure = rg.plt_figure()
-    plotfigure.canvas.set_window_title('Negative pixels ' + file)
+    plotfigure.canvas.manager.set_window_title('Negative pixels ' + file)
 
     crange = [fdat.min(), 0.0, np.percentile(fdat, hpercent), fdat.max()]
     norm = colors.BoundaryNorm(crange, cmap.N)

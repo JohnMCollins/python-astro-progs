@@ -93,7 +93,7 @@ except ValueError as e:
 dbase, dbcurs = remdefaults.opendb()
 
 fig = rg.plt_figure()
-fig.canvas.set_window_title("Exploration of cutoff point")
+fig.canvas.manager.set_window_title("Exploration of cutoff point")
 
 for filter, subp in ('i', 221), ('g', 222), ('z', 223), ('r', 224):
 

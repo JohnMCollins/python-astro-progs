@@ -1,20 +1,20 @@
 #!  /usr/bin/env python3
 
-# Duplicate creation of master flat file
+""""Create master flat files"""
 
-from astropy.utils.exceptions import AstropyWarning, AstropyUserWarning
-from astropy.io import fits
-from astropy.time import Time
 import datetime
-import numpy as np
 import argparse
 import warnings
 import sys
-import miscutils
 import math
+import os.path
+from scipy.stats import gmean
+from astropy.utils.exceptions import AstropyWarning, AstropyUserWarning
+from astropy.io import fits
+from astropy.time import Time
+import numpy as np
 import remdefaults
 import remfits
-import os.path
 import col_from_file
 
 # Shut up warning messages
@@ -22,11 +22,13 @@ import col_from_file
 warnings.simplefilter('ignore', AstropyWarning)
 warnings.simplefilter('ignore', AstropyUserWarning)
 warnings.simplefilter('ignore', UserWarning)
+warnings.simplefilter('error', RuntimeWarning)
 
 parsearg = argparse.ArgumentParser(description='Duplicate creation of master flat file ', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 parsearg.add_argument('iforbinds', nargs='*', type=str, help='Filenames or ids to process, otherwise use stdin')
+parsearg.add_argument('--colnum', type=int, default=0, help='Column to use from stdin')
 remdefaults.parseargs(parsearg, tempdir=False)
-parsearg.add_argument('--biasfile', type=str, required=True, help='Bias file to use"')
+parsearg.add_argument('--biasfile', type=str, required=True, help='Bias file to use')
 parsearg.add_argument('--outfile', type=str, required=True, help='Output FITS file')
 parsearg.add_argument('--badpix', type=str, help='Bad pixel mask file to use')
 parsearg.add_argument('--filter', type=str, help='Specify filter otherwise deduced from files')
@@ -40,7 +42,7 @@ remdefaults.getargs(resargs)
 biasfile = resargs['biasfile']
 outfile = resargs['outfile']
 badpix = resargs['badpix']
-filter = resargs['filter']
+filter_name = resargs['filter']
 stoperr = resargs['stoperr']
 force = resargs['force']
 baseid = resargs['baseid']
@@ -49,15 +51,16 @@ if os.path.exists(outfile) and not force:
     print("Will not overwrite existing", outfile, "use --force if needed", file=sys.stderr)
     sys.exit(50)
 
-idlist, errors = col_from_file.ids_from_file_list(files)
+if len(files) == 0:
+    files = col_from_file.col_from_file(sys.stdin, resargs['colnum'])
+    if len(files) == 0:
+        print("No files to process", file=sys.stderr)
+        sys.exit(51)
 
-if len(idlist) == 0:
-    print("No IDs to preocess", errors, "errors", file=sys.stderr)
-    sys.exit(99)
+mydb, mycurs = remdefaults.opendb()
 
-biasstr = remfits.RemFits()
 try:
-    biasstr.load_from_fits(biasfile)
+    biasstr = remfits.parse_filearg(biasfile, 'B')
 except remfits.RemFitsErr as e:
     print("Bias file", biasfile, "gave error", e.args[0], file=sys.stderr)
     sys.exit(10)
@@ -66,14 +69,13 @@ if biasstr.ftype != 'Daily bias' and biasstr.ftype != 'Combined bias':
     print(biasfile, "is", biasstr.ftype, "not a bias file", file=sys.stderr)
     sys.exit(11)
 
-if filter is None:
-    filter = biasstr.filter
-elif filter != biasstr.filter:
-    print(biasfile, "is for filter", biasstr.filter, "but filter given as", filter, file=sys.stderr)
+if filter_name is None:
+    filter_name = biasstr.filter
+elif filter_name != biasstr.filter:
+    print(biasfile, "is for filter", biasstr.filter, "but filter given as", filter_name, file=sys.stderr)
     sys.exit(12)
 
-Bdims = (biasstr.ncolumns, biasstr.nrows)
-Bstarts = (biasstr.startx, biasstr.starty)
+Bdims = biasstr.dimscr()
 biasdata = biasstr.data
 
 badpixmask = None
@@ -87,48 +89,45 @@ if badpix is not None:
 
 # If none given as base, use first one
 
-sidlist = set(idlist)
-if baseid is None or baseid not in sidlist:
-    baseid = idlist[0]
-# This manoeuvre is to eliminate duplicates
-idlist = sorted(list(sidlist))
-
-# Now load up daily flats
-
-mydb, mycurs = remdefaults.opendb()
+sfiles = set(files)
+if baseid is None or baseid not in sfiles:
+    baseid = files[0]
+# This manoeuvre is a quick way to eliminate duplicates
+files = sorted(sfiles)
 
 ffiles = []
 usedids = []
 basef = None
+errors = 0
+intfiles = []
 
-for id in idlist:
+for file in files:
     try:
-        rf = remfits.RemFits()
-        rf.load_from_iforbind(mycurs, id)
+        rf = remfits.parse_filearg(file, mycurs, 'F')
     except remfits.RemFitsErr as e:
-        print("Loading from", id, "gave error", e.args[0], file=sys.stderr)
+        print("Loading from", file, "gave error", e.args[0], file=sys.stderr)
         errors += 1
         continue
     if rf.ftype != "Daily flat":
-        print("File type of", id, "is", rf.ftype, "not flat", file=sys.stderr)
+        print("File type of", file, "is", rf.ftype, "not flat", file=sys.stderr)
         errors += 1
         continue
-    if rf.filter != filter:
-        print("Filter of", id, "is", rf.filter, "but using", filter, file=sys.stderr)
+    if rf.filter != filter_name:
+        print("Filter of", file, "is", rf.filter, "but using", filter_name, file=sys.stderr)
         errors += 1
         continue
-    if Bdims != (rf.ncolumns, rf.nrows):
-        print("Dimensions of", id, "are", (rf.ncolumns, rf.nrows), "whereas previous are", Bdims, file=sys.stderr)
+    if Bdims != rf.dimscr():
+        print("Dimensions of", file, "are", rf.dimscr(), "whereas previous are", Bdims, file=sys.stderr)
         errors += 1
         continue
-    if Bstarts != (rf.startx, rf.starty):
-        print("Starts of", id, "are", (rf.startx, rf.starty), "whereas previous are", Bstarts, file=sys.stderr)
-        errors += 1
-        continue
-    if id == baseid:
+    if file == baseid:
         basef = rf
     ffiles.append(rf)
-    usedids.append(id)
+    usedids.append(file)
+    try:
+        intfiles.append(rf.hdr['FILENAME'])
+    except KeyError:
+        pass
 
 if (errors > 0  and  stoperr) or len(ffiles) == 0:
     print("Stopping due to", errors, "-", len(ffiles), "files loaded", file=sys.stderr)
@@ -145,50 +144,57 @@ temps = []
 dates = []
 prebadpm = []
 postbadpm = []
-for id, ff in zip(usedids, ffiles):
+for ff in ffiles:
     dat = ff.data - biasdata
     prebadpm.append(np.count_nonzero(dat <= 0.0))
-    if badpixmask is not None:
-        dat[badpixmask] = 1.0
     postbadpm.append(np.count_nonzero(dat <= 0.0))
     arrblock.append(dat)
     temps.append(ff.ccdtemp)
     dates.append(ff.date)
 
 arrblock = np.array(arrblock)
+arrblock -= biasdata
 
-for id, ff, pre, post in zip(usedids, ffiles, prebadpm, postbadpm):
-    print("%10d %5d %5d" % (id, pre, post))
+try:
+    if badpixmask is not None:
+        arrblock[:, badpixmask] = 1.0
+    result = gmean(arrblock, axis=0)
+except RuntimeWarning:
+    print("Zeror or negative values in result - aborting", file=sys.stderr)
+    sys.exit(200)
 
-sys.exit(0)
+result /= result.mean()
+if badpixmask is not None:
+    result[badpixmask] = 1.0
+data_min = result.min()
+data_max = result.max()
+min_date = Time(min(dates))
+max_date = Time(max(dates))
+rrows, rcols = result.shape
+result = np.pad(result, ((0, 1024 - rrows), (0, 1024 - rcols)), 'constant', constant_values=math.nan)
 
-rimmed_image.mean()
-ffin = final_image.flatten()
-ffin = ffin[ffin > 0.0]
-data_min = ffin.min()
-data_max = ffin.max()
+first_header = basef.hdr
 
-final_image[final_image <= 0.0] = math.nan
-
-first_header = hdrs[0]
-
-first_header.set('DATE_MIN', str(Time(min_date, format='mjd', precision=0).isot), ' (UTC) start date of used flat frames')
-first_header.set('DATE_MAX', str(Time(max_date, format='mjd', precision=0).isot), ' (UTC) end date of used flat frames')
-first_header.set('MJD_MIN', min_date, ' [day] start MJD of used flat frames')
-first_header.set('MJD_MAX', max_date, ' [day] end MJD of used flat frames')
-first_header.set('N_IMAGES', len(mjd), '  number of images used')
+first_header.set('DATE_MIN', str(min_date.isot), ' (UTC) start date of used flat frames')
+first_header.set('DATE_MAX', str(max_date.isot), ' (UTC) end date of used flat frames')
+first_header.set('MJD_MIN', min_date.mjd, ' [day] start MJD of used flat frames')
+first_header.set('MJD_MAX', max_date.mjd, ' [day] end MJD of used flat frames')
+first_header.set('N_IMAGES', len(dates), '  number of images used')
 first_header['DATAMIN'] = data_min
 first_header['DATAMAX'] = data_max
-first_header.set('FILENAME', miscutils.removesuffix(outfile), ' filename of this median image')
-first_header['COMMENT'] = 'The following keywords refer to files used to build the image'
-histb = []
-while len(intfiles) != 0:
-    nxt = []
-    while len(intfiles) != 0 and len(nxt) < 4:
-        nxt.append(intfiles.pop(0))
-    histb.append(nxt)
-for n in histb:
-    first_header['HISTORY'] = ",".join(n)
+quadrant = remfits.revfn[filter_name]
+first_header.set('FILTER', filter_name, " filter corresponding to " + quadrant + " quadrant")
+first_header.set('FILENAME', "Generated flat for " + quadrant, ' filename of the image')
+if len(intfiles) != 0:
+    first_header['COMMENT'] = 'The following keywords refer to files used to build the image'
+    histb = []
+    while len(intfiles) != 0:
+        nxt = []
+        while len(intfiles) != 0 and len(nxt) < 4:
+            nxt.append(intfiles.pop(0))
+        histb.append(nxt)
+    for n in histb:
+        first_header['HISTORY'] = ",".join(n)
 
 first_header['HISTORY'] = datetime.datetime.now().strftime("Created on %a %b %d %H:%M:%S %Y")
 
@@ -197,7 +203,7 @@ for todel in ('BZERO', 'BSCALE', 'BUNIT', 'BLANK'):
         del first_header[todel]
     except KeyError:
         pass
-hdu = fits.PrimaryHDU(final_image, first_header)
+hdu = fits.PrimaryHDU(result, first_header)
 try:
     hdu.writeto(outfile, overwrite=force, checksum=True)
 except OSError:

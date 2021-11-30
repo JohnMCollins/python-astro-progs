@@ -109,7 +109,7 @@ for file in files:
 
     data = ff.data
     plotfigure = rg.plt_figure()
-    plotfigure.canvas.set_window_title('FITS Image from file ' + file)
+    plotfigure.canvas.manager.set_window_title('FITS Image from file ' + file)
     ax = plotfigure.add_subplot(111, projection='3d')
     rows, cols = data.shape
     xvals = np.tile(range(0, cols), (rows, 1))

@@ -130,7 +130,7 @@ if restcount != 0:
     expls.append(ramt)
 
 fig = plt.figure(figsize=dims)
-fig.canvas.set_window_title(title)
+fig.canvas.manager.set_window_title(title)
 plt.pie(sizes, labels=labs, shadow=True, explode=expls, colors=cols, autopct='%1.1f%%', radius=pierad)
 if leg is not None:
     plt.legend([leg], handlelength=0, handletextpad=0, fancybox=True, loc='lower right')

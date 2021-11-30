@@ -49,7 +49,7 @@ if msfile.shape != (5, 2048, 2048):
     sys.exit(12)
 
 plotfigure = rg.plt_figure()
-plotfigure.canvas.set_window_title('Extreme mean/std counts from ' + file)
+plotfigure.canvas.manager.set_window_title('Extreme mean/std counts from ' + file)
 wplane = dict(M=1, S=2, L=3, H=4)
 values = msfile[wplane[meanorstd]]
 counts = msfile[0]

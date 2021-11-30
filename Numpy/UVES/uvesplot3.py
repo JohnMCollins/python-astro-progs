@@ -97,7 +97,7 @@ filesmade = []
 # Display of X-ray values
 
 fig = plt.figure(figsize=(width, height))
-fig.canvas.set_window_title("Xray values all to same scale")
+fig.canvas.manager.set_window_title("Xray values all to same scale")
 ln = 1
 commonax = None
 
@@ -169,7 +169,7 @@ for day_dates, day_ews, day_prs, day_xrayvs, day_xraygrads in dateparts:
 
     fig = plt.figure(figsize=(width,height))
     plt.xlim(day_dates[0], day_dates[-1])
-    fig.canvas.set_window_title("Plotting for " + datedescr)
+    fig.canvas.manager.set_window_title("Plotting for " + datedescr)
     ax1 = plt.subplot(3, 1, 1)
 
     plt.ylabel('EW ($\AA$)')
@@ -201,7 +201,7 @@ for day_dates, day_ews, day_prs, day_xrayvs, day_xraygrads in dateparts:
 # Repeat with EWs all on same scale
 
 fig = plt.figure(figsize=(width, height))
-fig.canvas.set_window_title("EWs all to same scale")
+fig.canvas.manager.set_window_title("EWs all to same scale")
 ln = 1
 commonax = None
 
@@ -239,7 +239,7 @@ if outfile is not None:
 # Repeat with PRs all on same scale
 
 fig = plt.figure(figsize=(width, height))
-fig.canvas.set_window_title("PRs all to same scale")
+fig.canvas.manager.set_window_title("PRs all to same scale")
 ln = 1
 commonax = None
 

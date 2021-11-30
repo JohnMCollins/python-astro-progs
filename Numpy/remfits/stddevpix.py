@@ -154,7 +154,7 @@ sdevs = pending.std(axis=0)
 #     sdevs[pending.mean(axis=0) < cutoff] = 0
 
 plotfigure = rg.plt_figure()
-plotfigure.canvas.set_window_title(wtitle)
+plotfigure.canvas.manager.set_window_title(wtitle)
 plt.subplot(121)
 crange = gsdets.get_cmap(sdevs)
 norm = colors.BoundaryNorm(crange, cmap.N)

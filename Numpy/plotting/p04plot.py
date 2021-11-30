@@ -174,7 +174,7 @@ mprec = "%%.%df" % mprec
 
 plt.rcParams['figure.figsize'] = (resargs['width'], resargs['height'])
 fig = plt.gcf()
-fig.canvas.set_window_title(resargs['title'])
+fig.canvas.manager.set_window_title(resargs['title'])
 
 if xrange is not None:
     plt.xlim(*xrange)

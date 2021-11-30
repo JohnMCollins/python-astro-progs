@@ -151,7 +151,7 @@ for day_datetimes, day_jdates, day_ew1, day_ew2 in separated_vals:
     if len(day_datetimes) < 2:
         continue
     fig = plt.figure(figsize=dims)
-    fig.canvas.set_window_title(title + ' period ' + str(fnum))
+    fig.canvas.manager.set_window_title(title + ' period ' + str(fnum))
     if xrange is not None: plt.xlim(*xrange)
     if y1range is not None: plt.ylim(*y1range)
     ax = plt.gca()

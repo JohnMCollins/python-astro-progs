@@ -129,7 +129,7 @@ if trimright is not None:
     imagedata = imagedata[:,0:-trimright]
 
 plotfigure = plt.figure(figsize=(10,12))
-plotfigure.canvas.set_window_title('FITS Image')
+plotfigure.canvas.manager.set_window_title('FITS Image')
 
 med = np.median(imagedata)
 mx = imagedata.max()

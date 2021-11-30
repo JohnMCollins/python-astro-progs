@@ -94,7 +94,7 @@ for month, year, filter, fitsind in forbrows:
     p[1].append(ff.stdval)
 
 plotfigure = rg.plt_figure()
-plotfigure.canvas.set_window_title("Mean std/dev 4 filters")
+plotfigure.canvas.manager.set_window_title("Mean std/dev 4 filters")
 
 maxv = -1
 minv = 1e6

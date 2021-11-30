@@ -195,7 +195,7 @@ else:
 # Step one is to do the histogram
 
 fig = plt.figure(figsize=dims)
-fig.canvas.set_window_title(title + ' Histogram')
+fig.canvas.manager.set_window_title(title + ' Histogram')
 
 # If clipping histogram, iterate to remove outliers
 
@@ -270,7 +270,7 @@ if outf is not None:
     plt.savefig(fname)
 if not sdp:
     fig = plt.figure(figsize=dims)
-    fig.canvas.set_window_title(title + ' Value by time')
+    fig.canvas.manager.set_window_title(title + ' Value by time')
 
 # Now for plot itself
 # We use our split routine to split by date, splitting the jdates as well in case we're using those
@@ -299,7 +299,7 @@ if sdp[0] == 's':
         
         colour = colours[fnum-1]
         fig = plt.figure(figsize=dims)
-        fig.canvas.set_window_title(title + ' Day ' + str(fnum))
+        fig.canvas.manager.set_window_title(title + ' Day ' + str(fnum))
         if xrange is not None: plt.xlim(*xrange)        # Needs fixing for dates!!!!
         if yrange is not None: plt.ylim(*yrange)
         ax = plt.gca()
@@ -362,7 +362,7 @@ elif sdp[0] == 'o':
     starting_date = starting_datetime.date()
     
     fig = plt.figure(figsize=dims)
-    fig.canvas.set_window_title(title + ' all days')
+    fig.canvas.manager.set_window_title(title + ' all days')
         
     if xrange is not None: plt.xlim(*xrange)        # Needs fixing for dates!!!!
     if yrange is not None: plt.ylim(*yrange)
@@ -424,7 +424,7 @@ else:
     colour = colours[0]
     
     fig = plt.figure(figsize=dims)
-    fig.canvas.set_window_title(title + ' all days')
+    fig.canvas.manager.set_window_title(title + ' all days')
         
     if xrange is not None: plt.xlim(*xrange)        # Needs fixing for dates!!!!
     if yrange is not None: plt.ylim(*yrange)

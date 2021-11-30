@@ -1,29 +1,23 @@
 #!  /usr/bin/env python3
 
-# @Author: John M Collins <jmc>
-# @Date:   2018-08-24T22:41:12+01:00
-# @Email:  jmc@toad.me.uk
-# @Filename: listobs.py
-# @Last modified by:   jmc
-# @Last modified time: 2019-01-04T23:00:35+00:00
+"""List daily flat or bias files"""
 
-import dbops
-import remdefaults
 import argparse
-import datetime
-import re
 import sys
+import remdefaults
 import parsetime
 import remfield
 import numpy as np
 
-Format_keys = ('ind', 'iforbind', 'filter', 'type', 'date', 'gain',
+Format_keys = ('ind', 'iforbind', 'filter', 'type', 'date', "daydiff", 'gain',
+               'startx', 'starty', 'cols', 'rows',
                'minval', 'nsminval', 'ansminval', 'maxval', 'nsmaxval', 'ansmaxval',
                'median', 'nsmeidan', 'ansmedian', 'mean', 'nsmean', 'ansmean',
                'std', 'nsstd', 'ansstd', 'skew', 'nsskew', 'ansskew',
                'kurt', 'nskurt', 'anskurt')
 
-Format_header = ('^FITS', '^Serial', '<Filter', '<Type', '<Date/Time', '>Gain',
+Format_header = ('^FITS', '^Serial', '<Filter', '<Type', '<Date/Time', ">Days", '>Gain',
+                '>startx', '>starty', '>cols', '>rows',
                '^Minimum', '^Ns min', '^Abs ns min',
                '^Maximum', '^Ns max', '^Abs ns max',
                '>Median', '>Ns meidan', '>Abs ns median',
@@ -32,12 +26,14 @@ Format_header = ('^FITS', '^Serial', '<Filter', '<Type', '<Date/Time', '>Gain',
                '>Skew', '>Ns skew', '>Abs ns skew',
                '>Kurtosis', '>Ns kurtosis', '>Abs ns kurtosis')
 
-Format_codes = ('d', 'd', 's', '.1s', '%Y-%m-%d %H:%M:%S', '.1f',
+Format_codes = ('d', 'd', 's', '.1s', '%Y-%m-%d %H:%M:%S', 'd', '.1f',
+                'd', 'd', 'd', 'd',
                 'd', '.3g', '.3g', 'd', '.3g', '.3g',
                 '.2f', '.3g', '.3g', '.2f', '.3g', '.3g',
                 '.3g', '.3g', '.3g', '.3g', '.3g', '.3g', '.3g', '.3g', '.3g')
 
-Format_accum = (False, False, False, False, False, False,
+Format_accum = (False, False, False, False, False, False, False,
+                False, False, False, False,
                 True, True, True, True, True, True,
                 True, True, True, True, True, True,
                 True, True, True, True, True, True, True, True, True)
@@ -53,6 +49,10 @@ parsetime.parseargs_daterange(parsearg)
 parsearg.add_argument('--filter', type=str, nargs='*', help='filters to limit to')
 parsearg.add_argument('--type', type=str, default='any', help='Type wanted flat, bias, any')
 parsearg.add_argument('--gain', type=float, help='Restrict to given gain value')
+parsearg.add_argument('--startx', type=int, help='Restrict to given startx value on CCD')
+parsearg.add_argument('--starty', type=int, help='Restrict to given starty value on CCD')
+parsearg.add_argument('--rows', type=int, help='Restrict to given rows value on CCD')
+parsearg.add_argument('--cols', type=int, help='Restrict to given cols value on CCD')
 remfield.parseargs(parsearg, multstd=True)
 parsearg.add_argument('--idonly', action='store_true', help='Just give ids no other data')
 parsearg.add_argument('--skprint', action='store_true', help='Print skew and kurtosis')
@@ -60,6 +60,8 @@ parsearg.add_argument('--fitsind', action='store_true', help='Print FITS ind not
 parsearg.add_argument('--format', type=str, help='Specify which fields to display')
 parsearg.add_argument('--header', action='store_true', help='Provide a header')
 parsearg.add_argument('--totals', action='store_true', help='Print totals')
+parsearg.add_argument('--windate', type=str, help='Date to base window about')
+parsearg.add_argument('--winsize', type=int, default=30, help='Size of window')
 parsearg.add_argument('--debug', action='store_true', help='Debug SQL query')
 
 resargs = vars(parsearg.parse_args())
@@ -84,34 +86,46 @@ idonly = resargs['idonly']
 filters = resargs['filter']
 typereq = resargs['type']
 gain = resargs["gain"]
+disp_startx = resargs['startx']
+disp_starty = resargs['starty']
+disp_rows = resargs['rows']
+disp_cols = resargs['cols']
 skprint = resargs['skprint']
 fitsind = resargs['fitsind']
-format = resargs['format']
+format_string = resargs['format']
 header = resargs['header']
 ptots = resargs['totals']
+windate = resargs['windate']
+winsize = resargs['winsize']
+if windate is not None:
+    try:
+        windate = parsetime.parsedate(windate)
+    except ValueError as e:
+        print("Cannot parse window date", windate, "error was", e.args[0], file=sys.stderr)
+        sys.exit(22)
 
-if format is None:
-    format = []
+if format_string is None:
+    format_string = []
     if fitsind:
-        format.append('ind')
+        format_string.append('ind')
     else:
-        format.append('iforbind')
+        format_string.append('iforbind')
     if not idonly:
-        format.append('filter')
-        format.append('type')
-        format.append('date')
+        format_string.append('filter')
+        format_string.append('type')
+        format_string.append('date')
         if gain is None:
-            format.append('gain')
-        format.append('minval')
-        format.append('maxval')
-        format.append('median')
-        format.append('mean')
-        format.append('std')
+            format_string.append('gain')
+        format_string.append('minval')
+        format_string.append('maxval')
+        format_string.append('median')
+        format_string.append('mean')
+        format_string.append('std')
         if skprint:
-            format.append('skew')
-            format.append('kurt')
+            format_string.append('skew')
+            format_string.append('kurt')
 else:
-    fbits = format.split(',')
+    fbits = format_string.split(',')
     errors = 0
     for fb in fbits:
         if fb not in Fc_dict:
@@ -119,12 +133,12 @@ else:
             errors += 1
     if errors != 0:
         sys.exit(30)
-    format = fbits
+    format_string = fbits
 
 # See if we need to work out extra fields
 
 extras_reqd = False
-for f in format:
+for f in format_string:
     if f[0:3] == "ans" or f[0:2] == "ns":
         extras_reqd = True
         break
@@ -143,8 +157,24 @@ elif typereq[0] == 'b':
 if gain is not None:
     fieldselect.append("ABS(gain-%.3g) < %.3g" % (gain, gain * 1e-3))
 
-sel = remfield.get_extended_args(resargs, "iforbinf", "SELECT ind,iforbind,filter,UPPER(typ),date_obs,gain", fieldselect, extras_reqd)
-sel += " ORDER BY date_obs"
+if disp_startx is not None:
+    fieldselect.append("startx={:d}".format(disp_startx))
+if disp_starty is not None:
+    fieldselect.append("starty={:d}".format(disp_starty))
+if disp_rows is not None:
+    fieldselect.append("nrows={:d}".format(disp_rows))
+if disp_cols is not None:
+    fieldselect.append("ncols={:d}".format(disp_cols))
+
+if windate is None:
+    wind = "0"
+    selextra = " ORDER BY date_obs"
+else:
+    wind = "ABS(DATEDIFF(date_obs," + mydb.escape(windate) + ")) AS days_diff"
+    selextra = " ORDER BY days_diff LIMIT {:d}".format(winsize)
+
+sel = remfield.get_extended_args(resargs, "iforbinf", "SELECT ind,iforbind,filter,UPPER(typ),date_obs," + wind + ",gain,startx,starty,ncols,nrows", fieldselect, extras_reqd)
+sel += selextra
 if resargs['debug']:
     print("Selection statement:\n", sel, sep="\t", file=sys.stderr)
 
@@ -153,13 +183,13 @@ dbcurs.execute(sel)
 dbrows = dbcurs.fetchall()
 
 if header:
-    headers = [Fh_dict[i] for i in format]
+    headers = [Fh_dict[i] for i in format_string]
     maxwids = [len(h[1:]) for h in headers]
 else:
-    maxwids = [0] * len(format)
+    maxwids = [0] * len(format_string)
 
 accums = []
-for f in format:
+for f in format_string:
     if Facc_dict[f]:
         accums.append([])
     else:
@@ -167,7 +197,7 @@ for f in format:
 
 # First run through to get widths
 
-Fcodes = ["{" + fc + ":" + Fc_dict[fc] + "}" for fc in format]
+Fcodes = ["{" + fc + ":" + Fc_dict[fc] + "}" for fc in format_string]
 for dbrow in dbrows:
     res = dict(zip(Format_keys, dbrow))
     rf = [fc.format(**res) for fc in Fcodes]
@@ -179,7 +209,7 @@ try:
 
     Fcodes = []
     TFcodes = []
-    for n, fc in enumerate(format):
+    for n, fc in enumerate(format_string):
         if fc == 'date':
             Fcodes.append("{" + fc + ":" + Fc_dict[fc] + "}")
         else:
@@ -190,7 +220,7 @@ try:
         res = dict(zip(Format_keys, dbrow))
         print(" ".join([f.format(**res) for f in Fcodes]))
         if ptots:
-            for n, c in enumerate(format):
+            for n, c in enumerate(format_string):
                 try:
                     accums[n].append(res[c])
                 except AttributeError:

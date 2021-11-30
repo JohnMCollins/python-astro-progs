@@ -45,7 +45,7 @@ for arg in args:
     if outf is None and os.fork() != 0:
         continue
     f = plt.figure()
-    f.canvas.set_window_title(arg)
+    f.canvas.manager.set_window_title(arg)
     plt.xlabel('Wavelength offset')
     plt.ylabel('Intensity')
     plt.plot(pf[0], pf[1])

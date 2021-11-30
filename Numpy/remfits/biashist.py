@@ -145,7 +145,7 @@ else:
     bdiffs[bdiffs > clip * mstd] = mv
 
 plotfigure = rg.plt_figure()
-plotfigure.canvas.set_window_title("BIAS file differences")
+plotfigure.canvas.manager.set_window_title("BIAS file differences")
 
 plt.hist(bdiffs.flatten(), bins=bins, color=colourhist, alpha=histalpha)
 medv = np.median(bdiffs)

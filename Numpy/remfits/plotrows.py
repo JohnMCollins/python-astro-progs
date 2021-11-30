@@ -49,11 +49,11 @@ colours *= nplots  # Way too many but don't faff around
 plotfigure = rg.plt_figure()
 tbits = []
 if columns:
-    plotfigure.canvas.set_window_title("File comparison by columns")
+    plotfigure.canvas.manager.set_window_title("File comparison by columns")
     plt.xlabel("Row number")
     plt.ylabel("Column value")
 else:
-    plotfigure.canvas.set_window_title("File comparison by rlws")
+    plotfigure.canvas.manager.set_window_title("File comparison by rlws")
     plt.xlabel("Column number")
     plt.ylabel("Row value")
 

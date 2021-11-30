@@ -98,7 +98,7 @@ for rf in rfiles:
 # Step one is to do the histogram
 
 fig = plt.figure(figsize=dims)
-fig.canvas.set_window_title(title + ' Histogram')
+fig.canvas.manager.set_window_title(title + ' Histogram')
 
 if histyrange is not None:
     plt.ylim(*histyrange)

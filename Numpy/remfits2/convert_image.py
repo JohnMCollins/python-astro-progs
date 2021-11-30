@@ -1,6 +1,6 @@
 #!  /usr/bin/env python3
 
-# Duplicate creation of master flat file
+"""Operations between FITS files"""
 
 from astropy.utils.exceptions import AstropyWarning, AstropyUserWarning
 from astropy.io import fits
@@ -26,7 +26,7 @@ warnings.simplefilter('error', RuntimeWarning)  # Want div by zero etc to retunr
 
 parsearg = argparse.ArgumentParser(description='Do specified operation on FITS files ', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 parsearg.add_argument('files', nargs=2, type=str, help='File1 and File2')
-remdefaults.parseargs(parsearg, tempdir=False)
+remdefaults.parseargs(parsearg, tempdir=False, inlib=False)
 parsearg.add_argument('--outfile', type=str, help='Output FITS file otherwise replace first file')
 parsearg.add_argument('--force', action='store_true', help='Force overwrite of existing file if --outfile given')
 parsearg.add_argument('--operation', type=str, choices=['add', 'sub', 'mult', 'div', 'rsub', 'rdiv'], required=True,
@@ -47,11 +47,13 @@ if outfile is None:
     if  file1.isnumeric() or (len(file1) > 2 and file1[1] == ':' and file1[2:].isnumeric()):
         print("First file must be file name if not --outfile given not", file1, file=sys.stderr)
         sys.exit(51)
-    outfile = file1
+    outfile = miscutils.addsuffix(file1, 'fits.gz')
     force = True
-elif  os.path.exists(outfile) and not force:
-    print("Will not overwrite existing", outfile, "use --force if needed", file=sys.stderr)
-    sys.exit(50)
+else:
+    outfile = miscutils.addsuffix(outfile, 'fits.gz')
+    if  os.path.exists(outfile) and not force:
+        print("Will not overwrite existing", outfile, "use --force if needed", file=sys.stderr)
+        sys.exit(50)
 
 try:
     f1 = remfits.parse_filearg(file1, dbcurs)

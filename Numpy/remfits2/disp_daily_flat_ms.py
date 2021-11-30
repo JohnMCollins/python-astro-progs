@@ -127,7 +127,7 @@ minstd = min([np.min(x) for x in stdds.values()])
 maxstd = max([np.max(x) for x in stdds.values()])
 
 fig = rg.plt_figure()
-fig.canvas.set_window_title("std dev/mean of daily flats")
+fig.canvas.manager.set_window_title("std dev/mean of daily flats")
 
 for filter, subp in ('i', 221), ('g', 222), ('z', 223), ('r', 224):
 

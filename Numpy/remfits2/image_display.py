@@ -5,12 +5,15 @@
 import sys
 import warnings
 import argparse
+import signal
+import subprocess
 from astropy.utils.exceptions import AstropyWarning, AstropyUserWarning
 import astroquery.utils as autils
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.patches as mp
 from matplotlib import colors
+from matplotlib.backend_bases import MouseButton
 import miscutils
 import remdefaults
 import remgeom
@@ -18,7 +21,135 @@ import remfits
 import col_from_file
 import find_results
 
+
+class figuredata:
+    """Remember image file and find results data for display"""
+
+    def __init__(self, prefixname, fitsfile, annot, findr=None):
+        self.prefix = prefixname
+        self.fitsfile = fitsfile
+        self.findres = findr
+        self.carray = None
+        if findr:
+            self.carray = np.array([complex(r.col, r.row) for r in findr.results()])
+        self.annot = annot
+
+    def result_closest_to(self, event):
+        """Get result closest to given event row and column"""
+        if self.findres is None or event.xdata is None or event.ydata is None:
+            return  None
+        dists = np.abs(self.carray - complex(event.xdata, event.ydata))
+        retind = np.argmin(dists)
+        if dists[retind] <= tagdist:
+            return  self.findres[retind]
+        return  None
+
+
+figdict = dict()
+
+
+def findfig(event):
+    """Get figuredata instance from event"""
+    try:
+        return  figdict[event.canvas.get_window_title()]
+    except KeyError:
+        return  None
+
+
+def setfig(fig, pref, fitsfile, findr=None):
+    """Set up figure structure and callbacks and add to list"""
+    ax = fig.axes[0]
+    canv = fig.canvas
+    canv.manager.set_window_title(pref)
+    annot = ax.annotate("", xy=(0, 0), xytext=(20, 20), textcoords="offset points", bbox=dict(boxstyle="round", fc=popupcolour), arrowprops=dict(arrowstyle="->"))
+    annot.get_bbox_patch().set_alpha(alphaflag)
+    annot.set_visible(False)
+    canv.mpl_connect('motion_notify_event', hover)
+    canv.mpl_connect('button_press_event', button_press)
+    figdict[prefix] = figuredata(prefix, fitsfile, annot, findr)
+
+
+def hover(event):
+    """Callback for mouse hover"""
+
+    fd = findfig(event)
+    if fd is None:
+        return
+    vis = fd.annot.get_visible()
+    objr = fd.result_closest_to(event)
+    if objr is None:
+        if vis:
+            fd.annot.set_visible(False)
+            event.canvas.draw_idle()
+        return
+    atxt = "{:s}: {:s}".format(objr.label, objr.dispname)
+    if objr.gmag is not None or objr.adus > 0.0:
+        atxt += "\n"
+        if objr.gmag is not None:
+            atxt += "gmag: {:.2f}".format(objr.gmag)
+            if objr.adus > 0.0:
+                atxt += " "
+        if objr.adus > 0.0:
+            atxt += "adus: {:.1f}".format(objr.adus)
+    fd.annot.set_text(atxt)
+    # fd.annot.get_bbox_patch().set_alpha(0.4)
+    fd.annot.xy = (objr.col, objr.row)
+    fd.annot.set_visible(True)
+    event.canvas.draw_idle()
+
+
+def button_press(event):
+    """Callback for button press"""
+    
+    if event.button is not MouseButton.RIGHT:
+        return
+    fd = findfig(event)
+    if fd is None:
+        return
+    objr = fd.result_closest_to(event)
+    if objr is None:
+        return
+    subprocess.Popen(("markobj.py", fd.prefix, objr.label))
+
+
+def display_findresults(ffile, work_findres):
+    """Insert find results from supplied structure and image file"""
+    w = ffile.wcs
+    countt = 0
+    targetcount = -1
+    for fr in work_findres.results():
+        if fr.istarget:
+            targetcount = countt
+            break
+        countt += 1
+    if targetcount < 0 and brightest:
+        targetcount = 0
+    n = 0
+    for fr in work_findres.results():
+        coords = w.coords_to_pix(np.array((fr.radeg, fr.decdeg)).reshape(1, 2))[0]
+        # print("Name is:", "'" + fr.name + "'", file=sys.stderr)
+        if n == targetcount:
+            objc = targetcolour
+        elif len(fr.name) != 0:
+            objc = idcolour
+        else:
+            objc = objcolour
+        ptch = mp.Circle(coords, radius=fr.apsize, alpha=rg.objdisp.objalpha, color=objc, fill=rg.objdisp.objfill)
+        ax = plt.gca()
+        ax.add_patch(ptch)
+        annot = ax.annotate(fr.label, xy=coords, xytext=(rg.objdisp.objtextdisp, rg.objdisp.objtextdisp),
+                            textcoords="offset points", bbox=dict(boxstyle="round", fc=flagcolour), arrowprops=dict(arrowstyle="->"))
+        annot.get_bbox_patch().set_alpha(alphaflag)
+        # displ = coords[0] + rg.objdisp.objtextdisp
+        # if displ > data.shape[0]:
+        #    displ = coords[0] - rg.objdisp.objtextdisp
+        # plt.text(displ, coords[1], fr.label, fontsize=rg.objdisp.objtextfs, color=objc)
+        n += 1
+        if n >= limfind:
+            break
+
 # Shut up warning messages
+
 
 warnings.simplefilter('ignore', AstropyWarning)
 warnings.simplefilter('ignore', AstropyUserWarning)
@@ -39,6 +170,11 @@ parsearg.add_argument('--limfind', type=int, default=1000000, help='Maximumm num
 parsearg.add_argument('--brightest', action='store_true', help='Mark brightest object as target if no target')
 parsearg.add_argument('--displimit', type=int, default=30, help='Maximum number of images to display')
 parsearg.add_argument('--setmax', type=str, help='Specify colour to set max to and max=1 to max')
+parsearg.add_argument('--griddisp', action='store_false', help='Display RA/DEC grid if possible')
+parsearg.add_argument('--flagcolour', type=str, default='yellow', help='Flag colour')
+parsearg.add_argument('--popupcolour', type=str, default='g', help='Popup colour')
+parsearg.add_argument('--alphaflag', type=float, default=0.4, help='Alpha for flag and popup')
+parsearg.add_argument('--tagdist', type=float, default=15.0, help='Number of pixel distance to treat as closeby')
 
 rg.disp_argparse(parsearg)
 
@@ -63,17 +199,23 @@ limfind = resargs['limfind']
 brightest = resargs['brightest']
 displimit = resargs['displimit']
 setmax = resargs['setmax']
+griddisp = resargs['griddisp']
+popupcolour = resargs['popupcolour']
+flagcolour = resargs['flagcolour']
+alphaflag = resargs['alphaflag']
+tagdist = resargs['tagdist']
+
+idcolour = rg.objdisp.idcolour
+objcolour = rg.objdisp.objcolour
+targetcolour = rg.objdisp.targcolour
 
 findresults = None
-if findres is not None:
+if findres is not None and findres != '@':
     try:
         findresults = find_results.load_results_from_file(findres)
     except find_results.FindResultErr as e:
         print("Read of results file gave error", e.args[0], file=sys.stderr)
         sys.exit(6)
-    idcolour = rg.objdisp.idcolour
-    objcolour = rg.objdisp.objcolour
-    targetcolour = rg.objdisp.targcolour
 
 gsdets = rg.get_greyscale(greyscalename)
 if gsdets is None:
@@ -89,7 +231,9 @@ cmap = colors.ListedColormap(collist)
 nfigs = len(files)
 fignum = 0
 
-if figout is not None:
+if figout is None:
+    signal.signal(signal.SIGCHLD, signal.SIG_IGN)
+else:
     figout = miscutils.removesuffix(figout, '.png')
 
 db, dbcurs = remdefaults.opendb()
@@ -106,16 +250,17 @@ for file in files:
 
     data = ff.data
     plotfigure = rg.plt_figure()
-    plotfigure.canvas.set_window_title('FITS Image from file ' + file)
+    # plotfigure.canvas.manager.set_window_title('FITS Image from file ' + file)
 
     crange = gsdets.get_cmap(data)
     norm = colors.BoundaryNorm(crange, cmap.N)
     img = plt.imshow(data, cmap=cmap, norm=norm, origin='lower')
     plt.colorbar(img, norm=norm, cmap=cmap, boundaries=crange, ticks=crange)
-    try:
-        rg.radecgridplt(ff.wcs, data)
-    except AttributeError:
-        pass  # Lazy way of testing for WCS coords
+    if griddisp:
+        try:
+            rg.radecgridplt(ff.wcs, data)
+        except AttributeError:
+            pass  # Lazy way of testing for WCS coords
     if title is None:
         tit = ff.description
         if ff.filter is not None:
@@ -125,35 +270,15 @@ for file in files:
         plt.title(title)
 
     if findresults is not None:
-        w = ff.wcs
-        countt = 0
-        targetcount = -1
-        for fr in findresults.results():
-            if fr.istarget:
-                targetcount = countt
-                break
-            countt += 1
-        if targetcount < 0 and brightest:
-            targetcount = 0
-        n = 0
-        for fr in findresults.results():
-            coords = w.coords_to_pix(np.array((fr.radeg, fr.decdeg)).reshape(1, 2))[0]
-            # print("Name is:", "'" + fr.name + "'", file=sys.stderr)
-            if n == targetcount:
-                objc = targetcolour
-            elif len(fr.name) != 0:
-                objc = idcolour
-            else:
-                objc = objcolour
-            ptch = mp.Circle(coords, radius=fr.apsize, alpha=rg.objdisp.objalpha, color=objc, fill=rg.objdisp.objfill)
-            plt.gca().add_patch(ptch)
-            displ = coords[0] + rg.objdisp.objtextdisp
-            if displ > data.shape[0]:
-                displ = coords[0] - rg.objdisp.objtextdisp
-            plt.text(displ, coords[1], fr.label, fontsize=rg.objdisp.objtextfs, color=objc)
-            n += 1
-            if n >= limfind:
-                break
+        display_findresults(ff, findresults)
+    elif findres == '@':
+        try:
+            prefix = miscutils.removesuffix(file, 'fits.gz')
+            tfindres = find_results.load_results_from_file(prefix)
+            display_findresults(ff, tfindres)
+            setfig(plotfigure, prefix, ff, tfindres)
+        except find_results.FindResultErr:
+            pass
     fignum += 1
     if figout is None:
         if fignum >= displimit:

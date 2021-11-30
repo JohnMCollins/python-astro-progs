@@ -5,6 +5,7 @@
 import sys
 import datetime
 import argparse
+from astropy.utils.exceptions import AstropyWarning, AstropyUserWarning
 from astropy.time import Time
 import scipy.stats as ss
 import numpy as np
@@ -16,6 +17,13 @@ import fitsops
 import trimarrays
 import mydateutil
 import wcscoord
+import warnings
+
+# Shut up warning messages
+
+warnings.simplefilter('ignore', AstropyWarning)
+warnings.simplefilter('ignore', AstropyUserWarning)
+warnings.simplefilter('ignore', UserWarning)
 
 
 def rejectmast(cu, mtyp, myear, mmonth, mfilter, mreason):
@@ -219,7 +227,7 @@ for year, month, ofilter, typ, fitsind in rows:
     fitsrows, fitscols = nzfdat.shape
     startx, starty, rcols, rrows = remdefaults.get_geom(date_obs, ofilter)
 
-    dbcurs.execute("UPDATE forbinf SET gain=%.6g,nrows=%d,ncols=%d,startx=%d,starty=%d WHERE filter='%s' AND typ='%s' AND year=%d AND month=%d" %
+    dbcurs.execute("UPDATE forbinf SET gain=%.6g,nrows=%d,ncols=%d,startx=%d,starty=%d WHERE filter='%s' AND typ='%s' AND year=%d AND month=%d" % 
                     (fgain, fitsrows, fitscols, startx, starty, ofilter, typ, year, month))
 
     dbcurs.execute("UPDATE fitsfile SET nrows=%d,ncols=%d,startx=%d,starty=%d WHERE ind=%d" % (fitsrows, fitscols, startx, starty, fitsind))

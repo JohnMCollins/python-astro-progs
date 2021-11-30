@@ -73,7 +73,7 @@ dates = inp[0]
 vals = inp[1]
 
 fig = plt.figure(figsize=dims)
-fig.canvas.set_window_title(title + ' Histogram')
+fig.canvas.manager.set_window_title(title + ' Histogram')
 
 # If clipping histogram, iterate to remove outliers
 
@@ -148,7 +148,7 @@ if outf is not None:
     plt.savefig(fname)
 if not sdp:
     fig = plt.figure(figsize=dims)
-    fig.canvas.set_window_title(title + ' Value by time')
+    fig.canvas.manager.set_window_title(title + ' Value by time')
 
 rxarray = []
 ryarray = []
@@ -182,7 +182,7 @@ if sdp:
         xa = np.array(xarr) - offs
         ya = np.array(yarr)
         f = plt.figure(figsize=dims)
-        f.canvas.set_window_title(title + ' Day ' + str(fnum))
+        f.canvas.manager.set_window_title(title + ' Day ' + str(fnum))
         if xrange is not None:
             plt.xlim(*xrange)
         if yrange is not None:

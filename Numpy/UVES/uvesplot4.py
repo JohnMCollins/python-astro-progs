@@ -126,7 +126,7 @@ for day_dates, day_ews, day_prs, day_xrayvs, day_xraygrads in dateparts:
 
     fig = plt.figure(figsize=(width,height))
     plt.xlim(day_dates[0], day_dates[-1])
-    fig.canvas.set_window_title("Plotting for " + datedescr)
+    fig.canvas.manager.set_window_title("Plotting for " + datedescr)
     ax1 = plt.subplot(4, 1, 1)
 
     plt.ylabel('EW ($\AA$)')

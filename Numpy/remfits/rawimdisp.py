@@ -166,7 +166,7 @@ for file in files:
         ftype = rfh.ftype
 
     plotfigure = rg.plt_figure()
-    plotfigure.canvas.set_window_title('FITS Image from file ' + file)
+    plotfigure.canvas.manager.set_window_title('FITS Image from file ' + file)
     plt.subplot(121)
 
     crange = gsdets.get_cmap(dat)

@@ -1,16 +1,16 @@
 #!  /usr/bin/env python3
 
-# Duplicate creation of master bias file
+"""Duplicate creation of master bias file"""
 
-from astropy.utils.exceptions import AstropyWarning, AstropyUserWarning
-from astropy.io import fits
-from astropy.time import Time
 import datetime
-import numpy as np
 import argparse
 import warnings
 import sys
 import os.path
+from astropy.utils.exceptions import AstropyWarning, AstropyUserWarning
+from astropy.io import fits
+from astropy.time import Time
+import numpy as np
 import remdefaults
 import remfits
 import col_from_file
@@ -23,6 +23,7 @@ warnings.simplefilter('ignore', UserWarning)
 
 parsearg = argparse.ArgumentParser(description='Create master bias file ', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 parsearg.add_argument('iforbinds', nargs='*', type=str, help='Filenames or iforbinds to process, otherwise use stdin')
+parsearg.add_argument('--colnum', type=int, default=0, help='Column to use from stdin')
 remdefaults.parseargs(parsearg, libdir=False, tempdir=False)
 parsearg.add_argument('--outfile', type=str, required=True, help='Output FITS file')
 parsearg.add_argument('--filter', type=str, help='Specify filter otherwise deduced from files')
@@ -35,7 +36,7 @@ resargs = vars(parsearg.parse_args())
 remdefaults.getargs(resargs)
 files = resargs['iforbinds']
 outfile = resargs['outfile']
-filter = resargs['filter']
+filter_name = resargs['filter']
 stoperr = resargs['stoperr']
 force = resargs['force']
 usemean = resargs['usemean']
@@ -45,62 +46,56 @@ if os.path.exists(outfile) and not force:
     print("Will not overwrite existing", outfile, "use --force if needed", file=sys.stderr)
     sys.exit(50)
 
-idlist, errors = cols_from_file.ids_from_file_list(files)
-
-if len(idlist) == 0:
-    print("No IDs to preocess", errors, "errors", file=sys.stderr)
-    sys.exit(99)
+if len(files) == 0:
+    files = col_from_file.col_from_file(sys.stdin, resargs['colnum'])
+    if len(files) == 0:
+        print("No files to process", file=sys.stderr)
+        sys.exit(51)
 
 mydb, mycurs = remdefaults.opendb()
 
 # If none given as base, use first one
 
-sidlist = set(idlist)
+sfiles = set(files)
 
-if baseid is None or baseid not in sidlist:
-    baseid = idlist[0]
+if baseid is None or baseid not in sfiles:
+    baseid = files[0]
 
 # This manoeuvre is to eliminate duplicates
 
-idlist = sorted(list(sidlist))
+files = sorted(list(sfiles))
+
+# Save all the remfits structs in ffiles
 
 ffiles = []
 dims = None
-starts = None
-
 basef = None
+errors = 0
 
-for id in idlist:
+for file in files:
     try:
-        rf = remfits.RemFits()
-        rf.load_from_iforbind(mycurs, id)
+        rf = remfits.parse_filearg(file, mycurs, 'B')
     except remfits.RemFitsErr as e:
-        print("Loading from", id, "gave error", e.args[0], file=sys.stderr)
+        print("Loading from", file, "gave error", e.args[0], file=sys.stderr)
         errors += 1
         continue
     if rf.ftype != "Daily bias":
-        print("File type of", id, "is", rf.ftype, "not bias", file=sys.stderr)
+        print("File type of", file, "is", rf.ftype, "not bias", file=sys.stderr)
         errors += 1
         continue
-    if filter is None:
-        filter = rf.filter
-    elif rf.filter != filter:
-        print("Filter of", id, "is", rf.filter, "but using", filter, file=sys.stderr)
+    if filter_name is None:
+        filter_name = rf.filter
+    elif rf.filter != filter_name:
+        print("Filter of", file, "is", rf.filter, "but using", filter_name, file=sys.stderr)
         errors += 1
         continue
     if dims is None:
-        dims = (rf.ncolumns, rf.nrows)
-    elif dims != (rf.ncolumns, rf.nrows):
-        print("Dimensions of", id, "are", (rf.ncolumns, rf.nrows), "whereas previous are", dims, file=sys.stderr)
+        dims = rf.dimscr()
+    elif dims != rf.dimscr():
+        print("Dimensions of", file, "filter", rf.filter, "are", rf.dimscr(), "whereas previous are", dims, file=sys.stderr)
         errors += 1
         continue
-    if starts is None:
-        starts = (rf.startx, rf.starty)
-    elif starts != (rf.startx, rf.starty):
-        print("Starts of", id, "are", (rf.startx, rf.starty), "whereas previous are", starts, file=sys.stderr)
-        errors += 1
-        continue
-    if id == baseid:
+    if file == baseid:
         basef = rf
     ffiles.append(rf)
 
@@ -143,8 +138,8 @@ first_header.set('MJD_MAX', max_date.mjd, ' [day] end MJD of used bias frames')
 first_header.set('N_IMAGES', len(ffiles), '  number of images used')
 first_header['DATAMIN'] = data_min
 first_header['DATAMAX'] = data_max
-quadrant = remfits.revfn[filter]
-first_header.set('FILTER', filter, " filter corresponding to " + quadrant + " quadrant")
+quadrant = remfits.revfn[filter_name]
+first_header.set('FILTER', filter_name, " filter corresponding to " + quadrant + " quadrant")
 first_header.set('FILENAME', "Combined bias for " + quadrant, ' filename of the image')
 first_header.set('CCDTEMP', np.median(temps), ' [C] median value of CCD Temp of used images')
 

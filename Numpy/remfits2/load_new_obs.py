@@ -8,6 +8,7 @@
 import dbops
 import sys
 import remdefaults
+import remtargets
 import parsetime
 import remget
 import argparse
@@ -18,10 +19,17 @@ remdefaults.parseargs(parsearg, libdir=False, tempdir=False)
 parsetime.parseargs_daterange(parsearg)
 parsearg.add_argument('--remir', action='store_true', help='Load REMIR files')
 parsearg.add_argument('--verbose', action='store_false', help='Print out summary of what has been loaded')
+parsearg.add_argument('--targets', action='store_false', help='Load files for targets otherwise everything')
+parsearg.add_argument('--objects', type=str, nargs='*', help='Objects to restrict load to (plus targets if specified)')
+parsearg.add_argument("--debug", action='store_true', help='Debug selection command')
 resargs = vars(parsearg.parse_args())
 obsinds = resargs['obsinds']
 plusremir = resargs['remir']
 verbose = resargs['verbose']
+targets = resargs['targets']
+objects = resargs['objects']
+debug = resargs['debug']
+
 remdefaults.getargs(resargs)
 
 fieldselect = []
@@ -45,10 +53,25 @@ else:
 
 mydb, mycurs = remdefaults.opendb()
 
+objselect_list = []
+if targets:
+	remtargets.remtargets(mycurs, objselect_list)
+if objects and len(objects) != 0:
+	for ob in objects:
+		objselect_list.append("object=" + mydb.escape(ob))
+if len(objselect_list) != 0:
+	if len(objselect_list) == 1:
+		fieldselect += objselect_list
+	else:
+		fieldselect.append("(" + " OR ".join(objselect_list) + ")")
+
 loaded = errors = 0
 
 selection = "SELECT ffname,dithID,obsind FROM obsinf WHERE " + " AND ".join(fieldselect)
+if debug:
+	print("Selection:", selection, file=sys.stderr)
 mycurs.execute(selection)
+
 dbrows = mycurs.fetchall()
 
 for ffname, dithID, obsind in dbrows:

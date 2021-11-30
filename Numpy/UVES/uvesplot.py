@@ -119,7 +119,7 @@ hfmt = dates.DateFormatter('%H:%M')
 # Display of X-ray values
 
 fig = plt.figure(figsize=(width, height))
-fig.canvas.set_window_title("Xray values all to same scale")
+fig.canvas.manager.set_window_title("Xray values all to same scale")
 ln = 1
 commonax = None
 plt.subplots_adjust(hspace = 0)
@@ -208,7 +208,7 @@ for day_dates, day_ews, day_prs, day_xrayvs, day_xraygrads in dateparts:
     fig = plt.figure(figsize=(width,height))
     plt.subplots_adjust(hspace = 0)
     plt.xlim(day_dates[0], day_dates[-1])
-    fig.canvas.set_window_title(day_dates[0].strftime("For %d %b %Y"))
+    fig.canvas.manager.set_window_title(day_dates[0].strftime("For %d %b %Y"))
 
     ax1 = None
 
@@ -280,7 +280,7 @@ for day_dates, day_ews, day_prs, day_xrayvs, day_xraygrads in dateparts:
     # First a combined histogram
 
     fig = plt.figure(figsize=(hwidth, hheight))
-    fig.canvas.set_window_title(day_dates[0].strftime("Equivalent widths for %d %b %Y combined"))
+    fig.canvas.manager.set_window_title(day_dates[0].strftime("Equivalent widths for %d %b %Y combined"))
     plt.hist(ewforday, bins=bins)
     plt.legend(legends)
     if outfile is not None:
@@ -290,7 +290,7 @@ for day_dates, day_ews, day_prs, day_xrayvs, day_xraygrads in dateparts:
 
     fig = plt.figure(figsize=(hwidth, hheight))
     plt.subplots_adjust(hspace = 0)
-    fig.canvas.set_window_title(day_dates[0].strftime("Equivalent widths for %d %b %Y"))
+    fig.canvas.manager.set_window_title(day_dates[0].strftime("Equivalent widths for %d %b %Y"))
     plt.subplots_adjust(hspace = 0)
     ax1 = None
     for ln, ewd in enumerate(ewforday):
@@ -305,7 +305,7 @@ for day_dates, day_ews, day_prs, day_xrayvs, day_xraygrads in dateparts:
 # One histogram with different bars for each X-ray level
 
 fig = plt.figure(figsize=(hwidth, hheight))
-fig.canvas.set_window_title("Equivalent widths (all days) combined")
+fig.canvas.manager.set_window_title("Equivalent widths (all days) combined")
 plt.hist(ewlevs, bins=bins)
 plt.legend(legends)
 if outfile is not None:
@@ -314,7 +314,7 @@ if outfile is not None:
 # Now redo as separate histograms for each level
 
 fig = plt.figure(figsize=(hwidth, hheight))
-fig.canvas.set_window_title("Equivalent widths (all days)")
+fig.canvas.manager.set_window_title("Equivalent widths (all days)")
 plt.subplots_adjust(hspace = 0)
 ax1 = None
 for ln, ewd in enumerate(ewlevs):

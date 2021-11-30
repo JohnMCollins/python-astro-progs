@@ -137,7 +137,7 @@ if linemarks is not None:
 
 dims = (resargs['width'], resargs['height'])
 fig = plt.figure(figsize=dims)
-fig.canvas.set_window_title(resargs['title'])
+fig.canvas.manager.set_window_title(resargs['title'])
 
 legends = []
 plotlist = []

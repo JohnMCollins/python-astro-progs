@@ -93,7 +93,7 @@ if errors > 0:
     sys.exit(80)
 
 plotfigure = rg.plt_figure()
-plotfigure.canvas.set_window_title("Mean std/dev 4 filters")
+plotfigure.canvas.manager.set_window_title("Mean std/dev 4 filters")
 
 # Work out what sort of dates we are doing
 

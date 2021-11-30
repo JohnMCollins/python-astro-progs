@@ -87,7 +87,7 @@ ff.close()
 plotfigure = rg.plt_figure()
 
 if columns:
-    plotfigure.canvas.set_window_title("Flat file display by columns")
+    plotfigure.canvas.manager.set_window_title("Flat file display by columns")
     xdisp = np.arange(0, fd.shape[0])
     if lefttrim > 0:
         fd = fd[lefttrim:]
@@ -108,7 +108,7 @@ if columns:
     plt.xlabel("Row number")
     plt.ylabel("Column value")
 else:
-    plotfigure.canvas.set_window_title("Flat file display by rows")
+    plotfigure.canvas.manager.set_window_title("Flat file display by rows")
     plt.title("Flat file display by rows filter " + filter + datef.strftime(" %d/%m/%Y @ %H:%M:%S"))
     xdisp = np.arange(0, fd.shape[1])
     if lefttrim > 0:

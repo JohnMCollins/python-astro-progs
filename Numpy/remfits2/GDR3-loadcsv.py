@@ -5,13 +5,17 @@
 import argparse
 import sys
 import csv
+import math
 from operator import attrgetter
+import astropy.units as u
 import remdefaults
 import objdata
 import miscutils
 import vicinity
 import numpy as np
 import parsedms
+
+Parallax_conv = u.parallax()
 
 
 class csvobj:
@@ -29,15 +33,21 @@ class csvobj:
             self.pmdec = float(csvrow['pmdec'])
         except ValueError:
             self.pmdec = None
-        try:
-            self.ruwe = float(csvrow['ruwe'])
-        except ValueError:
-            self.ruwe = 1e6
+#         try:
+#             self.ruwe = float(csvrow['ruwe'])
+#         except ValueError:
+#             self.ruwe = 1e6
         self.gmag = float(csvrow['phot_g_mean_mag'])
         try:
             self.rv = float(csvrow['dr2_radial_velocity'])
         except ValueError:
             self.rv = None
+        try:
+            self.distance = (float(csvrow['parallax']) * u.arcsec).to(u.lightyear, equivalencies=Parallax_conv).value
+            if math.isnan(self.distance):
+                self.distance = None
+        except ValueError:
+            self.distance = None
 
     def gen_insert(self):
         """Generate insert statement - need dbase for escapes"""
@@ -73,6 +83,10 @@ class csvobj:
             fields.append('decpm')
             values.append("{:.8e}".format(self.pmdec))
 
+        if self.distance is not None:
+            fields.append("dist")
+            values.append("{:.8e}".format(self.distance))
+
         fields.append("gmag")
         values.append("{:.8e}".format(self.gmag))
         return "INSERT INTO objdata (" + ",".join(fields) + ") VALUES (" + ",".join(values) + ")"
@@ -82,7 +96,7 @@ parsearg = argparse.ArgumentParser(description='Process output from GAIA DR3 to 
 parsearg.add_argument('csvfile', nargs=1, type=str, help='CSV file to process')
 remdefaults.parseargs(parsearg, libdir=False, tempdir=False)
 parsearg.add_argument('--diffmin', type=str, default='1s', help='Difference between RA and DEC to decide whether they are same in dms')
-parsearg.add_argument('--maxruew', type=float, default=3.0, help='Maximum acceptable RUWE')
+# parsearg.add_argument('--maxruew', type=float, default=3.0, help='Maximum acceptable RUWE')
 parsearg.add_argument('--sepmin', type=str, default='2s', help='Sparation minimum in DMS to avoid close objects')
 parsearg.add_argument('--update', action='store_true', help='Update database with findings"')
 
@@ -90,7 +104,7 @@ resargs = vars(parsearg.parse_args())
 csvfile = miscutils.addsuffix(resargs['csvfile'][0], 'csv')
 remdefaults.getargs(resargs)
 difference = resargs['diffmin']
-maxruew = resargs['maxruew']
+# maxruew = resargs['maxruew']
 minsep = resargs['sepmin']
 update = resargs['update']
 
@@ -116,25 +130,25 @@ reader = csv.DictReader(inf)
 mydb, dbcurs = remdefaults.opendb()
 
 ilist = []
-nonruwe = 0
+# nonruwe = 0
 
 for row in reader:
     try:
         newitem = csvobj(row)
     except ValueError:
         print("Input error in", csvfile, "line", reader.line_num, "expected fields missing", file=sys.stderr)
-        sys.exit(50)
-    if newitem.ruwe <= maxruew:
-        ilist.append(newitem)
-    else:
-        nonruwe += 1
+        continue
+#     if newitem.ruwe <= maxruew:
+    ilist.append(newitem)
+#     else:
+#         nonruwe += 1
 
 if len(ilist) == 0:
     print("No acceptable lines found", file=sys.stderr)
     sys.exit(51)
 
-if nonruwe > 0:
-    print(nonruwe, "lines omitted as excess RUWE")
+# if nonruwe > 0:
+#     print(nonruwe, "lines omitted as excess RUWE")
 
 ilist = sorted(ilist, key=attrgetter('radeg', 'decdeg'))
 
@@ -155,22 +169,31 @@ print("Before pruning for too adjacent", len(ilist), "after", len(distinct_list)
 
 diffsq = difference ** 2
 nomatches = dupmatches = foundmatch = already = 0
+newentries = newaliases = updrv = upddist = 0
 
 for item in distinct_list:
-    print("{id:<16s}{ra:9.3f}{dec:9.3f}{pmra:9.3f}{pmdec:9.3f} {ruew:6.4f} {mag:6.3f}".format(id=item.id, ra=item.radeg, dec=item.decdeg, pmra=item.pmra, pmdec=item.pmdec, ruew=item.ruwe, mag=item.gmag), item.rv, sep='\t')
-    dbcurs.execute("SELECT objname,radeg,decdeg FROM objdata WHERE POWER(radeg-{radeg:.8e},2)+POWER(decdeg-{decdeg:.8e},2)<={diff:.8e}".format(radeg=item.radeg, decdeg=item.decdeg, diff=diffsq))
+    pmra = item.pmra
+    pmdec = item.pmdec
+    if pmra is None:
+        pmra = 0
+    if pmdec is None:
+        pmdec = 0
+ #   print("{id:<16s}{ra:9.3f}{dec:9.3f}{pmra:9.3f}{pmdec:9.3f} {mag:6.3f}".format(id=item.id, ra=item.radeg, dec=item.decdeg, pmra=pmra, pmdec=pmdec, mag=item.gmag), item.rv, sep='\t')
+    dbcurs.execute("SELECT objname,radeg,decdeg,dist,rv FROM objdata WHERE POWER(radeg-{radeg:.8e},2)+POWER(decdeg-{decdeg:.8e},2)<={diff:.8e}".format(radeg=item.radeg, decdeg=item.decdeg, diff=diffsq))
     inreg = dbcurs.fetchall()
     if len(inreg) == 0:
         nomatches += 1
         if update:
             dbcurs.execute(item.gen_insert())
+            newentries += 1
         continue
     if len(inreg) > 1:
         possnames = sorted([m[0] for m in inreg])
         print("\t***Near to", len(inreg), "objects", ", ".join(possnames))
         dupmatches += 1
         continue
-    dbobj = objdata.ObjData(inreg[0][0])
+    dbobjname, dbra, dbdec, dbdist, dbrv = inreg[0]
+    dbobj = objdata.ObjData(dbobjname)
     alist = dbobj.list_aliases(dbcurs)
     anames = [a.aliasname for a in alist]
     anames.append(dbobj.objname)
@@ -178,21 +201,30 @@ for item in distinct_list:
     matched = False
     for a in anames:
         try:
-            if a[0:7] == 'Gaia DR' and a[9:] == item.id:
+            if a[0:7] == 'Gaia DR' and item.id in a:
                 matched = True
                 break
         except (IndexError, ValueError):
             continue
     if matched:
-        print("\t***Previously matched to GAIA release", ", ".join(anames))
+        print("\t***", item.id, "Previously matched to GAIA release", ", ".join(anames))
         already += 1
     else:
-        print("\t***Found object before with names", ", ".join(anames))
+        print("{id:<16s}{ra:9.3f}{dec:9.3f}{pmra:9.3f}{pmdec:9.3f} {mag:6.3f}".format(id=item.id, ra=item.radeg, dec=item.decdeg, pmra=pmra, pmdec=pmdec, mag=item.gmag), item.rv, sep='\t')
+        print("\t***Found object", item.id, "before with names", ", ".join(anames))
+        if update:
+            dbcurs.execute("INSERT INTO objalias (objname,alias,source,sbok) VALUES (%s,%s,%s,0)", (dbobjname, 'Gaid DR3 ' + item.id, "Gaia DR3"))
+            newaliases += 1
     foundmatch += 1
-
-    # for name, nra, ndec in dbcurs.fetchall():
-        # print("\t{name:<16s}{ra:9.3f}{dec:9.3f}".format(name=name, ra=nra, dec=ndec))
+    if update:
+        if dbdist is None and item.distance is not None:
+            dbcurs.execute("UPDATE objdata SET dist={:.8e}".format(item.distance) + " WHERE objname=%s", dbobjname)
+            upddist += 1
+        if dbrv is None and item.rv is not None:
+            dbcurs.execute("UPDATE objdata SET rv={:.8e}".format(item.rv) + " WHERE objname=%s", dbobjname)
+            updrv += 1
 
 print(nomatches, "not matched", dupmatches, "duplicate", foundmatch, "found match", already, "already as GAIA")
-if update and nomatches > 0:
+if update and (nomatches > 0 or newentries > 0 or newaliases > 0 or upddist > 0 or updrv > 0):
+    print(newentries, "new entries", newaliases, "new aliases", upddist, "update dists", updrv, "update rv")
     mydb.commit()

@@ -18,7 +18,7 @@ warnings.simplefilter('ignore', UserWarning)
 
 parsearg = argparse.ArgumentParser(description='Find objects in image ', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 parsearg.add_argument('files', nargs='+', type=str, help='Image file and output find results')
-remdefaults.parseargs(parsearg, tempdir=False)
+remdefaults.parseargs(parsearg, tempdir=False, inlib=False)
 parsearg.add_argument('--force', action='store_true', help='Force overwrite of existing file')
 parsearg.add_argument('--significance', type=float, default=10.0, help='Multiples of standard deviation to look for in search')
 parsearg.add_argument('--apsize', type=int, default=6, help='Aperature size to search initially"')

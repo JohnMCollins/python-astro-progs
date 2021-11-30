@@ -200,7 +200,7 @@ for obsind in obsinds:
     (imagedata,) = rg.apply_trims(w, imagedata)
 
     plotfigure = rg.plt_figure()
-    plotfigure.canvas.set_window_title('FITS Image obsind %d' % obsind)
+    plotfigure.canvas.manager.set_window_title('FITS Image obsind %d' % obsind)
 
     med = np.median(imagedata)
     sigma = imagedata.std()

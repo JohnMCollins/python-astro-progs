@@ -99,7 +99,7 @@ if width <= 0:
 plt.rcParams['figure.figsize'] = (width, resargs['height'])
 
 fig = plt.gcf()
-fig.canvas.set_window_title(resargs['title'])
+fig.canvas.manager.set_window_title(resargs['title'])
 
 try:
     f = np.loadtxt(spec, unpack=True)

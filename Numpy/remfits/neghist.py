@@ -95,7 +95,7 @@ diffs = diffs[diffs <= np.median(diffs) + delhigh * diffs.std()]
 medv = np.median(diffs)
 stdv = diffs.std()
 plotfigure = rg.plt_figure()
-plotfigure.canvas.set_window_title("Distibution of sky level values")
+plotfigure.canvas.manager.set_window_title("Distibution of sky level values")
 plt.hist(diffs, bins=bins, alpha=histalpha)
 if normplot is not None:
     rv = norm(loc=medv, scale=stdv)

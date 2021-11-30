@@ -9,6 +9,8 @@ import remdefaults
 import obj_locations
 import find_results
 import match_finds
+import remfits
+import objdata
 from astropy.utils.exceptions import AstropyWarning, AstropyUserWarning
 
 # Shut up warning messages
@@ -18,32 +20,44 @@ warnings.simplefilter('ignore', AstropyUserWarning)
 warnings.simplefilter('ignore', UserWarning)
 
 parsearg = argparse.ArgumentParser(description='Match locations of objects within image and find object results', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-parsearg.add_argument('files', nargs='+', type=str, help='Location file and find results file (or just one if same name)')
-remdefaults.parseargs(parsearg, tempdir=False)
+parsearg.add_argument('files', nargs=1, type=str, help='Prefix part of location, find results and image file')
+remdefaults.parseargs(parsearg, tempdir=False, inlib=False)
+parsearg.add_argument('--imagefile', type=str, help='Image file in case different from files argument')
+parsearg.add_argument('--findres', type=str, help='Find results file in case different from files argument')
+parsearg.add_argument('--objloc', type=str, help='Object location file in case different from files argument')
 parsearg.add_argument('--threshold', type=float, default=20.0, help='Threshold for match in arcsec')
 parsearg.add_argument('--verbose', action='store_true', help='Give statistics')
 parsearg.add_argument('--idonly', action='store_true', help='Just keep things that have been identified')
 parsearg.add_argument('--usonly', action='store_true', help='Just keep things that are usable')
+parsearg.add_argument('--shiftmax', type=int, default=4, help='Maxmimum shift of centre when repositioning')
 
 resargs = vars(parsearg.parse_args())
-files = resargs['files']
+prefix = resargs['files'][0]
 remdefaults.getargs(resargs)
 threshold = resargs['threshold']
 verbose = resargs['verbose']
 idonly = resargs['idonly']
 usonly = resargs['usonly']
+imagefile = resargs['imagefile']
+findresfile = resargs['findres']
+locfile = resargs['objloc']
+maxshift = resargs['shiftmax']
 
-locfile = files[0]
-if len(files) > 1:
-    if len(files) > 2:
-        print("Only expecting at most two files", file=sys.stderr)
-        sys.exit(10)
-    findresfile = files[1]
-else:
-    findresfile = locfile + ""  # Forces new copy
+if imagefile is None:
+    imagefile = prefix
+if findresfile is None:
+    findresfile = prefix
+if locfile is None:
+    locfile = prefix
 
-locations = obj_locations.load_objlist_from_file(locfile)
-findres = find_results.load_results_from_file(findresfile)
+try:
+    inputfile = remfits.parse_filearg(imagefile, None)
+except remfits.RemFitsErr as e:
+    print(e.args[0], file=sys.stderr)
+    sys.exit(52)
+
+locations = obj_locations.load_objlist_from_file(locfile, inputfile)
+findres = find_results.load_results_from_file(findresfile, inputfile)
 
 try:
     matchlist = match_finds.allocate_locs(locations, findres, threshold)
@@ -66,7 +80,12 @@ for row, col, dist in matchlist:
         hadt += 1
     f.invented = l.invented
     f.isusable = l.isusable
-    f.apsize = l.apsize
+    if f.apsize != l.apsize:
+        f.needs_correction = True
+        f.apsize = l.apsize
+    for filt in objdata.Possible_filters:
+        mname = filt + 'mag'
+        setattr(f, mname, getattr(l, mname, None))
 
 if hadt != 1:
     print("Did not find a target", file=sys.stderr)
@@ -84,19 +103,29 @@ if idonly or usonly:
             newf.append(fr)
     if nouse + noid > 0:
         findres.resultlist = newf
+        findres.rekey()
         if verbose:
             if nouse > 0:
                 print(nouse, "not usable eliminated", file=sys.stderr)
             if noid > 0:
                 print(noid, "not identified eliminated", file=sys.stderr)
 
-if len(findres.resultlist) < 2:
-    print("No results in file other than target", file=sys.stderr)
-    sys.exit(241)
+for f in findres.results():
+    if not f.needs_correction:
+        continue
+    f.col, f.row, f.adus, newpixc = findres.findbest_colrow(f.col, f.row, f.apsize, maxshift)
+    f.needs_correction = False
 
 findres.reorder()
 findres.relabel()
 find_results.save_results_to_file(findres, findresfile, True)
+
+if findres.num_results() < 2:
+    if findres.num_results(True) == 1:
+        print("No results in file other than target", file=sys.stderr)
+        sys.exit(241)
+    print("No results in file", file=sys.stderr)
+    sys.exit(242)
 
 if verbose:
     n = nfound = 0

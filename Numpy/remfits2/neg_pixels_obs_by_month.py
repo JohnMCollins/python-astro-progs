@@ -57,7 +57,7 @@ if figout is not None:
     figout = miscutils.removesuffix(figout, '.png')
 
 plotfigure = rg.plt_figure()
-plotfigure.canvas.set_window_title("Negative pixel percentages")
+plotfigure.canvas.manager.set_window_title("Negative pixel percentages")
 
 pmtch = re.compile("([griz]):\s*(\d+)/(\d+).*&\s+([\d.]+)\s\\\\")
 

@@ -86,7 +86,7 @@ sdiffs = diffs.copy()
 extval = sdiffs.min() * extreme
 print("Extreme", np.count_nonzero(sdiffs < 0), "neg", np.count_nonzero(sdiffs == 0), "pos", np.count_nonzero(sdiffs > 0))
 plotfigure = rg.plt_figure()
-plotfigure.canvas.set_window_title("Negatives after bias sub")
+plotfigure.canvas.manager.set_window_title("Negatives after bias sub")
 crange = [sdiffs.min(), extval, 0.0, -extval, sdiffs.max()]
 cmap = colors.ListedColormap(['#ff0000', '#0000ff', '#00ff00', '#ffffff'])
 norm = colors.BoundaryNorm(crange, 4, clip=True)

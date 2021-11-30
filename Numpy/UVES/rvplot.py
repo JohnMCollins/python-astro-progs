@@ -64,7 +64,7 @@ for daydata in splits:
 
     fig = plt.figure(figsize=figuresize)
     plt.subplots_adjust(hspace = 0)
-    fig.canvas.set_window_title(day_dtdates[0].strftime("For %d %b %Y"))
+    fig.canvas.manager.set_window_title(day_dtdates[0].strftime("For %d %b %Y"))
     topax = plt.subplot(2, 1, 1)
     plt.errorbar(day_dtdates, day_rvs, yerr=day_errs, color='black', ecolor='r')
     plt.ylabel('Uncorrected RVs m/s')

@@ -136,7 +136,7 @@ result = resplus - resminus
 result /= ndone
 
 plotfigure = rg.plt_figure()
-plotfigure.canvas.set_window_title(wtitle)
+plotfigure.canvas.manager.set_window_title(wtitle)
 plt.subplot(121)
 crange = [result.min(), result.max(), -lperc * 100, uperc * 100]
 crange.sort()

@@ -1,11 +1,13 @@
 #!  /usr/bin/env python3
 
-import remdefaults
+"""Make badpix mask from bias mean/std dev file"""
+
 import argparse
 import sys
 import os.path
-import numpy as np
 import warnings
+import numpy as np
+import remdefaults
 
 # Cope with divisions by zero
 

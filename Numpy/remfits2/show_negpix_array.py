@@ -50,7 +50,7 @@ if imagedata.dtype != np.int32 and imagedata.dtype != np.int64:
     sys.exit(13)
 
 plotfigure = rg.plt_figure()
-plotfigure.canvas.set_window_title('Negative pixel counts from ' + file)
+plotfigure.canvas.manager.set_window_title('Negative pixel counts from ' + file)
 
 cmap = colors.ListedColormap(["#%.2x%.2x%.2x" % (i, i, i) for i in np.linspace(255, 0, gsnum).round().astype(np.int32)])
 crange = [0] + list(np.linspace(1, imagedata.max(), gsnum))

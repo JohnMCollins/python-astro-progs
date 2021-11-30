@@ -120,7 +120,7 @@ for filt in 'griz':
     diffstab[filt] = res
 
 plotfigure = rg.plt_figure()
-plotfigure.canvas.set_window_title("BIAS file differences")
+plotfigure.canvas.manager.set_window_title("BIAS file differences")
 
 for filt, subp in ('i', 221), ('g', 222), ('z', 223), ('r', 224):
 

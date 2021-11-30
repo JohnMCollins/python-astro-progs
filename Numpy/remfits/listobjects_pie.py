@@ -140,7 +140,7 @@ for k in results:
     explodes.append(exp)
 
 plotfigure = rg.plt_figure()
-plotfigure.canvas.set_window_title("Distribution of objects")
+plotfigure.canvas.manager.set_window_title("Distribution of objects")
 
 if len(title) != 0:
     plt.title(title)

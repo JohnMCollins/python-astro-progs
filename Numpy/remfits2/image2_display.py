@@ -73,7 +73,7 @@ if errors > 0:
     sys.exit(20)
 
 plotfigure = rg.plt_figure()
-plotfigure.canvas.set_window_title("Composite 2 images")
+plotfigure.canvas.manager.set_window_title("Composite 2 images")
 
 for ff, subp in zip(fpair, (121, 122)):
 
