@@ -97,7 +97,7 @@ for targobj, upap in zip(targobjs, updateap):
             print("Updated", targres.name, file=sys.stderr)
             changes += 1
         pixes.append(npix)
-        
+
     avcont = np.diff(adutots) / np.diff(pixes)
     plt.plot(aprange[1:], avcont)
     legs.append(targobj)

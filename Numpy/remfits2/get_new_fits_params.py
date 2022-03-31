@@ -227,7 +227,7 @@ for year, month, ofilter, typ, fitsind in rows:
     fitsrows, fitscols = nzfdat.shape
     startx, starty, rcols, rrows = remdefaults.get_geom(date_obs, ofilter)
 
-    dbcurs.execute("UPDATE forbinf SET gain=%.6g,nrows=%d,ncols=%d,startx=%d,starty=%d WHERE filter='%s' AND typ='%s' AND year=%d AND month=%d" % 
+    dbcurs.execute("UPDATE forbinf SET gain=%.6g,nrows=%d,ncols=%d,startx=%d,starty=%d WHERE filter='%s' AND typ='%s' AND year=%d AND month=%d" %
                     (fgain, fitsrows, fitscols, startx, starty, ofilter, typ, year, month))
 
     dbcurs.execute("UPDATE fitsfile SET nrows=%d,ncols=%d,startx=%d,starty=%d WHERE ind=%d" % (fitsrows, fitscols, startx, starty, fitsind))

@@ -5,6 +5,7 @@
 import argparse
 import sys
 import remdefaults
+import remtargets
 import parsetime
 import remfield
 import numpy as np
@@ -48,6 +49,7 @@ parsearg.add_argument('obsinds', type=int, nargs='*', help='Observation ids to r
 remdefaults.parseargs(parsearg)
 parsetime.parseargs_daterange(parsearg)
 parsearg.add_argument('--objects', type=str, nargs='*', help='Objects to limit to')
+parsearg.add_argument('--targets', action='store_false', help='Add targets to objects to limit to')
 parsearg.add_argument('--dither', type=int, nargs='*', default=[0], help='Dither ID to limit to')
 parsearg.add_argument('--filter', type=str, nargs='*', help='filters to limit to')
 parsearg.add_argument('--gain', type=float, help='Restrict to given gain value')
@@ -80,6 +82,7 @@ except ValueError as e:
 
 idonly = resargs['idonly']
 objlist = resargs['objects']
+list_targets = resargs['targets']
 dither = resargs['dither']
 filters = resargs['filter']
 summary = resargs['summary']
@@ -157,9 +160,20 @@ mydb, dbcurs = remdefaults.opendb()
 if hasfile:
     fieldselect.append("ind!=0")
 
+qobj = []
 if objlist is not None:
-    qobj = [ "object='" + o + "'" for o in objlist]
-    fieldselect.append("(" + " OR ".join(qobj) + ")")
+    for o in objlist:
+        qobj.append("object=" + mydb.escape(o))
+    # Only add targets if we haven't named a target in the objlist
+    if list_targets and remtargets.notargets(objlist):
+        remtargets.remtargets(dbcurs, qobj)
+elif list_targets:
+    remtargets.remtargets(dbcurs, qobj)
+if len(qobj) != 0:
+    if len(qobj) == 1:
+        fieldselect += qobj
+    else:
+        fieldselect.append("(" + " OR ".join(qobj) + ")")
 
 if filters is not None:
     qfilt = [ "filter='" + o + "'" for o in filters]

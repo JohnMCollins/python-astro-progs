@@ -10,10 +10,12 @@
 # @Last modified time: 2019-01-04T23:10:43+00:00
 
 import argparse
+import sys
 from operator import attrgetter
 import objdata
 import numpy as np
 import remdefaults
+import parsetime
 
 
 class obstot:
@@ -33,12 +35,14 @@ remdefaults.parseargs(parsearg, libdir=False, tempdir=False)
 parsearg.add_argument('--order', type=str, help='Order - (n)umber obs (e)arlist (l)atest')
 parsearg.add_argument('--cutoff', type=float, help='Summarise for percent arg less than this')
 parsearg.add_argument('--targets', action='store_true', help='Show for targets, summarise for rest')
+parsetime.parseargs_daterange(parsearg)
 parsearg.add_argument('--dither', type=int, nargs='*', default=[0], help='Dither ID to limit to')
 parsearg.add_argument('--filter', type=str, nargs='*', help='filters to limit to')
 parsearg.add_argument('--gain', type=float, help='Restrict to given gain value')
 parsearg.add_argument('--latex', action='store_true', help='Latex output')
 parsearg.add_argument('--noundef', action='store_true', help='Do not summarise undefined')
 parsearg.add_argument('--thousand', action='store_false', help='Separate thousands')
+parsearg.add_argument('--debug', action='store_true', help='Debug selection statement')
 
 resargs = vars(parsearg.parse_args())
 remdefaults.getargs(resargs)
@@ -51,25 +55,51 @@ dither = resargs['dither']
 filters = resargs['filter']
 noundef = resargs['noundef']
 thousand = resargs['thousand']
+debug = resargs['debug']
+
+fieldselect = []
+try:
+    parsetime.getargs_daterange(resargs, fieldselect)
+except ValueError as e:
+    print(e.args[0], file=sys.stderr)
+    sys.exit(20)
+
+# Might want this later
+
+dateselect = ' AND '.join(fieldselect)
 
 mydb, dbcurs = remdefaults.opendb()
 
-sel = ''
 if gain is not None:
-    sel = "ABS(gain-%.3g) < %.3g " % (gain, gain * 1e-3)
+    fieldselect.append("ABS(gain-{:.3g}) < {:.3g}".format(gain, gain * 1e-3))
 
 if filters is not None:
-    qfilt = [ "filter='" + o + "'" for o in filters]
-    if len(sel) != 0: sel += " AND "
-    sel += "(" + " OR ".join(qfilt) + ")"
+    fs = []
+    for o in filters:
+        fs.append("filter=" + mydb.escape(o))
+    if len(fs) != 0:
+        if len(fs) == 1:
+            fieldselect += fs
+        else:
+            fieldselect.append('(' + " OR ".join(fs) + ')')
 
 if len(dither) != 1 or dither[0] != -1:
-    qdith = [ "dithID=" + str(d) for d in dither]
-    if len(sel) != 0: sel += " AND "
-    sel += "(" + " OR ".join(qdith) + ")"
+    fs = []
+    for d in dither:
+        fs.append("dithID={:d}".format(d))
+    if len(fs) != 0:
+        if len(fs) == 1:
+            fieldselect += fs
+        else:
+            fieldselect.append('(' + " OR ".join(fs) + ')')
 
-if len(sel) != 0: sel = "WHERE " + sel
-dbcurs.execute("SELECT object,COUNT(*) AS number FROM obsinf " + sel + "GROUP BY object")
+sel = " AND ".join(fieldselect)
+if len(sel) != 0:
+    sel = "WHERE " + sel
+sel = "SELECT object,COUNT(*) AS number FROM obsinf " + sel + " GROUP BY object"
+if debug:
+    print("Selection:", sel, file=sys.stderr)
+dbcurs.execute(sel)
 
 results = []
 
@@ -77,12 +107,15 @@ for row in dbcurs.fetchall():
     obj, num = row
     results.append(obstot(obj, num))
 
+if len(dateselect) != 0:
+    dateselect = ' AND ' + dateselect
+
 for k in results:
     obj = k.objname
-    dbcurs.execute("SELECT date_obs FROM obsinf WHERE object='" + obj + "' ORDER BY date_obs LIMIT 1")
+    dbcurs.execute("SELECT date_obs FROM obsinf WHERE object=" + mydb.escape(obj) + dateselect + " ORDER BY date_obs LIMIT 1")
     row = dbcurs.fetchall()
     k.fromdate = row[0][0]
-    dbcurs.execute("SELECT date_obs FROM obsinf WHERE object='" + obj + "' ORDER BY date_obs DESC LIMIT 1")
+    dbcurs.execute("SELECT date_obs FROM obsinf WHERE object=" + mydb.escape(obj) + dateselect + " ORDER BY date_obs DESC LIMIT 1")
     row = dbcurs.fetchall()
     k.todate = row[0][0]
     try:

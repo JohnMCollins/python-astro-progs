@@ -30,19 +30,35 @@ class figuredata:
         self.fitsfile = fitsfile
         self.findres = findr
         self.carray = None
+        self.labs = None
         if findr:
-            self.carray = np.array([complex(r.col, r.row) for r in findr.results()])
+            car = []
+            labs = []
+            for r in findr.results():
+                if not r.hide:
+                    car.append(complex(r.col, r.row))
+                    labs.append(r.label)
+            self.carray = np.array(car)
+            self.labs = labs
         self.annot = annot
 
-    def result_closest_to(self, event):
-        """Get result closest to given event row and column"""
+    def results_in_area(self, event):
+        """Get results in area closest to given event row and column"""
         if self.findres is None or event.xdata is None or event.ydata is None:
             return  None
         dists = np.abs(self.carray - complex(event.xdata, event.ydata))
-        retind = np.argmin(dists)
-        if dists[retind] <= tagdist:
-            return  self.findres[retind]
-        return  None
+        asrt = np.argsort(dists)
+        asrt = asrt[dists[asrt] <= tagdist]
+        if asrt.size == 0:
+            return  None
+        return  [self.findres[self.labs[a]] for a in asrt]
+
+    def result_closest_to(self, event):
+        """Get result closest to given event row and column"""
+        ret = self.results_in_area(event)
+        if ret is None:
+            return  None
+        return  ret[0]
 
 
 figdict = dict()
@@ -82,15 +98,17 @@ def hover(event):
             fd.annot.set_visible(False)
             event.canvas.draw_idle()
         return
-    atxt = "{:s}: {:s}".format(objr.label, objr.dispname)
-    if objr.gmag is not None or objr.adus > 0.0:
+    dispn = "(not known)"
+    if objr.obj is not None: dispn = objr.obj.dispname
+    atxt = "{:s}: {:s}".format(objr.label, dispn)
+    if objr.obj is not None or objr.adus > 0.0:
         atxt += "\n"
-        if objr.gmag is not None:
-            atxt += "gmag: {:.2f}".format(objr.gmag)
+        if objr.obj is not None and objr.obj.gmag is not None:
+            atxt += "gmag: {:.2f}".format(objr.obj.gmag)
             if objr.adus > 0.0:
                 atxt += " "
         if objr.adus > 0.0:
-            atxt += "adus: {:.1f}".format(objr.adus)
+            atxt += "adus: {:.1f} ap: {:d}".format(objr.adus, objr.apsize)
     fd.annot.set_text(atxt)
     # fd.annot.get_bbox_patch().set_alpha(0.4)
     fd.annot.xy = (objr.col, objr.row)
@@ -100,37 +118,35 @@ def hover(event):
 
 def button_press(event):
     """Callback for button press"""
-    
+
     if event.button is not MouseButton.RIGHT:
         return
     fd = findfig(event)
     if fd is None:
         return
-    objr = fd.result_closest_to(event)
+    objr = fd.results_in_area(event)
     if objr is None:
-        return
-    subprocess.Popen(("markobj.py", fd.prefix, objr.label))
+        coordlist = fd.fitsfile.wcs.pix_to_coords(np.array(((event.xdata, event.ydata),)))
+        ra, dec = coordlist[0]
+        subprocess.Popen(('markobj.py', '--create', '--findres', fd.prefix, str(round(event.xdata)), str(round(event.ydata)), str(ra), str(dec)))
+    else:
+        for r in objr:
+            subprocess.Popen(("markobj.py", '--findres', fd.prefix, r.label))
 
 
 def display_findresults(ffile, work_findres):
     """Insert find results from supplied structure and image file"""
     w = ffile.wcs
-    countt = 0
-    targetcount = -1
-    for fr in work_findres.results():
-        if fr.istarget:
-            targetcount = countt
-            break
-        countt += 1
-    if targetcount < 0 and brightest:
-        targetcount = 0
     n = 0
     for fr in work_findres.results():
-        coords = w.coords_to_pix(np.array((fr.radeg, fr.decdeg)).reshape(1, 2))[0]
+        if fr.hide:
+            continue
+        # coords = w.coords_to_pix(np.array((fr.radeg, fr.decdeg)).reshape(1, 2))[0]
         # print("Name is:", "'" + fr.name + "'", file=sys.stderr)
-        if n == targetcount:
+        coords = (fr.col, fr.row)
+        if fr.istarget or (n == 0 and brightest):
             objc = targetcolour
-        elif len(fr.name) != 0:
+        elif fr.obj is None:
             objc = idcolour
         else:
             objc = objcolour
@@ -140,10 +156,6 @@ def display_findresults(ffile, work_findres):
         annot = ax.annotate(fr.label, xy=coords, xytext=(rg.objdisp.objtextdisp, rg.objdisp.objtextdisp),
                             textcoords="offset points", bbox=dict(boxstyle="round", fc=flagcolour), arrowprops=dict(arrowstyle="->"))
         annot.get_bbox_patch().set_alpha(alphaflag)
-        # displ = coords[0] + rg.objdisp.objtextdisp
-        # if displ > data.shape[0]:
-        #    displ = coords[0] - rg.objdisp.objtextdisp
-        # plt.text(displ, coords[1], fr.label, fontsize=rg.objdisp.objtextfs, color=objc)
         n += 1
         if n >= limfind:
             break
@@ -209,13 +221,13 @@ idcolour = rg.objdisp.idcolour
 objcolour = rg.objdisp.objcolour
 targetcolour = rg.objdisp.targcolour
 
-findresults = None
-if findres is not None and findres != '@':
-    try:
-        findresults = find_results.load_results_from_file(findres)
-    except find_results.FindResultErr as e:
-        print("Read of results file gave error", e.args[0], file=sys.stderr)
-        sys.exit(6)
+# findresults = None
+# if findres is not None and findres != '@':
+#    try:
+#        findresults = find_results.load_results_from_file(findres)
+#    except find_results.FindResultErr as e:
+#        print("Read of results file gave error", e.args[0], file=sys.stderr)
+#        sys.exit(6)
 
 gsdets = rg.get_greyscale(greyscalename)
 if gsdets is None:
@@ -269,16 +281,18 @@ for file in files:
     elif len(title) != 0:
         plt.title(title)
 
-    if findresults is not None:
-        display_findresults(ff, findresults)
-    elif findres == '@':
-        try:
+    if findres is not None:
+        tfindres = None
+        prefix = findres
+        if prefix == '@':
             prefix = miscutils.removesuffix(file, 'fits.gz')
+        try:
             tfindres = find_results.load_results_from_file(prefix)
             display_findresults(ff, tfindres)
             setfig(plotfigure, prefix, ff, tfindres)
         except find_results.FindResultErr:
             pass
+
     fignum += 1
     if figout is None:
         if fignum >= displimit:

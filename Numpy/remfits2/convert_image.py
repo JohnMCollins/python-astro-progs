@@ -2,20 +2,16 @@
 
 """Operations between FITS files"""
 
-from astropy.utils.exceptions import AstropyWarning, AstropyUserWarning
-from astropy.io import fits
-from astropy.time import Time
-import datetime
-import numpy as np
 import argparse
 import warnings
 import sys
+import os.path
 import miscutils
-import math
 import remdefaults
 import remfits
-import os.path
-import col_from_file
+import numpy as np
+from astropy.utils.exceptions import AstropyWarning, AstropyUserWarning
+from astropy.io import fits
 
 # Shut up warning messages
 
@@ -32,6 +28,7 @@ parsearg.add_argument('--force', action='store_true', help='Force overwrite of e
 parsearg.add_argument('--operation', type=str, choices=['add', 'sub', 'mult', 'div', 'rsub', 'rdiv'], required=True,
                       help='Operation required, rsub rdiv apply file1 to file2 result still in file1')
 parsearg.add_argument('--single', type=str, choices=['mean', 'median', 'min', 'max'], help='Use selected value of second file rather than whole')
+parsearg.add_argument('--setobsind', type=int, default=0, help='Specific value to set OBSIND to')
 
 resargs = vars(parsearg.parse_args())
 file1, file2 = resargs['files']
@@ -40,6 +37,7 @@ outfile = resargs['outfile']
 force = resargs['force']
 operation = resargs['operation']
 single = resargs['single']
+setobsind = resargs['setobsind']
 
 mydb, dbcurs = remdefaults.opendb()
 
@@ -127,6 +125,23 @@ result_header.set('FILENAME', miscutils.removesuffix(outfile), ' filename of thi
 result_header['DATAMIN'] = min_value
 result_header['DATAMAX'] = max_value
 result_header['COMMENT'] = "Constructed by " + operation + " on " + file1 + " and " + file2
+
+newobsind = oldobsind = 0
+
+if setobsind != 0:
+    newobsind = setobsind
+else:
+    if 'OBSIND' in f1.hdr:
+        oldobsind = f1.hdr['OBSIND']
+    if f1.from_obsind != 0:
+        newobsind = f1.from_obsind
+    elif f2.from_obsind != 0:
+        newobsind = f2.from_obsind
+    elif 'OBSIND' in f2.hdr:
+        newobsind = f2.hdr['OBSIND']
+
+if newobsind not in (0, oldobsind):
+    result_header.set('OBSIND', newobsind, 'Index of original observation in DB')
 
 for todel in ('BZERO', 'BSCALE', 'BUNIT', 'BLANK', 'DATE_MIN', 'DATE_MAX', 'MJD_MIN', 'MJD_MAX', 'N_IMAGES'):
     try:

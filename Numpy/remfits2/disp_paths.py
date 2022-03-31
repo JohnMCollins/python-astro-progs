@@ -153,8 +153,8 @@ radiff = (maxra - minra) * raoffs
 for ra, dec, dat in zip(ras, decs, dates):
     plt.text(ra + radiff, dec + decdiff, dat)
 
-dbcurs.execute(("SELECT objname,dispname,radeg,decdeg FROM objdata WHERE " + 
-               "radeg >= {minra:.8e} AND radeg <= {maxra:.8e} AND " + 
+dbcurs.execute(("SELECT objname,dispname,radeg,decdeg FROM objdata WHERE " +
+               "radeg >= {minra:.8e} AND radeg <= {maxra:.8e} AND " +
                "decdeg >= {mindec:.8e} AND decdeg <= {maxdec:.8e}").format(minra=minra - extra, maxra=maxra + extra, mindec=mindec - extra, maxdec=maxdec + extra))
 
 dispnames = []

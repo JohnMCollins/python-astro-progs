@@ -77,6 +77,9 @@ objstr = obj_locations.ObjLocs(inputfile)
 for obj in objlist.objlist:
     objstr.add_loc(obj)
 objstr.get_offsets_in_image()
+objstr.order_by_separation()
+# for obj in objstr.results():
+#     print(obj.dispname, obj.ra, obj.dec, "orig", obj.origra, obj.origdec)
 
 try:
     obj_locations.save_objlist_to_file(objstr, outfile, force)

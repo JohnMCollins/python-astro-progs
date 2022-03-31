@@ -11,13 +11,14 @@ import find_results
 import objdata
 import miscutils
 import parsetime
+import remfits
 
 warnings.simplefilter('ignore', ErfaWarning)
 
 parsearg = argparse.ArgumentParser(description='Display find object results', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 parsearg.add_argument('files', nargs='+', type=str, help='Find results file(s)')
 remdefaults.parseargs(parsearg, tempdir=False, inlib=False)
-parsearg.add_argument('--dispname', action='store_true', help='Display file name if only one file')
+parsearg.add_argument('--dispname', action='store_true', help='Display file name etc if only one file')
 parsearg.add_argument('--summary', action='store_true', help='Display summary of file')
 parsearg.add_argument('--testmin', type=int, help='Test at least the given number of objects found no output')
 parsearg.add_argument('--object', type=str, help='Give statistics for object if listing summary')
@@ -25,6 +26,8 @@ parsearg.add_argument('--present', action='store_true', help='Return 0 exit code
 parsearg.add_argument('--daterange', type=str, help='Range of dates to limit to')
 parsearg.add_argument('--filter', type=str, help='Filter name to limit to')
 parsearg.add_argument('--onlyfile', action='store_true', help='Only show file name')
+parsearg.add_argument('--diffs', action='store_true', help='Show row/col diffs')
+parsearg.add_argument('--nohide', action='store_false', help='Do not show hidden results')
 
 resargs = vars(parsearg.parse_args())
 files = resargs['files']
@@ -36,6 +39,8 @@ present = resargs['present']
 daterange = resargs['daterange']
 filtonly = resargs['filter']
 onlyfile = resargs['onlyfile']
+diffs = resargs['diffs']
+nohide = resargs['nohide']
 
 dispname = len(files) > 1 or resargs['dispname']
 
@@ -140,7 +145,7 @@ if summary:
         filts.append(findres.filter)
         try:
             tobj = findres[targobj]
-            if len(tobj.name) == 0:
+            if tobj.objident is None:
                 tobj = 0.0
             else:
                 tobj = tobj.adus
@@ -155,44 +160,57 @@ if summary:
         sys.exit(1)
     sys.exit(0)
 
-had = False
+had = 0
 
-for fil in files:
-    try:
-        findres = find_results.load_results_from_file(fil)
-    except find_results.FindResultErr as e:
-        print(fil, "gave error", e.args[0], file=sys.stderr)
-        continue
-    if daterange and not daterange.inrange(findres.obsdate):
-        continue
-    if filtonly and filtonly != findres.filter:
-        continue
-    ndone += 1
-    namelength = max([len(r.name) for r in findres.results()] + [0])
-    if namelength == 0:
-        print("No identified results in", fil, file=sys.stderr)
-    if dispname:
-        if had:
-            print("\n")
-        else:
-            had = True
-        print(fil, findres.obsdate.strftime("%d/%m/%Y @ %H:%M:%S:"))
-        print("Filter:", findres.filter, findres.nrows, "rows", findres.ncols, "columns")
-        print("Significance {:.2f} total significance {:.2f}\n".format(findres.signif, findres.totsignif))
-    dnamelength = max([len(r.dispname) for r in findres.results()] + [1])
-    lnamelength = max([len(r.label) for r in findres.results()] + [1])
-    for r in findres.results():
-        if len(r.name) == 0:
-            print("{lab:<{lw}s} {dn:<{dnw}s} {ap:2d} {adus:10.2f} {ra:8.3f} {dec:8.3f}".
-              format(dn=r.dispname, lab=r.label, ap=r.apsize, adus=r.adus, ra=r.radeg, dec=r.decdeg,
-                     lw=lnamelength, dnw=dnamelength))
+try:
+    for fil in files:
+        try:
+            findres = find_results.load_results_from_file(fil)
+        except find_results.FindResultErr as e:
+            print(fil, "gave error", e.args[0], file=sys.stderr)
             continue
-        robj = objdata.ObjData(r.name)
-        robj.get(dbcurs)
-        robj.apply_motion(findres.obsdate)
-        print("{lab:<{lw}s} {dn:<{dnw}s} {ap:2d} {adus:10.2f} {ra:8.3f} {dec:8.3f} {radiff:8.3f} {decdiff:8.3f}".
-              format(dn=r.dispname, lab=r.label, ap=r.apsize, adus=r.adus, ra=r.radeg, dec=r.decdeg, radiff=r.radeg - robj.ra, decdiff=r.decdeg - robj.dec,
-                     lw=lnamelength, dnw=dnamelength))
+        if daterange and not daterange.inrange(findres.obsdate):
+            continue
+        if filtonly and filtonly != findres.filter:
+            continue
+        ndone += 1
+        namelength = max([len(r.obj.objname) for r in findres.results() if r.obj is not None] + [0])
+        if namelength == 0:
+            print("No identified results in", fil, file=sys.stderr)
+        if dispname:
+            if had != 0:
+                print("\n")
+            had += 1
+            print(fil, findres.obsdate.strftime("%d/%m/%Y @ %H:%M:%S:"))
+            print("Filter:", findres.filter, findres.nrows, "rows", findres.ncols, "columns")
+            print("Significance {:.2f} total significance {:.2f}".format(findres.signif, findres.totsignif))
+            pixoff = remfits.Pixoffsets(obsind=findres.obsind)
+            if pixoff.get_offsets(dbcurs):
+                print("Offsets in DB: Row={:d} Col={:d}".format(pixoff.rowoffset, pixoff.coloffset))
+            print()
+        dnamelength = max([len(r.obj.dispname) for r in findres.results() if r.obj is not None] + [1])
+        lnamelength = max([len(r.label) for r in findres.results()] + [1])
+        for r in findres.results():
+            if nohide and r.hide:
+                continue
+            try:
+                dispn = r.obj.dispname
+            except AttributeError:
+                dispn = ""
+            print("{lab:<{lw}s} {dn:<{dnw}s} {ap:2d} {adus:10.2f} {ra:8.3f} {dec:8.3f}".
+                  format(dn=dispn, lab=r.label, ap=r.apsize, adus=r.adus, ra=r.radeg, dec=r.decdeg,
+                         lw=lnamelength, dnw=dnamelength), end='')
+            if diffs:
+                print("\tr={:d} c={:d} ({:d}/{:d})".format(r.row, r.col, r.rdiff, r.cdiff), end='')
+            print()
+#            robj = objdata.ObjData()
+#            robj.get(dbcurs, r.objident.objname)
+#            robj.apply_motion(findres.obsdate)
+#            print("{lab:<{lw}s} {dn:<{dnw}s} {ap:2d} {adus:10.2f} {ra:8.3f} {dec:8.3f} {radiff:8.3f} {decdiff:8.3f}".
+#                  format(dn=r.dispname, lab=r.label, ap=r.apsize, adus=r.adus, ra=r.radeg, dec=r.decdeg, radiff=r.radeg - robj.objposition.ra, decdiff=r.decdeg - robj.objposition.dec,
+#                         lw=lnamelength, dnw=dnamelength))
+except (KeyboardInterrupt, BrokenPipeError):
+    pass
 if ndone == 0:
     sys.exit(1)
 sys.exit(0)

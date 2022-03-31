@@ -10,7 +10,6 @@ import obj_locations
 import find_results
 import match_finds
 import remfits
-import objdata
 from astropy.utils.exceptions import AstropyWarning, AstropyUserWarning
 
 # Shut up warning messages
@@ -62,7 +61,7 @@ findres = find_results.load_results_from_file(findresfile, inputfile)
 try:
     matchlist = match_finds.allocate_locs(locations, findres, threshold)
 except match_finds.FindError as e:
-    print("Match gave error", e.args[0], file=sys.stderr)
+    print("Match of", findresfile, "gave error", e.args[0], file=sys.stderr)
     sys.exit(200)
 
 locr = locations.resultlist
@@ -73,21 +72,15 @@ hadt = 0
 for row, col, dist in matchlist:
     f = findr[col]
     l = locr[row]
-    f.name = l.name
-    f.dispname = l.dispname
+    f.obj = l
     f.istarget = l.istarget
     if f.istarget:
         hadt += 1
-    f.invented = l.invented
-    f.isusable = l.isusable
-    if f.apsize != l.apsize:
+    if l.objinfo.apsize not in (0, f.apsize):
         f.needs_correction = True
-        f.apsize = l.apsize
-    for filt in objdata.Possible_filters:
-        mname = filt + 'mag'
-        setattr(f, mname, getattr(l, mname, None))
+        f.apsize = l.objinfo.apsize
 
-if hadt != 1:
+if hadt == 0:
     print("Did not find a target", file=sys.stderr)
     sys.exit(240)
 
@@ -95,10 +88,13 @@ if idonly or usonly:
     noid = nouse = 0
     newf = []
     for fr in findr:
-        if idonly and len(fr.name) == 0:
-            noid += 1
-        elif usonly and not fr.usable:
-            nouse += 1
+        if idonly:
+            if  fr.obj is None:
+                noid += 1
+            elif not fr.obj.usable:
+                nouse += 1
+            else:
+                newf.append(fr)
         else:
             newf.append(fr)
     if nouse + noid > 0:
