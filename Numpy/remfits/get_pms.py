@@ -15,16 +15,52 @@ import col_from_file
 
 MAS_YR = u.mas / u.yr
 
+# Make mapping of obj inds to names
+
+indict = dict()
+
+
+def getname(indx):
+    """Get name of object from index"""
+    global dbcurs, indict
+    try:
+        return  indict[indx]
+    except  KeyError:
+        pass
+    dbcurs.execute("SELECT objname, dispname FROM objdata WHERE ind={:d}".format(indx))
+    rows = dbcurs.fetchall()
+    if len(rows) == 0:
+        ret = "(Unknown)"
+    else:
+        objn, dispn = rows[0]
+        if objn == dispn:
+            ret = objn
+        else:
+            ret = "{:s} ({:s})".format(dispn, objn)
+    indict[indx] = ret
+    return  ret
+
+
 parsearg = argparse.ArgumentParser(description='Build table of proper motions for specified dates',
                                    formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 parsearg.add_argument('datelist', type=str, nargs='*', help='Dates to calculate for - empty to take from stdin')
 parsearg.add_argument('--colnum', type=int, default=0, help='Column to use from stdin')
+parsearg.add_argument('--replace', action='store_true', help='Replace existing entries')
+parsearg.add_argument('--verbose', action='count', help='Give increasing commentary on stderr')
+parsearg.add_argument('--commit', type=int, default=10, help='Commit after this number of inserts')
+
 remdefaults.parseargs(parsearg)
 resargs = vars(parsearg.parse_args())
 datelist = resargs['datelist']
 if len(datelist) == 0:
     datelist = col_from_file.col_from_file(sys.stdin, resargs['colnum'])
 remdefaults.getargs(resargs)
+commitint = resargs['commit']
+if commitint <= 0:
+    print("Do not understand commit", commitint, "reverting to 10", file=sys.stderr)
+    commitint = 10
+verbose = resargs['verbose']
+repl = resargs['replace']
 
 mydb, dbcurs = remdefaults.opendb()
 
@@ -44,14 +80,32 @@ if len(convdates) != len(datelist):
 dbcurs.execute("SELECT ind,radeg,decdeg,dist,rapm,decpm,rv FROM objdata WHERE rapm!=0 or decpm!=0")
 dbtab = dbcurs.fetchall()
 
-n = 0
+ntot = 0
 
 for poss_date in convdates:
 
-    dbcurs.execute("DELETE FROM objpm WHERE obsdate=%s", poss_date)
+    n4date = 0
+
+    if verbose > 0:
+        print("Commencing work for", poss_date, "out of", len(convdates), file=sys.stderr)
+
     newtime = Time(poss_date)
 
     for ind, radeg, decdeg, dist, rapm, decpm, rv in dbtab:
+        dbcurs.execute("SELECT COUNT(*) FROM objpm WHERE objind={:d} AND obsdate=%s".format(ind), poss_date)
+        nexist = dbcurs.fetchall()[0][0]
+        if nexist > 1:
+            if repl:
+                if verbose > 1:
+                    print("Replacing existing data for", getname(ind), file=sys.stderr)
+                dbcurs.execute("DELETE FROM objpm WHERE ind={:d} AND obsdate=%s".format(ind), poss_date)
+            else:
+                if verbose > 1:
+                    print("Skipping with existing data for", getname(ind), file=sys.stderr)
+                n4date += 1
+                continue
+        if verbose > 2:
+            print("Starting pm calculation for", getname(ind), file=sys.stderr)
         args = dict(ra=radeg * u.deg, dec=decdeg * u.deg, obstime=Time('J2000'), pm_ra_cosdec=rapm * MAS_YR, pm_dec=decpm * MAS_YR)
         if dist is not None and rv is not None:
             args['distance'] = dist * u.lightyear
@@ -63,8 +117,15 @@ for poss_date in convdates:
             fields.append("dist")
             values.append(str(spos.distance.lightyear))
         dbcurs.execute("INSERT INTO objpm (" + ",".join(fields) + ") VALUES (" + ",".join(values) + ")")
-        n += 1
-        if n % 10 == 0:
+        if verbose > 2:
+            print("Created PM data for", getname(ind), file=sys.stderr)
+        ntot += 1
+        n4date += 1
+        if ntot % 10 == 0:
             mydb.commit()
+            if verbose > 0:
+                print("Completed", n4date, "out of", len(dbtab), "for", poss_date, file=sys.stderr)
 
+if verbose > 0:
+    print("Completed", ntot, "altogether")
 mydb.commit()
