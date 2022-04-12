@@ -10,6 +10,7 @@ import remdefaults
 import remfits
 import obj_locations
 import find_results
+import searchparam
 
 # Shut up warning messages
 
@@ -17,16 +18,14 @@ warnings.simplefilter('ignore', AstropyWarning)
 warnings.simplefilter('ignore', AstropyUserWarning)
 warnings.simplefilter('ignore', UserWarning)
 
+searchpar = searchparam.load()
 parsearg = argparse.ArgumentParser(description='Find target in image having listed possible objects', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 parsearg.add_argument('file', nargs=1, type=str, help='Image file and output find results')
 parsearg.add_argument('--objloc', type=str, help='Name for object locations file if to be different from image file name')
 parsearg.add_argument('--findres', type=str, help='Name for find results file if to be different from image file name')
+searchpar.argparse(parsearg)
 remdefaults.parseargs(parsearg, tempdir=False, inlib=False)
 parsearg.add_argument('--force', action='store_true', help='Force overwrite of existing file')
-parsearg.add_argument('--apsize', type=int, default=6, help='Aperature size to use if none assigned')
-parsearg.add_argument('--signif', type=float, default=find_results.DEFAULT_SIGN, help='No of std devs above sky level to start search')
-parsearg.add_argument('--totsign', type=float, default=find_results.DEFAULT_TOTSIGN, help='Total significance')
-parsearg.add_argument('--maxshift', type=int, default=7, help='Maximum pixel displacement looking for objects first pass')
 parsearg.add_argument('--updatedb', action='store_true', help='Update DB with offsets')
 parsearg.add_argument('--locupdate', action='store_true', help='Update objloc file with offsets')
 parsearg.add_argument('--verbose', action='store_true', help='Tell everything')
@@ -35,17 +34,22 @@ parsearg.add_argument('--listbest', type=int, default=0, help='List n best solut
 resargs = vars(parsearg.parse_args())
 infilename = resargs['file'][0]
 remdefaults.getargs(resargs)
+searchpar.getargs(resargs)
 force = resargs['force']
 findresprefix = resargs['findres']
 objlocprefix = resargs['objloc']
-defapsize = resargs['apsize']
-signif = resargs['signif']
-totsign = resargs['totsign']
-maxshift = resargs['maxshift']
 updatedb = resargs['updatedb']
 locupdate = resargs['locupdate']
 verbose = resargs['verbose']
 listbest = resargs['listbest']
+
+# If we are saving stuff, do so and exit
+
+if searchpar.saveparams:
+    searchparam.save(searchpar)
+    if verbose:
+        searchpar.display(sys.stderr)
+    sys.exit(0)
 
 mydb, dbcurs = remdefaults.opendb()
 
@@ -117,7 +121,7 @@ elif  fitsfile.pixoff.coloffset is not None:
     if verbose:
         print("Using database offsets r={:d} c={:d}".format(db_roff, db_coff))
 
-offs = findres.find_object(objloctarget, eoffrow=existing_roff, eoffcol=existing_coff, maxshift=maxshift, signif=signif, totsign=totsign, defapwidth=defapsize)
+offs = findres.find_object(objloctarget, searchpar, eoffrow=existing_roff, eoffcol=existing_coff)
 
 # NB Exit code of 1 if we didn't find the targe
 
@@ -158,10 +162,9 @@ targ_findresult.istarget = True
 
 if updatedb:
     # Get any existing offset in database first as new offset is on top
-    # Take account that the row and cols we have in the objloc are net of the existing one if any
-    rowoffset -= db_roff
-    coloffset -= db_coff
     if coloffset != 0  or  rowoffset != 0:
+        coloffset += db_coff
+        rowoffset += db_roff
         if verbose:
             print("Setting col offset to {:d} row offset to {:d}".format(coloffset, rowoffset), file=sys.stderr)
         fitsfile.pixoff.set_offsets(dbcurs, rowoffset=rowoffset, coloffset=coloffset)

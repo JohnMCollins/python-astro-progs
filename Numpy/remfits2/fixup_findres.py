@@ -70,11 +70,11 @@ gorder = (-minima).argsort()[:selectn]
 offd = dict()
 for g in gorder:
     res = findres[labs[g]]
-    apwidth = res.obj.apsize
-    if apwidth == 0:
-        apwidth = res.apsize
+    apsize = res.obj.apsize
+    if apsize == 0:
+        apsize = res.apsize
     res.obj.apply_motion(findres.obsdate)
-    offlist = findres.find_object_offsets(res.obj, maxshift, totsig, apwidth)
+    offlist = findres.find_object_offsets(res.obj, maxshift, totsig, apsize)
     if offlist is None:
         print("No find results for", res.obj.dispname, file=sys.stderr)
         continue

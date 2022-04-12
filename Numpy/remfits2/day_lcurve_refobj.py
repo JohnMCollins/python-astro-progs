@@ -256,13 +256,14 @@ for filtp, nres in nresults.items():
         pstr = plt.scatter(datelist, adulist, marker=marker, color=Filt_colour[filtp])
     else:
         pstr = plt.plot(datelist, adulist, marker=marker, color=Filt_colour[filtp])
-    setup_hover(pstr, obsinds)
+        setup_hover(pstr, obsinds)
     leglist.append("Filter {:s} ({:d} subset)".format(filtp, len(filter_subset[filtp])))
 plt.legend(leglist)
 
 plt.tight_layout()
 if ofig is None:
-    complete_hover(fig)
+    if not scatplot:
+        complete_hover(fig)
     plt.show()
 else:
     ofig = miscutils.replacesuffix(ofig, 'png')

@@ -57,7 +57,7 @@ class markobjdlg(QtWidgets.QDialog, ui_markobj.Ui_markobj):
 
 def record_exit(pref, edit):
     """Record operaion and exit"""
-    elist = objedits.load_edits_from_file(pref, vicinity=vicinity, create=True)
+    global elist
     elist.add_edit(edit)
     objedits.save_edits_to_file(elist, pref)
     sys.exit(0)
@@ -70,12 +70,14 @@ parsearg.add_argument('args', type=str, nargs='+', help='Label or coords if crea
 remdefaults.parseargs(parsearg, inlib=False, tempdir=False)
 parsearg.add_argument('--create', action='store_true', help='Create label at coords')
 parsearg.add_argument('--findres', type=str, required=True, help='Name of fild results file')
+parsearg.add_argument('--edits', type=str, help='Edits file name if different from findres file name')
 parsearg.add_argument('--newname', type=str, default='newobj', help='Initial name of new objects')
 resargs = vars(parsearg.parse_args())
 remdefaults.getargs(resargs)
 args = resargs['args']
 creating = resargs['create']
 prefix = resargs['findres']
+editprefix = resargs['edits']
 newobjname = resargs['newname']
 
 try:
@@ -87,8 +89,14 @@ except find_results.FindResultErr as e:
 if findres.num_results() == 0:
     QtWidgets.QMessageBox.warning(None, "No results in file ", "No results in findres file " + prefix)
     sys.exit(41)
+    
+if editprefix is None:
+    editprefix = prefix
 
 vicinity = findres[0].obj.vicinity
+
+elist = objedits.load_edits_from_file(editprefix, vicinity=vicinity, create=True)
+elist.load_findres(findres)
 
 nosuff = miscutils.removesuffix(prefix, 'findres')
 dlg = markobjdlg()
@@ -138,27 +146,27 @@ while dlg.exec_():
             QtWidgets.QMessageBox.warning(dlg, "No object name", "Need to select object name")
             continue
 
-        elif objdata.nameused(mycurs, oname, True):
-            oname = objdata.nextname(mycurs, oname)
-            QtWidgets.QMessageBox.information(dlg, "Name amended", "Name clashed and amended to " + oname)
+        elif objdata.nameused(mycurs, oname, True) or oname in elist.namelist:
+            QtWidgets.QMessageBox.warning(dlg, "Duplicated name", "Name clashed with existing name")
+            continue
 
         dispname = str(dlg.dispname.text())
         if len(dispname) == 0:
             dispname = oname
-        elif  objdata.nameused(mycurs, dispname, True):
+        elif  objdata.nameused(mycurs, dispname, True) or dispname in elist.namelist:
             QtWidgets.QMessageBox.information(dlg, "Display name amended", "Name clashed and reverted to " + oname)
             dispname = oname
 
         apsize = dlg.apsize.value()
         if sn and apsize < 3:
-            QtWidgets.QMessageBox.warning(dlg, "Invalide aperture", "Aperture must be at least 3")
+            QtWidgets.QMessageBox.warning(dlg, "Invalid aperture", "Aperture must be at least 3")
             continue
 
         if sn:
-            ed = objedits.ObjEdit_Newobj_Ap(row=ycoord, col=xcoord, radeg=raparam, decdeg=decparam, apsize=apsize)
+            ed = objedits.ObjEdit_Newobj_Ap(name=oname, dispname=dispname, row=ycoord, col=xcoord, radeg=raparam, decdeg=decparam, apsize=apsize)
         else:
-            ed = objedits.ObjEdit_Newobj_Calcap(row=ycoord, col=xcoord, radeg=raparam, decdeg=decparam)
-        record_exit(prefix, ed)
+            ed = objedits.ObjEdit_Newobj_Calcap(name=oname, dispname=dispname, row=ycoord, col=xcoord, radeg=raparam, decdeg=decparam)
+        record_exit(editprefix, ed)
 
     else:
         oid = robj.obj.objind
@@ -168,26 +176,26 @@ while dlg.exec_():
             dispname = str(dlg.dispname.text())
 
             if len(dispname) == 0:
-                record_exit(prefix, objedits.ObjEdit_Deldisp(oid=oid, label=label))
+                record_exit(editprefix, objedits.ObjEdit_Deldisp(oid=oid, label=label))
 
             else:
-                if objdata.nameused(mycurs, dispname, True):
+                if objdata.nameused(mycurs, dispname, True) or dispname in elist.namelist:
                     QtWidgets.QMessageBox.warning(dlg, "Display name not accepted", "Name clashed with existing name")
                     continue
-                record_exit(prefix, "newdisp", objedits.ObjEdit_Newdisp(oid=oid, label=label, dname=dispname))
+                record_exit(editprefix, "newdisp", objedits.ObjEdit_Newdisp(oid=oid, label=label, dname=dispname))
 
         elif dlg.hide.isChecked():
-            record_exit(prefix, objedits.ObjEdit_Hide(oid=oid, label=label))
+            record_exit(editprefix, objedits.ObjEdit_Hide(oid=oid, label=label))
 
         elif dlg.apadj.isChecked():
             apsize = dlg.apsize.value()
             if apsize < 3:
                 QtWidgets.QMessageBox.warning(dlg, "Invalid aperture", "Aperture must be at least 3")
                 continue
-            record_exit(prefix, objedits.ObjEdit_Adjap(oid=oid, label=label, apsize=apsize))
+            record_exit(editprefix, objedits.ObjEdit_Adjap(oid=oid, label=label, apsize=apsize))
 
         elif dlg.calcaperture.isChecked():
-            record_exit(prefix, objedits.ObjEdit_Calcap(oid=oid, label=label))
+            record_exit(editprefix, objedits.ObjEdit_Calcap(oid=oid, label=label))
 
         else:
             QtWidgets.QMessageBox.warning(dlg, "No operation selected", "Please choose an operation")

@@ -59,7 +59,7 @@ except remfits.RemFitsErr as e:
 
 rstr = find_results.FindResults(inputfile)
 
-if rstr.findfast(sign=signif, apwidth=apsize, totsign=totsign, ignleft=ignleft, ignright=ignright, igntop=igntop, ignbottom=ignbottom) == 0:
+if rstr.findfast(sign=signif, apsize=apsize, totsign=totsign, ignleft=ignleft, ignright=ignright, igntop=igntop, ignbottom=ignbottom) == 0:
     print("No results found", file=sys.stderr)
     sys.exit(1)
 

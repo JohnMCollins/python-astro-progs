@@ -15,7 +15,10 @@ def pobj(ind):
     row, col, ap, lab = frlist[ind]
     fr = findres[lab]
     robj = fr.obj
-    print(lab, ": ", robj.dispname, " ", fr.rdiff, " ", fr.cdiff, sep='')
+    print(lab, ": ", robj.dispname, " ", fr.rdiff, " ", fr.cdiff, sep='', end='')
+    if fr.apsize == 0:
+        print(" Undefined aperture", end='')
+    print()
 
 
 parsearg = argparse.ArgumentParser(description='Display overlaps in find results', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
@@ -35,6 +38,8 @@ autohide = resargs['autohide']
 foundcount = dict()
 objdets = dict()
 dispnames = dict()
+
+noverlaps = 0
 
 for fil in files:
     try:
@@ -67,16 +72,32 @@ for fil in files:
     rows, cols = np.where((distct - apcomp) < 0)
     lastrow = -1
     hidden = 0
+    errors = 0
     for row, col in zip(rows, cols):
         if row >= col:
             continue
         if row != lastrow:
             pobj(row)
-            lastrow = row
+            robj = findres[frlist[row][-1]]
+            if robj.hide:
+                continue
+            if robj.apsize == 0:
+                errors += 1
+        cobj = findres[frlist[col][-1]]
+        if cobj.hide:
+            continue
+        noverlaps += 1
         print("\tClashes with ", end='')
         pobj(col)
         if autohide:
             hidden += 1
-            findres[frlist[col][-1]].hide = True
+            cobj.hide = True
     if hidden > 0:
-        find_results.save_results_to_file(findres, fil, force=True)
+        if errors != 0:
+            print("Not saving as default aperture in", errors, "cases")
+        else:
+            find_results.save_results_to_file(findres, fil, force=True)
+
+if noverlaps > 0:
+    sys.exit(1)
+sys.exit(0)

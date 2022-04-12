@@ -10,6 +10,7 @@ import remdefaults
 import remfits
 import obj_locations
 import find_results
+import searchparam
 
 # Shut up warning messages
 
@@ -17,16 +18,14 @@ warnings.simplefilter('ignore', AstropyWarning)
 warnings.simplefilter('ignore', AstropyUserWarning)
 warnings.simplefilter('ignore', UserWarning)
 
+searchpar = searchparam.load()
 parsearg = argparse.ArgumentParser(description='Find objects in image after finding target', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 parsearg.add_argument('file', nargs=1, type=str, help='Image file and output find results')
 parsearg.add_argument('--objloc', type=str, help='Name for object locations file if to be different from image file name')
 parsearg.add_argument('--findres', type=str, help='Name for find results file if to be different from image file name')
+searchpar.argparse(parsearg)
 remdefaults.parseargs(parsearg, tempdir=False, inlib=False)
 parsearg.add_argument('--force', action='store_true', help='Force overwrite of existing file if targets found already')
-parsearg.add_argument('--apsize', type=int, default=6, help='Aperature size to use if none assigned')
-parsearg.add_argument('--signif', type=float, default=find_results.DEFAULT_SIGN / 10.0, help='No of std devs above sky to be significant')
-parsearg.add_argument('--totsign', type=float, default=find_results.DEFAULT_TOTSIGN, help='Total significance')
-parsearg.add_argument('--maxshift', type=int, default=3, help='Maximum pixel displacement looking for objects')
 parsearg.add_argument('--minbri', type=float, default=5, help='Minimum brightness of objects as percentage of target')
 parsearg.add_argument('--nogaia', action='store_true', help='Omit listing GAIA objects')
 parsearg.add_argument('--verbose', action='store_true', help='Tell everything')
@@ -35,17 +34,22 @@ parsearg.add_argument('--findmin', type=int, default=10, help='Minimum number to
 resargs = vars(parsearg.parse_args())
 infilename = resargs['file'][0]
 remdefaults.getargs(resargs)
+searchpar.getargs(resargs)
 force = resargs['force']
 findresprefix = resargs['findres']
 objlocprefix = resargs['objloc']
-apsize = resargs['apsize']
-signif = resargs['signif']
-totsign = resargs['totsign']
-maxshift = resargs['maxshift']
 minbri = resargs['minbri']
 nogaia = resargs['nogaia']
 verbose = resargs['verbose']
 findmin = resargs['findmin']
+
+# If we are saving stuff, do so and exit
+
+if searchpar.saveparams:
+    searchparam.save(searchpar)
+    if verbose:
+        searchpar.display(sys.stderr)
+    sys.exit(0)
 
 mydb, dbcurs = remdefaults.opendb()
 
@@ -121,10 +125,10 @@ for ol in objlocfile.results():
     aps = ol.apsize
     msg = "*"
     if aps == 0:
-        aps = apsize
+        aps = None
         msg = "(def)"
 
-    offs = findres.find_object(ol, maxshift=maxshift, signif=signif, totsign=totsign, defapwidth=aps, eoffrow=erowoffset, eoffcol=ecoloffset)
+    offs = findres.find_object(ol, searchpar, apsize=aps, eoffrow=erowoffset, eoffcol=ecoloffset)
     if offs is None:
         if verbose:
             print("Could not find", ol.dispname, "ap", aps, msg, file=sys.stderr)
@@ -142,7 +146,7 @@ for ol in objlocfile.results():
     found += 1
 
 if found < findmin:
-    print("Not enough objects found, looking for", findmin, "only found", found, file=sys.stderr)
+    print("Not enough objects found in {:s} (filter {:s}) looking for {:d} only found {:d}".format(infilename, fitsfile.filter, findmin, found), file=sys.stderr)
     sys.exit(1)
 
 findres.resultlist = newresults

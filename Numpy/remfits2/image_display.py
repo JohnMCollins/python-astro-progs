@@ -177,7 +177,7 @@ parsearg.add_argument('--type', type=str, choices=['F', 'B', 'Z', 'I'], help='In
 parsearg.add_argument('--colnum', type=int, default=0, help='Column number to take from standard input')
 parsearg.add_argument('--greyscale', type=str, help="Standard greyscale to use")
 parsearg.add_argument('--title', type=str, help='Optional title to put at head of image otherwise based on file')
-parsearg.add_argument('--findres', type=str, help='File of find results')
+parsearg.add_argument('--findres', type=str, help='File of find results if not the same as input file')
 parsearg.add_argument('--limfind', type=int, default=1000000, help='Maximumm number of find results')
 parsearg.add_argument('--brightest', action='store_true', help='Mark brightest object as target if no target')
 parsearg.add_argument('--displimit', type=int, default=30, help='Maximum number of images to display')
@@ -281,17 +281,16 @@ for file in files:
     elif len(title) != 0:
         plt.title(title)
 
-    if findres is not None:
-        tfindres = None
+    prefix = miscutils.removesuffix(file, 'fits.gz')
+    if findres is not None and findres != '@':
         prefix = findres
-        if prefix == '@':
-            prefix = miscutils.removesuffix(file, 'fits.gz')
-        try:
-            tfindres = find_results.load_results_from_file(prefix)
+    try:
+        tfindres = find_results.load_results_from_file(prefix)
+        if tfindres.obsind == ff.from_obsind:
             display_findresults(ff, tfindres)
             setfig(plotfigure, prefix, ff, tfindres)
-        except find_results.FindResultErr:
-            pass
+    except find_results.FindResultErr:
+        pass
 
     fignum += 1
     if figout is None:
