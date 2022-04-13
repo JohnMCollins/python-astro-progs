@@ -82,7 +82,7 @@ dbtab = dbcurs.fetchall()
 
 ntot = 0
 
-for poss_date in convdates:
+for poss_date in set(convdates):
 
     n4date = 0
 
