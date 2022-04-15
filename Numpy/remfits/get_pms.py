@@ -10,6 +10,7 @@ import astropy.units as u
 import remdefaults
 import parsetime
 import col_from_file
+import objdata
 
 # Units ready for use
 
@@ -48,6 +49,7 @@ parsearg.add_argument('--colnum', type=int, default=0, help='Column to use from 
 parsearg.add_argument('--replace', action='store_true', help='Replace existing entries')
 parsearg.add_argument('--verbose', action='count', help='Give increasing commentary on stderr')
 parsearg.add_argument('--commit', type=int, default=10, help='Commit after this number of inserts')
+parsearg.add_argument('--vicinity', type=str, help='Only consider objects in this vicinity')
 
 remdefaults.parseargs(parsearg)
 resargs = vars(parsearg.parse_args())
@@ -61,6 +63,7 @@ if commitint <= 0:
     commitint = 10
 verbose = resargs['verbose']
 repl = resargs['replace']
+vicinity = resargs['vicinity']
 
 mydb, dbcurs = remdefaults.opendb()
 
@@ -77,7 +80,12 @@ if len(convdates) != len(datelist):
     print("Aborting due to errors", file=sys.stderr)
     sys.exit(10)
 
-dbcurs.execute("SELECT ind,radeg,decdeg,dist,rapm,decpm,rv FROM objdata WHERE rapm!=0 or decpm!=0")
+if vicinity is not None:
+    vicinity = objdata.get_objname(dbcurs, vicinity)
+    dbcurs.execute("SELECT ind,radeg,decdeg,dist,rapm,decpm,rv FROM objdata WHERE (rapm!=0 OR decpm!=0) AND vicinity=%s", vicinity)
+else:
+    dbcurs.execute("SELECT ind,radeg,decdeg,dist,rapm,decpm,rv FROM objdata WHERE rapm!=0 OR decpm!=0")
+
 dbtab = dbcurs.fetchall()
 
 ntot = 0
