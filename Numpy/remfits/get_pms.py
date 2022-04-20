@@ -92,10 +92,13 @@ ntot = 0
 
 for poss_date in set(convdates):
 
+    descr = poss_date
+    if vicinity is not None:
+        descr += " " + vicinity
     n4date = 0
 
     if verbose > 0:
-        print("Commencing work for", poss_date, "out of", len(convdates), file=sys.stderr)
+        print("Commencing work for", descr, "out of", len(convdates), file=sys.stderr)
 
     newtime = Time(poss_date)
 
@@ -132,7 +135,7 @@ for poss_date in set(convdates):
         if ntot % 10 == 0:
             mydb.commit()
             if verbose > 0:
-                print("Completed", n4date, "out of", len(dbtab), "for", poss_date, file=sys.stderr)
+                print("Completed", n4date, "out of", len(dbtab), "for", descr, file=sys.stderr)
 
 if verbose > 0:
     print("Completed", ntot, "altogether")

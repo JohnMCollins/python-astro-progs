@@ -1,17 +1,9 @@
-#!  /usr/bin/env python3
+#! /usr/bin/env python3
 
-# @Author: John M Collins <jmc>
-# @Date:   2019-01-04T22:45:58+00:00
-# @Email:  jmc@toad.me.uk
-# @Filename: listobjects.py
-# @Last modified by:   jmc
-# @Last modified time: 2019-01-04T23:10:43+00:00
+"""Display all objects in pie chart"""
 
-import dbops
-import datetime
+from operator import attrgetter
 import argparse
-import sys
-import dbobjinfo
 import numpy as np
 import remdefaults
 import remgeom
@@ -19,13 +11,23 @@ import matplotlib.pyplot as plt
 import miscutils
 
 
-class obstot(object):
-	"""Details of result"""
+class obstot:
+    """Details of result"""
 
-	def __init__(self, objname, n):
-		self.objname = objname
-		self.count = int(n)
-		self.isothers = False
+    def __init__(self, objname, nobs):
+        self.objname = objname
+        self.count = int(nobs)
+        self.isothers = False
+
+
+def add_or_fields(mainfields, orfields):
+    """Add subfields with OR to mainfields"""
+    if len(orfields) == 0:
+        return
+    if len(orfields) == 1:
+        mainfields.append(orfields[0])
+        return
+    mainfields.append("(" + " OR ".join(orfields) + ")")
 
 
 rg = remgeom.load()
@@ -59,28 +61,33 @@ outfig = rg.disp_getargs(resargs)
 
 mydb, dbcurs = remdefaults.opendb()
 
-sel = ''
+fields = []
 if gain is not None:
-    sel = "ABS(gain-%.3g) < %.3g " % (gain, gain * 1e-3)
+    fields.append("ABS(gain-{:.3g}) < {:.3g}".format(gain, gain * 1e-3))
 
 if filters is not None:
-    qfilt = [ "filter='" + o + "'" for o in filters]
-    if len(sel) != 0: sel += " AND "
-    sel += "(" + " OR ".join(qfilt) + ")"
+    ffs = []
+    for o in filters:
+        ffs.append("filter={:s}".format(mydb.escape(o)))
+        add_or_fields(fields, ffs)
 
-if len(dither) != 1 or dither[0] != -1:
-    qdith = [ "dithID=" + str(d) for d in dither]
-    if len(sel) != 0: sel += " AND "
-    sel += "(" + " OR ".join(qdith) + ")"
+ffs = []
+for d in dither:
+    if d >= 0:
+        ffs.append("dithID={:d}".format(d))
+add_or_fields(fields, ffs)
 
-if len(sel) != 0: sel = "WHERE " + sel
-dbcurs.execute("SELECT object,COUNT(*) AS number FROM obsinf " + sel + "GROUP BY object")
+sel = ''
+if len(fields) != 0:
+    sel = " WHERE " + " AND ".join(fields)
+
+dbcurs.execute("SELECT object,COUNT(*) AS number FROM obsinf" + sel + " GROUP BY object")
 
 results = []
 
 for row in dbcurs.fetchall():
-	obj, num = row
-	results.append(obstot(obj, num))
+    obj, num = row
+    results.append(obstot(obj, num))
 
 nonproxr = [r for r in results if r.objname[0:4] != 'Prox']
 proxr = [r for r in results if r.objname[0:4] == 'Prox']
@@ -102,22 +109,22 @@ if cutoff is not None:
         summ.isothers = True
     results = keeping
 elif targets:
-	intarg = []
-	summing = []
-	for r in results:
-		if r.objname == 'Proxima' or r.objname == 'BarnardStar' or r.objname == 'Ross154':
-			intarg.append(r)
-		else:
-			summing.append(r)
-	if len(summing) != 0:
-		summ = obstot('Others', np.sum([r.count for r in summing]))
-		summ.isothers = True
-	results = intarg
+    intarg = []
+    summing = []
+    for r in results:
+        if r.objname == 'Proxima' or r.objname == 'BarnardStar' or r.objname == 'Ross154':
+            intarg.append(r)
+        else:
+            summing.append(r)
+        if len(summing) != 0:
+            summ = obstot('Others', np.sum([r.count for r in summing]))
+            summ.isothers = True
+    results = intarg
 
 if order is not None and len(order) != 0:
-	f = order[0].lower()
-	if f == 'n':
-		results.sort(key=attrgetter('count'), reverse=True)
+    f = order[0].lower()
+    if f == 'n':
+        results.sort(key=attrgetter('count'), reverse=True)
 
 if summ is not None:
     results.append(summ)
