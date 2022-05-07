@@ -158,8 +158,8 @@ while dlg.exec_():
             dispname = oname
 
         apsize = dlg.apsize.value()
-        if sn and apsize < 3:
-            QtWidgets.QMessageBox.warning(dlg, "Invalid aperture", "Aperture must be at least 3")
+        if sn and apsize < 1.0:
+            QtWidgets.QMessageBox.warning(dlg, "Invalid aperture", "Aperture must be at least 1")
             continue
 
         if sn:
@@ -189,8 +189,8 @@ while dlg.exec_():
 
         elif dlg.apadj.isChecked():
             apsize = dlg.apsize.value()
-            if apsize < 3:
-                QtWidgets.QMessageBox.warning(dlg, "Invalid aperture", "Aperture must be at least 3")
+            if apsize < 1.0:
+                QtWidgets.QMessageBox.warning(dlg, "Invalid aperture", "Aperture must be at least 1")
                 continue
             record_exit(editprefix, objedits.ObjEdit_Adjap(oid=oid, label=label, apsize=apsize))
 

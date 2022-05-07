@@ -81,7 +81,7 @@ for fil in files:
         fvalues.append("{:d}".format(fr.cdiff))
         fvalues.append("{:.8e}".format(fr.radeg))
         fvalues.append("{:.8e}".format(fr.decdeg))
-        fvalues.append("{:d}".format(fr.apsize))
+        fvalues.append("{:.4g}".format(fr.apsize))
         fvalues.append("{:.8e}".format(fr.adus))
         fvalues.append(str(fr.hide))
         dbcurs.execute(frfields.format(','.join(fvalues)))

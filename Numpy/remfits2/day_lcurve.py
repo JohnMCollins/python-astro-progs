@@ -5,6 +5,7 @@
 import argparse
 import sys
 import re
+import datetime
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 import matplotlib.ticker as mtick
@@ -96,6 +97,7 @@ resultlist = []
 matchname = re.compile('(\w+?)(\d+)$')
 
 Filt_colour = dict(g='g', r='r', i='k', z='b')
+Lstyles = ('solid', 'dotted', 'dashed', 'dashdot')
 Names = dict(GJ551='Proxima Centauri', GJ699="Barnard\'s Star", GJ729='Ross 154')
 
 nresults = dict()
@@ -119,8 +121,10 @@ parsearg.add_argument('--ylabel', type=str, default='ADU count * {yscale:.6g}', 
 parsearg.add_argument('--daterot', type=float, default=45, help='Rotation of dates')
 parsearg.add_argument('--verbose', action='store_true', help='Give blow-by-blow account')
 parsearg.add_argument('--scatter', action='store_true', help='Plot as scatter not line"')
-parsearg.add_argument('--ymarg', type=float, default=10.0, help='Percent margin on top of y axis')
-parsearg.add_argument('--yscale', type=float, default=1000.0, help='Percent margin on top of y axis')
+parsearg.add_argument('--bytime', action='store_true', help='Display by time')
+parsearg.add_argument('--ylower', type=float, help='Lower limit of Y axis')
+parsearg.add_argument('--yupper', type=float, help='Upper limit of Y axis')
+parsearg.add_argument('--yscale', type=float, default=1e3, help='Scale for Y axis')
 rg.disp_argparse(parsearg)
 
 resargs = vars(parsearg.parse_args())
@@ -140,7 +144,9 @@ xlab = resargs['xlabel']
 title = resargs['title']
 daterot = resargs['daterot']
 scatplot = resargs['scatter']
-ymarg = (resargs['ymarg'] + 100.0) / 100.0
+bytime = resargs['bytime']
+ylower = resargs['ylower']
+yupper = resargs['yupper']
 yscale = resargs['yscale']
 
 ofig = rg.disp_getargs(resargs)
@@ -193,9 +199,13 @@ if filt and verbose:
 
 fig = rg.plt_figure()
 ax = plt.subplot(111)
-ax.set_ylim(0, max([r.findres.adus for r in resultlist]) * ymarg / yscale)
+if ylower is not None:
+    ax.set_ylim(ylower, yupper)
 y_formatter = mtick.ScalarFormatter(useOffset=False)
-df = mdates.DateFormatter("%d/%m/%y %H:%M")
+if bytime:
+    df = mdates.DateFormatter("%H:%M")
+else:
+    df = mdates.DateFormatter("%d/%m/%y %H:%M")
 ax.xaxis.set_major_formatter(df)
 if daterot != 0.0:
     plt.xticks(rotation=daterot)
@@ -207,27 +217,67 @@ except KeyError:
     targobjname = targobj
 plt.title(title.format(name=targobjname))
 leglist = []
-for f in nresults:
-    datelist = []
-    adulist = []
-    obsinds = []
-    for rl in sorted([res for res in resultlist if res.filtname == f], key=lambda x: x.when):
-        datelist.append(rl.when)
-        adulist.append(rl.findres.adus)
-        obsinds.append(rl)
-    if len(datelist) < 2:
-        continue
-    adulist = np.array(adulist) / 1000.0
-    if scatplot:
-        pstr = plt.scatter(datelist, adulist, marker=marker, color=Filt_colour[f])
-    else:
-        pstr = plt.plot(datelist, adulist, marker=marker, color=Filt_colour[f])
-    setup_hover(pstr, obsinds)
-    leglist.append("Filter {:s}".format(f))
+if bytime:
+    for f in nresults:
+        results_for_filter = sorted([res for res in resultlist if res.filtname == f], key=lambda x: x.when)
+        lastdate = datetime.date(1901, 1, 1)
+        timelist = []
+        lscount = 0
+        while len(results_for_filter) != 0:
+            nxtr = results_for_filter.pop(0)
+            nxtdt = nxtr.when
+            nxtd = nxtdt.date()
+            if nxtd != lastdate:
+                if len(timelist) > 2:
+                    leglist.append("Filter {:s} {:%d/%m/%y}".format(f, lastdate))
+                    adulist = np.array(adulist)
+                    if scatplot:
+                        pstr = plt.scatter(timelist, adulist, marker=marker, color=Filt_colour[f])
+                    else:
+                        pstr = plt.plot(timelist, adulist, marker=marker, color=Filt_colour[f], alpha=1, linestyle=Lstyles[lscount % len(Lstyles)])
+                        lscount += 1
+                        setup_hover(pstr, obsinds)
+                timelist = []
+                adulist = []
+                obsinds = []
+                lastdate = nxtd
+            timelist.append(datetime.datetime(2020, 1, 1, nxtdt.hour, nxtdt.minute, nxtdt.second))
+            adulist.append(nxtr.findres.adus / yscale)
+            obsinds.append(nxtr)
+
+        # Do trailing ones
+
+        if len(timelist) > 2:
+            leglist.append("Filter {:s} {:%d/%m/%y}".format(f, lastdate))
+            adulist = np.array(adulist)
+            if scatplot:
+                pstr = plt.scatter(timelist, adulist, marker=marker, color=Filt_colour[f])
+            else:
+                pstr = plt.plot(timelist, adulist, marker=marker, alpha=1, color=Filt_colour[f], linestyle=Lstyles[lscount % len(Lstyles)])
+                setup_hover(pstr, obsinds)
+else:
+    for f in nresults:
+        datelist = []
+        adulist = []
+        obsinds = []
+        for rl in sorted([res for res in resultlist if res.filtname == f], key=lambda x: x.when):
+            datelist.append(rl.when)
+            adulist.append(rl.findres.adus)
+            obsinds.append(rl)
+        if len(datelist) < 2:
+            continue
+        adulist = np.array(adulist) / 1000.0
+        if scatplot:
+            pstr = plt.scatter(datelist, adulist, marker=marker, color=Filt_colour[f])
+        else:
+            pstr = plt.plot(datelist, adulist, marker=marker, color=Filt_colour[f])
+        setup_hover(pstr, obsinds)
+        leglist.append("Filter {:s}".format(f))
 plt.legend(leglist)
 plt.tight_layout()
 if ofig is None:
-    complete_hover(fig)
+    if not scatplot:
+        complete_hover(fig)
     plt.show()
 else:
     ofig = miscutils.replacesuffix(ofig, 'png')

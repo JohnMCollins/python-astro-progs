@@ -108,7 +108,7 @@ def hover(event):
             if objr.adus > 0.0:
                 atxt += " "
         if objr.adus > 0.0:
-            atxt += "adus: {:.1f} ap: {:d}".format(objr.adus, objr.apsize)
+            atxt += "adus: {:.1f} ap: {:.4g}".format(objr.adus, objr.apsize)
     fd.annot.set_text(atxt)
     # fd.annot.get_bbox_patch().set_alpha(0.4)
     fd.annot.xy = (objr.col, objr.row)

@@ -87,6 +87,7 @@ parsearg.add_argument('file', nargs=1, type=str, help='Image file')
 parsearg.add_argument('--objloc', type=str, help='Name for object locations file if to be different from image file name')
 parsearg.add_argument('--findres', type=str, help='Name for find results file if to be different from image file name')
 parsearg.add_argument('--edits', type=str, help='Edits file name if different from findres file name')
+parsearg.add_argument('--apstep', type=float, default=1.0, help='Step size for optimising apertures')
 searchpar.argparse(parsearg)
 remdefaults.parseargs(parsearg, tempdir=False, inlib=False)
 parsearg.add_argument('--force', action='store_true', help='Force continue if it seems to be done or half-done')
@@ -101,6 +102,7 @@ remdefaults.getargs(resargs)
 searchpar.getargs(resargs)
 force = resargs['force']
 verbose = resargs['verbose']
+apstep = resargs['apstep']
 
 # If we are saving stuff, do so and do not exit
 
@@ -188,7 +190,7 @@ for ed in efile.editlist:
             print("Failed to find object near r={:d} c={:d}".format(ed.row, ed.col), file=sys.stderr)
             continue
         dummy, dummy, trow, tcol, tadus = peak1[0]
-        oapp = findres.opt_aperture(trow, tcol, searchpar)
+        oapp = findres.opt_aperture(trow, tcol, searchpar, step=apstep)
         if oapp is None:
             print("Could not find opt aperture for object near r={:d} c={:d}".format(trow, tcol), file=sys.stderr)
             continue
@@ -217,7 +219,7 @@ for ed in efile.editlist:
             frchanges += 1
     elif isinstance(ed, objedits.ObjEdit_Calcap):
         fr = get_fr_by_label(ed)
-        oapp = findres.opt_aperture(fr.row, fr.col, searchpar)
+        oapp = findres.opt_aperture(fr.row, fr.col, searchpar, step=apstep)
         if oapp is None:
             print("Could not find object near r={:d} c={:d}".format(fr.row, fr.col), file=sys.stderr)
             continue
