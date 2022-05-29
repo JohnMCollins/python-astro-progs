@@ -4,6 +4,7 @@
 
 import argparse
 import sys
+import re
 import remdefaults
 import remtargets
 import parsetime
@@ -68,13 +69,16 @@ remfield.parseargs(parsearg, multstd=True)
 parsearg.add_argument('--debug', action='store_true', help='Display selection command')
 parsearg.add_argument('--format', type=str, help='Specify which fields to display')
 parsearg.add_argument('--header', action='store_true', help='Provide a header')
-parsearg.add_argument('--totals', action='store_true', help='Print totals'
-                      )
+parsearg.add_argument('--totals', action='store_true', help='Print totals')
+parsearg.add_argument('--includerej', action='store_true', help='Include observations marked as rejected')
 resargs = vars(parsearg.parse_args())
+inclrej = resargs['includerej']
 obsinds = resargs['obsinds']
 remdefaults.getargs(resargs)
 
-fieldselect = ["rejreason is NULL"]
+fieldselect = []
+if not inclrej:
+    fieldselect.append("rejreason is NULL")
 try:
     parsetime.getargs_daterange(resargs, fieldselect)
 except ValueError as e:
@@ -236,7 +240,16 @@ else:
 Fcodes = ["{" + fc + ":" + Fc_dict[fc] + "}" for fc in formatlines]
 for dbrow in dbrows:
     res = dict(zip(Format_keys, dbrow))
-    rf = [fc.format(**res) for fc in Fcodes]
+    # May work without correcting for null items
+    try:
+        rf = [fc.format(**res) for fc in Fcodes]
+    except TypeError:
+        rf = []
+        for fc in Fcodes:
+            try:
+                rf.append(fc.format(**res))
+            except TypeError:
+                rf.append("NULL")
     maxwids = [max(n, len(p)) for n, p in zip(maxwids, rf)]
 
 accums = []
@@ -261,7 +274,18 @@ try:
 
     for dbrow in dbrows:
         res = dict(zip(Format_keys, dbrow))
-        print(" ".join([f.format(**res) for f in Fcodes]))
+        try:
+            resline = [f.format(**res) for f in Fcodes]
+        except TypeError:
+            resline = []
+            for f in Fcodes:
+                try:
+                    resline.append(f.format(**res))
+                except TypeError:
+                    # Extract width from format code
+                    mtch = re.search(':(\d+)', f)
+                    resline.append(' ' * (int(mtch.group(1)) - 4) + "NULL")
+        print(" ".join(resline))
         if ptots:
             for n, c in enumerate(formatlines):
                 try:

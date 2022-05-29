@@ -197,7 +197,7 @@ try:
                 dispn = r.obj.dispname
             except AttributeError:
                 dispn = ""
-            print("{lab:<{lw}s} {dn:<{dnw}s} {ap:2d} {adus:10.2f} {ra:8.3f} {dec:8.3f}".
+            print("{lab:<{lw}s} {dn:<{dnw}s} {ap:5.2f} {adus:10.2f} {ra:8.3f} {dec:8.3f}".
                   format(dn=dispn, lab=r.label, ap=r.apsize, adus=r.adus, ra=r.radeg, dec=r.decdeg,
                          lw=lnamelength, dnw=dnamelength), end='')
             if diffs:
@@ -206,7 +206,7 @@ try:
 #            robj = objdata.ObjData()
 #            robj.get(dbcurs, r.objident.objname)
 #            robj.apply_motion(findres.obsdate)
-#            print("{lab:<{lw}s} {dn:<{dnw}s} {ap:2d} {adus:10.2f} {ra:8.3f} {dec:8.3f} {radiff:8.3f} {decdiff:8.3f}".
+#            print("{lab:<{lw}s} {dn:<{dnw}s} {ap:5.2f} {adus:10.2f} {ra:8.3f} {dec:8.3f} {radiff:8.3f} {decdiff:8.3f}".
 #                  format(dn=r.dispname, lab=r.label, ap=r.apsize, adus=r.adus, ra=r.radeg, dec=r.decdeg, radiff=r.radeg - robj.objposition.ra, decdiff=r.decdeg - robj.objposition.dec,
 #                         lw=lnamelength, dnw=dnamelength))
 except (KeyboardInterrupt, BrokenPipeError):

@@ -67,14 +67,14 @@ except objdata.ObjDataError as e:
     sys.exit(54)
 
 if verbose:
-    print(objlist.numobjs(), "Possible objects after restriction to image", file=sys.stderr)
+    print(len(objlist), "Possible objects after restriction to image", file=sys.stderr)
 
-if objlist.numobjs() < 2:
+if len(objlist) < 2:
     print("Not enough possible objects in list", file=sys.stderr)
     sys.exit(100)
 
 objstr = obj_locations.ObjLocs(inputfile)
-for obj in objlist.objlist:
+for obj in objlist:
     objstr.add_loc(obj)
 objstr.get_offsets_in_image()
 objstr.order_by_separation()

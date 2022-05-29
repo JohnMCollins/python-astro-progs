@@ -77,7 +77,7 @@ def setfig(fig, pref, fitsfile, findr=None):
     ax = fig.axes[0]
     canv = fig.canvas
     canv.manager.set_window_title(pref)
-    annot = ax.annotate("", xy=(0, 0), xytext=(20, 20), textcoords="offset points", bbox=dict(boxstyle="round", fc=popupcolour), arrowprops=dict(arrowstyle="->"))
+    annot = ax.annotate("", xy=(0, 0), xytext=(20, 20), textcoords="offset points", fontsize=rg.objdisp.objtextfs, bbox=dict(boxstyle="round", fc=popupcolour), arrowprops=dict(arrowstyle="->"))
     annot.get_bbox_patch().set_alpha(alphaflag)
     annot.set_visible(False)
     canv.mpl_connect('motion_notify_event', hover)
@@ -153,12 +153,26 @@ def display_findresults(ffile, work_findres):
         ptch = mp.Circle(coords, radius=fr.apsize, alpha=rg.objdisp.objalpha, color=objc, fill=rg.objdisp.objfill)
         ax = plt.gca()
         ax.add_patch(ptch)
-        annot = ax.annotate(fr.label, xy=coords, xytext=(rg.objdisp.objtextdisp, rg.objdisp.objtextdisp),
+        annot = ax.annotate(fr.label, xy=coords, xytext=(rg.objdisp.objtextdisp, rg.objdisp.objtextdisp), fontsize=rg.objdisp.objtextfs,
                             textcoords="offset points", bbox=dict(boxstyle="round", fc=flagcolour), arrowprops=dict(arrowstyle="->"))
         annot.get_bbox_patch().set_alpha(alphaflag)
         n += 1
         if n >= limfind:
             break
+
+
+def parse_zoom(arg):
+    """Parse zoom specification"""
+    if arg is None:
+        return None
+    try:
+        res = sorted(map(lambda x: float(x), arg.split(':')))
+        if len(res) == 2:
+            return  res
+    except (TypeError, ValueError):
+        pass
+    print("Did not understand zoom argument", arg, "expecting 2 numerics", file=sys.stderr)
+    sys.exit(80)
 
 # Shut up warning messages
 
@@ -187,6 +201,8 @@ parsearg.add_argument('--flagcolour', type=str, default='yellow', help='Flag col
 parsearg.add_argument('--popupcolour', type=str, default='g', help='Popup colour')
 parsearg.add_argument('--alphaflag', type=float, default=0.4, help='Alpha for flag and popup')
 parsearg.add_argument('--tagdist', type=float, default=15.0, help='Number of pixel distance to treat as closeby')
+parsearg.add_argument('--xlims', type=str, help='Limits for x zoom')
+parsearg.add_argument('--ylims', type=str, help='Limits for y zoom')
 
 rg.disp_argparse(parsearg)
 
@@ -216,6 +232,8 @@ popupcolour = resargs['popupcolour']
 flagcolour = resargs['flagcolour']
 alphaflag = resargs['alphaflag']
 tagdist = resargs['tagdist']
+xzoom = parse_zoom(resargs['xlims'])
+yzoom = parse_zoom(resargs['ylims'])
 
 idcolour = rg.objdisp.idcolour
 objcolour = rg.objdisp.objcolour
@@ -267,6 +285,10 @@ for file in files:
     crange = gsdets.get_cmap(data)
     norm = colors.BoundaryNorm(crange, cmap.N)
     img = plt.imshow(data, cmap=cmap, norm=norm, origin='lower')
+    if xzoom is not None:
+        plt.gca().set_xlim(*xzoom)
+    if yzoom is not None:
+        plt.gca().set_ylim(*yzoom)
     plt.colorbar(img, norm=norm, cmap=cmap, boundaries=crange, ticks=crange)
     if griddisp:
         try:

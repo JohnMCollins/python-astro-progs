@@ -7,15 +7,13 @@ import sys
 import numpy as np
 import remdefaults
 import find_results
-import objdata
 
 
 def pobj(ind):
     """Display details of object indexed by index"""
-    row, col, ap, lab = frlist[ind]
+    dummy, dummy, dummy, lab = frlist[ind]
     fr = findres[lab]
-    robj = fr.obj
-    print(lab, ": ", robj.dispname, " ", fr.rdiff, " ", fr.cdiff, sep='', end='')
+    print(lab, ": ", fr.obj.dispname, " ", fr.rdiff, " ", fr.cdiff, sep='', end='')
     if fr.apsize == 0:
         print(" Undefined aperture", end='')
     print()
@@ -26,6 +24,7 @@ parsearg.add_argument('files', nargs='+', type=str, help='Find results files')
 remdefaults.parseargs(parsearg, tempdir=False, inlib=False)
 parsearg.add_argument('--filter', type=str, help='Filter name to restrict to')
 parsearg.add_argument('--autohide', action='store_true', help='Auto-hide overlapping results')
+parsearg.add_argument('--compress', action='store_true', help='Squeeze out hidden results and relabel')
 parsearg.add_argument('--byrc', action='store_true', help='Sort by row then column other than descending brightness')
 
 resargs = vars(parsearg.parse_args())
@@ -34,6 +33,7 @@ remdefaults.getargs(resargs)
 filt = resargs['filter']
 byrc = resargs['byrc']
 autohide = resargs['autohide']
+compress = resargs['compress']
 
 foundcount = dict()
 objdets = dict()
@@ -71,8 +71,8 @@ for fil in files:
     apcomp = np.add.outer(aplist, aplist)
     rows, cols = np.where((distct - apcomp) < 0)
     lastrow = -1
-    hidden = 0
-    errors = 0
+    hidden = already_hidden = 0
+    errors = set()
     for row, col in zip(rows, cols):
         if row >= col:
             continue
@@ -82,9 +82,11 @@ for fil in files:
             if robj.hide:
                 continue
             if robj.apsize == 0:
-                errors += 1
+                errors.add(robj.label)
+            lastrow = row
         cobj = findres[frlist[col][-1]]
         if cobj.hide:
+            already_hidden += 1
             continue
         noverlaps += 1
         print("\tClashes with ", end='')
@@ -92,9 +94,17 @@ for fil in files:
         if autohide:
             hidden += 1
             cobj.hide = True
+
+    # Compression of hidden ones for when we're doing displays for report
+
+    if hidden > 0 or (compress and already_hidden > 0):
+        hidden += already_hidden  # Save testing again
+        findres.resultlist = list(findres.results(nohidden=True))
+        findres.relabel()
+
     if hidden > 0:
-        if errors != 0:
-            print("Not saving as default aperture in", errors, "cases")
+        if len(errors) != 0:
+            print("Not saving as default aperture in", len(errors), "cases concerning", ", ".join(sorted(errors)), file=sys.stderr)
         else:
             find_results.save_results_to_file(findres, fil, force=True)
 

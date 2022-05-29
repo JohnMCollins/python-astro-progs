@@ -77,7 +77,7 @@ if titles is not None:
 else:
     titles = []
     for f in files:
-        titles.append(miscutils.removesuffix(f, all=True))
+        titles.append(miscutils.removesuffix(f, allsuff=True))
 
 errors = 0
 
@@ -87,7 +87,7 @@ totminus = 0
 
 for f in files:
     try:
-        ff = remfits.parse_filearg(f, mycurs, type=type)
+        ff = remfits.parse_filearg(f, mycurs, typef=type)
     except remfits.RemFitsErr as e:
         print("file", f, "gave error", e.args[0], file=sys.stderr)
         errors += 1

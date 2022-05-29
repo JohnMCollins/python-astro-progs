@@ -30,8 +30,8 @@ parsearg = argparse.ArgumentParser(description='Plot proper motions of object re
 parsearg.add_argument('targets', type=str, nargs='+', help='Target objects to plot for')
 remdefaults.parseargs(parsearg, libdir=False, tempdir=False)
 rg.disp_argparse(parsearg)
-parsearg.add_argument('--ramargin', type=float, default=500.0, help='Margin to put either side of X/RA axis')
-parsearg.add_argument('--decmargin', type=float, default=500.0, help='Margin to put either side of Y/DEC axis')
+parsearg.add_argument('--rarange', type=float, default=0.2, help='Range for RA display')
+parsearg.add_argument('--decrange', type=float, default=0.2, help='Range for DEC display')
 parsearg.add_argument('--targcolour', type=str, default='b', help='Colour to display target')
 parsearg.add_argument('--targalpha', type=float, default=1.0, help='Alpha value for target colour')
 parsearg.add_argument('--objcolour', type=str, default='k', help='Colour for objects other than target')
@@ -40,14 +40,16 @@ parsearg.add_argument('--apsize', type=int, help='Aperture size otherwise use DB
 parsearg.add_argument('--apmult', type=float, default=4.0, help='Multiple of aperture size for scatter')
 parsearg.add_argument('--xlabel', type=str, default='RA (deg)', help='Label for X axis')
 parsearg.add_argument('--ylabel', type=str, default='Dec (deg)', help='Label for Y axis')
+parsearg.add_argument('--xrot', type=float, default=0.0, help="Rotation of X axis ticks")
+parsearg.add_argument('--yrot', type=float, default=0.0, help="Rotation of Y axis ticks")
 parsearg.add_argument('--toffset', type=float, default=5, help='Offset facfor first/last label')
 
 resargs = vars(parsearg.parse_args())
 targets = resargs["targets"]
 remdefaults.getargs(resargs)
 ofig = rg.disp_getargs(resargs)
-ramarg = resargs["ramargin"] / 100.0
-decmarg = resargs['decmargin'] / 100.0
+ra_disp_range = resargs["rarange"]
+dec_disp_range = resargs['decrange']
 targcolour = resargs['targcolour']
 targalpha = resargs['targalpha']
 objcolour = resargs['objcolour']
@@ -56,6 +58,8 @@ setapsize = resargs['apsize']
 apmult = resargs['apmult']
 xlab = resargs['xlabel']
 ylab = resargs['ylabel']
+xrot = resargs['xrot']
+yrot = resargs['yrot']
 toffset = resargs['toffset'] / 100.0
 
 if ofig is not None:
@@ -88,14 +92,24 @@ for tobj in targobjs:
 
     mycurs.execute("SELECT MIN(radeg),MAX(radeg),MIN(decdeg),MAX(decdeg) FROM objpm WHERE objind={:d}".format(tobj.objind))
     minra, maxra, mindec, maxdec = mycurs.fetchall()[0]
-
+    
     rarange = maxra - minra
     decrange = maxdec - mindec
-
-    pminra = max(0, minra - ramarg * rarange)
-    pmaxra = min(360, maxra + ramarg * rarange)
-    pmindec = max(-90, mindec - decmarg * decrange)
-    pmaxdec = min(90, maxdec + decmarg * decrange)
+    
+    if  rarange > ra_disp_range or decrange > dec_disp_range:
+        print("Range of ra/disp values in data for", tobj.dispname, "too great please increase --rarange/--decrange", file=sys.stderr)
+        print("Ra range is {:.6f} against {:.6f}".format(rarange, ra_disp_range), file=sys.stderr)
+        print("Dec range is {:.6f} against {:.6f}".format(decrange, dec_disp_range), file=sys.stderr)
+        sys.exit(50)
+    
+    # Probably don't need max/min stuff but so "nothing can go wrong"
+    
+    rapad = (ra_disp_range - rarange) / 2
+    decpad = (dec_disp_range - decrange) / 2
+    pminra = max(0, minra - rapad)
+    pmaxra = min(360, maxra + rapad)
+    pmindec = max(-90, mindec - decpad)
+    pmaxdec = min(90, maxdec + decpad)
 
     pltfig = rg.plt_figure()
     pltfig.canvas.manager.set_window_title("Proper motion for {:s}".format(tobj.dispname))
@@ -104,6 +118,10 @@ for tobj in targobjs:
     plt.ylim(pmindec, pmaxdec)
     plt.xlabel(xlab)
     plt.ylabel(ylab)
+    if xrot != 0.0:
+        plt.xticks(rotation=xrot)
+    if yrot != 0.0:
+        plt.yticks(rotation=yrot)
     ax = pltfig.axes[0]
     ax.xaxis.set_inverted(True)
     plt.grid()

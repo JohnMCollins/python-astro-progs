@@ -121,7 +121,7 @@ elif  fitsfile.pixoff.coloffset is not None:
     if verbose:
         print("Using database offsets r={:d} c={:d}".format(db_roff, db_coff))
 
-offs = findres.find_object(objloctarget, searchpar, eoffrow=existing_roff, eoffcol=existing_coff)
+offs = findres.find_object(objloctarget, searchpar, eoffrow=existing_roff, eoffcol=existing_coff, finding_target=True)
 
 # NB Exit code of 1 if we didn't find the targe
 
