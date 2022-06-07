@@ -268,6 +268,8 @@ else:
 
 db, dbcurs = remdefaults.opendb()
 
+plt.rc('figure', max_open_warning=0)
+
 # Get details of object once only if doing multiple pictures
 
 for file in files:

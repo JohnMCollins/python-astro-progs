@@ -11,24 +11,24 @@ import parsetime
 import remfield
 import numpy as np
 
-Format_keys = ('ind', 'obsind', "object", 'filter', 'dither', 'date', 'gain', 'orient', 'qual',
+Format_keys = ('ind', 'obsind', "object", 'filter', 'dither', 'date', 'gain', 'orient', 'qual', 'reason',
                'startx', 'starty', 'cols', 'rows', 'airmass',
                'minval', 'nsminval', 'ansminval', 'maxval', 'nsmaxval', 'ansmaxval',
                'median', 'nsmeidan', 'ansmedian', 'mean', 'nsmean', 'ansmean',
                'std', 'nsstd', 'ansstd', 'skew', 'nsskew', 'ansskew',
-               'kurt', 'nskurt', 'anskurt', 'orient')
+               'kurt', 'nskurt', 'anskurt')
 
-Format_header = ('^FITS', '^Serial', "<Object", '<Filter', '>Dither', '<Date/Time', '>Gain', '>Orient', '>Qual',
+Format_header = ('^FITS', '^Serial', "<Object", '<Filter', '>Dither', '<Date/Time', '>Gain', '>Orient', '>Qual', '<Rejreason',
                '>startx', '>starty', '>cols', '>rows', '>airmass',
                '^Minimum', '^Ns min', '^Abs ns min',
                '^Maximum', '^Ns max', '^Abs ns max',
                '^Median', '>Ns meidan', '>Abs ns median',
-               '^Mean', '>Ns mean', '>Abs ns mean',
-               '^Std', '>Ns std', '>Abs ns std',
-               '^Skew', '>Ns skew', '>Abs ns skew',
-               '^Kurtosis', '>Ns kurtosis', '>Abs ns kurtosis')
+               '>Mean', '>Ns mean', '>Abs ns mean',
+               '>Std', '>Ns std', '>Abs ns std',
+               '>Skew', '>Ns skew', '>Abs ns skew',
+               '>Kurtosis', '>Ns kurtosis', '>Abs ns kurtosis')
 
-Format_codes = ('d', 'd', 's', 's', 'd', '%Y-%m-%d %H:%M:%S', '.1f', 'd', '.3g',
+Format_codes = ('d', 'd', 's', 's', 'd', '%Y-%m-%d %H:%M:%S', '.1f', 'd', '.3g', 's',
                 'd', 'd', 'd', 'd', '.4f',
                 'd', '.3g', '.3g', 'd', '.3g', '.3g',
                 '.2f', '.3g', '.3g', '.2f', '.3g', '.3g',
@@ -213,7 +213,9 @@ try:
     if summary:
         sel = "SELECT object,COUNT(*) FROM obsinf WHERE " + " AND ".join(fieldselect) + " GROUP BY object ORDER BY object"
     else:
-        sel = remfield.get_extended_args(resargs, "obsinf", "SELECT ind,obsind,object,filter,dithID,date_obs,gain,orient,quality,startx,starty,ncols,nrows,airmass", fieldselect, extras_reqd)
+        sel = remfield.get_extended_args(resargs, "obsinf", "SELECT ind,obsind,object,filter,dithID,date_obs,gain,orient,quality," \
+                                         "IF(rejreason IS NULL,'OK',rejreason) AS reason, " \
+                                         "startx,starty,ncols,nrows,airmass", fieldselect, extras_reqd)
         sel += " ORDER BY date_obs"
 except remfield.RemFieldError as e:
     print(e.args[0], file=sys.stderr)

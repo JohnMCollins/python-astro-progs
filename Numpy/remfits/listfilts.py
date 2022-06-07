@@ -52,37 +52,55 @@ for row in dbcurs.fetchall():
     results[filt] = count
     total += count
 
+fields.append("rejreason IS NULL")
+sel = " WHERE " + " AND ".join(fields)
+
+dbcurs.execute("SELECT filter,COUNT(*) FROM obsinf" + sel + " GROUP BY filter")
+
+OKresults = dict()
+
+OKtotal = 0
+for row in dbcurs.fetchall():
+    filt, count = row
+    OKresults[filt] = count
+    OKtotal += count
+
 if latex:
     for filt in 'girzHJK':
         try:
-            print(filt, thou(results[filt]), sep=' & ', end=' \\\\\n')
+            print(filt, thou(results[filt]), thou(OKresults[filt]), sep=' & ', end=' \\\\\n')
         except KeyError:
             pass
     try:
-        print('GRISM', thou(results['GRI']), sep=' & ', end=' \\\\\n')
+        print('GRISM', thou(results['GRI']), thou(OKresults[filt]), sep=' & ', end=' \\\\\n')
     except KeyError:
         pass
     print("\\hline")
-    print('Total', thou(total), sep=' & ', end=' \\\\\n')
+    print('Total', thou(total), thou(OKtotal), sep=' & ', end=' \\\\\n')
 
 else:
     fnames = []
     tots = []
+    OKtots = []
     for filt in 'girzHJK':
         try:
             tots.append(thou(results[filt]))
+            OKtots.append(thou(OKresults[filt]))
             fnames.append(filt)
         except KeyError:
             pass
     try:
         tots.append(thou(results['GRI']))
+        OKtots.append(thou(OKresults['GRI']))
         fnames.append('GRISM')
     except KeyError:
         pass
 
     fnames.append("Total")
     tots.append(thou(total))
+    OKtots.append(thou(OKtotal))
     nlength = max([len(f) for f in fnames])
     tlength = max([len(t) for t in tots])
-    for f, t in zip(fnames, tots):
-        print("{f:{nl}s} {t:>{tl}s}".format(f=f, t=t, nl=nlength, tl=tlength))
+    OKtlength = max([len(t) for t in OKtots])
+    for f, t, okt in zip(fnames, tots, OKtots):
+        print("{f:{nl}s} {t:>{tl}s} {OKt:>{OKtl}s}".format(f=f, t=t, OKt=okt, nl=nlength, tl=tlength, OKtl=OKtlength))

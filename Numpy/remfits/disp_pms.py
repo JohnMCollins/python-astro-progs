@@ -92,18 +92,18 @@ for tobj in targobjs:
 
     mycurs.execute("SELECT MIN(radeg),MAX(radeg),MIN(decdeg),MAX(decdeg) FROM objpm WHERE objind={:d}".format(tobj.objind))
     minra, maxra, mindec, maxdec = mycurs.fetchall()[0]
-    
+
     rarange = maxra - minra
     decrange = maxdec - mindec
-    
+
     if  rarange > ra_disp_range or decrange > dec_disp_range:
         print("Range of ra/disp values in data for", tobj.dispname, "too great please increase --rarange/--decrange", file=sys.stderr)
         print("Ra range is {:.6f} against {:.6f}".format(rarange, ra_disp_range), file=sys.stderr)
         print("Dec range is {:.6f} against {:.6f}".format(decrange, dec_disp_range), file=sys.stderr)
         sys.exit(50)
-    
+
     # Probably don't need max/min stuff but so "nothing can go wrong"
-    
+
     rapad = (ra_disp_range - rarange) / 2
     decpad = (dec_disp_range - decrange) / 2
     pminra = max(0, minra - rapad)
