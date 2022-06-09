@@ -95,7 +95,7 @@ if verbose:
 	if loaded > 0:
 		print(loaded, "files loaded", file=sys.stderr)
 	else:
-		print("Nothing loaded", file=sys.stderr)
+		print("No new obs files loaded", file=sys.stderr)
 if errors > 0:
 	sys.exit(1)
 sys.exit(0)
