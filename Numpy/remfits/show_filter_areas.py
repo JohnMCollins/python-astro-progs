@@ -12,7 +12,8 @@ import miscutils
 rg = remgeom.load()
 
 parsearg = argparse.ArgumentParser(description='Show used areas on CCD for visible filters', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-rg.disp_argparse(parsearg, fmt='single"')
+#rg.disp_argparse(parsearg, fmt='single"')
+rg.disp_argparse(parsearg)
 parsearg.add_argument('--filter', type=str, choices=('g', 'i', 'r', 'z'), help='Filter to restrict to')
 parsearg.add_argument('--skip', type=int, default=0, help='Number of periods to skip in display')
 

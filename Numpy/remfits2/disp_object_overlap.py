@@ -13,7 +13,7 @@ def pobj(ind):
     """Display details of object indexed by index"""
     dummy, dummy, dummy, lab = frlist[ind]
     fr = findres[lab]
-    print(lab, ": ", fr.obj.dispname, " ", fr.rdiff, " ", fr.cdiff, sep='', end='')
+    print("{:s}: {:s} ({:.3f}/{:.3f}) {:d} {:d}".format(lab, fr.obj.dispname, fr.obj.ra, fr.obj.dec, fr.rdiff, fr.cdiff), end='')
     if fr.apsize == 0:
         print(" Undefined aperture", end='')
     print()
@@ -22,6 +22,7 @@ def pobj(ind):
 parsearg = argparse.ArgumentParser(description='Display overlaps in find results', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 parsearg.add_argument('files', nargs='+', type=str, help='Find results files')
 remdefaults.parseargs(parsearg, tempdir=False, inlib=False)
+parsearg.add_argument('--printfn', action='store_true', help='Print file name in front of main line of output')
 parsearg.add_argument('--filter', type=str, help='Filter name to restrict to')
 parsearg.add_argument('--autohide', action='store_true', help='Auto-hide overlapping results')
 parsearg.add_argument('--compress', action='store_true', help='Squeeze out hidden results and relabel')
@@ -30,6 +31,7 @@ parsearg.add_argument('--byrc', action='store_true', help='Sort by row then colu
 resargs = vars(parsearg.parse_args())
 files = resargs['files']
 remdefaults.getargs(resargs)
+printfn = resargs['printfn']
 filt = resargs['filter']
 byrc = resargs['byrc']
 autohide = resargs['autohide']
@@ -77,6 +79,8 @@ for fil in files:
         if row >= col:
             continue
         if row != lastrow:
+            if printfn:
+                print(fil, ":\t", sep='', end='')
             pobj(row)
             robj = findres[frlist[row][-1]]
             if robj.hide:
@@ -97,7 +101,7 @@ for fil in files:
 
     # Compression of hidden ones for when we're doing displays for report
 
-    if hidden > 0 or (compress and already_hidden > 0):
+    if compress and (hidden > 0 or already_hidden > 0):
         hidden += already_hidden  # Save testing again
         findres.resultlist = list(findres.results(nohidden=True))
         findres.relabel()

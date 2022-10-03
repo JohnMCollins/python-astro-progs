@@ -184,7 +184,7 @@ class GsEditorMain(QtWidgets.QMainWindow, ui_gsedit.Ui_gseditmain):
                     self.gslist.addItem('*' + g)
                 else:
                     self.gslist.addItem(g)
-    
+
     def get_selected_gs(self):
         """Get currently selected grey scale, trimming off any * for default"""
         cur = self.gslist.currentItem()
@@ -390,7 +390,7 @@ class GsEditorMain(QtWidgets.QMainWindow, ui_gsedit.Ui_gseditmain):
             break
         if dlg.plotfigure is not None:
             plt.close(dlg.plotfigure)
-    
+
     def on_action_Set_default_triggered(self, checked=None):
         if checked is None: return
         origname = self.get_selected_gs()

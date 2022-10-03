@@ -1,15 +1,17 @@
 #!  /usr/bin/env python3
 
-"""Naje takkt file from FITS files"""
+"""Make individual histograms for each pixel"""
 
 import argparse
 import sys
-import warnings
 import os.path
-import numpy as np
+import warnings
 import remdefaults
+import miscutils
+import numpy as np
 import col_from_file
 import remfits
+
 from astropy.utils.exceptions import AstropyWarning, AstropyUserWarning
 
 # Shut up warning messages
@@ -25,9 +27,11 @@ parsearg.add_argument('--colnum', type=int, default=0, help='Column to use from 
 remdefaults.parseargs(parsearg, tempdir=False)
 parsearg.add_argument('--type', type=str, default='obs', choices=('obs', 'flat', 'bias'), help='What kind of file tp process')
 parsearg.add_argument('--create', action='store_true', help='Expecting to create file rather than append to existing file')
-parsearg.add_argument('--clear', action='store_true', help='Clear contents of existing file')
+parsearg.add_argument('--force', action='store_true', help='Force create new file on top of existing')
 parsearg.add_argument('--prefix', required=True, type=str, help='Result file prefix')
 parsearg.add_argument('--trim', type=int, default=0, help='Amount to trim each edge of image')
+parsearg.add_argument('--bins', type=float, nargs='+', required=True, help='Bins of histogram')
+parsearg.add_argument('--verbose', action='store_true', help='Give stats')
 
 resargs = vars(parsearg.parse_args())
 remdefaults.getargs(resargs)
@@ -35,8 +39,15 @@ files = resargs['files']
 create = resargs['create']
 prefix = resargs['prefix']
 ftype = resargs['type']
-clear = resargs['clear']
+force = resargs['force']
 trim = resargs['trim']
+bins = sorted(resargs['bins'])
+verbose = resargs['verbose']
+
+if bins[0] > 0.0:
+    bins.insert(0, 0.0)
+
+numbins = len(bins)
 
 gtype = None
 if ftype == 'flat':
@@ -47,27 +58,23 @@ elif ftype == 'bias':
 if len(files) == 0:
     files = col_from_file.col_from_file(sys.stdin, resargs['colnum'])
 
-tallyfn = remdefaults.tally_file(prefix)
-tally = None
+outfile = miscutils.addsuffix(prefix, 'hist')
 
 if create:
-    if clear or not os.path.exists(tallyfn):
-        tally = np.concatenate((np.zeros((3, 2048, 2048), dtype=np.float64),
-                                np.full((1, 2048, 2048), 1e60, dtype=np.float64),
-                                np.full((1, 2048, 2048), -1e60, dtype=np.float64)), axis=0)
-if tally is None:
-    if not os.path.exists(tallyfn):
-        print(tallyfn, "does not exist, use --create if needed (or specify libdir)", file=sys.stderr)
-        sys.exit(11)
+    if not force:
+        if os.path.exists(outfile):
+            print("Output file", outfile, "already exists - aborting use --force if needed", file=sys.stderr)
+            sys.exit(11)
+    count_array = np.zeros((numbins, 2048, 2048), dtype=np.uint32)
+else:
     try:
-        tally = np.load(tallyfn)
+        count_array = np.load(outfile)
     except OSError as e:
         print("Cannot open", e.filename, "error was", e.args[1], file=sys.stderr)
         sys.exit(12)
-
-if tally.shape != (5, 2048, 2048):
-    print("Unexpected tally shape in", tallyfn, "Expected (5,2048,2048) found", tally.shape, file=sys.stderr)
-    sys.exit(13)
+    if count_array.shape != (numbins, 2048, 2028):
+        print("Shape mismatch expected", (numbins, 2048, 2048), "read", count_array.shape, file=sys.stderr)
+        sys.exit(13)
 
 dbase, dbcurs = remdefaults.opendb()
 
@@ -78,6 +85,9 @@ for file in files:
         print("Could not fetch file", file, "error was", e.args[0], file=sys.stderr)
         continue
 
+    if verbose:
+        print("Looking at", file, "filter", ff.filter, file=sys.stderr)
+
     fdat = ff.data
     if trim != 0:
         fdat = fdat[trim:-trim, trim:-trim]
@@ -87,13 +97,21 @@ for file in files:
     endc = ff.endx - trim
 
     try:
-        tally[0, starty:endr, startx:endc] += 1.0
-        tally[1, starty:endr, startx:endc] += fdat
-        tally[2, starty:endr, startx:endc] += fdat ** 2
-        tally[3, starty:endr, startx:endc] = np.minimum(tally[3, starty:endr, startx:endc], fdat)
-        tally[4, starty:endr, startx:endc] = np.maximum(tally[4, starty:endr, startx:endc], fdat)
+        for n, bv in enumerate(bins):
+            compar = fdat >= bv
+            nz = np.count_nonzero(compar)
+            if nz == 0:
+                if verbose:
+                    print("Nothing above {:.6g}".format(bv), file=sys.stderr)
+                break
+            if verbose:
+                print("{:d} values above {:.6g}".format(nz, bv), file=sys.stderr)
+            count_array[n, starty:endr, startx:endc] += compar
     except ValueError:
         print("Wrong size file = ", file, "r/c/sx/sy", endr - starty, endc - startx, startx, starty, file=sys.stderr)
 
-with open(tallyfn, "wb") as outf:
-    np.save(outf, tally)
+for n in range(0, numbins - 1):
+    count_array[n] -= count_array[n + 1]
+
+with open(outfile, "wb") as outf:
+    np.save(outf, count_array)

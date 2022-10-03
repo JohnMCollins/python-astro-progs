@@ -94,6 +94,10 @@ flatcount = counts.flatten()
 
 flatarray = flatarray[flatcount != 0]
 
+if flatarray.size == 0:
+    print("Resulting array for", msfile, "has zero length", file=sys.stderr)
+    sys.exit(1)
+
 overall_mean = flatarray.mean()
 overall_std = flatarray.std()
 overall_min = flatarray.min()

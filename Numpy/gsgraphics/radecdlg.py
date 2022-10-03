@@ -57,7 +57,7 @@ class RaDecDlg(QtWidgets.QDialog, ui_radecdlg.Ui_radecdlg):
         self.objfill.setChecked(config.objdisp.objfill)
         # self.Racolour.mouseDoubleClickEvent.connect(self.on_resetracol_clicked)
         # self.DECcolour.mouseDoubleClickEvent.connect(self.on_resetdeccol_clicked)
-        
+
     def copyout(self):
         """Copy date out of dialog. We already set a copy in self.config"""
         config = self.config

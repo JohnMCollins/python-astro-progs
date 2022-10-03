@@ -1,10 +1,12 @@
 #!  /usr/bin/env python3
 
-import remdefaults
+"""Output statistics about bad pixel mask files"""
+
 import argparse
 import sys
-import numpy as np
 import warnings
+import numpy as np
+import remdefaults
 
 # Cope with divisions by zero
 
@@ -21,7 +23,7 @@ bpmfile = remdefaults.bad_pixmask(resargs['bpm'][0])
 try:
     mask = np.load(bpmfile)
 except OSError as e:
-    print("Could not load", bpmflle, "error was", e.args[1], file=sys.stderr)
+    print("Could not load", bpmfile, "error was", e.args[1], file=sys.stderr)
     sys.exit(10)
 
 neighbours = np.zeros(mask.shape, dtype=np.uint16)

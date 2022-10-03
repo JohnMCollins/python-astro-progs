@@ -11,14 +11,14 @@ import parsetime
 import remfield
 import numpy as np
 
-Format_keys = ('ind', 'obsind', "object", 'filter', 'dither', 'date', 'gain', 'orient', 'qual', 'reason',
+Format_keys = ('ind', 'obsind', "object", 'filter', 'dither', 'date', 'gain', 'orient', 'qual', 'reason', 'exptime',
                'startx', 'starty', 'cols', 'rows', 'airmass',
                'minval', 'nsminval', 'ansminval', 'maxval', 'nsmaxval', 'ansmaxval',
                'median', 'nsmeidan', 'ansmedian', 'mean', 'nsmean', 'ansmean',
                'std', 'nsstd', 'ansstd', 'skew', 'nsskew', 'ansskew',
                'kurt', 'nskurt', 'anskurt')
 
-Format_header = ('^FITS', '^Serial', "<Object", '<Filter', '>Dither', '<Date/Time', '>Gain', '>Orient', '>Qual', '<Rejreason',
+Format_header = ('^FITS', '^Serial', "<Object", '<Filter', '>Dither', '<Date/Time', '>Gain', '>Orient', '>Qual', '<Rejreason', '>Exo',
                '>startx', '>starty', '>cols', '>rows', '>airmass',
                '^Minimum', '^Ns min', '^Abs ns min',
                '^Maximum', '^Ns max', '^Abs ns max',
@@ -28,17 +28,17 @@ Format_header = ('^FITS', '^Serial', "<Object", '<Filter', '>Dither', '<Date/Tim
                '>Skew', '>Ns skew', '>Abs ns skew',
                '>Kurtosis', '>Ns kurtosis', '>Abs ns kurtosis')
 
-Format_codes = ('d', 'd', 's', 's', 'd', '%Y-%m-%d %H:%M:%S', '.1f', 'd', '.3g', 's',
+Format_codes = ('d', 'd', 's', 's', 'd', '%Y-%m-%d %H:%M:%S', '.1f', 'd', '.3g', 's', '.3g',
                 'd', 'd', 'd', 'd', '.4f',
                 'd', '.3g', '.3g', 'd', '.3g', '.3g',
                 '.2f', '.3g', '.3g', '.2f', '.3g', '.3g',
                 '.3g', '.3g', '.3g', '.3g', '.3g', '.3g', '.3g', '.3g', '.3g')
 
-Format_accum = (False, False, False, False, False, False, False, False,
+Format_accum = (False, False, False, False, False, False, False, False, False, False, False,
                 False, False, False, False, False,
                 True, True, True, True, True, True,
                 True, True, True, True, True, True,
-                True, True, True, True, True, True, True, True, True, False)
+                True, True, True, True, True, True, True, True, True)
 
 Fc_dict = dict(zip(Format_keys, Format_codes))
 Fh_dict = dict(zip(Format_keys, Format_header))
@@ -100,11 +100,11 @@ disp_cols = resargs['cols']
 gain = resargs["gain"]
 hasfile = resargs['hasfile']
 debug = resargs['debug']
-formatlines = resargs['format']
+formatarg = resargs['format']
 header = resargs['header']
 ptots = resargs['totals']
 
-if idonly and (summary or formatlines is not None or header):
+if idonly and (summary or formatarg is not None or header):
     print("Cannot have idonly and specify format or header or summary", file=sys.stderr)
     sys.exit(10)
 
@@ -115,19 +115,19 @@ if idonly:
     if header:
         print("Cannot have --idonly and --header together", file=sys.stderr)
         sys.exit(11)
-    if formatlines is not None:
+    if formatarg is not None:
         print("Cannot have --idonly and --format together", file=sys.stderr)
         sys.exit(12)
 elif summary:
     if header:
         print("Cannot have --summary and --header together", file=sys.stderr)
         sys.exit(13)
-    if formatlines is not None:
+    if formatarg is not None:
         print("Cannot have --summary and --format together", file=sys.stderr)
         sys.exit(14)
 
-if formatlines is None:
-    formatlines = []
+formatlines = []
+if formatarg is None or len(formatarg) == 0:
     if fitsind:
         formatlines.append('ind')
     else:
@@ -138,7 +138,16 @@ if formatlines is None:
         formatlines.append('filter')
         # formatlines.append('dither')
 else:
-    fbits = formatlines.split(',')
+    if formatarg[0] == '+':
+        formatarg = formatarg[1:]
+        if fitsind:
+            formatlines.append('ind')
+        else:
+            formatlines.append('obsind')
+        formatlines.append('date')
+        formatlines.append('object')
+        formatlines.append('filter')
+    fbits = formatarg.split(',')
     errors = 0
     for fb in fbits:
         if fb not in Fc_dict:
@@ -146,7 +155,7 @@ else:
             errors += 1
     if errors != 0:
         sys.exit(30)
-    formatlines = fbits
+    formatlines += fbits
 
 extras_reqd = False
 for f in formatlines:
@@ -214,7 +223,7 @@ try:
         sel = "SELECT object,COUNT(*) FROM obsinf WHERE " + " AND ".join(fieldselect) + " GROUP BY object ORDER BY object"
     else:
         sel = remfield.get_extended_args(resargs, "obsinf", "SELECT ind,obsind,object,filter,dithID,date_obs,gain,orient,quality," \
-                                         "IF(rejreason IS NULL,'OK',rejreason) AS reason, " \
+                                         "IF(rejreason IS NULL,'OK',rejreason) AS reason,exptime," \
                                          "startx,starty,ncols,nrows,airmass", fieldselect, extras_reqd)
         sel += " ORDER BY date_obs"
 except remfield.RemFieldError as e:

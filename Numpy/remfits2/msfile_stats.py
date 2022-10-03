@@ -1,5 +1,7 @@
 #!  /usr/bin/env python3
 
+"""Print statisics from mean/std dev files"""
+
 import remdefaults
 import argparse
 import sys
@@ -8,7 +10,7 @@ import warnings
 
 
 def disprow(name, arr):
-    """Printer a row of the array"""
+    """Print a row of the array"""
     print("{name}:\t{min:8.1f} {med:8.1f} {max:8.1f} {mean:8.2f} {std:8.2f}".format(name=name, max=arr.max(), min=arr.min(), med=np.median(arr), mean=arr.mean(), std=arr.std()))
 
 # Cope with divisions by zero
@@ -19,6 +21,7 @@ warnings.simplefilter('ignore', RuntimeWarning)
 parsearg = argparse.ArgumentParser(description="Print statistics about mean/std dev files", formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 parsearg.add_argument('msfiles', type=str, nargs='+', help='Input MS files')
 remdefaults.parseargs(parsearg, tempdir=False, database=False)
+parsearg.add_argument('--header', action='store_true', help="Print header")
 
 resargs = vars(parsearg.parse_args())
 remdefaults.getargs(resargs)
@@ -50,6 +53,8 @@ for file in msfiles:
     else:
         print(file, ":", sep='')
 
+    if resargs['header']:
+        print("Stat\t     Min      Med      Max     Mean      Std")
     disprow("Means", means)
     disprow("Stds", stds)
     disprow("Minima", mins)

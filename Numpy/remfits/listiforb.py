@@ -9,14 +9,14 @@ import parsetime
 import remfield
 import numpy as np
 
-Format_keys = ('ind', 'iforbind', 'filter', 'type', 'date', "daydiff", 'gain',
+Format_keys = ('ind', 'iforbind', 'filter', 'type', 'date', "daydiff", 'gain', 'exptime',
                'startx', 'starty', 'cols', 'rows',
                'minval', 'nsminval', 'ansminval', 'maxval', 'nsmaxval', 'ansmaxval',
                'median', 'nsmeidan', 'ansmedian', 'mean', 'nsmean', 'ansmean',
                'std', 'nsstd', 'ansstd', 'skew', 'nsskew', 'ansskew',
                'kurt', 'nskurt', 'anskurt')
 
-Format_header = ('^FITS', '^Serial', '<Filter', '<Type', '<Date/Time', ">Days", '>Gain',
+Format_header = ('^FITS', '^Serial', '<Filter', '<Type', '<Date/Time', ">Days", '>Gain', '>Exp',
                 '>startx', '>starty', '>cols', '>rows',
                '^Minimum', '^Ns min', '^Abs ns min',
                '^Maximum', '^Ns max', '^Abs ns max',
@@ -26,13 +26,13 @@ Format_header = ('^FITS', '^Serial', '<Filter', '<Type', '<Date/Time', ">Days", 
                '>Skew', '>Ns skew', '>Abs ns skew',
                '>Kurtosis', '>Ns kurtosis', '>Abs ns kurtosis')
 
-Format_codes = ('d', 'd', 's', '.1s', '%Y-%m-%d %H:%M:%S', 'd', '.1f',
+Format_codes = ('d', 'd', 's', '.1s', '%Y-%m-%d %H:%M:%S', 'd', '.1f', '.3g',
                 'd', 'd', 'd', 'd',
                 'd', '.3g', '.3g', 'd', '.3g', '.3g',
                 '.2f', '.3g', '.3g', '.2f', '.3g', '.3g',
                 '.3g', '.3g', '.3g', '.3g', '.3g', '.3g', '.3g', '.3g', '.3g')
 
-Format_accum = (False, False, False, False, False, False, False,
+Format_accum = (False, False, False, False, False, False, False, False,
                 False, False, False, False,
                 True, True, True, True, True, True,
                 True, True, True, True, True, True,
@@ -92,7 +92,7 @@ disp_rows = resargs['rows']
 disp_cols = resargs['cols']
 skprint = resargs['skprint']
 fitsind = resargs['fitsind']
-format_string = resargs['format']
+format_arg = resargs['format']
 header = resargs['header']
 ptots = resargs['totals']
 windate = resargs['windate']
@@ -104,8 +104,9 @@ if windate is not None:
         print("Cannot parse window date", windate, "error was", e.args[0], file=sys.stderr)
         sys.exit(22)
 
-if format_string is None:
-    format_string = []
+format_string = []
+
+if format_arg is None or (len(format_arg) != 0 and format_arg[0] == '+'):
     if fitsind:
         format_string.append('ind')
     else:
@@ -124,8 +125,10 @@ if format_string is None:
         if skprint:
             format_string.append('skew')
             format_string.append('kurt')
-else:
-    fbits = format_string.split(',')
+    if format_arg is not None:
+        format_arg = format_arg[1:]
+if format_arg is not None:
+    fbits = format_arg.split(',')
     errors = 0
     for fb in fbits:
         if fb not in Fc_dict:
@@ -133,7 +136,7 @@ else:
             errors += 1
     if errors != 0:
         sys.exit(30)
-    format_string = fbits
+    format_string += fbits
 
 # See if we need to work out extra fields
 
@@ -173,7 +176,7 @@ else:
     wind = "ABS(DATEDIFF(date_obs," + mydb.escape(windate) + ")) AS days_diff"
     selextra = " ORDER BY days_diff LIMIT {:d}".format(winsize)
 
-sel = remfield.get_extended_args(resargs, "iforbinf", "SELECT ind,iforbind,filter,UPPER(typ),date_obs," + wind + ",gain,startx,starty,ncols,nrows", fieldselect, extras_reqd)
+sel = remfield.get_extended_args(resargs, "iforbinf", "SELECT ind,iforbind,filter,UPPER(typ),date_obs," + wind + ",gain,exptime,startx,starty,ncols,nrows", fieldselect, extras_reqd)
 sel += selextra
 if resargs['debug']:
     print("Selection statement:\n", sel, sep="\t", file=sys.stderr)

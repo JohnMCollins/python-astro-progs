@@ -76,7 +76,7 @@ if len(objlist) < 2:
 objstr = obj_locations.ObjLocs(inputfile)
 for obj in objlist:
     objstr.add_loc(obj)
-objstr.get_offsets_in_image()
+objstr.get_offsets_in_image(forget_offsets=True)
 objstr.order_by_separation()
 # for obj in objstr.results():
 #     print(obj.dispname, obj.ra, obj.dec, "orig", obj.origra, obj.origdec)

@@ -85,7 +85,7 @@ nnz = np.count_nonzero(maskf)
 if nnz / maskf.size >= toomany / 100.0:
     print("Too many in BP mask", nnz, "out of", maskf.size, "accepting up to", toomany, "percent", file=sys.stderr)
     sys.exit(12)
-result = np.zeros((2048, 2048), dtype=np.bool)
+result = np.zeros((2048, 2048), dtype=bool)
 result[starty:endy, startx:endx] = maskf
 rnz = np.count_nonzero(result)
 if rnz == 0:

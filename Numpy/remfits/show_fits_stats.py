@@ -45,26 +45,29 @@ fsize = max([len(miscutils.removesuffix(f, allsuff=True)) for f in files])
 if pheader:
     print("{:{fsize}s} {:>7s} {:>8s} {:>8s} {:>8s} {:>8s}".format("File", "Min", "Max", "Median", "Mean", "Std", fsize=fsize))
 
-for file in files:
-
-    try:
-        ff = remfits.parse_filearg(file, mycu)
-    except remfits.RemFitsErr as e:
-        print("Open of", file, "gave error", e.args[0], file=sys.stderr)
-        errors += 1
-        continue
-
-    data = ff.data
-    if trimleft > 0:
-        data = data[:, trimleft:]
-    if trimright > 0:
-        data = data[:, :-trimright]
-    if trimtop > 0:
-        data = data[:-trimtop]
-    if trimbottom > 0:
-        data = data[trimbottom:]
-
-    print("{:{fsize}s} {:7.2f} {:8.2f} {:8.2f} {:8.2f} {:8.2f}".format(miscutils.removesuffix(file, allsuff=True), data.min(), data.max(), np.median(data), data.mean(), data.std(), fsize=fsize))
+try:
+    for file in files:
+    
+        try:
+            ff = remfits.parse_filearg(file, mycu)
+        except remfits.RemFitsErr as e:
+            print("Open of", file, "gave error", e.args[0], file=sys.stderr)
+            errors += 1
+            continue
+    
+        data = ff.data
+        if trimleft > 0:
+            data = data[:, trimleft:]
+        if trimright > 0:
+            data = data[:, :-trimright]
+        if trimtop > 0:
+            data = data[:-trimtop]
+        if trimbottom > 0:
+            data = data[trimbottom:]
+    
+        print("{:{fsize}s} {:7.2f} {:8.2f} {:8.2f} {:8.2f} {:8.2f}".format(miscutils.removesuffix(file, allsuff=True), data.min(), data.max(), np.median(data), data.mean(), data.std(), fsize=fsize))
+except (KeyboardInterrupt, BrokenPipeError):
+    sys.exit(0)
 
 if errors != 0:
     sys.exit(1)

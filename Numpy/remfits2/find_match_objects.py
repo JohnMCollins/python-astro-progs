@@ -30,6 +30,10 @@ parsearg.add_argument('--minbri', type=float, default=5, help='Minimum brightnes
 parsearg.add_argument('--nogaia', action='store_true', help='Omit listing GAIA objects')
 parsearg.add_argument('--verbose', action='store_true', help='Tell everything')
 parsearg.add_argument('--findmin', type=int, default=10, help='Minimum number to find to consider success')
+parsearg.add_argument('--trimleft', type=int, default=0, help='Pixels to trim off left')
+parsearg.add_argument('--trimright', type=int, default=0, help='Pixels to trim off right')
+parsearg.add_argument('--trimtop', type=int, default=0, help='Pixels to trim off top')
+parsearg.add_argument('--trimbottom', type=int, default=0, help='Pixels to trim off bottom')
 
 resargs = vars(parsearg.parse_args())
 infilename = resargs['file'][0]
@@ -42,6 +46,10 @@ minbri = resargs['minbri']
 nogaia = resargs['nogaia']
 verbose = resargs['verbose']
 findmin = resargs['findmin']
+trimbottom = resargs['trimbottom']
+trimleft = resargs['trimleft']
+trimright = resargs['trimright']
+trimtop = resargs['trimtop']
 
 # If we are saving stuff, do so and exit
 
@@ -134,13 +142,17 @@ for ol in objlocfile.results():
             print("Could not find", ol.dispname, "ap", aps, msg, file=sys.stderr)
         continue
 
-    offr, offc, row, col, adus = offs[0]
-    fr = find_results.FindResult(row=row,
-                                 col=col,
+    topinst = offs[0]
+    if topinst.row < trimbottom or topinst.col < trimleft:
+        continue
+    if topinst.row >= fitsfile.nrows - trimtop or topinst.col >= fitsfile.ncolumns - trimright:
+        continue
+    fr = find_results.FindResult(row=topinst.row,
+                                 col=topinst.col,
                                  apsize=ol.apsize,
-                                 adus=adus,
-                                 rdiff=offr + erowoffset,
-                                 cdiff=offc + ecoloffset,
+                                 adus=topinst.adus,
+                                 rdiff=topinst.rowdiff + erowoffset,
+                                 cdiff=topinst.coldiff + ecoloffset,
                                  obj=ol)
     newresults.append(fr)
     found += 1

@@ -132,10 +132,13 @@ if offs is None:
 if listbest > 0:
     n = 0
     try:
-        print("Rdf,Cdf  Row, Col        ADUs       %")
-        tperc = offs[0][-1] / 100.0
-        for rowoffset, coloffset, row, column, adus in offs:
-            print("{:3d},{:3d} {:4d},{:4d}: {:10.2f} {:7.2f}".format(rowoffset - existing_roff - db_roff, coloffset - existing_coff - db_coff, row, column, adus, adus / tperc))
+        print("Rdf,Cdf  Row, Col        ADUs       %      Fit")
+        tperc = offs[0].adus / 100.0
+        for resinst in offs:
+            print("{:3d},{:3d} {:4d},{:4d}: {:10.2f} {:7.2f} {:8.3g}".format(resinst.rowdiff - existing_roff - db_roff,
+                                                                     resinst.coldiff - existing_coff - db_coff,
+                                                                     resinst.row, resinst.col,
+                                                                     resinst.adus, resinst.adus / tperc, resinst.peakstd))
             n += 1
             if n >= listbest:
                 break
@@ -146,11 +149,11 @@ if listbest > 0:
 
 # Taking first match (find_object returns results in descending ADU order)
 
-rowoffset, coloffset, row, column, adus = offs[0]
-rowoffset += existing_roff
-coloffset += existing_coff
+resinst = offs[0]
+rowoffset = resinst.rowdiff + existing_roff
+coloffset = resinst.coldiff + existing_coff
 
-targ_findresult = find_results.FindResult(adus=adus,
+targ_findresult = find_results.FindResult(adus=resinst.adus,
                                           label="A",
                                           col=objloctarget.col,
                                           row=objloctarget.row,
@@ -163,8 +166,8 @@ targ_findresult.istarget = True
 if updatedb:
     # Get any existing offset in database first as new offset is on top
     if coloffset != 0  or  rowoffset != 0:
-        coloffset += db_coff
-        rowoffset += db_roff
+        coloffset -= db_coff
+        rowoffset -= db_roff
         if verbose:
             print("Setting col offset to {:d} row offset to {:d}".format(coloffset, rowoffset), file=sys.stderr)
         fitsfile.pixoff.set_offsets(dbcurs, rowoffset=rowoffset, coloffset=coloffset)
@@ -172,26 +175,10 @@ if updatedb:
         # We don't fiddle with row or column as we've just fixed them to line up
         # Don't need to set rdiff and cdiff to zero in targ_findresult as the init routine did it for us
 elif rowoffset != 0  or  coloffset != 0:
-    targ_findresult.col = column
-    targ_findresult.row = row
-    if locupdate:
-        # If we are undating the objloc file we adjust all the row and columns in the objloc file by
-        # the offsets we found
-        replol = []
-        pixrows, pixcols = fitsfile.data.shape
-        for ol in objlocfile.results():
-            ol.row += rowoffset
-            ol.col += coloffset
-            if ol.row >= 0 and ol.col >= 0 and ol.row < pixrows and ol.col < pixcols:
-                replol.append(ol)
-        objlocfile.resultlist = replol
-        obj_locations.save_objlist_to_file(objlocfile, objlocprefix, force=True)
-        # targ_findresult.cdiff = targ_findresult.rdiff = 0 done already in init
-    else:
-        # Not updating anything, set row and column and differences to what we found
-        targ_findresult.radeg, targ_findresult.decdeg = fitsfile.wcs.colrow_to_coords(column, row)
-        targ_findresult.cdiff = coloffset - db_coff
-        targ_findresult.rdiff = rowoffset - db_roff
+    targ_findresult.col = resinst.col
+    targ_findresult.row = resinst.row
+    targ_findresult.cdiff = coloffset - db_coff
+    targ_findresult.rdiff = rowoffset - db_roff
 
 findres.resultlist = [targ_findresult]
 try:

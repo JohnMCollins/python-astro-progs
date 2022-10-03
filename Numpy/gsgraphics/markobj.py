@@ -33,6 +33,17 @@ class markobjdlg(QtWidgets.QDialog, ui_markobj.Ui_markobj):
         self.radeg.setValue(obj.radeg)
         self.decdeg.setValue(obj.decdeg)
         self.apsize.setValue(obj.apsize)
+        self.curradus.setText("{:.2f}".format(obj.adus))
+        magname = None
+        magmin = 1e60
+        for f in 'griz':
+            m = getattr(obj.obj, f+'mag', None)
+            if m is not None and m < magmin:
+                magname = f
+                magmin = m
+        if magname is not None:
+            self.magname.setText(magname)
+            self.magvalue.setText("{:.6g}".format(magmin))
         if obj.istarget:
             self.hide.setEnabled(False)
         self.setname.setEnabled(False)
@@ -53,13 +64,15 @@ class markobjdlg(QtWidgets.QDialog, ui_markobj.Ui_markobj):
         self.setdispname.setEnabled(False)
         self.apadj.setEnabled(False)
         self.calcaperture.setEnabled(False)
+        self.specdisplay.setEnabled(False)
 
 
 def record_exit(pref, edit):
     """Record operaion and exit"""
-    global elist
-    elist.add_edit(edit)
-    objedits.save_edits_to_file(elist, pref)
+    # Reload in case changed by another instance
+    newelist = objedits.load_edits_from_file(editprefix, vicinity=vicinity, create=True)
+    newelist.add_edit(edit)
+    objedits.save_edits_to_file(newelist, pref)
     sys.exit(0)
 
 
@@ -89,7 +102,7 @@ except find_results.FindResultErr as e:
 if findres.num_results() == 0:
     QtWidgets.QMessageBox.warning(None, "No results in file ", "No results in findres file " + prefix)
     sys.exit(41)
-    
+
 if editprefix is None:
     editprefix = prefix
 
@@ -169,6 +182,10 @@ while dlg.exec_():
         record_exit(editprefix, ed)
 
     else:
+        if label in {item.oldlabel for item in elist.editlist if isinstance(item, objedits.ObjEdit_Exist_Base) and not item.done}:
+            QtWidgets.QMessageBox.warning(dlg, "Edit already made", "This has existing edit set up")
+            continue
+
         oid = robj.obj.objind
 
         if dlg.setdispname.isChecked():
@@ -196,6 +213,9 @@ while dlg.exec_():
 
         elif dlg.calcaperture.isChecked():
             record_exit(editprefix, objedits.ObjEdit_Calcap(oid=oid, label=label))
+
+        elif dlg.specdisplay.isChecked():
+            record_exit(editprefix, objedits.ObjEdit_Displab(oid=oid, label=label))
 
         else:
             QtWidgets.QMessageBox.warning(dlg, "No operation selected", "Please choose an operation")

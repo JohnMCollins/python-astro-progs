@@ -32,16 +32,22 @@ def get_fr_by_label(edit):
     return  fres
 
 
-def fix_fr_aperture(fres, row, col, adus, aps):
+def fix_fr_aperture(fres, oapp, aps):
     """Adjust aperture size and row/col in findresult"""
-    fres.rdiff += row - fres.row
-    fres.cdiff += col - fres.col
-    fres.row = row
-    fres.col = col
-    fres.adus = adus
+    global dbchanges, dbcurs
+    fres.rdiff += oapp.rowdiff
+    fres.cdiff += oapp.coldiff
+    #print("Changing fr r/c from", fres.row, fres.col, end='')
+    # oapp.row+ dbpixoffs.rowoffset, oapp.col+ dbpixoffs.coloffset)
+    fres.row = oapp.row# + dbpixoffs.rowoffset
+    fres.col = oapp.col# + dbpixoffs.coloffset
+    #print("to", fres.row, fres.col)
+    fres.adus = oapp.adus
     fres.apsize = aps
     if fres.obj:
         fres.obj.apsize = aps
+        fres.obj.update(dbcurs)
+        dbchanges += 1
 
 
 def create_invented_object(edit, rrow, rcol, rapsize, adus):
@@ -49,7 +55,7 @@ def create_invented_object(edit, rrow, rcol, rapsize, adus):
     and aperture. This is intended to cope with the case where we have specified the
     aperture and where we have optimised it."""
 
-    global findres, targfr, fitsfile
+    global findres, targfr, fitsfile, dbchanges, dbcurs
 
     # Assume that the peak we just found is offset by as much as the target
     # Get the RA/DEC according to what they would have been if the peak was not offset by that.
@@ -73,6 +79,8 @@ def create_invented_object(edit, rrow, rcol, rapsize, adus):
                                          cdiff=targfr.cdiff)
     newfindres.obj = newobject
     findres.resultlist.append(newfindres)
+    newobject.put(dbcurs)
+    dbchanges += 1
 
 # Shut up warning messages
 
@@ -152,6 +160,9 @@ except find_results.FindResultErr as e:
     print("Unable to load findres file, error was", e.args[0], file=sys.stderr)
     sys.exit(14)
 
+# dbpixoffs = remfits.Pixoffsets(obsind=findres.obsind)
+# dbpixoffs.get_offsets(dbcurs)
+
 targfr = findres.get_targobj()
 if targfr is None:
     print("Target not found in findres file???", file=sys.stderr)
@@ -163,7 +174,7 @@ except objedits.ObjEditErr as e:
     print("Could not open edits file", editprefix, "error was", e.args[0])
     sys.exit(15)
 
-frchanges = edchanges = 0
+frchanges = edchanges = dbchanges = 0
 
 for ed in efile.editlist:
     if ed.done:
@@ -179,32 +190,33 @@ for ed in efile.editlist:
         if peakl is None:
             print("Failed to find object near r={:d} c={:d}".format(ed.row, ed.col), file=sys.stderr)
             continue
-        dummy, dummy, trow, tcol, tadus = peak1[0]
-        create_invented_object(ed, trow, tcol, ed.apsize, tadus)
+        create_invented_object(ed, peakl[0].row, peakl[0].col, ed.apsize, peakl[0].adus)
         frchanges += 1
     elif isinstance(ed, objedits.ObjEdit_Newobj_Calcap):
         peak1 = findres.find_peak(ed.row, ed.col, searchpar)
         if peak1 is None:
             print("Failed to find object near r={:d} c={:d}".format(ed.row, ed.col), file=sys.stderr)
             continue
-        dummy, dummy, trow, tcol, tadus = peak1[0]
-        oapp = findres.opt_aperture(trow, tcol, searchpar)
+        oapp = findres.opt_aperture(peak1[0].row, peak1[0].col, searchpar)
         if oapp is None:
-            print("Could not find opt aperture for object near r={:d} c={:d}".format(trow, tcol), file=sys.stderr)
+            print("Could not find opt aperture for object near r={:d} c={:d}".format(oapp.row, oapp.col), file=sys.stderr)
             continue
-        aperture, trow, tcol, tadus = oapp
-        create_invented_object(ed, trow, tcol, aperture, tadus)
+        create_invented_object(ed, oapp.row, oapp.col, oapp.apsize, oapp.adus)
         frchanges += 1
     elif isinstance(ed, objedits.ObjEdit_Deldisp):
         fr = get_fr_by_label(ed)
         if fr.obj and fr.obj.objname != fr.obj.dispname:
             fr.obj.dispname = fr.obj.objname
             frchanges += 1
+            fr.obj.update(dbcurs)
+            dbchanges += 1
     elif isinstance(ed, objedits.ObjEdit_Newdisp):
         fr = get_fr_by_label(ed)
         if fr.obj and fr.obj.dispname != ed.dispname:
             fr.obj.dispname = ed.dispname
             frchanges += 1
+            fr.obj.update(dbcurs)
+            dbchanges += 1
     elif isinstance(ed, objedits.ObjEdit_Adjap):
         fr = get_fr_by_label(ed)
         if fr.apsize != ed.apsize or (fr.obj and fr.obj.apsize != ed.epsize):
@@ -212,18 +224,35 @@ for ed in efile.editlist:
             if oapp is None:
                 print("Could not find object near r={:d} c={:d}".format(fr.row, fr.col), file=sys.stderr)
                 continue
-            dummy, trow, tcol, tadus = oapp
-            fix_fr_aperture(fr, trow, tcol, tadus, ed.apsize)
+            #print("Setting aperature to", ed.apsize)
+            fix_fr_aperture(fr, oapp, ed.apsize)
             frchanges += 1
+            fr.obj.update(dbcurs)
+            dbchanges += 1
     elif isinstance(ed, objedits.ObjEdit_Calcap):
         fr = get_fr_by_label(ed)
         oapp = findres.opt_aperture(fr.row, fr.col, searchpar)
         if oapp is None:
             print("Could not find object near r={:d} c={:d}".format(fr.row, fr.col), file=sys.stderr)
             continue
-        aperture, trow, tcol, tadus = oapp
-        if fr.apsize != aperture or (fr.obj and fr.obj.apsize != aperture):
-            fix_fr_aperture(fr, trow, tcol, tadus, aperture)
+        if fr.apsize != oapp.apsize or (fr.obj and fr.obj.apsize != oapp.apsize):
+            if verbose:
+                print("Setting aperature label", ed.oldlabel, "from", fr.obj.apsize, "to", oapp.apsize, file=sys.stderr)
+            fix_fr_aperture(fr, oapp, oapp.apsize)
+            frchanges += 1
+    elif isinstance(ed, objedits.ObjEdit_Displab):
+        fr = get_fr_by_label(ed)
+        if fr.hide:
+            print("Changing label on hidden object", ed.oldlabel, file=sys.stderr)
+            continue
+        if fr.obj is None:
+            print("Changing no identified object on", ed.oldlabel, file=sys.stderr)
+            continue
+        if fr.obj.valid_label():
+            dbchanges += fr.unassign_label(dbcurs)
+            frchanges += 1
+        else:
+            dbchanges += fr.assign_label(dbcurs, findres.get_label_set(dbcurs))
             frchanges += 1
     else:
         print("Unknown edit tyupe in file", efile, file=sys.stderr)
@@ -239,3 +268,5 @@ if frchanges != 0:
 if edchanges != 0:
     objedits.save_edits_to_file(efile, editprefix)
     print(edchanges, "changes to edits file", file=sys.stderr)
+if dbchanges != 0:
+    mydb.commit()

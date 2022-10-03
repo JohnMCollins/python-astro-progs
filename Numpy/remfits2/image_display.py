@@ -20,6 +20,7 @@ import remgeom
 import remfits
 import col_from_file
 import find_results
+from argon2._ffi import ffi
 
 
 class figuredata:
@@ -146,7 +147,7 @@ def display_findresults(ffile, work_findres):
         coords = (fr.col, fr.row)
         if fr.istarget or (n == 0 and brightest):
             objc = targetcolour
-        elif fr.obj is None:
+        elif fr.obj is None or not fr.obj.valid_label():
             objc = idcolour
         else:
             objc = objcolour
@@ -160,19 +161,13 @@ def display_findresults(ffile, work_findres):
         if n >= limfind:
             break
 
-
-def parse_zoom(arg):
-    """Parse zoom specification"""
-    if arg is None:
-        return None
-    try:
-        res = sorted(map(lambda x: float(x), arg.split(':')))
-        if len(res) == 2:
-            return  res
-    except (TypeError, ValueError):
-        pass
-    print("Did not understand zoom argument", arg, "expecting 2 numerics", file=sys.stderr)
-    sys.exit(80)
+def set_zoom(ffile, zoomcol, zoomrow):
+    """Set yo ziin ariybd guveb row and column"""
+    prows, pcols = ffile.data.shape
+    zrows = prows / factorzoom / 2
+    zcols = pcols / factorzoom / 2
+    plt.xlim(max(0, zoomcol-zcols), min(pcols, zoomcol+zcols))
+    plt.ylim(max(0, zoomrow-zrows), min(prows, zoomrow+zrows))
 
 # Shut up warning messages
 
@@ -201,8 +196,8 @@ parsearg.add_argument('--flagcolour', type=str, default='yellow', help='Flag col
 parsearg.add_argument('--popupcolour', type=str, default='g', help='Popup colour')
 parsearg.add_argument('--alphaflag', type=float, default=0.4, help='Alpha for flag and popup')
 parsearg.add_argument('--tagdist', type=float, default=15.0, help='Number of pixel distance to treat as closeby')
-parsearg.add_argument('--xlims', type=str, help='Limits for x zoom')
-parsearg.add_argument('--ylims', type=str, help='Limits for y zoom')
+parsearg.add_argument('--zoomcoords', type=str, help='RA (deg)/DEC (deg) for centre zoom or object label')
+parsearg.add_argument('--factorzoom', type=float, default=5.0, help='Factor to zoom by')
 
 rg.disp_argparse(parsearg)
 
@@ -232,8 +227,21 @@ popupcolour = resargs['popupcolour']
 flagcolour = resargs['flagcolour']
 alphaflag = resargs['alphaflag']
 tagdist = resargs['tagdist']
-xzoom = parse_zoom(resargs['xlims'])
-yzoom = parse_zoom(resargs['ylims'])
+zoomcoords = resargs['zoomcoords']
+factorzoom = resargs['factorzoom']
+
+if zoomcoords is not None:
+    griddisp = False
+    zparts = zoomcoords.split(",")
+    if len(zparts) == 2:
+        try:
+            zoomcoords = tuple(map(lambda x: float(x), zparts))
+        except (TypeError, ValueError):
+            print("Did not understand zoom coords", zoomcoords, "expecting RA/Dec or label", file=sys.stderr)
+            sys.exit(80)
+    elif len(zparts) != 1:
+        print("Did not understand zoom coords", zoomcoords, "expecting RA/Dec or label", file=sys.stderr)
+        sys.exit(81)
 
 idcolour = rg.objdisp.idcolour
 objcolour = rg.objdisp.objcolour
@@ -286,11 +294,16 @@ for file in files:
 
     crange = gsdets.get_cmap(data)
     norm = colors.BoundaryNorm(crange, cmap.N)
+
+    if isinstance(zoomcoords, tuple):
+        zcol, zrow = ff.wcs.coords_to_colrow(*zoomcoords)
+        set_zoom(ff, zcol, zrow)
+        # ax = plt.gca()
+        # xx = ax.get_xlim()
+        # yy = ax.get_ylim()
+        # print("after xlim {:}-{:} ylim={:}-{:}".format(*xx,*yy))
+    
     img = plt.imshow(data, cmap=cmap, norm=norm, origin='lower')
-    if xzoom is not None:
-        plt.gca().set_xlim(*xzoom)
-    if yzoom is not None:
-        plt.gca().set_ylim(*yzoom)
     plt.colorbar(img, norm=norm, cmap=cmap, boundaries=crange, ticks=crange)
     if griddisp:
         try:
@@ -305,12 +318,18 @@ for file in files:
     elif len(title) != 0:
         plt.title(title)
 
-    prefix = miscutils.removesuffix(file, 'fits.gz')
+    prefix = miscutils.removesuffix(file)
     if findres is not None and findres != '@':
         prefix = findres
     try:
         tfindres = find_results.load_results_from_file(prefix)
         if tfindres.obsind == ff.from_obsind:
+            if isinstance(zoomcoords, str):
+                try:
+                    fr = tfindres[zoomcoords]
+                    set_zoom(ff, fr.col, fr.row)
+                except KeyError:
+                    pass
             display_findresults(ff, tfindres)
             setfig(plotfigure, prefix, ff, tfindres)
     except find_results.FindResultErr:

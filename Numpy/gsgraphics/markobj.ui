@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>634</width>
-    <height>553</height>
+    <height>575</height>
    </rect>
   </property>
   <property name="font">
@@ -172,107 +172,80 @@
      <x>80</x>
      <y>230</y>
      <width>391</width>
-     <height>231</height>
+     <height>241</height>
     </rect>
    </property>
    <property name="title">
     <string>Action</string>
    </property>
-   <widget class="QRadioButton" name="setname">
+   <widget class="QSplitter" name="splitter">
     <property name="geometry">
      <rect>
-      <x>11</x>
+      <x>10</x>
       <y>32</y>
-      <width>341</width>
-      <height>26</height>
+      <width>323</width>
+      <height>182</height>
      </rect>
     </property>
-    <property name="toolTip">
-     <string>Give a label to an unidentified object</string>
+    <property name="orientation">
+     <enum>Qt::Vertical</enum>
     </property>
-    <property name="text">
-     <string>Give name to object given aperture</string>
-    </property>
-   </widget>
-   <widget class="QRadioButton" name="hide">
-    <property name="geometry">
-     <rect>
-      <x>11</x>
-      <y>128</y>
-      <width>151</width>
-      <height>26</height>
-     </rect>
-    </property>
-    <property name="toolTip">
-     <string>Hide this object</string>
-    </property>
-    <property name="text">
-     <string>Hide</string>
-    </property>
-   </widget>
-   <widget class="QRadioButton" name="apadj">
-    <property name="geometry">
-     <rect>
-      <x>11</x>
-      <y>160</y>
-      <width>261</width>
-      <height>26</height>
-     </rect>
-    </property>
-    <property name="toolTip">
-     <string>Adjust aperture for this object</string>
-    </property>
-    <property name="text">
-     <string>Adjust aperture</string>
-    </property>
-   </widget>
-   <widget class="QRadioButton" name="calcaperture">
-    <property name="geometry">
-     <rect>
-      <x>11</x>
-      <y>192</y>
-      <width>291</width>
-      <height>26</height>
-     </rect>
-    </property>
-    <property name="toolTip">
-     <string>Calculate aperture for this object</string>
-    </property>
-    <property name="text">
-     <string>Calculate aperture</string>
-    </property>
-   </widget>
-   <widget class="QRadioButton" name="setdispname">
-    <property name="geometry">
-     <rect>
-      <x>11</x>
-      <y>96</y>
-      <width>321</width>
-      <height>26</height>
-     </rect>
-    </property>
-    <property name="toolTip">
-     <string>Give a label to an unidentified object</string>
-    </property>
-    <property name="text">
-     <string>Set/update display name</string>
-    </property>
-   </widget>
-   <widget class="QRadioButton" name="setnamecalc">
-    <property name="geometry">
-     <rect>
-      <x>11</x>
-      <y>64</y>
-      <width>351</width>
-      <height>26</height>
-     </rect>
-    </property>
-    <property name="toolTip">
-     <string>Give a label to an unidentified object</string>
-    </property>
-    <property name="text">
-     <string>Give name to object calculate aperture</string>
-    </property>
+    <widget class="QRadioButton" name="setname">
+     <property name="toolTip">
+      <string>Give a label to an unidentified object</string>
+     </property>
+     <property name="text">
+      <string>Give name to object given aperture</string>
+     </property>
+    </widget>
+    <widget class="QRadioButton" name="setnamecalc">
+     <property name="toolTip">
+      <string>Give a label to an unidentified object</string>
+     </property>
+     <property name="text">
+      <string>Give name to object calculate aperture</string>
+     </property>
+    </widget>
+    <widget class="QRadioButton" name="setdispname">
+     <property name="toolTip">
+      <string>Give a label to an unidentified object</string>
+     </property>
+     <property name="text">
+      <string>Set/update display name</string>
+     </property>
+    </widget>
+    <widget class="QRadioButton" name="hide">
+     <property name="toolTip">
+      <string>Hide this object</string>
+     </property>
+     <property name="text">
+      <string>Hide</string>
+     </property>
+    </widget>
+    <widget class="QRadioButton" name="apadj">
+     <property name="toolTip">
+      <string>Adjust aperture for this object</string>
+     </property>
+     <property name="text">
+      <string>Adjust aperture</string>
+     </property>
+    </widget>
+    <widget class="QRadioButton" name="calcaperture">
+     <property name="toolTip">
+      <string>Calculate aperture for this object</string>
+     </property>
+     <property name="text">
+      <string>Calculate aperture</string>
+     </property>
+    </widget>
+    <widget class="QRadioButton" name="specdisplay">
+     <property name="toolTip">
+      <string>Give display label to object or cancel one if it has one</string>
+     </property>
+     <property name="text">
+      <string>Display label</string>
+     </property>
+    </widget>
    </widget>
   </widget>
   <widget class="QLabel" name="label_2">
@@ -472,6 +445,89 @@
     <bool>true</bool>
    </property>
   </widget>
+  <widget class="QLabel" name="label_10">
+   <property name="geometry">
+    <rect>
+     <x>370</x>
+     <y>190</y>
+     <width>41</width>
+     <height>17</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Mag</string>
+   </property>
+  </widget>
+  <widget class="QLineEdit" name="magname">
+   <property name="geometry">
+    <rect>
+     <x>420</x>
+     <y>190</y>
+     <width>31</width>
+     <height>25</height>
+    </rect>
+   </property>
+   <property name="layoutDirection">
+    <enum>Qt::RightToLeft</enum>
+   </property>
+   <property name="readOnly">
+    <bool>true</bool>
+   </property>
+  </widget>
+  <widget class="QLineEdit" name="magvalue">
+   <property name="geometry">
+    <rect>
+     <x>490</x>
+     <y>190</y>
+     <width>111</width>
+     <height>25</height>
+    </rect>
+   </property>
+   <property name="layoutDirection">
+    <enum>Qt::RightToLeft</enum>
+   </property>
+   <property name="alignment">
+    <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+   </property>
+   <property name="readOnly">
+    <bool>true</bool>
+   </property>
+  </widget>
+  <widget class="QLineEdit" name="curradus">
+   <property name="geometry">
+    <rect>
+     <x>460</x>
+     <y>220</y>
+     <width>141</width>
+     <height>25</height>
+    </rect>
+   </property>
+   <property name="toolTip">
+    <string>Current ADU count</string>
+   </property>
+   <property name="layoutDirection">
+    <enum>Qt::RightToLeft</enum>
+   </property>
+   <property name="alignment">
+    <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+   </property>
+   <property name="readOnly">
+    <bool>true</bool>
+   </property>
+  </widget>
+  <widget class="QLabel" name="label_11">
+   <property name="geometry">
+    <rect>
+     <x>370</x>
+     <y>220</y>
+     <width>67</width>
+     <height>17</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>ADUs</string>
+   </property>
+  </widget>
  </widget>
  <tabstops>
   <tabstop>filename</tabstop>
@@ -480,13 +536,17 @@
   <tabstop>radeg</tabstop>
   <tabstop>decdeg</tabstop>
   <tabstop>frlab</tabstop>
+  <tabstop>magname</tabstop>
   <tabstop>apsize</tabstop>
+  <tabstop>magvalue</tabstop>
+  <tabstop>curradus</tabstop>
   <tabstop>setname</tabstop>
   <tabstop>setnamecalc</tabstop>
   <tabstop>setdispname</tabstop>
   <tabstop>hide</tabstop>
   <tabstop>apadj</tabstop>
   <tabstop>calcaperture</tabstop>
+  <tabstop>specdisplay</tabstop>
   <tabstop>rdiff</tabstop>
   <tabstop>cdiff</tabstop>
   <tabstop>trdiff</tabstop>
