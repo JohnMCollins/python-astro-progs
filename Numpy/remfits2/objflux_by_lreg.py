@@ -36,6 +36,7 @@ parsearg.add_argument('--outfile', type=str, help='Output file or use stdout')
 parsearg.add_argument('--minrefs', type=int, default=5, help='Minimum number of reference stars')
 parsearg.add_argument('--minsnr', type=float, default=1.0, help='Minimum SNR for ref stars')
 parsearg.add_argument('--mincorrelation', type=float, default=0.5, help='Minimum correlation coeff')
+parsearg.add_argument('--maxsky', type=float, default=1000.0, help='Maximum sky level')
 
 resargs = vars(parsearg.parse_args())
 remdefaults.getargs(resargs)
@@ -48,6 +49,7 @@ outfile = resargs['outfile']
 minrefs = resargs['minrefs']
 minsnr = resargs['minsnr']
 mincorr = resargs['mincorrelation']
+maxsky = resargs['maxsky']
 
 mydb, mycu = remdefaults.opendb()
 
@@ -102,7 +104,7 @@ elif vicinity != targobj.vicinity:
 
 mycu.execute("SELECT bjdobs,obsinf.obsind,aducount,aduerr " \
              "FROM obsinf INNER JOIN aducalc ON obsinf.obsind=aducalc.obsind " \
-             "WHERE obsinf.filter=%s AND aducalc.objind={:d} ORDER BY date_obs".format(targobj.objind), filtname)
+             "WHERE obsinf.filter=%s AND aducalc.objind={:d} AND aducalc.skylevel<={:.8e} ORDER BY date_obs".format(targobj.objind, maxsky), filtname)
 
 targrows = mycu.fetchall()
 if len(targrows) == 0:

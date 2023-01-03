@@ -94,7 +94,7 @@ else:
         sys.exit(30)
     if toflux is not None:
         f = 10 ** ((f + toflux) / 2.5)
-        err *= 0.4 * math.log(10) * f 
+        err *= 0.4 * math.log(10) * f
     if normalise is not None:
         nf = normalise / f.mean()
         f *= nf

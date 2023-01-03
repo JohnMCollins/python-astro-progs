@@ -302,7 +302,7 @@ for file in files:
         # xx = ax.get_xlim()
         # yy = ax.get_ylim()
         # print("after xlim {:}-{:} ylim={:}-{:}".format(*xx,*yy))
-    
+
     img = plt.imshow(data, cmap=cmap, norm=norm, origin='lower')
     plt.colorbar(img, norm=norm, cmap=cmap, boundaries=crange, ticks=crange)
     if griddisp:

@@ -86,4 +86,3 @@ for objind, counterr in  resdict.items():
     print("{:8d} {:4d} {:10.2f} {:10.2f}".format(objind, num, meanvs, stvs))
     mycu.execute("UPDATE objdata SET {filt:s}bri={mv:.9e},{filt:s}brisd={sd:.9e} WHERE ind={oi:d}".format(filt=filt,mv=meanvs,sd=stvs,oi=objind))
 mydb.commit()
-

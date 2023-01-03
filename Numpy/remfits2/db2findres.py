@@ -8,7 +8,6 @@ import warnings
 from astropy.utils.exceptions import ErfaWarning
 import remdefaults
 import find_results
-import objdata
 import col_from_file
 
 warnings.simplefilter('ignore', ErfaWarning)
@@ -29,7 +28,6 @@ if len(ids) == 0:
     ids = col_from_file.col_from_file(sys.stdin, resargs['colnum'])
 
 errors = 0
-frfields = "INSERT INTO findresult (obsind,objind,nrow,ncol,radeg,decdeg,apsize,adus) VALUES ({:s})"
 
 mydb, dbcurs = remdefaults.opendb()
 
@@ -41,42 +39,13 @@ for idstr in ids:
         errors += 1
         continue
 
-    dbcurs.execute("SELECT objind,nrow,ncol,radeg,decdeg,rdiff,cdiff,apsize,adus,hide FROM findresult WHERE obsind={:d}".format(intid))
-    frres = dbcurs.fetchall()
-    if len(frres) == 0:
-        print(idstr, "does not have any results in DB", file=sys.stderr)
-        errors += 1
-        continue
-
-    # Get stuff from obsinf record
-
-    dbcurs.execute("SELECT filter,date_obs,nrows,ncols FROM obsinf WHERE obsind={:d}".format(intid))
-    obsinf = dbcurs.fetchall()
-    if len(obsinf) != 1:
-        print(idstr, "does not have an obsinf???", file=sys.stderr)
-        errors += 1
-        continue
-
     findres = find_results.FindResults()
-    findres.filter, findres.obsdate, findres.nrows, findres.ncols = obsinf[0]
-    findres.obsind = intid
-
-    for objind, nrow, ncol, radeg, decdeg, rdiff, cdiff, apsize, adus, hide in frres:
-        fr = find_results.FindResult(col=ncol, row=nrow, rdiff=rdiff, cdiff=cdiff, apsize=apsize, adus=adus, radeg=radeg, decdeg=decdeg, hide=hide)
-        fr.obj = objdata.ObjData()
-        fr.obj.get(dbcurs, ind=objind)
-        fr.istarget = fr.obj.is_target()
-        if round(radeg, 4) != round(fr.obj.ra, 4) or round(decdeg, 4) != round(fr.obj.dec, 4):
-            # NB we're not worrying about distance
-            fr.obj.origra = fr.obj.ra
-            fr.obj.origdec = fr.obj.dec
-            fr.obj.ra = radeg
-            fr.obj.dec = decdeg
-        findres.resultlist.append(fr)
-
-    findres.reorder()
-    findres.relabel()
-    findres.rekey()
+    try:
+        findres.loaddb(dbcurs)
+    except find_results.FindResultErr as e:
+        print(e.args[0], file=sys.stderr)
+        errors += 1
+        continue
 
     try:
         find_results.save_results_to_file(findres, prefix + idstr, force=force)

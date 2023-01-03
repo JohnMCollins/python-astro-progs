@@ -8,7 +8,6 @@ import matplotlib.pyplot as plt
 import remgeom
 import remdefaults
 import objdata
-import miscutils
 
 
 def plotdate(pentry):
@@ -43,6 +42,7 @@ parsearg.add_argument('--ylabel', type=str, default='Dec (deg)', help='Label for
 parsearg.add_argument('--xrot', type=float, default=0.0, help="Rotation of X axis ticks")
 parsearg.add_argument('--yrot', type=float, default=0.0, help="Rotation of Y axis ticks")
 parsearg.add_argument('--toffset', type=float, default=5, help='Offset facfor first/last label')
+parsearg.add_argument('--multi', action='store_true', help='Treat one file as multiple')
 
 resargs = vars(parsearg.parse_args())
 targets = resargs["targets"]
@@ -61,9 +61,7 @@ ylab = resargs['ylabel']
 xrot = resargs['xrot']
 yrot = resargs['yrot']
 toffset = resargs['toffset'] / 100.0
-
-if ofig is not None:
-    ofig = miscutils.removesuffix(ofig, ".png")
+multi = len(targets) > 1 or resargs['multi']
 
 mydb, mycurs = remdefaults.opendb()
 
@@ -85,8 +83,7 @@ if len(targobjs) != len(targets):
     print("Aborteing due to errors", file=sys.stderr)
     sys.exit(10)
 
-multifig = len(targobjs) > 1
-fignum = 1
+fignum = 9
 
 for tobj in targobjs:
 
@@ -150,13 +147,7 @@ for tobj in targobjs:
         xcs = [a[0] for a in plist]
         ycs = [a[1] for a in plist]
         plt.scatter(xcs, ycs, ap * apmult, color=otherpmcolour, alpha=targalpha)
-    if ofig is not None:
-        if multifig:
-            outfile = "{:s}{:03d}.png".format(ofig, fignum)
-        else:
-            outfile = "{:s}.png".format(ofig)
-        pltfig.savefig(outfile)
-        fignum += 1
+    fignum += 1
+    remgeom.end_figure(pltfig, ofig, fignum, multi)
 
-if ofig is None:
-    plt.show()
+remgeom.end_plot(ofig)

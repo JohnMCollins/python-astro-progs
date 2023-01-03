@@ -96,6 +96,12 @@ for file in files:
         print("Update obsinf for", file, file=sys.stderr)
     mycu.execute(query)
     dbchanges += 1
+    if quality == 0.0:
+        for tab in ('findresult', 'aducalc'):
+            ndone = mycu.execute("DELETE FROM {:s} WHERE obsind={:d}".format(tab, obsind))
+            if verbose and ndone != 0:
+                print("Deleted", ndone, "from", tab, file=sys.stderr)
+            dbchanges += ndone
 
 if errors != 0:
     sys.exit(1)

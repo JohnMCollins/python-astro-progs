@@ -74,7 +74,7 @@ for file in ids:
         continue
 
     had_obsind.add(obsind)
-    dbcurs.execute("SELECT objind,nrow,ncol,apsize FROM findresult WHERE hide=0 AND obsind={:d}".format(obsind))
+    dbcurs.execute("SELECT objind,nrow,ncol,apsize,ind FROM findresult WHERE hide=0 AND obsind={:d}".format(obsind))
     frows = dbcurs.fetchall()
     if  len(frows) == 0:
         print("No find results for", file, file=sys.stderr)
@@ -106,7 +106,7 @@ for file in ids:
     skylevel = fimagedata.mean()
     skystd = fimagedata.std()
 
-    for objind, row, col, apsize in frows:
+    for objind, row, col, apsize, frind in frows:
 
         if objind in objsfound:
             iapsize, apmask = objsfound[objind]
@@ -133,7 +133,7 @@ for file in ids:
         if adus <= 0:
             print("Skipping", objind, "as negative", adus, file=sys.stderr)
             continue
-        resulttab.append((obsind, objind, skylevel, skystd, adus, aduerr))
+        resulttab.append((obsind, objind, frind, skylevel, skystd, adus, aduerr))
 
 if errors != 0:
     print(errors, "errors found", file=sys.stderr)
@@ -159,9 +159,9 @@ else:
     mydb.commit()
     print(deletions, "existing calculations deleted", file=sys.stderr)
 
-for obsind, objind, skylevel, skystd, adus, aduerr in resulttab:
-    dbcurs.execute("INSERT INTO aducalc (objind,obsind,skylevel,skystd,aducount,aduerr) " \
-                   "VALUES ({:d},{:d},{:.8e},{:.8e},{:.8e},{:.8e})".format(objind,obsind,skylevel,skystd,adus, aduerr))
+for obsind, objind, frind, skylevel, skystd, adus, aduerr in resulttab:
+    dbcurs.execute("INSERT INTO aducalc (objind,obsind,frind skylevel,skystd,aducount,aduerr) " \
+                   "VALUES ({:d},{:d},{:d},{:.8e},{:.8e},{:.8e},{:.8e})".format(objind,obsind,frind,skylevel,skystd,adus, aduerr))
 mydb.commit()
 print(len(resulttab), "rows added", file=sys.stderr)
 

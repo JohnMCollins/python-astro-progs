@@ -183,10 +183,11 @@ try:
             had += 1
             print(fil, findres.obsdate.strftime("%d/%m/%Y @ %H:%M:%S:"))
             print("Filter:", findres.filter, findres.nrows, "rows", findres.ncols, "columns")
-            print("Significance {:.2f} total significance {:.2f}".format(findres.signif, findres.totsignif))
+            if findres.signif is not None and findres.totsignif is not None:
+                print("Significance {:.2f} total significance {:.2f}".format(findres.signif, findres.totsignif))
             pixoff = remfits.Pixoffsets(obsind=findres.obsind)
             if pixoff.get_offsets(dbcurs):
-                print("Offsets in DB: Row={:d} Col={:d}".format(pixoff.rowoffset, pixoff.coloffset))
+                print("Offsets in DB: Row={:.2f} Col={:.3f}".format(pixoff.rowoffset, pixoff.coloffset))
             print()
         dnamelength = max([len(r.obj.dispname) for r in findres.results() if r.obj is not None] + [1])
         lnamelength = max([len(r.label) for r in findres.results()] + [1])
@@ -201,7 +202,7 @@ try:
                   format(dn=dispn, lab=r.label, ap=r.apsize, adus=r.adus, ra=r.radeg, dec=r.decdeg,
                          lw=lnamelength, dnw=dnamelength), end='')
             if diffs:
-                print("\tr={:d} c={:d} ({:d}/{:d})".format(r.row, r.col, r.rdiff, r.cdiff), end='')
+                print("\tr={:.2f} c={:.2f} ({:.2f}/{:.2f})".format(r.row, r.col, r.rdiff, r.cdiff), end='')
             print()
 #            robj = objdata.ObjData()
 #            robj.get(dbcurs, r.objident.objname)

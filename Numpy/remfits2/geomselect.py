@@ -61,7 +61,7 @@ else:
         print("Have to specify filter unless parsing file", file=sys.stderr)
         sys.exit(22)
     try:
-        seldate = parsetime.parsetime(seldate)
+        seldate = parsetime.parse_datetime(seldate)
     except ValueError:
         print("Cannot understand date", seldate, file=sys.stderr)
         sys.exit(10)
