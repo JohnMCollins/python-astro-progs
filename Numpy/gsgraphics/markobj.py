@@ -5,6 +5,9 @@
 import sys
 import os.path
 import argparse
+import warnings
+from astropy.utils.exceptions import AstropyWarning, AstropyUserWarning
+import astroquery.utils as autils
 from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtWidgets import (QWidget, QFrame, QApplication)
 import miscutils
@@ -12,8 +15,9 @@ import find_results
 import remdefaults
 import objdata
 import objedits
+import remfits
 import ui_markobj
-
+import logs
 
 class markobjdlg(QtWidgets.QDialog, ui_markobj.Ui_markobj):
     """Dialog box for mark object"""
@@ -30,6 +34,7 @@ class markobjdlg(QtWidgets.QDialog, ui_markobj.Ui_markobj):
             self.objectname.setReadOnly(True)
             self.setname.setEnabled(False)
             self.dispname.setText(obj.obj.dispname)
+            self.latexname.setText(obj.obj.latexname)
         self.radeg.setValue(obj.radeg)
         self.decdeg.setValue(obj.decdeg)
         self.apsize.setValue(obj.apsize)
@@ -49,10 +54,10 @@ class markobjdlg(QtWidgets.QDialog, ui_markobj.Ui_markobj):
         self.setname.setEnabled(False)
         self.setnamecalc.setEnabled(False)
         self.frlab.setText(obj.label)
-        self.cdiff.setText(str(obj.cdiff))
-        self.rdiff.setText(str(obj.rdiff))
-        self.tcdiff.setText(str(findres[0].cdiff))
-        self.trdiff.setText(str(findres[0].rdiff))
+        self.cdiff.setText(str(round(obj.cdiff,4)))
+        self.rdiff.setText(str(round(obj.rdiff, 4)))
+        self.tcdiff.setText(str(round(findres[0].cdiff, 4)))
+        self.trdiff.setText(str(round(findres[0].rdiff, 4)))
 
     def setupplace(self, pref, defname, radeg, decdeg):
         """Set up for marking place"""
@@ -64,17 +69,36 @@ class markobjdlg(QtWidgets.QDialog, ui_markobj.Ui_markobj):
         self.setdispname.setEnabled(False)
         self.apadj.setEnabled(False)
         self.calcaperture.setEnabled(False)
-        self.specdisplay.setEnabled(False)
 
 
-def record_exit(pref, edit):
+def record_exit(edit):
     """Record operaion and exit"""
     # Reload in case changed by another instance
-    newelist = objedits.load_edits_from_file(editprefix, vicinity=vicinity, create=True)
+    newelist = objedits.ObjEdit_List()
+    newelist.loaddb(mycurs, notdone=False)
+    if fitsfilename.isdigit():
+        edit.obsfile = fitsfilename
+    else:
+        edit.obsfile = os.path.abspath(fitsfilename)
+    if  edit.objind != 0:
+        for ed in newelist.editlist:
+            if not ed.done:
+                if ed.objind == edit.objind:
+                    if QtWidgets.QMessageBox.question(None,
+                                                  "Already got edit " + ed.op + " for object - replace?",
+                                                  QtWidgets.QMessageBox.No | QtWidgets.QMessageBox.Yes, QtWidgets.QMessageBox.No) \
+                                                  != QtWidgets.QMessageBox.Yes:
+                        return
+                ed.done = True
+                newelist.add_edit(ed)
     newelist.add_edit(edit)
-    objedits.save_edits_to_file(newelist, pref)
+    newelist.savedb(mycurs)
     sys.exit(0)
 
+warnings.simplefilter('ignore', AstropyWarning)
+warnings.simplefilter('ignore', AstropyUserWarning)
+warnings.simplefilter('ignore', UserWarning)
+#autils.suppress_vo_warnings()
 
 app = QApplication(sys.argv)
 
@@ -82,52 +106,49 @@ parsearg = argparse.ArgumentParser(description='Interactively mark objects in di
 parsearg.add_argument('args', type=str, nargs='+', help='Label or coords if creating')
 remdefaults.parseargs(parsearg, inlib=False, tempdir=False)
 parsearg.add_argument('--create', action='store_true', help='Create label at coords')
-parsearg.add_argument('--findres', type=str, required=True, help='Name of fild results file')
-parsearg.add_argument('--edits', type=str, help='Edits file name if different from findres file name')
 parsearg.add_argument('--newname', type=str, default='newobj', help='Initial name of new objects')
+logs.parseargs(parsearg)
 resargs = vars(parsearg.parse_args())
 remdefaults.getargs(resargs)
 args = resargs['args']
 creating = resargs['create']
-prefix = resargs['findres']
-editprefix = resargs['edits']
 newobjname = resargs['newname']
-
-try:
-    findres = find_results.load_results_from_file(prefix)
-except find_results.FindResultErr as e:
-    QtWidgets.QMessageBox.warning(None, "Could not load file " + prefix, e.args[0])
-    sys.exit(40)
-
-if findres.num_results() == 0:
-    QtWidgets.QMessageBox.warning(None, "No results in file ", "No results in findres file " + prefix)
-    sys.exit(41)
-
-if editprefix is None:
-    editprefix = prefix
-
-vicinity = findres[0].obj.vicinity
-
-elist = objedits.load_edits_from_file(editprefix, vicinity=vicinity, create=True)
-elist.load_findres(findres)
-
-nosuff = miscutils.removesuffix(prefix, 'findres')
-dlg = markobjdlg()
+logging = logs.getargs(resargs)
 
 mydb, mycurs = remdefaults.opendb()
+
+fitsfilename = args.pop(0)
+
+try:
+    fitsfile = remfits.parse_filearg(fitsfilename, mycurs)
+except remfits.RemFitsErr as e:
+    QtWidgets.QMessageBox.warning(None, "Could not load FITSfile " + fitsfilename, e.args[0])
+    sys.exit(40)
+
+findres = find_results.FindResults(fitsfile)
+findres.loaddb(mycurs)
+
+if findres.num_results() == 0:
+    QtWidgets.QMessageBox.warning(None, "No results in file ", "No results for file " + fitsfilename)
+    sys.exit(41)
+
+elist = objedits.ObjEdit_List()
+elist.loaddb(mycurs)
+
+dlg = markobjdlg()
 
 if creating:
     try:
         xcoord, ycoord, raparam, decparam = args
-        xcoord = int(xcoord)
-        ycoord = int(ycoord)
+        xcoord = float(xcoord)
+        ycoord = float(ycoord)
         raparam = float(raparam)
         decparam = float(decparam)
     except (ValueError, TypeError):
         QtWidgets.QMessageBox.warning(None, "Wrong arguments", "Expecting coordinates for create")
         sys.exit(20)
 
-    dlg.setupplace(os.path.basename(nosuff), newobjname, raparam, decparam)
+    dlg.setupplace(os.path.basename(fitsfilename), newobjname, raparam, decparam)
     dlg.setname.setChecked(True)
 else:
     try:
@@ -141,7 +162,7 @@ else:
         QtWidgets.QMessageBox.warning(None, "Could not locate object " + label, e.args[0])
         sys.exit(60)
 
-    dlg.setupobj(os.path.basename(nosuff), robj)
+    dlg.setupobj(os.path.basename(fitsfilename), robj)
 
 while dlg.exec_():
 
@@ -166,9 +187,9 @@ while dlg.exec_():
         dispname = str(dlg.dispname.text())
         if len(dispname) == 0:
             dispname = oname
-        elif  objdata.nameused(mycurs, dispname, True) or dispname in elist.namelist:
-            QtWidgets.QMessageBox.information(dlg, "Display name amended", "Name clashed and reverted to " + oname)
-            dispname = oname
+        latexname = str(dlg.latexname.text())
+        if len(latexname) == 0:
+            latexname = dispname
 
         apsize = dlg.apsize.value()
         if sn and apsize < 1.0:
@@ -176,47 +197,56 @@ while dlg.exec_():
             continue
 
         if sn:
-            ed = objedits.ObjEdit_Newobj_Ap(name=oname, dispname=dispname, row=ycoord, col=xcoord, radeg=raparam, decdeg=decparam, apsize=apsize)
+            ed = objedits.ObjEdit(op='NEW',
+                                  objname=oname,
+                                  dispname=dispname,
+                                  latexname=latexname,
+                                  nrow=ycoord,
+                                  ncol=xcoord,
+                                  radeg=raparam,
+                                  decdeg=decparam,
+                                  apsize=apsize)
         else:
-            ed = objedits.ObjEdit_Newobj_Calcap(name=oname, dispname=dispname, row=ycoord, col=xcoord, radeg=raparam, decdeg=decparam)
-        record_exit(editprefix, ed)
+            ed = objedits.ObjEdit(op='NEWAP',
+                                  objname=oname,
+                                  dispname=dispname,
+                                  latexname=latexname,
+                                  nrow=ycoord,
+                                  ncol=xcoord,
+                                  radeg=raparam,
+                                  decdeg=decparam)
+        record_exit(ed)
 
     else:
-        if label in {item.oldlabel for item in elist.editlist if isinstance(item, objedits.ObjEdit_Exist_Base) and not item.done}:
+   
+        oid = robj.obj.objind
+
+        if oid in {e.objind for e in elist.editlist if e.objind is not None and not e.done}:
             QtWidgets.QMessageBox.warning(dlg, "Edit already made", "This has existing edit set up")
             continue
-
-        oid = robj.obj.objind
 
         if dlg.setdispname.isChecked():
 
             dispname = str(dlg.dispname.text())
+            latexname = str(dlg.latexname.text())
 
-            if len(dispname) == 0:
-                record_exit(editprefix, objedits.ObjEdit_Deldisp(oid=oid, label=label))
-
+            if len(dispname) == 0 or len(latexname) == 0:
+                record_exit(objedits.ObjEdit(op='DELDISP', objind=oid))
             else:
-                if objdata.nameused(mycurs, dispname, True) or dispname in elist.namelist:
-                    QtWidgets.QMessageBox.warning(dlg, "Display name not accepted", "Name clashed with existing name")
-                    continue
-                record_exit(editprefix, "newdisp", objedits.ObjEdit_Newdisp(oid=oid, label=label, dname=dispname))
+                record_exit(objedits.ObjEdit(op="NEWDISP", objind=oid, dispname=dispname, latexname=latexname))
 
         elif dlg.hide.isChecked():
-            record_exit(editprefix, objedits.ObjEdit_Hide(oid=oid, label=label))
+            record_exit(objedits.ObjEdit(op='HIDE', objind=oid))
 
         elif dlg.apadj.isChecked():
             apsize = dlg.apsize.value()
             if apsize < 1.0:
                 QtWidgets.QMessageBox.warning(dlg, "Invalid aperture", "Aperture must be at least 1")
                 continue
-            record_exit(editprefix, objedits.ObjEdit_Adjap(oid=oid, label=label, apsize=apsize))
+            record_exit(objedits.ObjEdit(op='SETAP', objind=oid, apsize=apsize))
 
         elif dlg.calcaperture.isChecked():
-            record_exit(editprefix, objedits.ObjEdit_Calcap(oid=oid, label=label))
-
-        elif dlg.specdisplay.isChecked():
-            record_exit(editprefix, objedits.ObjEdit_Displab(oid=oid, label=label))
-
+            record_exit(objedits.ObjEdit(op='CALCAP', objind=oid))
         else:
             QtWidgets.QMessageBox.warning(dlg, "No operation selected", "Please choose an operation")
             continue

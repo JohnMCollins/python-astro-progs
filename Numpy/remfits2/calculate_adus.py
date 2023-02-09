@@ -4,15 +4,19 @@
 
 import argparse
 import sys
-import math
+#import math
 import warnings
-import numpy as np
+import time
+import pymysql
+#import numpy as np
 from astropy.utils.exceptions import ErfaWarning
 from astropy.utils.exceptions import AstropyWarning, AstropyUserWarning
 import remdefaults
 import remfits
 import col_from_file
 import stdarray
+import find_results
+import logs
 
 warnings.simplefilter('ignore', ErfaWarning)
 warnings.simplefilter('ignore', AstropyWarning)
@@ -28,6 +32,7 @@ parsearg.add_argument('--colnum', type=int, default=0, help='Column to use from 
 parsearg.add_argument('--skylevelstd', type=float, default=0.5, help='Theshold level of std devs to include points in sky')
 parsearg.add_argument('--stoperr', action='store_false', help='Stop processing if any errors met')
 parsearg.add_argument('--nullstop', action='store_true', help='Stop processing if nothing found for an observation')
+logs.parseargs(parsearg)
 
 resargs = vars(parsearg.parse_args())
 ids = resargs['files']
@@ -39,37 +44,36 @@ if len(ids) == 0:
     ids = col_from_file.col_from_file(sys.stdin, resargs['colnum'])
 biasfile = remdefaults.stdarray_file(resargs['biasfile'])
 flatfile = remdefaults.stdarray_file(resargs['flatfile'])
+logging = logs.getargs(resargs)
 
 try:
     biasarray = stdarray.load_array(biasfile)
 except stdarray.StdArrayErr as e:
-    print("Cannot open bias file", biasfile, "error was", e.args[0], file=sys.stderr)
-    sys.exit(10)
+    logging.die(10, "Cannot open bias file", biasfile, "error was", e.args[0])
 try:
     flatarray = stdarray.load_array(flatfile)
 except stdarray.StdArrayErr as e:
-    print("Cannot open flat file", flatfile, "error was", e.args[0], file=sys.stderr)
-    sys.exit(11)
+    logging.die(11,"Cannot open flat file", flatfile, "error was", e.args[0])
 
 errors = nullres = 0
 
 mydb, dbcurs = remdefaults.opendb()
 
-objsfound = dict()
 had_obsind = set()
 resulttab = []
 
 for file in ids:
+    logging.set_filename(file)
     try:
         ff = remfits.parse_filearg(file, dbcurs)
     except remfits.RemFitsErr as e:
-        print("Cannot open", file, "error was", e.args[0], file=sys.stderr)
+        logging.write("Cannot open error was", e.args[0])
         errors += 1
         continue
 
     obsind = ff.from_obsind
     if obsind == 0:
-        print("No obsind found in", file, file=sys.stderr)
+        logging.write("No obsind found")
         errors += 1
         continue
 
@@ -77,7 +81,7 @@ for file in ids:
     dbcurs.execute("SELECT objind,nrow,ncol,apsize,ind FROM findresult WHERE hide=0 AND obsind={:d}".format(obsind))
     frows = dbcurs.fetchall()
     if  len(frows) == 0:
-        print("No find results for", file, file=sys.stderr)
+        logging.write("No find results")
         nullres += 1
         continue
 
@@ -86,7 +90,7 @@ for file in ids:
     skymask = fimagedata - ff.meanval <= skylevelstd * ff.stdval
     fimagedata = fimagedata[skymask]
     if len(fimagedata) < 100:
-        print("No possible sky in", file, file=sys.stderr)
+        logging.write("No possible sky")
         errors += 1
         continue
 
@@ -108,44 +112,36 @@ for file in ids:
 
     for objind, row, col, apsize, frind in frows:
 
-        if objind in objsfound:
-            iapsize, apmask = objsfound[objind]
-        else:
-            iapsize = int(math.floor(apsize))
-            xpoints, ypoints = np.meshgrid(range(-iapsize, iapsize + 1), range(-iapsize, iapsize + 1))
-            radsq = apsize ** 2
-            xsq = xpoints ** 2
-            ysq = ypoints ** 2
-            apmask = xsq + ysq <= radsq
-            apmask = apmask.flatten()
-            objsfound[objind] = (iapsize, apmask)
-
         try:
-            adus, aduerr = imagedata.get_sum(row, col, iapsize, apmask)
+            adus, aduerr = imagedata.get_sum(col, row, apsize)
         except stdarray.StdArrayErr as e:
             if e.errortype == stdarray.INVALID_COL:
-                print("Cannot fetch for obj", objind, "column", e.args[1], "out of range", file=sys.stderr)
+                logging.write("Cannot fetch for obj", objind, "column", e.args[1], "out of range")
             elif e.errortype == stdarray.INVALID_ROW:
-                print("Cannot fetch for obj", objind, "row", e.args[1], "out of range", file=sys.stderr)
+                logging.write("Cannot fetch for obj", objind, "row", e.args[1], "out of range")
             else:
-                print("Cannot fetch for obj", objind, e.args[0], file=sys.stderr)
+                logging.write("Cannot fetch for obj", objind, e.args[0])
             continue
         if adus <= 0:
-            print("Skipping", objind, "as negative", adus, file=sys.stderr)
+            logging.write("Skipping", objind, "as negative", adus)
             continue
-        resulttab.append((obsind, objind, frind, skylevel, skystd, adus, aduerr))
+        fr = find_results.FindResult()
+        fr.loaddb(dbcurs, ind=frind)
+        modadus = fr.calculate_mod_integral()
+        modaduerr = aduerr # cheat for now
+        resulttab.append((obsind, objind, frind, skylevel, skystd, apsize, adus, aduerr, modadus, modaduerr))
 
 if errors != 0:
-    print(errors, "errors found", file=sys.stderr)
+    logging.write(errors, "errors found")
     if stoperr:
         sys.exit(1)
 if nullres != 0:
-    print(nullres, "have no results", file=sys.stderr)
+    logging.write(nullres, "have no results")
     if nullstop:
         sys.exit(1)
 
 if len(resulttab) == 0:
-    print("No usable results found", file=sys.stderr)
+    logging.die(2, "No usable results found")
     sys.exit(2)
 
 # Delete previous with the observations we had
@@ -154,16 +150,34 @@ deletions = 0
 for obsind in had_obsind:
     deletions += dbcurs.execute("DELETE FROM aducalc WHERE obsind={:d}".format(obsind))
 if deletions == 0:
-    print("No existing adu calculations deleted", file=sys.stderr)
+    logging.write("No existing adu calculations deleted")
 else:
     mydb.commit()
-    print(deletions, "existing calculations deleted", file=sys.stderr)
+    logging.write(deletions, "existing calculations deleted")
 
-for obsind, objind, frind, skylevel, skystd, adus, aduerr in resulttab:
-    dbcurs.execute("INSERT INTO aducalc (objind,obsind,frind skylevel,skystd,aducount,aduerr) " \
-                   "VALUES ({:d},{:d},{:d},{:.8e},{:.8e},{:.8e},{:.8e})".format(objind,obsind,frind,skylevel,skystd,adus, aduerr))
+for obsind, objind, frind, skylevel, skystd, apsize, adus, aduerr, modadus, modaduerr in resulttab:
+    tries = 3
+    while  tries > 0:
+        try:
+            dbcurs.execute("INSERT INTO aducalc (objind,obsind,frind,skylevel,skystd,aducount,aduerr,modaducount,modaduerr) " \
+                           "VALUES ({:d},{:d},{:d},{:.8e},{:.8e},{:.2f},{:.8e},{:.8e},{:.8e},{:.8e})".format(objind,
+                                                                                                      obsind,
+                                                                                                      frind,
+                                                                                                      skylevel,
+                                                                                                      skystd,
+                                                                                                      apsize,
+                                                                                                      adus,
+                                                                                                      aduerr,
+                                                                                                      modadus,
+                                                                                                      modaduerr))
+            break
+        except pymysql.err.OperationalError as e:
+            if e.args[0] != 1213:
+                logging.write("Other MySQL error", e.args[0], e.args[1])
+                break
+            tries -= 1
+            logging.write("Deadlock, sleeping {:d} more tries".format(tries))
+            time.sleep(10)
 mydb.commit()
-print(len(resulttab), "rows added", file=sys.stderr)
-
-
+logging.write(len(resulttab), "rows added")
 sys.exit(0)

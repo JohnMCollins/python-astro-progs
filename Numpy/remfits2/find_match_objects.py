@@ -8,9 +8,10 @@ import sys
 from astropy.utils.exceptions import AstropyWarning, AstropyUserWarning
 import remdefaults
 import remfits
-import obj_locations
 import find_results
 import searchparam
+import objdata
+import logs
 
 # Shut up warning messages
 
@@ -20,36 +21,42 @@ warnings.simplefilter('ignore', UserWarning)
 
 searchpar = searchparam.load()
 parsearg = argparse.ArgumentParser(description='Find objects in image after finding target', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-parsearg.add_argument('file', nargs=1, type=str, help='Image file and output find results')
-parsearg.add_argument('--objloc', type=str, help='Name for object locations file if to be different from image file name')
-parsearg.add_argument('--findres', type=str, help='Name for find results file if to be different from image file name')
+parsearg.add_argument('file', nargs=1, type=str, help='Image file')
 searchpar.argparse(parsearg)
 remdefaults.parseargs(parsearg, tempdir=False, inlib=False)
-parsearg.add_argument('--force', action='store_true', help='Force overwrite of existing file if targets found already')
+parsearg.add_argument('--deleteold', action='store_true', help='Delete ones done already')
+parsearg.add_argument('--filter', type=str, help='Filter to restrict to')
 parsearg.add_argument('--minbri', type=float, default=5, help='Minimum brightness of objects as percentage of target')
 parsearg.add_argument('--nogaia', action='store_true', help='Omit listing GAIA objects')
-parsearg.add_argument('--verbose', action='store_true', help='Tell everything')
+parsearg.add_argument('--verbose', action='count', help='Tell everything')
+parsearg.add_argument('--variability', type=float, default=0.0, help='Maximum variability acceptable')
+parsearg.add_argument('--skylevelstd', type=float, default=remfits.DEFAULT_SKYLEVELSTD, help='Theshold level of std devs to include points in sky')
 parsearg.add_argument('--findmin', type=int, default=10, help='Minimum number to find to consider success')
 parsearg.add_argument('--trimleft', type=int, default=0, help='Pixels to trim off left')
 parsearg.add_argument('--trimright', type=int, default=0, help='Pixels to trim off right')
 parsearg.add_argument('--trimtop', type=int, default=0, help='Pixels to trim off top')
 parsearg.add_argument('--trimbottom', type=int, default=0, help='Pixels to trim off bottom')
+logs.parseargs(parsearg)
 
 resargs = vars(parsearg.parse_args())
 infilename = resargs['file'][0]
 remdefaults.getargs(resargs)
 searchpar.getargs(resargs)
-force = resargs['force']
-findresprefix = resargs['findres']
-objlocprefix = resargs['objloc']
+deleteold = resargs['deleteold']
+filt = resargs['filter']
 minbri = resargs['minbri']
 nogaia = resargs['nogaia']
+maxvar = resargs['variability']
 verbose = resargs['verbose']
+if verbose is None:
+    verbose = 0
 findmin = resargs['findmin']
+skylevstdp = resargs['skylevelstd']
 trimbottom = resargs['trimbottom']
 trimleft = resargs['trimleft']
 trimright = resargs['trimright']
 trimtop = resargs['trimtop']
+logging = logs.getargs(resargs)
 
 # If we are saving stuff, do so and exit
 
@@ -61,114 +68,97 @@ if searchpar.saveparams:
 
 mydb, dbcurs = remdefaults.opendb()
 
+logging.set_filename(infilename)
+
 try:
     fitsfile = remfits.parse_filearg(infilename, dbcurs)
+    fitsfile.calc_skylevel(skylevstdp)
 except remfits.RemFitsErr as e:
-    print(e.args[0], file=sys.stderr)
-    sys.exit(52)
+    logging.die(52, e.args[0])
 
-if objlocprefix is None:
-    if infilename.isdigit():
-        print("Need to give objloc file name when image file from DB", infilename, "given as digits", file=sys.stderr)
-        sys.exit(10)
-    objlocprefix = infilename
-
-if findresprefix is None:
-    if infilename.isdigit():
-        print("Need to give find results file name when image file from DB", infilename, "given as digits", file=sys.stderr)
-        sys.exit(11)
-    findresprefix = infilename
+if filt is not None and fitsfile.filter not in filt:
+    logging.die(53, "is for filter", fitsfile.filter, "not in specified", filt)
 
 try:
-    objlocfile = obj_locations.load_objlist_from_file(objlocprefix, fitsfile)
-except obj_locations.ObjLocErr as e:
-    print("Unable to load objloc file, error was", e.args[0], file=sys.stderr)
-    sys.exit(12)
-
-if objlocfile.num_results() == 0:
-    print("No results in objloc file", objlocprefix, file=sys.stderr)
-    sys.exit(13)
-
-try:
-    findres = find_results.load_results_from_file(findresprefix, fitsfile)
+    findres = find_results.FindResults(fitsfile)
+    findres.loaddb(dbcurs)
 except find_results.FindResultErr as e:
-    print("Could not open findres file, error was", e.args[0])
-    sys.exit(14)
+    logging.die(14, "Could not load find results, error was", e.args[0])
 
-if findres.num_results() != 1:
-    if findres.num_results() == 0:
-        print("No results in findres file, expecting at least 1 for target", file=sys.stderr)
-        sys.exit(15)
-    if not force:
-        print("{:d} objects found already, use --force if needed".format(findres.num_results()), file=sys.stderr)
-        sys.exit(16)
+num_existing = findres.num_results()
+
+if num_existing == 0:
+    logging.die(15, "No results in findres file, expecting at least 1 for target")
 
 targfr = findres[0]
 
 if not targfr.istarget:
-    print("No target (should be first) in findres file", file=sys.stderr)
-    sys.exit(17)
+    logging.die(17, "No target (should be first) in findres file")
 
-db_roff = db_coff = 0
+# Get objects in vicinity
 
-if fitsfile.pixoff is not None and fitsfile.pixoff.coloffset is not None:
-    db_roff = fitsfile.pixoff.rowoffset
-    db_coff = fitsfile.pixoff.coloffset
-    if verbose:
-        print("Using database offsets r={:d} c={:d}".format(db_roff, db_coff))
+objlist = objdata.get_sky_region(dbcurs, fitsfile, maxvar)
+coordlist = [(obj.ra, obj.dec) for obj in objlist]
+pixlist = fitsfile.wcs.coords_to_pix(coordlist)
+maxrow = fitsfile.nrows - trimtop
+maxcol = fitsfile.ncolumns - trimright
 
-# Accumulate new results list
-# If we have row and column diffs in the target, use that so we look relative to that
+# Build new results list
 
-erowoffset = targfr.rdiff
-ecoloffset = targfr.cdiff
+newfrlist = [targfr]
+donealready = notfound = newones = 0
 
-newresults = [ targfr ]
-
-found = 0
-
-for ol in objlocfile.results():
-    if ol.istarget:
+for obj, pixes in zip(objlist, pixlist):
+    if not deleteold:
+        try:
+            fr = findres[obj.objname]
+            if verbose > 1:
+                logging.write("Done", obj.dispname, "already")
+            newfrlist.append(fr)
+            donealready += 1
+            continue
+        except find_results.FindResultErr:
+            pass
+    pcol, prow = pixes
+    if  pcol < trimleft or prow < trimbottom or pcol >= maxcol or prow >= maxrow or obj.is_target():
+        if verbose > 1:
+            logging.write(obj.dispname, "not in image")
         continue
-    aps = ol.apsize
-    msg = "*"
-    if aps == 0:
-        aps = None
-        msg = "(def)"
+    try:
+        newfr = findres.find_object(prow, pcol, obj, searchpar)
+        newfr.obsind = fitsfile.from_obsind
+        newfrlist.append(newfr)
+        newones += 1
+    except find_results.FindResultErr as e:
+        if verbose > 1:
+            logging.write(e.args[0])
+        notfound += 1
 
-    offs = findres.find_object(ol, searchpar, apsize=aps, eoffrow=erowoffset, eoffcol=ecoloffset)
-    if offs is None:
-        if verbose:
-            print("Could not find", ol.dispname, "ap", aps, msg, file=sys.stderr)
-        continue
+if notfound > 0  and  verbose > 0:
+    logging.write(notfound, "objects not found")
 
-    topinst = offs[0]
-    if topinst.row < trimbottom or topinst.col < trimleft:
-        continue
-    if topinst.row >= fitsfile.nrows - trimtop or topinst.col >= fitsfile.ncolumns - trimright:
-        continue
-    fr = find_results.FindResult(row=topinst.row,
-                                 col=topinst.col,
-                                 apsize=ol.apsize,
-                                 adus=topinst.adus,
-                                 rdiff=topinst.rowdiff + erowoffset,
-                                 cdiff=topinst.coldiff + ecoloffset,
-                                 obj=ol)
-    newresults.append(fr)
-    found += 1
+if verbose > 0:
+    logging.write("{:d} objects found".format(len(newfrlist)-1))
 
-if found < findmin:
-    print("Not enough objects found in {:s} (filter {:s}) looking for {:d} only found {:d}".format(infilename, fitsfile.filter, findmin, found), file=sys.stderr)
-    sys.exit(1)
+if len(newfrlist) < findmin:
+    logging.die(60, "too few ({:d}) objects found need at least {:d}".format(len(newfrlist), findmin))
 
-findres.resultlist = newresults
-findres.calccoords()
-findres.reorder()
-findres.relabel()
-findres.rekey()
+if deleteold and num_existing > 1:
+    if verbose > 0:
+        logging.write("Deleting {:d} old results".format(num_existing-1))
+    for fr in findres.results():
+        if not fr.istarget:
+            fr.delete(dbcurs)
 
-try:
-    find_results.save_results_to_file(findres, findresprefix, force=True)
-except find_results.FindResultErr as e:
-    print(e.args[0], file=sys.stderr)
-    sys.exit(100)
+findres.resultlist = newfrlist
+# print("Num existing = {:d} donealready = {:d} num in list = {:d}".format(num_existing, donealready, len(newfrlist)))
+if newones != 0:
+    findres.reorder()
+    findres.relabel()
+    findres.rekey()
+    findres.savedb(dbcurs)
+    if verbose > 0:
+        logging.write("Save complete")
+else:
+    if verbose > 0:
+        logging.write("Save omitted nothing new")

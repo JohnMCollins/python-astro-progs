@@ -157,8 +157,8 @@ try:
                 dispn = r.obj.dispname
             except AttributeError:
                 dispn = ""
-            print("{lab:<{lw}s} {dn:<{dnw}s} {ap:5.2f} {adus:10.2f} {ra:8.3f} {dec:8.3f}".
-                  format(dn=dispn, lab=r.label, ap=r.apsize, adus=r.adus, ra=r.radeg, dec=r.decdeg,
+            print("{lab:<{lw}s} {dn:<{dnw}s} {ap:5.2f} {adus:10.2f} {modadus:10.2f} {ra:8.3f} {dec:8.3f}".
+                  format(dn=dispn, lab=r.label, ap=r.apsize, adus=r.adus, modadus=r.modadus, ra=r.radeg, dec=r.decdeg,
                          lw=lnamelength, dnw=dnamelength))
 except (KeyboardInterrupt, BrokenPipeError):
     pass

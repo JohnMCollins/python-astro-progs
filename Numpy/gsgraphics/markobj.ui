@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>634</width>
+    <width>702</width>
     <height>575</height>
    </rect>
   </property>
@@ -21,8 +21,8 @@
   <widget class="QDialogButtonBox" name="buttonBox">
    <property name="geometry">
     <rect>
-     <x>270</x>
-     <y>500</y>
+     <x>320</x>
+     <y>530</y>
      <width>341</width>
      <height>32</height>
     </rect>
@@ -39,7 +39,7 @@
     <rect>
      <x>340</x>
      <y>10</y>
-     <width>271</width>
+     <width>331</width>
      <height>25</height>
     </rect>
    </property>
@@ -55,7 +55,7 @@
     <rect>
      <x>230</x>
      <y>60</y>
-     <width>381</width>
+     <width>431</width>
      <height>25</height>
     </rect>
    </property>
@@ -67,9 +67,9 @@
    <property name="geometry">
     <rect>
      <x>230</x>
-     <y>110</y>
-     <width>381</width>
-     <height>25</height>
+     <y>89</y>
+     <width>431</width>
+     <height>26</height>
     </rect>
    </property>
    <property name="toolTip">
@@ -79,8 +79,8 @@
   <widget class="QDoubleSpinBox" name="radeg">
    <property name="geometry">
     <rect>
-     <x>90</x>
-     <y>160</y>
+     <x>100</x>
+     <y>190</y>
      <width>111</width>
      <height>26</height>
     </rect>
@@ -109,8 +109,8 @@
   <widget class="QDoubleSpinBox" name="decdeg">
    <property name="geometry">
     <rect>
-     <x>90</x>
-     <y>190</y>
+     <x>100</x>
+     <y>220</y>
      <width>111</width>
      <height>26</height>
     </rect>
@@ -142,8 +142,8 @@
   <widget class="QDoubleSpinBox" name="apsize">
    <property name="geometry">
     <rect>
-     <x>520</x>
-     <y>160</y>
+     <x>580</x>
+     <y>180</y>
      <width>91</width>
      <height>26</height>
     </rect>
@@ -169,9 +169,9 @@
   <widget class="QGroupBox" name="groupBox">
    <property name="geometry">
     <rect>
-     <x>80</x>
-     <y>230</y>
-     <width>391</width>
+     <x>50</x>
+     <y>260</y>
+     <width>431</width>
      <height>241</height>
     </rect>
    </property>
@@ -183,7 +183,7 @@
      <rect>
       <x>10</x>
       <y>32</y>
-      <width>323</width>
+      <width>401</width>
       <height>182</height>
      </rect>
     </property>
@@ -238,14 +238,6 @@
       <string>Calculate aperture</string>
      </property>
     </widget>
-    <widget class="QRadioButton" name="specdisplay">
-     <property name="toolTip">
-      <string>Give display label to object or cancel one if it has one</string>
-     </property>
-     <property name="text">
-      <string>Display label</string>
-     </property>
-    </widget>
    </widget>
   </widget>
   <widget class="QLabel" name="label_2">
@@ -278,7 +270,7 @@
    <property name="geometry">
     <rect>
      <x>40</x>
-     <y>110</y>
+     <y>90</y>
      <width>121</width>
      <height>17</height>
     </rect>
@@ -290,8 +282,8 @@
   <widget class="QLabel" name="label_5">
    <property name="geometry">
     <rect>
-     <x>40</x>
-     <y>160</y>
+     <x>50</x>
+     <y>190</y>
      <width>67</width>
      <height>17</height>
     </rect>
@@ -303,8 +295,8 @@
   <widget class="QLabel" name="label_6">
    <property name="geometry">
     <rect>
-     <x>40</x>
-     <y>190</y>
+     <x>50</x>
+     <y>220</y>
      <width>67</width>
      <height>17</height>
     </rect>
@@ -316,8 +308,8 @@
   <widget class="QLabel" name="label_7">
    <property name="geometry">
     <rect>
-     <x>370</x>
-     <y>160</y>
+     <x>430</x>
+     <y>180</y>
      <width>131</width>
      <height>17</height>
     </rect>
@@ -329,8 +321,8 @@
   <widget class="QLabel" name="label">
    <property name="geometry">
     <rect>
-     <x>230</x>
-     <y>190</y>
+     <x>240</x>
+     <y>220</y>
      <width>67</width>
      <height>17</height>
     </rect>
@@ -342,8 +334,8 @@
   <widget class="QLineEdit" name="frlab">
    <property name="geometry">
     <rect>
-     <x>290</x>
-     <y>190</y>
+     <x>300</x>
+     <y>220</y>
      <width>51</width>
      <height>25</height>
     </rect>
@@ -358,8 +350,8 @@
   <widget class="QLabel" name="label_8">
    <property name="geometry">
     <rect>
-     <x>530</x>
-     <y>260</y>
+     <x>540</x>
+     <y>290</y>
      <width>67</width>
      <height>17</height>
     </rect>
@@ -371,14 +363,20 @@
   <widget class="QLineEdit" name="rdiff">
    <property name="geometry">
     <rect>
-     <x>530</x>
-     <y>280</y>
-     <width>71</width>
+     <x>540</x>
+     <y>310</y>
+     <width>121</width>
      <height>25</height>
     </rect>
    </property>
+   <property name="toolTip">
+    <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Row difference from expected&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+   </property>
    <property name="layoutDirection">
     <enum>Qt::RightToLeft</enum>
+   </property>
+   <property name="alignment">
+    <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
    </property>
    <property name="readOnly">
     <bool>true</bool>
@@ -387,14 +385,20 @@
   <widget class="QLineEdit" name="cdiff">
    <property name="geometry">
     <rect>
-     <x>530</x>
-     <y>310</y>
-     <width>71</width>
+     <x>540</x>
+     <y>340</y>
+     <width>121</width>
      <height>25</height>
     </rect>
    </property>
+   <property name="toolTip">
+    <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Column difference from expected&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+   </property>
    <property name="layoutDirection">
     <enum>Qt::RightToLeft</enum>
+   </property>
+   <property name="alignment">
+    <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
    </property>
    <property name="readOnly">
     <bool>true</bool>
@@ -403,14 +407,17 @@
   <widget class="QLineEdit" name="tcdiff">
    <property name="geometry">
     <rect>
-     <x>530</x>
-     <y>390</y>
-     <width>71</width>
+     <x>540</x>
+     <y>420</y>
+     <width>121</width>
      <height>25</height>
     </rect>
    </property>
    <property name="layoutDirection">
     <enum>Qt::RightToLeft</enum>
+   </property>
+   <property name="alignment">
+    <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
    </property>
    <property name="readOnly">
     <bool>true</bool>
@@ -419,8 +426,8 @@
   <widget class="QLabel" name="label_9">
    <property name="geometry">
     <rect>
-     <x>530</x>
-     <y>340</y>
+     <x>540</x>
+     <y>370</y>
      <width>67</width>
      <height>17</height>
     </rect>
@@ -432,14 +439,17 @@
   <widget class="QLineEdit" name="trdiff">
    <property name="geometry">
     <rect>
-     <x>530</x>
-     <y>360</y>
-     <width>71</width>
+     <x>540</x>
+     <y>390</y>
+     <width>121</width>
      <height>25</height>
     </rect>
    </property>
    <property name="layoutDirection">
     <enum>Qt::RightToLeft</enum>
+   </property>
+   <property name="alignment">
+    <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
    </property>
    <property name="readOnly">
     <bool>true</bool>
@@ -448,8 +458,8 @@
   <widget class="QLabel" name="label_10">
    <property name="geometry">
     <rect>
-     <x>370</x>
-     <y>190</y>
+     <x>430</x>
+     <y>210</y>
      <width>41</width>
      <height>17</height>
     </rect>
@@ -461,8 +471,8 @@
   <widget class="QLineEdit" name="magname">
    <property name="geometry">
     <rect>
-     <x>420</x>
-     <y>190</y>
+     <x>480</x>
+     <y>210</y>
      <width>31</width>
      <height>25</height>
     </rect>
@@ -477,8 +487,8 @@
   <widget class="QLineEdit" name="magvalue">
    <property name="geometry">
     <rect>
-     <x>490</x>
-     <y>190</y>
+     <x>550</x>
+     <y>210</y>
      <width>111</width>
      <height>25</height>
     </rect>
@@ -496,8 +506,8 @@
   <widget class="QLineEdit" name="curradus">
    <property name="geometry">
     <rect>
-     <x>460</x>
-     <y>220</y>
+     <x>520</x>
+     <y>240</y>
      <width>141</width>
      <height>25</height>
     </rect>
@@ -518,8 +528,8 @@
   <widget class="QLabel" name="label_11">
    <property name="geometry">
     <rect>
-     <x>370</x>
-     <y>220</y>
+     <x>430</x>
+     <y>240</y>
      <width>67</width>
      <height>17</height>
     </rect>
@@ -528,25 +538,51 @@
     <string>ADUs</string>
    </property>
   </widget>
+  <widget class="QLabel" name="label_12">
+   <property name="geometry">
+    <rect>
+     <x>40</x>
+     <y>120</y>
+     <width>121</width>
+     <height>17</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Latex Name</string>
+   </property>
+  </widget>
+  <widget class="QLineEdit" name="latexname">
+   <property name="geometry">
+    <rect>
+     <x>230</x>
+     <y>119</y>
+     <width>431</width>
+     <height>25</height>
+    </rect>
+   </property>
+   <property name="toolTip">
+    <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;This is the Latex name for the object for when we are referring to it in a&lt;/p&gt;&lt;p&gt;Latex file&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+   </property>
+  </widget>
  </widget>
  <tabstops>
   <tabstop>filename</tabstop>
   <tabstop>objectname</tabstop>
   <tabstop>dispname</tabstop>
+  <tabstop>latexname</tabstop>
   <tabstop>radeg</tabstop>
   <tabstop>decdeg</tabstop>
   <tabstop>frlab</tabstop>
-  <tabstop>magname</tabstop>
-  <tabstop>apsize</tabstop>
-  <tabstop>magvalue</tabstop>
-  <tabstop>curradus</tabstop>
   <tabstop>setname</tabstop>
   <tabstop>setnamecalc</tabstop>
   <tabstop>setdispname</tabstop>
   <tabstop>hide</tabstop>
   <tabstop>apadj</tabstop>
   <tabstop>calcaperture</tabstop>
-  <tabstop>specdisplay</tabstop>
+  <tabstop>magname</tabstop>
+  <tabstop>apsize</tabstop>
+  <tabstop>magvalue</tabstop>
+  <tabstop>curradus</tabstop>
   <tabstop>rdiff</tabstop>
   <tabstop>cdiff</tabstop>
   <tabstop>trdiff</tabstop>

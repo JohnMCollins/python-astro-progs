@@ -20,14 +20,14 @@ import remgeom
 import remfits
 import col_from_file
 import find_results
-from argon2._ffi import ffi
+import logs
 
 
 class figuredata:
     """Remember image file and find results data for display"""
 
-    def __init__(self, prefixname, fitsfile, annot, findr=None):
-        self.prefix = prefixname
+    def __init__(self, fitsfilename, fitsfile, annot, findr=None):
+        self.fitsfilename = fitsfilename
         self.fitsfile = fitsfile
         self.findres = findr
         self.carray = None
@@ -61,29 +61,27 @@ class figuredata:
             return  None
         return  ret[0]
 
-
 figdict = dict()
-
 
 def findfig(event):
     """Get figuredata instance from event"""
     try:
-        return  figdict[event.canvas.get_window_title()]
+        return  figdict[event.canvas.figure.number]
     except KeyError:
         return  None
 
 
-def setfig(fig, pref, fitsfile, findr=None):
+def setfig(fig, fitsfilename, fitsfile, findr=None):
     """Set up figure structure and callbacks and add to list"""
     ax = fig.axes[0]
     canv = fig.canvas
-    canv.manager.set_window_title(pref)
+    canv.manager.set_window_title(fitsfilename)
     annot = ax.annotate("", xy=(0, 0), xytext=(20, 20), textcoords="offset points", fontsize=rg.objdisp.objtextfs, bbox=dict(boxstyle="round", fc=popupcolour), arrowprops=dict(arrowstyle="->"))
     annot.get_bbox_patch().set_alpha(alphaflag)
     annot.set_visible(False)
     canv.mpl_connect('motion_notify_event', hover)
     canv.mpl_connect('button_press_event', button_press)
-    figdict[prefix] = figuredata(prefix, fitsfile, annot, findr)
+    figdict[fig.number] = figuredata(fitsfilename, fitsfile, annot, findr)
 
 
 def hover(event):
@@ -100,7 +98,8 @@ def hover(event):
             event.canvas.draw_idle()
         return
     dispn = "(not known)"
-    if objr.obj is not None: dispn = objr.obj.dispname
+    if objr.obj is not None:
+        dispn = objr.obj.dispname
     atxt = "{:s}: {:s}".format(objr.label, dispn)
     if objr.obj is not None or objr.adus > 0.0:
         atxt += "\n"
@@ -129,32 +128,31 @@ def button_press(event):
     if objr is None:
         coordlist = fd.fitsfile.wcs.pix_to_coords(np.array(((event.xdata, event.ydata),)))
         ra, dec = coordlist[0]
-        subprocess.Popen(('markobj.py', '--create', '--findres', fd.prefix, str(round(event.xdata)), str(round(event.ydata)), str(ra), str(dec)))
+        subprocess.Popen(('markobj.py', '--create', fd.fitsfilename, str(event.xdata), str(event.ydata), str(ra), str(dec)))
     else:
         for r in objr:
-            subprocess.Popen(("markobj.py", '--findres', fd.prefix, r.label))
+            subprocess.Popen(("markobj.py", fd.fitsfilename, r.label))
 
 
-def display_findresults(ffile, work_findres):
+def display_findresults(work_findres):
     """Insert find results from supplied structure and image file"""
-    w = ffile.wcs
     n = 0
-    for fr in work_findres.results():
-        if fr.hide:
+    for fres in work_findres.results():
+        if fres.hide:
             continue
         # coords = w.coords_to_pix(np.array((fr.radeg, fr.decdeg)).reshape(1, 2))[0]
         # print("Name is:", "'" + fr.name + "'", file=sys.stderr)
-        coords = (fr.col, fr.row)
-        if fr.istarget or (n == 0 and brightest):
+        coords = (fres.col, fres.row)
+        if fres.istarget or (n == 0 and brightest):
             objc = targetcolour
-        elif fr.obj is None or not fr.obj.valid_label():
+        elif fres.obj is None or not fres.obj.valid_label():
             objc = idcolour
         else:
             objc = objcolour
-        ptch = mp.Circle(coords, radius=fr.apsize, alpha=rg.objdisp.objalpha, color=objc, fill=rg.objdisp.objfill)
+        ptch = mp.Circle(coords, radius=fres.apsize, alpha=rg.objdisp.objalpha, color=objc, fill=rg.objdisp.objfill)
         ax = plt.gca()
         ax.add_patch(ptch)
-        annot = ax.annotate(fr.label, xy=coords, xytext=(rg.objdisp.objtextdisp, rg.objdisp.objtextdisp), fontsize=rg.objdisp.objtextfs,
+        annot = ax.annotate(fres.label, xy=coords, xytext=(rg.objdisp.objtextdisp, rg.objdisp.objtextdisp), fontsize=rg.objdisp.objtextfs,
                             textcoords="offset points", bbox=dict(boxstyle="round", fc=flagcolour), arrowprops=dict(arrowstyle="->"))
         annot.get_bbox_patch().set_alpha(alphaflag)
         n += 1
@@ -186,7 +184,6 @@ parsearg.add_argument('--type', type=str, choices=['F', 'B', 'Z', 'I'], help='In
 parsearg.add_argument('--colnum', type=int, default=0, help='Column number to take from standard input')
 parsearg.add_argument('--greyscale', type=str, help="Standard greyscale to use")
 parsearg.add_argument('--title', type=str, help='Optional title to put at head of image otherwise based on file')
-parsearg.add_argument('--findres', type=str, help='File of find results if not the same as input file')
 parsearg.add_argument('--limfind', type=int, default=1000000, help='Maximumm number of find results')
 parsearg.add_argument('--brightest', action='store_true', help='Mark brightest object as target if no target')
 parsearg.add_argument('--displimit', type=int, default=30, help='Maximum number of images to display')
@@ -198,11 +195,13 @@ parsearg.add_argument('--alphaflag', type=float, default=0.4, help='Alpha for fl
 parsearg.add_argument('--tagdist', type=float, default=15.0, help='Number of pixel distance to treat as closeby')
 parsearg.add_argument('--zoomcoords', type=str, help='RA (deg)/DEC (deg) for centre zoom or object label')
 parsearg.add_argument('--factorzoom', type=float, default=5.0, help='Factor to zoom by')
+logs.parseargs(parsearg)
 
 rg.disp_argparse(parsearg)
 
 resargs = vars(parsearg.parse_args())
 remdefaults.getargs(resargs)
+logging = logs.getargs(resargs)
 
 files = resargs['files']
 if len(files) == 0:
@@ -213,11 +212,9 @@ greyscalename = resargs['greyscale']
 if greyscalename is None:
     greyscalename = rg.defgreyscale
     if greyscalename is None:
-        print("No greyscale given, use --greyscale or set default one", file=sys.stderr)
-        sys.exit(0)
+        logging.die(8, "No greyscale given, use --greyscale or set default one")
 
 title = resargs['title']
-findres = resargs['findres']
 limfind = resargs['limfind']
 brightest = resargs['brightest']
 displimit = resargs['displimit']
@@ -235,13 +232,11 @@ if zoomcoords is not None:
     zparts = zoomcoords.split(",")
     if len(zparts) == 2:
         try:
-            zoomcoords = tuple(map(lambda x: float(x), zparts))
+            zoomcoords = tuple(map(float, zparts))
         except (TypeError, ValueError):
-            print("Did not understand zoom coords", zoomcoords, "expecting RA/Dec or label", file=sys.stderr)
-            sys.exit(80)
+            logging.die(80, "Did not understand zoom coords", zoomcoords, "expecting RA/Dec or label")
     elif len(zparts) != 1:
-        print("Did not understand zoom coords", zoomcoords, "expecting RA/Dec or label", file=sys.stderr)
-        sys.exit(81)
+        logging.die(81, "Did not understand zoom coords", zoomcoords, "expecting RA/Dec or label")
 
 idcolour = rg.objdisp.idcolour
 objcolour = rg.objdisp.objcolour
@@ -257,8 +252,7 @@ targetcolour = rg.objdisp.targcolour
 
 gsdets = rg.get_greyscale(greyscalename)
 if gsdets is None:
-    print("Sorry grey scale", greyscalename, "is not defined", file=sys.stderr)
-    sys.exit(9)
+    logging.die(9, "Sorry grey scale", greyscalename, "is not defined")
 
 collist = gsdets.get_colours()
 if setmax is not None:
@@ -282,12 +276,14 @@ plt.rc('figure', max_open_warning=0)
 
 for file in files:
 
+    logging.set_filename(file)
     try:
         ff = remfits.parse_filearg(file, dbcurs, typef=ftype)
     except remfits.RemFitsErr as e:
-        print(file, "open error", e.args[0], file=sys.stderr)
+        logging.write("open error", e.args[0])
         continue
 
+    prefix = miscutils.removesuffix(file)
     data = ff.data
     plotfigure = rg.plt_figure()
     # plotfigure.canvas.manager.set_window_title('FITS Image from file ' + file)
@@ -318,27 +314,20 @@ for file in files:
     elif len(title) != 0:
         plt.title(title)
 
-    prefix = miscutils.removesuffix(file)
-    if findres is not None and findres != '@':
-        prefix = findres
-    try:
-        tfindres = find_results.load_results_from_file(prefix)
-        if tfindres.obsind == ff.from_obsind:
-            if isinstance(zoomcoords, str):
-                try:
-                    fr = tfindres[zoomcoords]
-                    set_zoom(ff, fr.col, fr.row)
-                except KeyError:
-                    pass
-            display_findresults(ff, tfindres)
-            setfig(plotfigure, prefix, ff, tfindres)
-    except find_results.FindResultErr:
-        pass
-
+    findres = find_results.FindResults(remfitsobj=ff)
+    findres.loaddb(dbcurs)
+    if isinstance(zoomcoords, str):
+        try:
+            fr = findres[zoomcoords]
+            set_zoom(ff, fr.col, fr.row)
+        except KeyError:
+            pass
+    display_findresults(findres)
+    setfig(plotfigure, file, ff, findres)
     fignum += 1
     if figout is None:
         if fignum >= displimit:
-            print("Stopping display as reached", displimit, "images", file=sys.stderr)
+            logging.write("Stopping display as reached", displimit, "images")
             break
     else:
         if nfigs > 1:
@@ -349,7 +338,6 @@ for file in files:
         plt.close(plotfigure)
 
 if fignum == 0:
-    print("Nothing displayed", file=sys.stderr)
-    sys.exit(1)
+    logging.die(1, "Nothing displayed")
 if figout is None:
     plt.show()

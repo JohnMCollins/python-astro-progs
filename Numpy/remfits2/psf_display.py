@@ -115,11 +115,8 @@ for file in files:
 
     # Get findres from file if it exists, otherwise get from database
 
-    try:
-        findres = find_results.load_results_from_file(fprefix + file, ff)
-    except find_results.FindResultErr as e:
-        findres = find_results.FindResults(ff)
-        findres.loaddb(dbcurs)
+    findres = find_results.FindResults(ff)
+    findres.loaddb(dbcurs)
 
     for objname in verified_objnames:
 
