@@ -5,6 +5,7 @@
 import argparse
 import warnings
 import sys
+from multiprocessing import Pool
 from astropy.utils.exceptions import AstropyWarning, AstropyUserWarning
 import remdefaults
 import remfits
@@ -12,6 +13,24 @@ import find_results
 import searchparam
 import objdata
 import logs
+
+def run_find(objpixes):
+    """For running multiprocessor"""
+
+    obj, pixes = objpixes
+    pcol, prow = pixes
+    if  pcol < trimleft or prow < trimbottom or pcol >= maxcol or prow >= maxrow or obj.is_target():
+        if verbose > 1:
+            logging.write(obj.dispname, "not in image")
+        return None
+    try:
+        newfr = findres.find_object(prow, pcol, obj, searchpar)
+        newfr.obsind = fitsfile.from_obsind
+        return newfr
+    except find_results.FindResultErr as e:
+        if verbose > 1:
+            logging.write(e.args[0])
+        return None
 
 # Shut up warning messages
 
@@ -36,6 +55,7 @@ parsearg.add_argument('--trimleft', type=int, default=0, help='Pixels to trim of
 parsearg.add_argument('--trimright', type=int, default=0, help='Pixels to trim off right')
 parsearg.add_argument('--trimtop', type=int, default=0, help='Pixels to trim off top')
 parsearg.add_argument('--trimbottom', type=int, default=0, help='Pixels to trim off bottom')
+parsearg.add_argument('--maxproc', type=int, default=8, help='Maximum number of processes to run')
 logs.parseargs(parsearg)
 
 resargs = vars(parsearg.parse_args())
@@ -57,6 +77,7 @@ trimleft = resargs['trimleft']
 trimright = resargs['trimright']
 trimtop = resargs['trimtop']
 logging = logs.getargs(resargs)
+maxproc = resargs['maxproc']
 
 # If we are saving stuff, do so and exit
 
@@ -66,7 +87,7 @@ if searchpar.saveparams:
         searchpar.display(sys.stderr)
     sys.exit(0)
 
-mydb, dbcurs = remdefaults.opendb()
+mydb, dbcurs = remdefaults.opendb(waitlock=True)
 
 logging.set_filename(infilename)
 
@@ -95,6 +116,15 @@ targfr = findres[0]
 if not targfr.istarget:
     logging.die(17, "No target (should be first) in findres file")
 
+if num_existing > 1:
+    if not deleteold:
+        logging.die(18, "Already done, use --deleteold if needed")
+    if verbose > 0:
+        logging.write("Deleting {:d} old results".format(num_existing-1))
+    for fr in findres.results():
+        if not fr.istarget:
+            fr.delete(dbcurs)
+
 # Get objects in vicinity
 
 objlist = objdata.get_sky_region(dbcurs, fitsfile, maxvar)
@@ -106,59 +136,37 @@ maxcol = fitsfile.ncolumns - trimright
 # Build new results list
 
 newfrlist = [targfr]
-donealready = notfound = newones = 0
+notfound = newones = 0
+objpixes = list(zip(objlist, pixlist))
 
-for obj, pixes in zip(objlist, pixlist):
-    if not deleteold:
-        try:
-            fr = findres[obj.objname]
-            if verbose > 1:
-                logging.write("Done", obj.dispname, "already")
-            newfrlist.append(fr)
-            donealready += 1
-            continue
-        except find_results.FindResultErr:
-            pass
-    pcol, prow = pixes
-    if  pcol < trimleft or prow < trimbottom or pcol >= maxcol or prow >= maxrow or obj.is_target():
-        if verbose > 1:
-            logging.write(obj.dispname, "not in image")
-        continue
-    try:
-        newfr = findres.find_object(prow, pcol, obj, searchpar)
-        newfr.obsind = fitsfile.from_obsind
-        newfrlist.append(newfr)
-        newones += 1
-    except find_results.FindResultErr as e:
-        if verbose > 1:
-            logging.write(e.args[0])
-        notfound += 1
+while len(objpixes) != 0:
+    seg = objpixes[:maxproc]
+    objpixes = objpixes[maxproc:]
+    with Pool(min(len(seg), maxproc)) as p:
+        results = p.map(run_find, seg)
+        for r in results:
+            if r is None:
+                notfound += 1
+            else:
+                newfrlist.append(r)
+                newones += 1
 
 if notfound > 0  and  verbose > 0:
     logging.write(notfound, "objects not found")
 
 if verbose > 0:
-    logging.write("{:d} objects found".format(len(newfrlist)-1))
+    logging.write("{:d} objects found".format(newones))
 
-if len(newfrlist) < findmin:
+if newones+1 < findmin:
     logging.die(60, "too few ({:d}) objects found need at least {:d}".format(len(newfrlist), findmin))
-
-if deleteold and num_existing > 1:
-    if verbose > 0:
-        logging.write("Deleting {:d} old results".format(num_existing-1))
-    for fr in findres.results():
-        if not fr.istarget:
-            fr.delete(dbcurs)
 
 findres.resultlist = newfrlist
 # print("Num existing = {:d} donealready = {:d} num in list = {:d}".format(num_existing, donealready, len(newfrlist)))
-if newones != 0:
-    findres.reorder()
-    findres.relabel()
-    findres.rekey()
-    findres.savedb(dbcurs)
-    if verbose > 0:
-        logging.write("Save complete")
-else:
-    if verbose > 0:
-        logging.write("Save omitted nothing new")
+findres.reorder()
+findres.relabel()
+findres.rekey()
+if verbose > 0:
+    logging.write("About to start saving to DB")
+findres.save_as_block(dbcurs)
+if verbose > 0:
+    logging.write("Save complete")

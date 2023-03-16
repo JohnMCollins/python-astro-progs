@@ -19,6 +19,7 @@ import objdata
 import col_from_file
 import find_results
 import gauss2d
+import apoffsets
 
 # Shut up warning messages
 
@@ -127,6 +128,7 @@ for file in files:
             continue
 
         apsize = max(fr.apsize, minap)
+        apsq = apsize**2
         minrow = int(math.ceil(fr.row - apsize - margin))
         maxrow = int(math.floor(fr.row + apsize + 1 + margin))
         mincol = int(math.ceil(fr.col - apsize - margin))
@@ -135,36 +137,35 @@ for file in files:
             print("Omitting", objname, "too close to edge", file=sys.stderr)
             continue
 
-        datseg = data[minrow:maxrow, mincol:maxcol]
+        colfrac, scol = math.modf(fr.col)
+        rowfrac, srow = math.modf(fr.row)
+        srow = int(srow)
+        scol = int(scol)
+        limdata = int(math.ceil(apsize+margin))
+        fullrange = range(-limdata, limdata+2)
+        xygrid = np.meshgrid(fullrange, fullrange)
+        xpoints, ypoints = xygrid
+        xycoords = np.array([(y,x) for x,y in zip(xpoints.flatten(), ypoints.flatten()) if (x - colfrac)**2 + (y - rowfrac)**2 <= apsq])
+        xvals, yvals = xycoords.transpose()
+        datseg = np.array([data[y,x] for y,x in xycoords+(srow,scol)])
         scdat = datseg / datseg.mean()
-        iapsize = int(apsize)
-        iapplusmarg = int(apsize + margin)
-        apsq = apsize ** 2
-        aprange = range(-iapsize, iapsize+1)
-        aplusmarg = range(-iapplusmarg, iapplusmarg+1)
-        faplusmarg = np.arange(-iapplusmarg,iapplusmarg+1.0, pstep)
-        datcoords = [(y, x) for y in aprange for x in aprange if x**2+y**2 <= apsq]
-        datvals = np.array([scdat[y+iapplusmarg,x+iapplusmarg] for y, x in datcoords])
-        lresult = opt.curve_fit(gauss2d.gauss_circle, np.array(datcoords), datvals, p0=(0, 0, max(datvals), np.std(datvals)))
-
+        lresult = opt.curve_fit(gauss2d.gauss_circle, xycoords, scdat, p0=(colfrac, rowfrac, max(scdat), np.std(scdat)))
         xoffset, yoffset, amp, sig = lresult[0]
         amp *= datseg.mean()
         print("x/yoffs={:.2f}/{:.2f} amp={:.6g} sig={:.6g}".format(xoffset, yoffset, amp, sig), file=sys.stderr)
-
         plotfigure = rg.plt_figure()
         plotfigure.canvas.manager.set_window_title("{:s} ({:s}) filter {:s} on {:%d/%m/%Y at %H:%M:%S}".format(fr.obj.dispname, fr.label, findres.filter, findres.obsdate))
         ax = plotfigure.add_subplot(121, projection='3d')
-        xvals = np.tile(aplusmarg, (iapplusmarg*2+1, 1))
-        yvals = xvals.transpose()
-        ax.plot_wireframe(xvals, yvals, datseg, color=plotcolour, alpha=plotalpha)
+        datapoints = data[(ypoints+srow, xpoints+scol)]
+        ax.plot_wireframe(xpoints, ypoints, datapoints, color=plotcolour, alpha=plotalpha)
         zmin, zmax = ax.get_zlim()
-        fitpoints = gauss2d.gauss2d(xvals-xoffset, yvals-yoffset, amp, sig)
-        ax.plot_surface(xvals, yvals, fitpoints, color=fitcolour, alpha=surfalpha)
+        fitpoints = gauss2d.gauss2d(xpoints-xoffset, ypoints-yoffset, amp, sig)
+        ax.plot_surface(xpoints, ypoints, fitpoints, color=fitcolour, alpha=surfalpha)
         ax = plotfigure.add_subplot(122, projection='3d')
-        fitpoints -= datseg
+        fitpoints -= datapoints
         if np.sum(fitpoints) < 0.0:
             fitpoints = - fitpoints
-        ax.plot_surface(xvals, yvals, fitpoints, cmap=cmap, alpha=residalpha)
+        ax.plot_surface(xpoints, ypoints, fitpoints, cmap=cmap, alpha=residalpha)
         zmin2, zmax2 = ax.get_zlim()
         mult = (zmax-zmin)/(zmax2-zmin2)
         ax.set_zlim(zmin2*mult, zmax2*mult)

@@ -47,14 +47,14 @@ if pheader:
 
 try:
     for file in files:
-    
+
         try:
             ff = remfits.parse_filearg(file, mycu)
         except remfits.RemFitsErr as e:
             print("Open of", file, "gave error", e.args[0], file=sys.stderr)
             errors += 1
             continue
-    
+
         data = ff.data
         if trimleft > 0:
             data = data[:, trimleft:]
@@ -64,7 +64,7 @@ try:
             data = data[:-trimtop]
         if trimbottom > 0:
             data = data[trimbottom:]
-    
+
         print("{:{fsize}s} {:7.2f} {:8.2f} {:8.2f} {:8.2f} {:8.2f}".format(miscutils.removesuffix(file, allsuff=True), data.min(), data.max(), np.median(data), data.mean(), data.std(), fsize=fsize))
 except (KeyboardInterrupt, BrokenPipeError):
     sys.exit(0)

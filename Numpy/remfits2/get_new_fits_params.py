@@ -5,6 +5,7 @@
 import sys
 import datetime
 import argparse
+import warnings
 from astropy.utils.exceptions import AstropyWarning, AstropyUserWarning
 from astropy.time import Time
 import scipy.stats as ss
@@ -17,7 +18,6 @@ import fitsops
 import trimarrays
 import mydateutil
 import wcscoord
-import warnings
 
 # Shut up warning messages
 
@@ -61,9 +61,7 @@ orfields.append("(" + " AND ".join(sxfields) + ")")
 orfields.append("sidet!=%d" % trimsides)
 fieldselect.append('(' + " OR ".join(orfields) + ')')
 
-realtrimsides = trimsides
-if realtrimsides < 0:
-    realtrimsides = 0
+realtrimsides = max(trimsides, 0)
 
 dbase, dbcurs = remdefaults.opendb()
 dbcurs.execute("SELECT obsind,ind,exptime,filter,date_obs,gain,dithID,ffname FROM obsinf WHERE " + " AND ".join(fieldselect))
@@ -147,6 +145,10 @@ for obsind, fitsind, exptime, ofilter, date_obs, gain, dithID, ffname in rows:
     updfields.append("gain=%.6g" % fgain)
     updfields.append("orient=%d" % orient)
     updfields.append("airmass=%.6g" % fairmass)
+    try:
+        updfields.append("seeing=%.6g" % ffhdr['SEEING'])
+    except KeyError:
+        pass
     updfields.append("moonphase=%.6g" % moonphase)
     updfields.append("moondist=%.6g" % moondist)
     updfields.append("nrows=%d" % fitsrows)

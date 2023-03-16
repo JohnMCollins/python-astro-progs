@@ -52,7 +52,7 @@ if searchpar.saveparams:
         searchpar.display(sys.stderr)
     sys.exit(0)
 
-mydb, dbcurs = remdefaults.opendb()
+mydb, dbcurs = remdefaults.opendb(waitlock=True)
 
 logging.set_filename(infilename)
 try:

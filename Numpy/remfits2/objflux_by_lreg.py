@@ -9,6 +9,7 @@ import numpy as np
 from scipy.stats import linregress
 import remdefaults
 import objdata
+import col_from_file
 
 def get_obj_by_label(dbcu, vic, lab):
     """Work out what the object is by the label"""
@@ -28,8 +29,9 @@ def combine_errors(f, x, y, xerr, yerr):
     return (f, f * math.sqrt((xerr/x)**2+(yerr/y)**2))
 
 parsearg = argparse.ArgumentParser(description='Get object flux by linear regression from reference objects', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+parsearg.add_argument('obsids', type=int, nargs='*', help='List of obs ids or use stdin')
+parsearg.add_argument('--colnum', type=int, default=0, help='Column number to take from standard input')
 remdefaults.parseargs(parsearg, tempdir=False, inlib=False)
-parsearg.add_argument('--filter', type=str, required=True, help='Filter to limit refs to')
 parsearg.add_argument('--object', type=str, required=True, help='Object to study as id label or objid')
 parsearg.add_argument('--vicinity', type=str, help='Study objects in vicinity if we cannot otherwise work it out')
 parsearg.add_argument('--outfile', type=str, help='Output file or use stdout')
@@ -40,9 +42,9 @@ parsearg.add_argument('--maxsky', type=float, default=1000.0, help='Maximum sky 
 
 resargs = vars(parsearg.parse_args())
 remdefaults.getargs(resargs)
-filtname = resargs['filter']
-filtbri = filtname + 'bri'
-filtbristd = filtbri + 'sd'
+obsids = resargs['obsids']
+if len(obsids) == 0:
+    obsids = map(int, col_from_file.col_from_file(sys.stdin, resargs['colnum']))
 target = resargs['object']
 vicinity = resargs['vicinity']
 outfile = resargs['outfile']
@@ -87,12 +89,6 @@ else:
             print("Unknown target", target, file=sys.stderr)
             sys.exit(13)
 
-targbri = getattr(targobj, filtbri, None)
-targbrisd = getattr(targobj, filtbristd, None)
-if targbri is None or targbrisd is None:
-    print(target, "has no", filtbri, "and", filtbristd, file=sys.stderr)
-    sys.exit(15)
-
 target = targobj.objname
 if vicinity is None:
     vicinity = targobj.vicinity
@@ -102,22 +98,39 @@ elif vicinity != targobj.vicinity:
     print("Confused about vicinity, target was", targobj.vicinity, "specified was", vicinity, file=sys.stderr)
     sys.exit(14)
 
-mycu.execute("SELECT bjdobs,obsinf.obsind,aducount,aduerr " \
+mycu.execute("SELECT bjdobs,obsinf.obsind,aducount,aduerr,filter " \
              "FROM obsinf INNER JOIN aducalc ON obsinf.obsind=aducalc.obsind " \
-             "WHERE obsinf.filter=%s AND aducalc.objind={:d} AND aducalc.skylevel<={:.8e} ORDER BY date_obs".format(targobj.objind, maxsky), filtname)
+             "WHERE obsinf.obsind IN ({:s}) " \
+             "AND aducalc.objind={:d} " \
+             "AND aducalc.skylevel<={:.8e} " \
+             "ORDER BY date_obs".format(",".join(map(str, obsids)), targobj.objind, maxsky))
 
 targrows = mycu.fetchall()
 if len(targrows) == 0:
     print("No target rows to display", file=sys.stderr)
     sys.exit(20)
 
+targbrilu = dict()
 objindtobri = dict()
 resarray = []
 
-for bjdate, obsind, acttargadus, acttargaduerr in targrows:
+for bjdate, obsind, acttargadus, acttargaduerr, filt in targrows:
 
     if acttargadus / acttargaduerr < minsnr:
         continue
+
+    filtbri = filt + 'bri'
+    filtbrisd = filtbri + "sd"
+
+    if filt in targbrilu:
+        targbri, targbrisd = targbrilu[filt]
+    else:
+        targbri = getattr(targobj, filt + 'bri', None)
+        targbrisd = getattr(targobj, filt + 'brisd', None)
+        if targbri is None or targbrisd is None:
+            print(target, "has no bri and brisd for filter",  filt, file=sys.stderr)
+            continue
+        targbrilu[filt] = (targbri, targbrisd)
 
     mycu.execute("SELECT aducount,aduerr,objind FROM aducalc WHERE obsind={:d} AND objind!={:d}".format(obsind, targobj.objind))
     refrows = mycu.fetchall()
@@ -132,7 +145,7 @@ for bjdate, obsind, acttargadus, acttargaduerr in targrows:
         if objind in objindtobri:
             bri, brisd = objindtobri[objind]
         else:
-            mycu.execute("SELECT " + filtbri + "," + filtbristd + " FROM objdata WHERE ind={:d}".format(objind))
+            mycu.execute("SELECT " + filtbri + "," + filtbrisd + " FROM objdata WHERE ind={:d}".format(objind))
             try:
                 bri, brisd = mycu.fetchone()
             except TypeError:

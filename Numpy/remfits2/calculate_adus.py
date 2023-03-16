@@ -6,8 +6,6 @@ import argparse
 import sys
 #import math
 import warnings
-import time
-import pymysql
 #import numpy as np
 from astropy.utils.exceptions import ErfaWarning
 from astropy.utils.exceptions import AstropyWarning, AstropyUserWarning
@@ -29,7 +27,7 @@ parsearg.add_argument('files', type=str, nargs='*', help='List of obsids or use 
 parsearg.add_argument('--biasfile', type=str, required=True, help='New-style bias file to use')
 parsearg.add_argument('--flatfile', type=str, required=True, help='New style flat file to use')
 parsearg.add_argument('--colnum', type=int, default=0, help='Column to use from stdin')
-parsearg.add_argument('--skylevelstd', type=float, default=0.5, help='Theshold level of std devs to include points in sky')
+parsearg.add_argument('--skylevelstd', type=float, default=remfits.DEFAULT_SKYLEVELSTD, help='Theshold level of std devs to include points in sky')
 parsearg.add_argument('--stoperr', action='store_false', help='Stop processing if any errors met')
 parsearg.add_argument('--nullstop', action='store_true', help='Stop processing if nothing found for an observation')
 logs.parseargs(parsearg)
@@ -57,7 +55,7 @@ except stdarray.StdArrayErr as e:
 
 errors = nullres = 0
 
-mydb, dbcurs = remdefaults.opendb()
+mydb, dbcurs = remdefaults.opendb(waitlock=True)
 
 had_obsind = set()
 resulttab = []
@@ -142,7 +140,6 @@ if nullres != 0:
 
 if len(resulttab) == 0:
     logging.die(2, "No usable results found")
-    sys.exit(2)
 
 # Delete previous with the observations we had
 
@@ -156,11 +153,8 @@ else:
     logging.write(deletions, "existing calculations deleted")
 
 for obsind, objind, frind, skylevel, skystd, apsize, adus, aduerr, modadus, modaduerr in resulttab:
-    tries = 3
-    while  tries > 0:
-        try:
-            dbcurs.execute("INSERT INTO aducalc (objind,obsind,frind,skylevel,skystd,aducount,aduerr,modaducount,modaduerr) " \
-                           "VALUES ({:d},{:d},{:d},{:.8e},{:.8e},{:.2f},{:.8e},{:.8e},{:.8e},{:.8e})".format(objind,
+    dbcurs.execute("INSERT INTO aducalc (objind,obsind,frind,skylevel,skystd,apsize,aducount,aduerr,modaducount,modaduerr) " \
+                   "VALUES ({:d},{:d},{:d},{:.8e},{:.8e},{:.2f},{:.8e},{:.8e},{:.8e},{:.8e})".format(objind,
                                                                                                       obsind,
                                                                                                       frind,
                                                                                                       skylevel,
@@ -170,14 +164,7 @@ for obsind, objind, frind, skylevel, skystd, apsize, adus, aduerr, modadus, moda
                                                                                                       aduerr,
                                                                                                       modadus,
                                                                                                       modaduerr))
-            break
-        except pymysql.err.OperationalError as e:
-            if e.args[0] != 1213:
-                logging.write("Other MySQL error", e.args[0], e.args[1])
-                break
-            tries -= 1
-            logging.write("Deadlock, sleeping {:d} more tries".format(tries))
-            time.sleep(10)
+    dbcurs.execute("UPDATE findresult SET apsize={:.2f},adus={:.8e},modadus={:.8e} WHERE ind={:d}".format(apsize,adus,modadus,frind))
 mydb.commit()
 logging.write(len(resulttab), "rows added")
 sys.exit(0)

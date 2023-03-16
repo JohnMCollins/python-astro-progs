@@ -12,14 +12,14 @@ import remfield
 import numpy as np
 
 Format_keys = ('ind', 'obsind', "object", 'filter', 'dither', 'date', 'gain', 'orient', 'qual', 'reason', 'exptime',
-               'startx', 'starty', 'cols', 'rows', 'airmass',
+               'startx', 'starty', 'cols', 'rows', 'airmass', 'seeing',
                'minval', 'nsminval', 'ansminval', 'maxval', 'nsmaxval', 'ansmaxval',
                'median', 'nsmeidan', 'ansmedian', 'mean', 'nsmean', 'ansmean',
                'std', 'nsstd', 'ansstd', 'skew', 'nsskew', 'ansskew',
                'kurt', 'nskurt', 'anskurt')
 
 Format_header = ('^FITS', '^Serial', "<Object", '<Filter', '>Dither', '<Date/Time', '>Gain', '>Orient', '>Qual', '<Rejreason', '>Exo',
-               '>startx', '>starty', '>cols', '>rows', '>airmass',
+               '>startx', '>starty', '>cols', '>rows', '>airmass', '>seeing',
                '^Minimum', '^Ns min', '^Abs ns min',
                '^Maximum', '^Ns max', '^Abs ns max',
                '^Median', '>Ns meidan', '>Abs ns median',
@@ -29,13 +29,13 @@ Format_header = ('^FITS', '^Serial', "<Object", '<Filter', '>Dither', '<Date/Tim
                '>Kurtosis', '>Ns kurtosis', '>Abs ns kurtosis')
 
 Format_codes = ('d', 'd', 's', 's', 'd', '%Y-%m-%d %H:%M:%S', '.1f', 'd', '.3g', 's', '.3g',
-                'd', 'd', 'd', 'd', '.4f',
+                'd', 'd', 'd', 'd', '.4f', '.3g',
                 'd', '.3g', '.3g', 'd', '.3g', '.3g',
                 '.2f', '.3g', '.3g', '.2f', '.3g', '.3g',
                 '.3g', '.3g', '.3g', '.3g', '.3g', '.3g', '.3g', '.3g', '.3g')
 
 Format_accum = (False, False, False, False, False, False, False, False, False, False, False,
-                False, False, False, False, False,
+                False, False, False, False, False, False,
                 True, True, True, True, True, True,
                 True, True, True, True, True, True,
                 True, True, True, True, True, True, True, True, True)
@@ -55,6 +55,7 @@ parsearg.add_argument('--dither', type=int, nargs='*', default=[0], help='Dither
 parsearg.add_argument('--filter', type=str, nargs='*', help='filters to limit to')
 parsearg.add_argument('--gain', type=float, help='Restrict to given gain value')
 parsearg.add_argument('--airmass', type=str, help='Restrict to min:max airmass values')
+parsearg.add_argument('--seeing', type=str, help='Restrict to min:max seeing')
 parsearg.add_argument('--quality', type=str, help='Restrict to min:max quality')
 parsearg.add_argument('--orientation', type=int, help='Restrict to given orientation value (quarter turns)')
 parsearg.add_argument('--startx', type=int, help='Restrict to given startx value on CCD')
@@ -218,13 +219,14 @@ if disp_cols is not None:
 try:
     remfield.getargs(resargs, fieldselect)
     remfield.parsepair(resargs, "airmass", fieldselect, "airmass")
+    remfield.parsepair(resargs, "seeing", fieldselect, "seeing")
     remfield.parsepair(resargs, "quality", fieldselect, "quality")
     if summary:
         sel = "SELECT object,COUNT(*) FROM obsinf WHERE " + " AND ".join(fieldselect) + " GROUP BY object ORDER BY object"
     else:
         sel = remfield.get_extended_args(resargs, "obsinf", "SELECT ind,obsind,object,filter,dithID,date_obs,gain,orient,quality," \
                                          "IF(rejreason IS NULL,'OK',rejreason) AS reason,exptime," \
-                                         "startx,starty,ncols,nrows,airmass", fieldselect, extras_reqd)
+                                         "startx,starty,ncols,nrows,airmass,seeing", fieldselect, extras_reqd)
         sel += " ORDER BY date_obs"
 except remfield.RemFieldError as e:
     print(e.args[0], file=sys.stderr)
