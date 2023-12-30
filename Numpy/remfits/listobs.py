@@ -47,7 +47,7 @@ Facc_dict = dict(zip(Format_keys, Format_accum))
 parsearg = argparse.ArgumentParser(description='List available observations',
                                    formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 parsearg.add_argument('obsinds', type=int, nargs='*', help='Observation ids to restrict to')
-remdefaults.parseargs(parsearg)
+remdefaults.parseargs(parsearg, libdir=False, tempdir=False)
 parsetime.parseargs_daterange(parsearg)
 parsearg.add_argument('--objects', type=str, nargs='*', help='Objects to limit to')
 parsearg.add_argument('--targets', action='store_false', help='Add targets to objects to limit to')
@@ -167,7 +167,7 @@ for f in formatlines:
 if len(obsinds) != 0:
     oil = []
     for oind in obsinds:
-        oil.append("obsind=%d" % oind)
+        oil.append(f"obsind={oind}")
     fieldselect.append("(" + " OR ".join(oil) + ")")
 
 mydb, dbcurs = remdefaults.opendb()
@@ -202,19 +202,19 @@ if len(dither) != 0 and dither[0] != -1:
         fieldselect.append("(" + " OR ".join(qdith) + ")")
 
 if gain is not None:
-    fieldselect.append("ABS(gain-%.3g) < %.3g" % (gain, gain * 1e-3))
+    fieldselect.append(f"ABS(gain-{gain:.3g}) < {gain * 1e-3:.3g}")
 
 if orient is not None:
-    fieldselect.append("orient=%d" % orient)
+    fieldselect.append(f"orient={orient}")
 
 if disp_startx is not None:
-    fieldselect.append("startx={:d}".format(disp_startx))
+    fieldselect.append(f"startx={disp_startx}")
 if disp_starty is not None:
-    fieldselect.append("starty={:d}".format(disp_starty))
+    fieldselect.append(f"starty={disp_starty}")
 if disp_rows is not None:
-    fieldselect.append("nrows={:d}".format(disp_rows))
+    fieldselect.append(f"nrows={disp_rows}")
 if disp_cols is not None:
-    fieldselect.append("ncols={:d}".format(disp_cols))
+    fieldselect.append(f"ncols={disp_cols}")
 
 try:
     remfield.getargs(resargs, fieldselect)
@@ -239,7 +239,7 @@ dbcurs.execute(sel)
 dbrows = dbcurs.fetchall()
 if summary:
     for row in dbrows:
-        print("{:<12s}{:7d}".format(row[0], row[1]))
+        print(f"{row[0]:<12s}{row[1]:7d}")
     sys.exit(0)
 
 if header:
@@ -274,7 +274,8 @@ for f in formatlines:
 
 try:
     if header:
-        print(" ".join(["{v:{a}{w}s}".format(a=h[0], v=h[1:], w=maxwids[n]) for n, h in enumerate(headers)]))
+        # First char of header gives alignment
+        print(" ".join([f"{h[1:]:{h[0]}{maxwids[n]}}" for n, h in enumerate(headers)]))
 
     Fcodes = []
     TFcodes = []

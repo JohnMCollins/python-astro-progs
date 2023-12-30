@@ -63,18 +63,18 @@ mydb, dbcurs = remdefaults.opendb()
 
 fields = []
 if gain is not None:
-    fields.append("ABS(gain-{:.3g}) < {:.3g}".format(gain, gain * 1e-3))
+    fields.append(f"ABS(gain-{gain:.3g}) < {gain * 1e-3:.3g}")
 
 if filters is not None:
     ffs = []
     for o in filters:
-        ffs.append("filter={:s}".format(mydb.escape(o)))
+        ffs.append(f"filter={mydb.escape(o):s}")
         add_or_fields(fields, ffs)
 
 ffs = []
 for d in dither:
     if d >= 0:
-        ffs.append("dithID={:d}".format(d))
+        ffs.append(f"dithID={d}")
 add_or_fields(fields, ffs)
 
 sel = ''
@@ -112,7 +112,7 @@ elif targets:
     intarg = []
     summing = []
     for r in results:
-        if r.objname == 'Proxima' or r.objname == 'BarnardStar' or r.objname == 'Ross154':
+        if r.objname in {'Proxima', 'BarnardStar', 'Ross154'}:
             intarg.append(r)
         else:
             summing.append(r)

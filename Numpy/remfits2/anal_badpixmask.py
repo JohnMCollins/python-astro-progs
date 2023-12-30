@@ -3,10 +3,10 @@
 """Output statistics about bad pixel mask files"""
 
 import argparse
-import sys
 import warnings
 import numpy as np
 import remdefaults
+import logs
 
 # Cope with divisions by zero
 
@@ -15,16 +15,17 @@ warnings.simplefilter('ignore', RuntimeWarning)
 parsearg = argparse.ArgumentParser(description="Annlysis of bed pixel mask", formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 parsearg.add_argument('bpm', type=str, nargs=1, help='Input Pixel mask')
 remdefaults.parseargs(parsearg, tempdir=False, database=False)
+logs.parseargs(parsearg)
 
 resargs = vars(parsearg.parse_args())
 remdefaults.getargs(resargs)
 bpmfile = remdefaults.bad_pixmask(resargs['bpm'][0])
+logging = logs.getargs(resargs)
 
 try:
     mask = np.load(bpmfile)
 except OSError as e:
-    print("Could not load", bpmfile, "error was", e.args[1], file=sys.stderr)
-    sys.exit(10)
+    logging.die(10, "Could not load", bpmfile, "error was", e.args[1])
 
 neighbours = np.zeros(mask.shape, dtype=np.uint16)
 
@@ -56,5 +57,3 @@ print("Total bad px:%10d" % np.count_nonzero(mask))
 print("0 neighbours:%10d" % np.count_nonzero((neighbours == 0) & mask))
 for n in range(1, 9):
     print("%d neighbours:%10d" % (n, np.count_nonzero(neighbours == n)))
-
-sys.exit(0)

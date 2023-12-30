@@ -1,20 +1,20 @@
 #!  /usr/bin/env python3
 
-# This program is intended to be run non-interactively.
-# It copies new observation data but not the FITS files to the named
-# #database, by default "remfits" but an alternative can be given as the
-# first argument
+"""Load new individual flat or bias files"""
 
 import sys
+import argparse
 import remdefaults
 import remget
-import argparse
+import logs
 
 parsearg = argparse.ArgumentParser(description='Copy new bias or flat FITS files to local DB', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 remdefaults.parseargs(parsearg, libdir=False, tempdir=False)
+logs.parseargs(parsearg)
 parsearg.add_argument('--verbose', action='store_false', help='Print out summary of what has been loaded')
 parsearg.add_argument('--debug', action='store_true', help='Debug queries')
 resargs = vars(parsearg.parse_args())
+logging = logs.getargs(resargs)
 verbose = resargs['verbose']
 debug = resargs['debug']
 remdefaults.getargs(resargs)
@@ -29,29 +29,29 @@ loaded = errors = 0
 
 selection = "SELECT iforbind,ffname FROM iforbinf WHERE " + " AND ".join(fieldselect)
 if debug:
-	print("Selection is:", selection, file=sys.stderr)
+    logging.write("Selection is:", selection)
 mycurs.execute(selection)
 dbrows = mycurs.fetchall()
 
 for iforbind, ffname in dbrows:
-	try:
-		ffile = remget.get_iforb(ffname)
-		mycurs.execute("INSERT INTO fitsfile (side,fitsgz) VALUES (1024,%s)", ffile)
-		mycurs.execute("UPDATE iforbinf SET ind=%d WHERE iforbind=%d" % (mycurs.lastrowid, iforbind))
-		mydb.commit()
-		loaded += 1
-	except remget.RemGetError as e:
-		print("Caould not fetch %d error was %s" % (iforbind, e.args[0]), file=sys.stderr)
-		mycurs.execute("UPDATE iforbinf SET rejreason='FITS file not found' WHERE iforbind=%d" % iforbind)
-		errors += 1
+    try:
+        ffile = remget.get_iforb(ffname)
+        mycurs.execute("INSERT INTO fitsfile (side,fitsgz) VALUES (1024,%s)", ffile)
+        mycurs.execute(f"UPDATE iforbinf SET ind={mycurs.lastrowid} WHERE iforbind={iforbind}")
+        mydb.commit()
+        loaded += 1
+    except remget.RemGetError as e:
+        logging.write(f"Caould not fetch {iforbind} error was {e.args[0]}")
+        mycurs.execute(f"UPDATE iforbinf SET rejreason='FITS file not found' WHERE iforbind={iforbind}")
+        errors += 1
 
 if verbose:
-	if errors > 0:
-		print(errors, "files not loaded", file=sys.stderr)
-	if loaded > 0:
-		print(loaded, "files loaded", file=sys.stderr)
-	else:
-		print("Nothing loaded", file=sys.stderr)
+    if errors > 0:
+        logging.write(errors, "files not loaded")
+    if loaded > 0:
+        logging.write(loaded, "files loaded")
+    else:
+        logging.write("Nothing loaded")
 if errors > 0:
-	sys.exit(1)
+    sys.exit(1)
 sys.exit(0)

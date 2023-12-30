@@ -13,7 +13,6 @@ import argparse
 import sys
 from operator import attrgetter
 import objdata
-import numpy as np
 import remdefaults
 import parsetime
 
@@ -71,7 +70,7 @@ dateselect = ' AND '.join(fieldselect)
 mydb, dbcurs = remdefaults.opendb()
 
 if gain is not None:
-    fieldselect.append("ABS(gain-{:.3g}) < {:.3g}".format(gain, gain * 1e-3))
+    fieldselect.append(f"ABS(gain-{gain:.3g}) < {gain * 1e-3:.3g}")
 
 if filters is not None:
     fs = []
@@ -86,7 +85,7 @@ if filters is not None:
 if len(dither) != 1 or dither[0] != -1:
     fs = []
     for d in dither:
-        fs.append("dithID={:d}".format(d))
+        fs.append(f"dithID={d}")
     if len(fs) != 0:
         if len(fs) == 1:
             fieldselect += fs
@@ -127,15 +126,15 @@ for k in results:
 nonproxr = [r for r in results if r.objname[0:4] != 'Prox']
 proxr = [r for r in results if r.objname[0:4] == 'Prox']
 
-prox = obstot('Proxima', np.sum([r.count for r in proxr]))
-prox.fromdate = min([r.fromdate for r in proxr])
-prox.todate = max([r.todate for r in proxr])
+prox = obstot('Proxima', sum((r.count for r in proxr)))
+prox.fromdate = min((r.fromdate for r in proxr))
+prox.todate = max((r.todate for r in proxr))
 prox.isundef = False
 
 results = nonproxr
 results.append(prox)
 
-total = np.sum([r.count for r in results])
+total = sum((r.count for r in results))
 summ = None
 
 if cutoff is not None:
@@ -147,23 +146,23 @@ if cutoff is not None:
         keeping = [r for r in results if r.count >= cutperc]
         summing = [r for r in results if r.count < cutperc]
     if len(summing) != 0:
-        summ = obstot('Others', np.sum([r.count for r in summing]))
-        summ.fromdate = min([r.fromdate for r in summing])
-        summ.todate = max([r.todate for r in summing])
+        summ = obstot('Others', sum((r.count for r in summing)))
+        summ.fromdate = min((r.fromdate for r in summing))
+        summ.todate = max((r.todate for r in summing))
         summ.isundef = False
     results = keeping
 elif targets:
     intarg = []
     summing = []
     for r in results:
-        if r.objname == 'Proxima' or r.objname == 'BarnardStar' or r.objname == 'Ross154':
+        if r.objname in {'Proxima', 'BarnardStar', 'Ross154'}:
             intarg.append(r)
         else:
             summing.append(r)
     if len(summing) != 0:
-        summ = obstot('Others', np.sum([r.count for r in summing]))
-        summ.fromdate = min([r.fromdate for r in summing])
-        summ.todate = max([r.todate for r in summing])
+        summ = obstot('Others', sum((r.count for r in summing)))
+        summ.fromdate = min((r.fromdate for r in summing))
+        summ.todate = max((r.todate for r in summing))
         summ.isundef = False
     results = intarg
 
@@ -200,15 +199,15 @@ if latex:
     print("\\hline")
     print(tfmt.format(num=total))
 else:
-    mind = min([r.fromdate for r in results])
-    maxd = max([r.todate for r in results])
-    nsize = max(5, max([len(r.objname) for r in results]))
+    mind = min((r.fromdate for r in results))
+    maxd = max((r.todate for r in results))
+    nsize = max(5, max(len(r.objname) for r in results))
     if thousand:
-        tsize = len("{:,d}".format(total))
+        tsize = len(f"{total:,}")
         lfmt = "{nam:<{wid}s} {num:{tsize},d}{pc:8.2f} {sd:%d/%m/%Y} {ed:%d/%m/%Y}"
         tfmt = " {nam:<{wid}s} {num:{tsize},d}{sp:8s} {sd:%d/%m/%Y} {ed:%d/%m/%Y}"
     else:
-        tsize = len("{:d}".format(total))
+        tsize = len(f"{total}")
         lfmt = "{nam:<{wid}s} {num:{tsize}d}{pc:8.2f} {sd:%d/%m/%Y} {ed:%d/%m/%Y}"
         tfmt = " {nam:<{wid}s} {num:{tsize}d}{sp:8s} {sd:%d/%m/%Y} {ed:%d/%m/%Y}"
     for k in results:

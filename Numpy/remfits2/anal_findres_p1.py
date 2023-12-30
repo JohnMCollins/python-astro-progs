@@ -1,18 +1,15 @@
 #!  /usr/bin/env python3
 
-"""Analyse brightest objects in findresult files"""
+"""Analyse brightest objects in findresult files
+SUPERSEDED"""
 
 import argparse
-import sys
 import warnings
 import numpy as np
 from astropy.utils.exceptions import ErfaWarning
 import remdefaults
 import find_results
-import objdata
-import miscutils
-import parsetime
-import remfits
+import logs
 
 warnings.simplefilter('ignore', ErfaWarning)
 
@@ -20,11 +17,15 @@ parsearg = argparse.ArgumentParser(description='Analyse find object results', fo
 parsearg.add_argument('files', nargs='+', type=str, help='Find results file(s)')
 remdefaults.parseargs(parsearg, tempdir=False, inlib=False)
 parsearg.add_argument('--numobjs', type=int, default=10, help='Number of brightest objects in each')
+logs.parseargs(parsearg)
 
 resargs = vars(parsearg.parse_args())
 files = resargs['files']
 remdefaults.getargs(resargs)
 numobjs = resargs['numobjs']
+logging = logs.getargs(resargs)
+
+logging.die(200, "This program has been superseded now find result are stored in the database")
 
 mydb, dbcurs = remdefaults.opendb()
 
@@ -36,7 +37,7 @@ for fil in files:
     try:
         findres = find_results.load_results_from_file(fil)
     except find_results.FindResultErr as e:
-        print(fil, "gave error", e.args[0], file=sys.stderr)
+        logging.write(fil, "gave error", e.args[0])
         continue
 
     n = 0

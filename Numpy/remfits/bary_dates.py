@@ -12,10 +12,10 @@ La_Silla_lat = -70.7380
 La_Silla_long = -29.2563
 La_Silla_alt = 2400
 
-HIPs = dict(ProximaCenb=70890, BarnardStar=87937, Ross154=92403)
+HIPs = {"ProximaCenb": 70890, "BarnardStar": 87937, "Ross154": 92403}
 
 parsearg = argparse.ArgumentParser(description='Calculate Barycentric dates of targets', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-parsearg.add_argument('-listn', type=int, default=10, help="List progress every n")
+parsearg.add_argument('--listn', type=int, default=10, help="List progress every n")
 remdefaults.parseargs(parsearg, libdir=False, tempdir=False)
 resargs = vars(parsearg.parse_args())
 countevery = resargs['listn']
@@ -37,11 +37,11 @@ Done = 0
 
 for obsind, date_obs, objname in rows:
     bjdresult = utc_tdb.JDUTC_to_BJDTDB(Time(date_obs), hip_id=HIPs[objname], lat=La_Silla_lat, longi=La_Silla_long, alt=La_Silla_alt)[0][0]
-    mycurs.execute("UPDATE obsinf SET bjdobs={:.12e} WHERE obsind={:d}".format(bjdresult, obsind))
+    mycurs.execute(f"UPDATE obsinf SET bjdobs={bjdresult:.12e} WHERE obsind={obsind}")
     Done += 1
-    if Done % countevery == 0:
+    if countevery > 0 and Done % countevery == 0:
         mydb.commit()
-        print("Done {:d} out of {:d} {:.2f}%".format(Done, ToDo, Done * Todopc), file=sys.stderr)
+        print(f"Done {Done} out of {ToDo} {Done * Todopc:.2f}%", file=sys.stderr)
 
 mydb.commit()
 print("Update of BJDs complete", file=sys.stderr)

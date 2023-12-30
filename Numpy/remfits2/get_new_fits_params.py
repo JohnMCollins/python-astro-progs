@@ -18,6 +18,7 @@ import fitsops
 import trimarrays
 import mydateutil
 import wcscoord
+import logs
 
 # Shut up warning messages
 
@@ -28,20 +29,28 @@ warnings.simplefilter('ignore', UserWarning)
 
 def rejectmast(cu, mtyp, myear, mmonth, mfilter, mreason):
     """Set master file to rejected for various reasons"""
-    cu.execute("UPDATE forbinf SET rejreason=%s WHERE filter=%s AND typ=%s AND " + "year=%d AND month=%d" % (myear, mmonth), (mreason, mfilter, mtyp))
+    cu.execute("UPDATE forbinf SET rejreason=%s WHERE filter=%s AND typ=%s AND " + f"year={myear} AND month={mmonth}", (mreason, mfilter, mtyp))
     cu.connection.commit()
 
 
 parsearg = argparse.ArgumentParser(description='Update database fields from newly-loaded FITS files', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 remdefaults.parseargs(parsearg, libdir=False, tempdir=False)
+logs.parseargs(parsearg)
 parsearg.add_argument('--trimsides', type=int, default=0, help='Amount to trip off edges set -1 to force recalc')
 parsearg.add_argument('--remir', action='store_true', help='Include REMIR files (not yet fully implemented')
 parsearg.add_argument('--hasfile', action='store_false', help='Restrict to files we have loaded')
+parsearg.add_argument('--inclreject', action='store_true', help='Include files already rejected')
+parsearg.add_argument('--verbose', action='count', help='Be increasingly verbose')
 resargs = vars(parsearg.parse_args())
 remdefaults.getargs(resargs)
+logging = logs.getargs(resargs)
 trimsides = resargs['trimsides']
+verbose = resargs['verbose']
+inclrej = resargs['inclreject']
 
-fieldselect = ['rejreason IS NULL']
+fieldselect = []
+if not inclrej:
+    fieldselect.append('rejreason IS NULL')
 sxfields = []
 if resargs['remir']:
     sxfields.append("dithID=0")
@@ -58,7 +67,7 @@ sxfields.append("startx=0")
 sxfields.append("starty=0")
 
 orfields.append("(" + " AND ".join(sxfields) + ")")
-orfields.append("sidet!=%d" % trimsides)
+orfields.append(f"sidet!={trimsides}")
 fieldselect.append('(' + " OR ".join(orfields) + ')')
 
 realtrimsides = max(trimsides, 0)
@@ -70,6 +79,7 @@ rows = dbcurs.fetchall()
 dims_added = 0
 nfiles = 0
 nreject = 0
+nrows = len(rows)
 
 for obsind, fitsind, exptime, ofilter, date_obs, gain, dithID, ffname in rows:
 
@@ -97,7 +107,7 @@ for obsind, fitsind, exptime, ofilter, date_obs, gain, dithID, ffname in rows:
 
     fexptime = ffhdr['EXPTIME']
     if fexptime != exptime:
-        remget.set_rejection(dbcurs, obsind, "FITS exposure time of %.4g does not agree" % fexptime)
+        remget.set_rejection(dbcurs, obsind, f"FITS exposure time of {fexptime} does not agree" % fexptime)
         nreject += 1
         continue
 
@@ -114,7 +124,7 @@ for obsind, fitsind, exptime, ofilter, date_obs, gain, dithID, ffname in rows:
 
     sidesize = fdat.shape[0]
     if sidesize != sideexpected:
-        remget.set_rejection(dbcurs, obsind, "FITS has size of %d not %d as expected" % (sidesize, sideexpected))
+        remget.set_rejection(dbcurs, obsind, f"FITS has size of {sidesize} not {sideexpected} as expected")
         nreject += 1
         continue
 
@@ -142,51 +152,60 @@ for obsind, fitsind, exptime, ofilter, date_obs, gain, dithID, ffname in rows:
         else:
             orient = 2
     updfields = []
-    updfields.append("gain=%.6g" % fgain)
-    updfields.append("orient=%d" % orient)
-    updfields.append("airmass=%.6g" % fairmass)
+    updfields.append(f"gain={fgain}")
+    updfields.append(f"orient={orient}")
+    updfields.append(f"airmass={fairmass}")
     try:
-        updfields.append("seeing=%.6g" % ffhdr['SEEING'])
+        fseeing = ffhdr['SEEING']
+        updfields.append(f"seeing={fseeing}")
     except KeyError:
         pass
-    updfields.append("moonphase=%.6g" % moonphase)
-    updfields.append("moondist=%.6g" % moondist)
-    updfields.append("nrows=%d" % fitsrows)
-    updfields.append("ncols=%d" % fitscols)
-    updfields.append("startx=%d" % startx)
-    updfields.append("starty=%d" % starty)
-    updfields.append("minv=%d" % sqq.min())
-    updfields.append("maxv=%d" % sqq.max())
-    updfields.append("sidet=%d" % realtrimsides)
-    updfields.append("median=%.8e" % np.median(tsfdat))
-    updfields.append("mean=%.8e" % tsfdat.mean())
-    updfields.append("std=%.8e" % tsfdat.std())
-    updfields.append("skew=%.8e" % ss.skew(tsfdat, axis=None))
-    updfields.append("kurt=%.8e" % ss.kurtosis(tsfdat, axis=None))
-    dbcurs.execute("UPDATE obsinf SET " + ",".join(updfields) + " WHERE obsind=%d" % obsind)
+    updfields.append(f"moonphase={moonphase}")
+    updfields.append(f"moondist={moondist}")
+    updfields.append(f"nrows={fitsrows}")
+    updfields.append(f"ncols={fitscols}")
+    updfields.append(f"startx={startx}")
+    updfields.append(f"starty={starty}")
+    updfields.append(f"minv={sqq.min()}")
+    updfields.append(f"maxv={sqq.max()}")
+    updfields.append(f"sidet={realtrimsides}")
+    updfields.append(f"median={np.median(tsfdat)}")
+    updfields.append(f"mean={tsfdat.mean()}")
+    updfields.append(f"std={tsfdat.std()}")
+    updfields.append(f"skew={ss.skew(tsfdat, axis=None)}")
+    updfields.append(f"kurt={ss.kurtosis(tsfdat, axis=None)}")
+    dbcurs.execute("UPDATE obsinf SET " + ",".join(updfields) + f" WHERE obsind={obsind}")
     if fitsind != 0:
-        dbcurs.execute("UPDATE fitsfile SET nrows=%d,ncols=%d,startx=%d,starty=%d WHERE ind=%d" % (fitsrows, fitscols, startx, starty, fitsind))
+        dbcurs.execute(f"UPDATE fitsfile SET nrows={fitsrows},ncols={fitscols},startx={startx},starty={starty} WHERE ind={fitsind}")
         if dithID == 0 and not remfits.check_has_dims(ffhdr):
             remfits.set_dims_in_hdr(ffhdr, startx, starty, fitscols, fitsrows)
-            dbcurs.execute("UPDATE fitsfile SET fitsgz=%s WHERE ind=" + str(fitsind), fitsops.mem_makefits(ffhdr, fdat))
+            dbcurs.execute(f"UPDATE fitsfile SET fitsgz=%s WHERE ind={fitsind}", fitsops.mem_makefits(ffhdr, fdat))
             dims_added += 1
 
     # Do this check after we've updated the fields
     if rrows != fitsrows:
-        remget.set_rejection(dbcurs, obsind, "*** Height %d of FITS not %d as expected" % (fitsrows, rrows))
+        remget.set_rejection(dbcurs, obsind, f"*** Height {fitsrows} of FITS not {rrows} as expected")
         nreject += 1
         continue
     if rcols != fitscols:
-        remget.set_rejection(dbcurs, obsind, "*** Width %d of FITS not %d as expected" % (fitscols, rcols))
+        remget.set_rejection(dbcurs, obsind, f"*** Width {fitscols} of FITS not {rcols} as expected")
         nreject += 1
         continue
 
     dbase.commit()
     nfiles += 1
+    if verbose:
+        if verbose == 1:
+            if nfiles % 10 == 0:
+                logging.write(f"Processed {nfiles} observations out of {nrows}")
+        else:
+            logging.write(f"Processed observation dated {date_obs.strftime('%d/%m/%Y %H:%M:%S')} filter {ofilter} out of {nrows} obs")
 
 # Repeat for master flats and biases
 
-fieldselect = ['rejreason IS NULL']
+fieldselect = []
+if not inclrej:
+    fieldselect.append('rejreason IS NULL')
 orfields = []
 sxfields = []
 
@@ -204,6 +223,7 @@ dbcurs.execute("SELECT year,month,filter,typ,fitsind FROM forbinf WHERE " + " AN
 rows = dbcurs.fetchall()
 
 nmfb = 0
+nrows = len(rows)
 
 for year, month, ofilter, typ, fitsind in rows:
 
@@ -229,33 +249,40 @@ for year, month, ofilter, typ, fitsind in rows:
     fitsrows, fitscols = nzfdat.shape
     startx, starty, rcols, rrows = remdefaults.get_geom(date_obs, ofilter)
 
-    dbcurs.execute("UPDATE forbinf SET gain=%.6g,nrows=%d,ncols=%d,startx=%d,starty=%d WHERE filter='%s' AND typ='%s' AND year=%d AND month=%d" %
-                    (fgain, fitsrows, fitscols, startx, starty, ofilter, typ, year, month))
-
-    dbcurs.execute("UPDATE fitsfile SET nrows=%d,ncols=%d,startx=%d,starty=%d WHERE ind=%d" % (fitsrows, fitscols, startx, starty, fitsind))
+    dbcurs.execute(f"UPDATE forbinf SET gain={fgain},nrows={fitsrows},ncols={fitscols},startx={startx},starty={starty} WHERE filter='{ofilter}' AND typ='{typ}' AND year={year} AND month={month}")
+    dbcurs.execute(f"UPDATE fitsfile SET nrows={fitsrows},ncols={fitscols},startx={startx},starty={starty} WHERE ind={fitsind}")
 
     if not remfits.check_has_dims(ffhdr):
         remfits.set_dims_in_hdr(ffhdr, startx, starty, fitscols, fitsrows)
-        dbcurs.execute("UPDATE fitsfile SET fitsgz=%s WHERE ind=" + str(fitsind), fitsops.mem_makefits(ffhdr, fdat))
+        dbcurs.execute(f"UPDATE fitsfile SET fitsgz=%s WHERE ind={fitsind}", fitsops.mem_makefits(ffhdr, fdat))
         dims_added += 1
 
     # Do this check after we've updated the fields
 
     if rrows != fitsrows:
-        rejectmast(dbcurs, typ, year, month, ofilter, "*** Height %d of FITS not %d as expected" % (fitsrows, rrows))
+        rejectmast(dbcurs, typ, year, month, ofilter, f"*** Height {fitsrows} of FITS not {rrows} as expected")
         nreject += 1
         continue
     if rcols != fitscols:
-        rejectmast(dbcurs, typ, year, month, ofilter, "*** Width %d of FITS not %d as expected" % (fitscols, rcols))
+        rejectmast(dbcurs, typ, year, month, ofilter, f"*** Width {fitscols} of FITS not {rcols} as expected" % (fitscols, rcols))
         nreject += 1
         continue
 
     dbase.commit()
     nmfb += 1
+    if verbose:
+        if verbose == 1:
+            if nmfb % 10 == 0:
+                logging.write(f"Processed {nmfb} master files out of {nrows}")
+        else:
+            logging.write(f"Processed master file for {year}/{month} filter {ofilter} out of {nrows}")
+
 
 # Finally indiviaul flat and bias
 
-fieldselect = ['rejreason IS NULL']
+fieldselect = []
+if not inclrej:
+    fieldselect.append('rejreason IS NULL')
 sxfields = []
 fieldselect.append('ind!=0')
 
@@ -266,13 +293,14 @@ sxfields.append("startx=0")
 sxfields.append("starty=0")
 
 orfields.append("(" + " AND ".join(sxfields) + ")")
-orfields.append("sidet!=%d" % trimsides)
+orfields.append(f"sidet!={trimsides}")
 fieldselect.append('(' + " OR ".join(orfields) + ')')
 
 dbcurs.execute("SELECT ind,iforbind,typ,gain,exptime,filter,date_obs FROM iforbinf WHERE " + " AND ".join(fieldselect))
 rows = dbcurs.fetchall()
 
 nifb = 0
+nrows = len(rows)
 
 for fitsind, iforbind, typ, gain, exptime, ofilter, date_obs in rows:
 
@@ -297,7 +325,7 @@ for fitsind, iforbind, typ, gain, exptime, ofilter, date_obs in rows:
 
     fexptime = ffhdr['EXPTIME']
     if fexptime != exptime:
-        remget.set_rejection(dbcurs, iforbind, "FITS exposure time of %.4g does not agree" % fexptime, table='iforbinf', column='iforbind')
+        remget.set_rejection(dbcurs, iforbind, f"FITS exposure time of {fexptime} does not agree", table='iforbinf', column='iforbind')
         nreject += 1
         continue
 
@@ -314,42 +342,48 @@ for fitsind, iforbind, typ, gain, exptime, ofilter, date_obs in rows:
     startx, starty, rcols, rrows = remdefaults.get_geom(date_obs, ofilter)
 
     updfields = []
-    updfields.append("gain=%.6g" % fgain)
-    updfields.append("nrows=%d" % fitsrows)
-    updfields.append("ncols=%d" % fitscols)
-    updfields.append("startx=%d" % startx)
-    updfields.append("starty=%d" % starty)
-    updfields.append("minv=%d" % sqq.min())
-    updfields.append("maxv=%d" % sqq.max())
-    updfields.append("sidet=%d" % realtrimsides)
-    updfields.append("median=%.8e" % np.median(tsfdat))
-    updfields.append("mean=%.8e" % tsfdat.mean())
-    updfields.append("std=%.8e" % tsfdat.std())
-    updfields.append("skew=%.8e" % ss.skew(tsfdat, axis=None))
-    updfields.append("kurt=%.8e" % ss.kurtosis(tsfdat, axis=None))
-    dbcurs.execute("UPDATE iforbinf SET " + ",".join(updfields) + " WHERE iforbind=%d" % iforbind)
-    dbcurs.execute("UPDATE fitsfile SET nrows=%d,ncols=%d,startx=%d,starty=%d WHERE ind=%d" % (fitsrows, fitscols, startx, starty, fitsind))
+    updfields.append(f"gain={fgain}")
+    updfields.append(f"nrows={fitsrows}")
+    updfields.append(f"ncols={fitscols}")
+    updfields.append(f"startx={startx}")
+    updfields.append(f"starty={starty}")
+    updfields.append(f"minv={sqq.min()}")
+    updfields.append(f"maxv={sqq.max()}")
+    updfields.append(f"sidet={realtrimsides}")
+    updfields.append(f"median={np.median(tsfdat)}")
+    updfields.append(f"mean={tsfdat.mean()}")
+    updfields.append(f"std={tsfdat.std()}")
+    updfields.append(f"skew={ss.skew(tsfdat, axis=None)}")
+    updfields.append(f"kurt={ss.kurtosis(tsfdat, axis=None)}")
+    dbcurs.execute("UPDATE iforbinf SET " + ",".join(updfields) + f" WHERE iforbind={iforbind}")
+    dbcurs.execute(f"UPDATE fitsfile SET nrows={fitsrows},ncols={fitscols},startx={startx},starty={starty} WHERE ind={fitsind}")
 
     # Possibly update FITS file
 
     if not remfits.check_has_dims(ffhdr):
         remfits.set_dims_in_hdr(ffhdr, startx, starty, fitscols, fitsrows)
-        dbcurs.execute("UPDATE fitsfile SET fitsgz=%s WHERE ind=" + str(fitsind), fitsops.mem_makefits(ffhdr, fdat))
+        dbcurs.execute(f"UPDATE fitsfile SET fitsgz=%s WHERE ind={fitsind}", fitsops.mem_makefits(ffhdr, fdat))
         dims_added += 1
 
     # Do this check after we've put other stuff in
 
     if rrows != fitsrows:
-        remget.set_rejection(dbcurs, iforbind, "*** Height %d of FITS not %d as expected" % (fitsrows, rrows), table='iforbinf', column='iforbind')
+        remget.set_rejection(dbcurs, iforbind, f"*** Height {fitsrows} of FITS not {rrows} as expected", table='iforbinf', column='iforbind')
         nreject += 1
         continue
     if rcols != fitscols:
-        remget.set_rejection(dbcurs, iforbind, "*** Width %d of FITS not %d as expected" % (fitscols, rcols), table='iforbinf', column='iforbind')
+        remget.set_rejection(dbcurs, iforbind, f"*** Width {fitscols} of FITS not {rcols} as expected", table='iforbinf', column='iforbind')
         nreject += 1
         continue
 
     dbase.commit()
     nifb += 1
+    if verbose:
+        if verbose == 1:
+            if nifb % 10 == 0:
+                logging.write(f"Processed {nifb} flat/bias files out of {nrows}")
+        else:
+            logging.write(f"Processed individual {typ} file dated {date_obs.strftime('%d/%m/%Y %H:%M:%S')} filter {ofilter} out of {nrows}")
 
 if nreject + nfiles + nmfb + nifb + dims_added == 0:
     print("Nothing needed to be adjusted", file=sys.stderr)
