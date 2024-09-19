@@ -297,7 +297,7 @@ try:
                     resline.append(f.format(**res))
                 except TypeError:
                     # Extract width from format code
-                    mtch = re.search(':(\d+)', f)
+                    mtch = re.search(r':(\d+)', f)
                     resline.append(' ' * (int(mtch.group(1)) - 4) + "NULL")
         print(" ".join(resline))
         if ptots:
