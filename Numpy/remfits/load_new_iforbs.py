@@ -13,15 +13,18 @@ remdefaults.parseargs(parsearg, libdir=False, tempdir=False)
 logs.parseargs(parsearg)
 parsearg.add_argument('--verbose', action='store_false', help='Print out summary of what has been loaded')
 parsearg.add_argument('--debug', action='store_true', help='Debug queries')
+parsearg.add_argument('--noreset', action='store_false', help='Do not retry obs with rejections')
 resargs = vars(parsearg.parse_args())
 logging = logs.getargs(resargs)
 verbose = resargs['verbose']
 debug = resargs['debug']
+noreset = resargs['noreset']
 remdefaults.getargs(resargs)
 
 fieldselect = []
 fieldselect.append("ind=0")
-fieldselect.append("rejreason IS NULL")
+if noreset:
+    fieldselect.append("rejreason IS NULL")
 
 mydb, mycurs = remdefaults.opendb()
 
@@ -37,7 +40,7 @@ for iforbind, ffname in dbrows:
     try:
         ffile = remget.get_iforb(ffname)
         mycurs.execute("INSERT INTO fitsfile (side,fitsgz) VALUES (1024,%s)", ffile)
-        mycurs.execute(f"UPDATE iforbinf SET ind={mycurs.lastrowid} WHERE iforbind={iforbind}")
+        mycurs.execute(f"UPDATE iforbinf SET rejreason=NULL,ind={mycurs.lastrowid} WHERE iforbind={iforbind}")
         mydb.commit()
         loaded += 1
     except remget.RemGetError as e:
